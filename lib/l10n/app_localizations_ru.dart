@@ -1017,7 +1017,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get callKometDetectedNotification =>
-      'Этот человек использует ProMax! :3';
+      'Собеседник использует совместимый клиент Komet/ProMax.';
 
   @override
   String get callStatusConnecting => 'Соединение...';
@@ -3154,7 +3154,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String e2eeNeedsKomet(String name) {
-    return 'Чтобы это работало, $name должен пользоваться ProMax.';
+    return 'Чтобы это работало, $name должен пользоваться совместимым клиентом Komet или ProMax.';
   }
 
   @override

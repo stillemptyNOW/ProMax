@@ -81,6 +81,7 @@
       if (!face.hasLeftEyePosition || !face.hasRightEyePosition) continue;
       CGPoint left = face.leftEyePosition;
       CGPoint right = face.rightEyePosition;
+      if (left.x > right.x) std::swap(left, right);
       CGFloat eyeDistance = hypot(right.x - left.x, right.y - left.y);
       CGPoint center = CGPointMake((left.x + right.x) / 2, (left.y + right.y) / 2);
       CGFloat radius = eyeDistance * 0.36;

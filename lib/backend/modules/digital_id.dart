@@ -157,7 +157,9 @@ class DigitalIdModule {
   }) async {
     final webAppData = await _ensureWebAppData();
     final uri = Uri.parse('$_baseUrl$path');
-    final request = await _http.openUrl(method, uri);
+    final request = await _http
+        .openUrl(method, uri)
+        .timeout(const Duration(seconds: 20));
     request.headers.set('Authorization', '#WebAppData=$webAppData');
     request.headers.set('Origin', 'https://digital-id.max.ru');
     request.headers.set('Referer', 'https://digital-id.max.ru/');
@@ -168,8 +170,11 @@ class DigitalIdModule {
       request.headers.contentType = ContentType.json;
       request.add(utf8.encode(jsonEncode(body)));
     }
-    final response = await request.close();
-    final text = await response.transform(utf8.decoder).join();
+    final response = await request.close().timeout(const Duration(seconds: 20));
+    final text = await response
+        .transform(utf8.decoder)
+        .join()
+        .timeout(const Duration(seconds: 20));
     if (kDebugMode) {
       logger.i('[DID-native] $method $path -> ${response.statusCode}');
     }

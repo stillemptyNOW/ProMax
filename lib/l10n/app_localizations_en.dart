@@ -1016,7 +1016,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearancePreviewNotBad => 'Not bad at all!';
 
   @override
-  String get callKometDetectedNotification => 'This person uses ProMax! :3';
+  String get callKometDetectedNotification =>
+      'This person uses a compatible Komet/ProMax client.';
 
   @override
   String get callStatusConnecting => 'Connecting';
@@ -3139,7 +3140,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String e2eeNeedsKomet(String name) {
-    return '$name needs ProMax for this to work.';
+    return '$name needs a compatible Komet or ProMax client for this to work.';
   }
 
   @override

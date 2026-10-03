@@ -11,7 +11,9 @@ Pod::Spec.new do |s|
   s.public_header_files = 'Classes/ProMaxEffectsPlugin.h'
   s.dependency 'Flutter'
   s.dependency 'flutter_webrtc'
+  s.static_framework = true
   s.ios.deployment_target = '15.0'
   s.frameworks = 'CoreImage', 'CoreVideo', 'UIKit'
+  s.libraries = 'c++'
   s.pod_target_xcconfig = { 'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17' }
 end

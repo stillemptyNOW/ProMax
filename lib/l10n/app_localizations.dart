@@ -2003,7 +2003,7 @@ abstract class AppLocalizations {
   /// No description provided for @callKometDetectedNotification.
   ///
   /// In en, this message translates to:
-  /// **'This person uses ProMax! :3'**
+  /// **'This person uses a compatible Komet/ProMax client.'**
   String get callKometDetectedNotification;
 
   /// No description provided for @callStatusConnecting.
@@ -5897,7 +5897,7 @@ abstract class AppLocalizations {
   /// No description provided for @e2eeNeedsKomet.
   ///
   /// In en, this message translates to:
-  /// **'{name} needs ProMax for this to work.'**
+  /// **'{name} needs a compatible Komet or ProMax client for this to work.'**
   String e2eeNeedsKomet(String name);
 
   /// No description provided for @e2eeOfferSent.
