@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginTitle.
   ///
   /// In en, this message translates to:
-  /// **'Sign in to Komet'**
+  /// **'Sign in to ProMax'**
   String get loginTitle;
 
   /// No description provided for @loginSubtitle.
@@ -1439,7 +1439,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationsFkmEnableSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Komet keeps its own connection to the server and shows notifications itself. A service notification will stay in the shade while this is on.'**
+  /// **'ProMax keeps its own connection to the server and shows notifications itself. A service notification will stay in the shade while this is on.'**
   String get notificationsFkmEnableSubtitle;
 
   /// No description provided for @notificationsFkmUnsupported.
@@ -2003,7 +2003,7 @@ abstract class AppLocalizations {
   /// No description provided for @callKometDetectedNotification.
   ///
   /// In en, this message translates to:
-  /// **'This person uses Komet! :3'**
+  /// **'This person uses ProMax! :3'**
   String get callKometDetectedNotification;
 
   /// No description provided for @callStatusConnecting.
@@ -2087,7 +2087,7 @@ abstract class AppLocalizations {
   /// No description provided for @callTooltipKometHub.
   ///
   /// In en, this message translates to:
-  /// **'Komet'**
+  /// **'ProMax'**
   String get callTooltipKometHub;
 
   /// No description provided for @callInfoTitle.
@@ -2435,7 +2435,7 @@ abstract class AppLocalizations {
   /// No description provided for @hubTitleMenu.
   ///
   /// In en, this message translates to:
-  /// **'Komet'**
+  /// **'ProMax'**
   String get hubTitleMenu;
 
   /// No description provided for @hubChatPageTitle.
@@ -5441,7 +5441,7 @@ abstract class AppLocalizations {
   /// No description provided for @webPushIntro.
   ///
   /// In en, this message translates to:
-  /// **'Komet has no ordinary push on iOS: Apple issues a notification token only to apps signed with a developer certificate, and a sideloaded build never gets one.\n\nThe way around it is a web app on the Home Screen. MAX\'s own server sends the notifications through Apple, and a separate icon displays them.\n\nThat needs a web session. Komet creates one and approves it itself, from this very device — no phone number or code required.'**
+  /// **'ProMax has no ordinary push on iOS: Apple issues a notification token only to apps signed with a developer certificate, and a sideloaded build never gets one.\n\nThe way around it is a web app on the Home Screen. MAX\'s own server sends the notifications through Apple, and a separate icon displays them.\n\nThat needs a web session. ProMax creates one and approves it itself, from this very device — no phone number or code required.'**
   String get webPushIntro;
 
   /// No description provided for @webPushConfirm.
@@ -5477,7 +5477,7 @@ abstract class AppLocalizations {
   /// No description provided for @webPushInstallBody.
   ///
   /// In en, this message translates to:
-  /// **'Open push.komet.pw in Safari, add it to the Home Screen and launch the icon that appears. Notifications do not work from a browser tab — that is how iOS works.\n\nIn the app, allow notifications, create a subscription and tap \"Open Komet\". The subscription registers itself from there.'**
+  /// **'Open push.komet.pw in Safari, add it to the Home Screen and launch the icon that appears. Notifications do not work from a browser tab — that is how iOS works.\n\nIn the app, allow notifications, create a subscription and tap \"Open ProMax\". The subscription registers itself from there.'**
   String get webPushInstallBody;
 
   /// No description provided for @webPushLinkedTitle.
@@ -5531,7 +5531,7 @@ abstract class AppLocalizations {
   /// No description provided for @webPushWaitingBody.
   ///
   /// In en, this message translates to:
-  /// **'Komet is approving the web session from this device. This usually takes a few seconds.'**
+  /// **'ProMax is approving the web session from this device. This usually takes a few seconds.'**
   String get webPushWaitingBody;
 
   /// No description provided for @webPushNeedsOnline.
@@ -5897,7 +5897,7 @@ abstract class AppLocalizations {
   /// No description provided for @e2eeNeedsKomet.
   ///
   /// In en, this message translates to:
-  /// **'{name} needs Komet for this to work.'**
+  /// **'{name} needs ProMax for this to work.'**
   String e2eeNeedsKomet(String name);
 
   /// No description provided for @e2eeOfferSent.
@@ -6221,7 +6221,7 @@ abstract class AppLocalizations {
   /// No description provided for @lockBiometricReason.
   ///
   /// In en, this message translates to:
-  /// **'Unlock Komet'**
+  /// **'Unlock ProMax'**
   String get lockBiometricReason;
 
   /// No description provided for @lockBlocked.
@@ -6239,7 +6239,7 @@ abstract class AppLocalizations {
   /// No description provided for @lockNow.
   ///
   /// In en, this message translates to:
-  /// **'Lock Komet'**
+  /// **'Lock ProMax'**
   String get lockNow;
 
   /// No description provided for @passcodeTitle.
@@ -6317,7 +6317,7 @@ abstract class AppLocalizations {
   /// No description provided for @passcodeAutoLockHint.
   ///
   /// In en, this message translates to:
-  /// **'Lock Komet when you don\'t touch it for a while'**
+  /// **'Lock ProMax when you don\'t touch it for a while'**
   String get passcodeAutoLockHint;
 
   /// No description provided for @passcodeAutoLockOff.
@@ -6347,7 +6347,7 @@ abstract class AppLocalizations {
   /// No description provided for @passcodeDisableMessage.
   ///
   /// In en, this message translates to:
-  /// **'Komet will open without asking for the passcode.'**
+  /// **'ProMax will open without asking for the passcode.'**
   String get passcodeDisableMessage;
 
   /// No description provided for @passcodeDisableAction.
@@ -6371,19 +6371,19 @@ abstract class AppLocalizations {
   /// No description provided for @passcodeOnDescription.
   ///
   /// In en, this message translates to:
-  /// **'Komet asks for the passcode every time you open it. The lock in the chat list header locks it right away.'**
+  /// **'ProMax asks for the passcode every time you open it. The lock in the chat list header locks it right away.'**
   String get passcodeOnDescription;
 
   /// No description provided for @passcodeOffDescription.
   ///
   /// In en, this message translates to:
-  /// **'Protect your chats: Komet will ask for a passcode every time you open it.'**
+  /// **'Protect your chats: ProMax will ask for a passcode every time you open it.'**
   String get passcodeOffDescription;
 
   /// No description provided for @passcodeForgotHint.
   ///
   /// In en, this message translates to:
-  /// **'If you forget the passcode, you\'ll have to clear Komet\'s data or reinstall it and sign in again. After five wrong attempts input is blocked for five minutes.'**
+  /// **'If you forget the passcode, you\'ll have to clear ProMax\'s data or reinstall it and sign in again. After five wrong attempts input is blocked for five minutes.'**
   String get passcodeForgotHint;
 
   /// No description provided for @mediaDevicesTitle.
@@ -9395,7 +9395,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginSuccessGreetingWelcome.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to Komet!'**
+  /// **'Welcome to ProMax!'**
   String get loginSuccessGreetingWelcome;
 
   /// No description provided for @loginSuccessGreetingEmergencyExit.
@@ -9677,7 +9677,7 @@ abstract class AppLocalizations {
   /// No description provided for @pluginsScreenBundled.
   ///
   /// In en, this message translates to:
-  /// **'Built-in Komet plugin'**
+  /// **'Built-in ProMax plugin'**
   String get pluginsScreenBundled;
 
   /// No description provided for @pluginsScreenSigned.
@@ -11407,6 +11407,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If the photo you need isn\'t in the gallery'**
   String get avatarPickerFilesSubtitle;
+
+  /// No description provided for @proMaxShareContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Share contact'**
+  String get proMaxShareContact;
+
+  /// No description provided for @proMaxContactSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact sent'**
+  String get proMaxContactSent;
+
+  /// No description provided for @proMaxContactSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send contact'**
+  String get proMaxContactSendFailed;
+
+  /// No description provided for @proMaxSearchMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Search members'**
+  String get proMaxSearchMembers;
+
+  /// No description provided for @proMaxNoMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'No members found'**
+  String get proMaxNoMembers;
+
+  /// No description provided for @proMaxSwitchCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Flip camera'**
+  String get proMaxSwitchCamera;
+
+  /// No description provided for @proMaxQuickReaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick reaction'**
+  String get proMaxQuickReaction;
+
+  /// No description provided for @proMaxQuickReactionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{emoji} · double tap a message'**
+  String proMaxQuickReactionSubtitle(String emoji);
+
+  /// No description provided for @proMaxReactionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This reaction is unavailable in this chat'**
+  String get proMaxReactionUnavailable;
+
+  /// No description provided for @proMaxReactionsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load MAX reactions'**
+  String get proMaxReactionsLoadFailed;
+
+  /// No description provided for @proMaxProfileDateUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX did not provide a registration date'**
+  String get proMaxProfileDateUnavailable;
+
+  /// No description provided for @proMaxProfileDcUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Data center: not provided by MAX'**
+  String get proMaxProfileDcUnavailable;
+
+  /// No description provided for @proMaxRecordCircle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record a video note'**
+  String get proMaxRecordCircle;
+
+  /// No description provided for @proMaxCircleFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose video from gallery'**
+  String get proMaxCircleFromGallery;
+
+  /// No description provided for @proMaxCircleGalleryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn a video into a note up to 60 seconds'**
+  String get proMaxCircleGalleryHint;
+
+  /// No description provided for @proMaxCircleGalleryConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this video as a round video note? It will be center cropped to a square. Videos longer than one minute use the first 60 seconds.'**
+  String get proMaxCircleGalleryConfirm;
+
+  /// No description provided for @proMaxSendCircle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send video note'**
+  String get proMaxSendCircle;
+
+  /// No description provided for @proMaxCirclePreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing video note…'**
+  String get proMaxCirclePreparing;
+
+  /// No description provided for @proMaxCallVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get proMaxCallVoice;
+
+  /// No description provided for @proMaxCallMasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Masks'**
+  String get proMaxCallMasks;
+
+  /// No description provided for @proMaxVoiceNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get proMaxVoiceNormal;
+
+  /// No description provided for @proMaxVoiceDeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep'**
+  String get proMaxVoiceDeep;
+
+  /// No description provided for @proMaxVoiceHelium.
+  ///
+  /// In en, this message translates to:
+  /// **'Helium'**
+  String get proMaxVoiceHelium;
+
+  /// No description provided for @proMaxVoiceRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot'**
+  String get proMaxVoiceRobot;
+
+  /// No description provided for @proMaxVoiceRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio'**
+  String get proMaxVoiceRadio;
+
+  /// No description provided for @proMaxMaskNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get proMaxMaskNone;
+
+  /// No description provided for @proMaxMaskGlasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Glasses'**
+  String get proMaxMaskGlasses;
+
+  /// No description provided for @proMaxMaskVisor.
+  ///
+  /// In en, this message translates to:
+  /// **'Neon visor'**
+  String get proMaxMaskVisor;
+
+  /// No description provided for @proMaxMaskCat.
+  ///
+  /// In en, this message translates to:
+  /// **'Cat'**
+  String get proMaxMaskCat;
+
+  /// No description provided for @proMaxEffectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not enable effect'**
+  String get proMaxEffectFailed;
+
+  /// No description provided for @proMaxNativePush.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax push · experimental'**
+  String get proMaxNativePush;
+
+  /// No description provided for @proMaxNativePushExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct app notifications require APNs-enabled signing and your own delivery server. An arbitrary eSign certificate does not guarantee push. MAX delivery still needs a live test. Safari notifications are available separately. The ProMax server receives no MAX password or login token; it handles push events and sends notifications without message text.'**
+  String get proMaxNativePushExplanation;
+
+  /// No description provided for @proMaxPushSigningHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The signing profile must allow Push Notifications for the ProMax bundle identifier.'**
+  String get proMaxPushSigningHint;
+
+  /// No description provided for @proMaxTestNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Test notification permission'**
+  String get proMaxTestNotification;
+
+  /// No description provided for @proMaxTestNotificationScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'A local test notification will appear in 3 seconds. This does not test background delivery.'**
+  String get proMaxTestNotificationScheduled;
+
+  /// No description provided for @proMaxPushWebLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Authorize a MAX WEB session'**
+  String get proMaxPushWebLogin;
+
+  /// No description provided for @proMaxPushRelayUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTPS delivery server URL'**
+  String get proMaxPushRelayUrl;
+
+  /// No description provided for @proMaxPushRelayKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Server access key'**
+  String get proMaxPushRelayKey;
+
+  /// No description provided for @proMaxPushRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription registered. Test an incoming message while ProMax is closed.'**
+  String get proMaxPushRegistered;
+
+  /// No description provided for @proMaxPushConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'2. Connect APNs'**
+  String get proMaxPushConnect;
 }
 
 class _AppLocalizationsDelegate

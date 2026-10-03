@@ -875,7 +875,7 @@ class _SettingsTabState extends State<SettingsTab>
                             height: 22,
                             color: cs.onSurfaceVariant,
                           ),
-                          label: 'Komet',
+                          label: 'ProMax',
                           onTap: () {
                             Navigator.push(
                               context,

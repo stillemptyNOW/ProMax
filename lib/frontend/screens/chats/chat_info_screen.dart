@@ -56,6 +56,8 @@ import '../stories/story_peanut.dart';
 import '../stories/story_ring.dart';
 import '../stories/story_viewer_screen.dart';
 import 'chat_screen.dart';
+import 'chat_list_screen.dart' show openForwardScreen;
+import 'group_members_screen.dart';
 import 'group_invite_sheets.dart';
 import 'join_requests_screen.dart';
 import 'profile_action_sheets.dart';
@@ -1050,6 +1052,10 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
             _buildActions(cs),
             const SizedBox(height: 16),
             _buildPersistentInfo(cs),
+            if (widget.chatType == 'DIALOG' && _otherId != null) ...[
+              _profileMetadata(cs),
+              const SizedBox(height: 12),
+            ],
             if (_chatAdmin case final admin?
                 when AdminSection.visibleFor(admin))
               AdminSection(
@@ -1075,6 +1081,63 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
       if (n.type == type) return n;
     }
     return null;
+  }
+
+  Widget _profileMetadata(ColorScheme cs) {
+    final registered = _contactData?.raw['registrationTime'];
+    final date = registered is int && registered > 0
+        ? formatDateTimeNumeric(DateTime.fromMillisecondsSinceEpoch(registered))
+        : l10n.proMaxProfileDateUnavailable;
+    return Builder(
+      builder: (rowContext) => InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _copyInfoValue(rowContext, '$_otherId'),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ID $_otherId',
+                      style: TextStyle(
+                        color: cs.primary,
+                        fontSize: 14,
+                        letterSpacing: 0.7,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      date,
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      l10n.proMaxProfileDcUnavailable,
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Symbols.content_copy, size: 20, color: cs.primary),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   bool get _isContact => _localContact != null;
@@ -1155,6 +1218,14 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
           onTap: _openEdit,
         ));
       }
+      if (!_isBot && !_peerDeleted && _otherId != null) {
+        entries.add((
+          icon: Symbols.contact_page,
+          label: l10n.proMaxShareContact,
+          destructive: false,
+          onTap: _shareContact,
+        ));
+      }
       if (!_isBot && _otherId != null && _otherId != _myId) {
         entries.add((
           icon: _blocked ? Symbols.lock_open : Symbols.block,
@@ -1225,6 +1296,25 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
         });
       case EditContactAction.removed:
         Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _shareContact() async {
+    final peerId = _otherId;
+    if (peerId == null) return;
+    final target = await openForwardScreen(context: context);
+    if (target == null || !mounted) return;
+    try {
+      final sent = await messagesModule.sendContactMessage(
+        target.chatId,
+        peerId,
+      );
+      if (sent == null) throw StateError('Contact was not sent');
+      if (mounted) showCustomNotification(context, l10n.proMaxContactSent);
+    } catch (_) {
+      if (mounted) {
+        showCustomNotification(context, l10n.proMaxContactSendFailed);
+      }
     }
   }
 
@@ -1466,7 +1556,13 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
 
     CachedContact? contact;
     try {
-      contact = await ContactsModule.addContact(api, peerId, '');
+      final name = _nameEntry('ONEME');
+      contact = await ContactsModule.addContact(
+        api,
+        peerId,
+        name?.firstName ?? name?.name ?? '',
+        lastName: name?.lastName ?? '',
+      );
     } catch (_) {}
 
     if (!mounted) return;
@@ -2323,6 +2419,15 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
         ? _membersController.members.take(_membersController.memberRenderLimit)
         : _membersController.members;
     final rows = <Widget>[
+      _memberAction(
+        cs,
+        Symbols.search,
+        l10n.proMaxSearchMembers,
+        () => pushSwipeable(
+          context,
+          (_) => GroupMembersScreen(chatId: widget.chatId),
+        ),
+      ),
       if (_chatAdmin?.canAddMembers ?? true)
         _memberAction(
           cs,

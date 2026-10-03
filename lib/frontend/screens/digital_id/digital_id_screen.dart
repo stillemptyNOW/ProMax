@@ -67,7 +67,12 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
       _needsGosuslugi = false;
     });
     try {
-      final biometry = await digitalIdModule.biometryStatus();
+      DigitalIdBiometryStatus? biometry;
+      try {
+        biometry = await digitalIdModule.biometryStatus();
+      } on DigitalIdException catch (e) {
+        if (e.isUnauthorized) rethrow;
+      }
       DigitalIdUserDocs? docs;
       try {
         docs = await digitalIdModule.loadDocuments();

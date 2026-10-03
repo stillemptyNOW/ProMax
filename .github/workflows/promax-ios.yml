@@ -1,0 +1,82 @@
+name: ProMax iOS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: promax-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.47.0'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Verify encryption core
+        run: make -C native/crypto-core test shared
+      - name: Verify voice processing
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined native/promax_effects/test/voice_processor_test.cpp -o /tmp/promax-voice-test
+          /tmp/promax-voice-test
+      - name: Dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze lib test tool native/promax_effects/lib
+      - name: Test
+        run: flutter test
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Verify push relay
+        working-directory: server/apns-relay
+        run: |
+          python -m pip install -r requirements.txt
+          python -m unittest discover -s tests -v
+
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios
+      - name: Dependencies
+        run: flutter pub get
+      - uses: ./.github/actions/pin-kolibri-crates
+      - name: Build iPhone app
+        run: |
+          flutter config --no-enable-swift-package-manager
+          flutter build ios --release --no-codesign
+      - name: Package IPA for eSign
+        run: |
+          mkdir -p build/ios/Payload dist
+          cp -R build/ios/iphoneos/Runner.app build/ios/Payload/
+          cd build/ios
+          zip -qr ../../dist/ProMax-ios-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ProMax-ios-unsigned
+          path: dist/ProMax-ios-unsigned.ipa
+          retention-days: 14

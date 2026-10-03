@@ -19,6 +19,7 @@ import '../../widgets/section_header.dart';
 import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
 import 'web_push_screen.dart';
+import 'native_push_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -172,6 +173,11 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   if (Platform.isIOS) ...[
                     SettingsCard(
                       children: [
+                        SettingsNavTile(
+                          icon: Symbols.notifications_active,
+                          label: l10n.proMaxNativePush,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NativePushScreen())),
+                        ),
                         SettingsNavTile(
                           icon: Symbols.install_mobile,
                           label: l10n.webPushTitle,

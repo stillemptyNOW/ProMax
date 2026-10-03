@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart'
     show MediaStream, RTCVideoRenderer, RTCVideoValue, RTCVideoViewObjectFit;
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:promax_effects/promax_effects.dart';
 
 import '../../../backend/modules/messages.dart' show ContactCache;
 import '../../../core/cache/info_cache.dart';
@@ -420,6 +421,113 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   void _syncLocalPreview() {
     if (!_localRendererReady) return;
     _localRenderer.srcObject = _session?.localVideoStream;
+  }
+
+  Future<void> _switchCamera() async {
+    final session = _session;
+    if (session == null || _videoBusy || !session.localVideo) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _videoBusy = true);
+    try {
+      await session.switchCamera();
+    } catch (e) {
+      if (mounted) {
+        showCustomNotification(context, l10n.callCameraUnavailable(e));
+      }
+    } finally {
+      _syncLocalPreview();
+      if (mounted) setState(() => _videoBusy = false);
+    }
+  }
+
+  Future<void> _showVoiceEffects() async {
+    final session = _session;
+    if (session == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final selected = await _chooseCallEffect(l10n.proMaxCallVoice, [
+      l10n.proMaxVoiceNormal,
+      l10n.proMaxVoiceDeep,
+      l10n.proMaxVoiceHelium,
+      l10n.proMaxVoiceRobot,
+      l10n.proMaxVoiceRadio,
+    ], session.voiceEffect.index);
+    if (selected == null || !mounted || _session != session) return;
+    try {
+      await session.setVoiceEffect(ProMaxVoice.values[selected]);
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) showCustomNotification(context, l10n.proMaxEffectFailed);
+    }
+  }
+
+  Future<void> _showFaceMasks() async {
+    final session = _session;
+    if (session == null || !session.localVideo) return;
+    final l10n = AppLocalizations.of(context)!;
+    final selected = await _chooseCallEffect(l10n.proMaxCallMasks, [
+      l10n.proMaxMaskNone,
+      l10n.proMaxMaskGlasses,
+      l10n.proMaxMaskVisor,
+      l10n.proMaxMaskCat,
+    ], session.faceMask.index);
+    if (selected == null || !mounted || _session != session) return;
+    try {
+      await session.setFaceMask(ProMaxMask.values[selected]);
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) showCustomNotification(context, l10n.proMaxEffectFailed);
+    }
+  }
+
+  Future<int?> _chooseCallEffect(
+    String title,
+    List<String> labels,
+    int selected,
+  ) {
+    return showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final cs = Theme.of(sheetContext).colorScheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                for (var index = 0; index < labels.length; index++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      tileColor: selected == index
+                          ? cs.primaryContainer
+                          : cs.surfaceContainerHigh,
+                      title: Text(labels[index]),
+                      trailing: selected == index
+                          ? Icon(Symbols.check_circle, color: cs.primary)
+                          : null,
+                      onTap: () => Navigator.pop(sheetContext, index),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -1284,8 +1392,10 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     final screen = _session?.localScreen == true;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 12,
+        runSpacing: 14,
         children: [
           _CallButton(
             icon: _isSpeaker ? Symbols.volume_up : Symbols.volume_down,
@@ -1304,6 +1414,40 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
             busy: _videoBusy,
             onTap: _toggleVideo,
           ),
+          if (video)
+            _CallButton(
+              icon: Symbols.cameraswitch,
+              label: l10n.proMaxSwitchCamera,
+              background: cs.surfaceContainerHighest,
+              foreground: cs.onSurface,
+              busy: _videoBusy,
+              onTap: _switchCamera,
+            ),
+          if (_session?.effectsAvailable == true) ...[
+            _CallButton(
+              icon: Symbols.record_voice_over,
+              label: l10n.proMaxCallVoice,
+              background: _session?.voiceEffect != ProMaxVoice.normal
+                  ? cs.primary
+                  : cs.surfaceContainerHighest,
+              foreground: _session?.voiceEffect != ProMaxVoice.normal
+                  ? cs.onPrimary
+                  : cs.onSurface,
+              onTap: _showVoiceEffects,
+            ),
+            if (video)
+              _CallButton(
+                icon: Symbols.face_retouching_natural,
+                label: l10n.proMaxCallMasks,
+                background: _session?.faceMask != ProMaxMask.none
+                    ? cs.primary
+                    : cs.surfaceContainerHighest,
+                foreground: _session?.faceMask != ProMaxMask.none
+                    ? cs.onPrimary
+                    : cs.onSurface,
+                onTap: _showFaceMasks,
+              ),
+          ],
           _CallButton(
             icon: Symbols.screen_share,
             label: l10n.callScreenLabel,

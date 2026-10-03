@@ -11,6 +11,8 @@ import 'package:komet/backend/modules/messages.dart' show CachedMessage;
 import 'package:komet/core/config/app_show_extra_info.dart';
 import 'package:komet/core/config/app_fonts.dart';
 import 'package:komet/core/config/app_frost.dart';
+import 'package:komet/core/config/komet_settings.dart';
+import 'package:komet/frontend/widgets/hint_bubble.dart';
 import 'package:komet/core/config/app_message_actions_style.dart';
 import 'package:komet/core/crypto/message_decryption_cache.dart';
 import 'package:komet/core/utils/haptics.dart';
@@ -494,7 +496,6 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
   String? get _selectedReaction =>
       widget.reactions?.value?['yourReaction']?.toString();
 
-
   bool Function(String emoji) _reactionFilter() {
     final settings = _settings;
     if (settings == null) return (_) => true;
@@ -591,16 +592,24 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       widget.onToggleSelection();
       return;
     }
-    final react = _reactionFilter()('❤️') ? widget.onReact : null;
+    final emoji = KometSettings.quickReaction.value;
+    final react = widget.onReact;
     if (react != null && (_openTimer?.isActive ?? false)) {
       _openTimer?.cancel();
       _openTimer = null;
       Haptics.tap();
-      react('❤️');
+      if (_reactionFilter()(emoji)) {
+        react(emoji);
+      } else {
+        showHintBubble(
+          context,
+          AppLocalizations.of(context)!.proMaxReactionUnavailable,
+        );
+      }
       return;
     }
     _openTimer?.cancel();
-    _openTimer = Timer(const Duration(milliseconds: 200), () {
+    _openTimer = Timer(const Duration(milliseconds: 320), () {
       if (mounted && !widget.isSelectionActive()) _openMenu();
     });
   }

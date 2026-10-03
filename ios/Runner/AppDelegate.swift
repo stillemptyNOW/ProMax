@@ -56,6 +56,16 @@ final class KometStreamHandler: NSObject, FlutterStreamHandler {
     channels.append(channel)
   }
 
+  override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    KometNotifications.shared.registeredForPush(deviceToken)
+    super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+  }
+
+  override func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+    KometNotifications.shared.failedPushRegistration(error)
+    super.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
+  }
+
   private func events(_ name: String, _ messenger: FlutterBinaryMessenger,
                       _ onSink: @escaping (FlutterEventSink?) -> Void) {
     let handler = KometStreamHandler(onSink: onSink)

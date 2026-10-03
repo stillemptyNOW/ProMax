@@ -13,6 +13,7 @@ import 'shared_content.dart';
 import '../../core/crypto/e2ee_service.dart';
 import '../../core/media/deleted_media_keeper.dart';
 import '../../core/storage/app_database.dart';
+import '../../core/storage/local_read_state.dart';
 import '../../core/storage/chat_activity_store.dart';
 import '../../core/storage/chat_members_store.dart';
 import '../../core/storage/token_storage.dart';
@@ -589,8 +590,54 @@ class ChatsModule {
     final participants = Map<int, int>.from(cached.participants)
       ..[accountId] = mark > currentMark ? mark : currentMark;
     final updated = cached.copyWith(unreadCount: 0, participants: participants);
+    if (KometSettings.antiRead.value) {
+      await LocalReadState.record(
+        accountId,
+        chatId,
+        mark,
+        serverMark: currentMark,
+      );
+    }
     await _commitChatContent([(fresh.first, updated.toDbRow())]);
     unawaited(PushService.clearChatNotification(chatId));
+  }
+
+  Future<void> _applyLocalReadState(
+    Map<String, dynamic> row, {
+    bool updateServerMark = false,
+  }) async {
+    if (!KometSettings.antiRead.value) return;
+    final accountId = row['account_id'] as int;
+    final chatId = row['id'] as int;
+    final local = await LocalReadState.load(accountId, chatId);
+    if (local.mark == 0) return;
+    final participants = parseParticipants(row['participants']);
+    final serverMark = updateServerMark
+        ? participants[accountId] ?? 0
+        : local.serverMark;
+    if (updateServerMark && serverMark != local.serverMark) {
+      await LocalReadState(
+        mark: local.mark,
+        serverMark: serverMark,
+      ).save(accountId, chatId);
+    }
+    if (local.mark <= serverMark) return;
+    final read = await AppDatabase.countLocallyReadMessages(
+      accountId,
+      chatId,
+      serverMark,
+      local.mark,
+    );
+    row['unread_count'] = localUnreadCount(
+      serverUnread: (row['unread_count'] as int?) ?? 0,
+      locallyRead: read,
+      localMark: local.mark,
+      lastMessageTime: (row['last_msg_time'] as int?) ?? 0,
+    );
+    participants[accountId] = local.mark;
+    row['participants'] = jsonEncode(
+      participants.map((key, value) => MapEntry('$key', value)),
+    );
   }
 
   // #***! прочитано до сообщения, при скролле по непрочитанным
@@ -630,6 +677,14 @@ class ChatsModule {
       unreadCount: next,
       participants: participants,
     );
+    if (KometSettings.antiRead.value) {
+      await LocalReadState.record(
+        accountId,
+        chatId,
+        nextMark,
+        serverMark: currentMark,
+      );
+    }
     await _commitChatContent([(rows.first, updated.toDbRow())]);
     if (next == 0) {
       unawaited(PushService.clearChatNotification(chatId));
@@ -652,6 +707,7 @@ class ChatsModule {
     }
     if (unread == null) return null;
 
+    await const LocalReadState().save(accountId, chatId);
     await _updateChat(accountId, chatId, (chat) {
       final participants = Map<int, int>.from(chat.participants)
         ..[accountId] = mark - 1;
@@ -1239,6 +1295,7 @@ class ChatsModule {
       } else if (unread != null) {
         final newRow = Map<String, dynamic>.from(rows.first);
         newRow['unread_count'] = unread;
+        await _applyLocalReadState(newRow);
         await _commitChatContent([(rows.first, newRow)]);
       }
       _messageEventsController.add(
@@ -1342,7 +1399,10 @@ class ChatsModule {
       if (senderId != null) newRow['last_msg_sender'] = senderId;
       newRow['last_msg_status'] = 'sent';
     }
-    if (unread != null) newRow['unread_count'] = unread;
+    if (unread != null) {
+      newRow['unread_count'] = unread;
+      await _applyLocalReadState(newRow);
+    }
 
     if (msgIdInt != null &&
         status != 'REMOVED' &&
@@ -1431,7 +1491,10 @@ class ChatsModule {
       newRow['last_msg_sender'] = null;
       newRow['last_msg_status'] = null;
     }
-    if (unread != null) newRow['unread_count'] = unread;
+    if (unread != null) {
+      newRow['unread_count'] = unread;
+      await _applyLocalReadState(newRow);
+    }
     await _commitChatContent([(chatRow, newRow)]);
   }
 
@@ -1600,8 +1663,12 @@ class ChatsModule {
       unreadCount: unread,
       participants: Map<int, int>.from(cached.participants)..[userId] = mark,
     );
-    await _commitChatContent([(rows.first, updated.toDbRow())]);
-    if (ownRead && unread == 0) {
+    final row = updated.toDbRow();
+    if (ownRead) {
+      await _applyLocalReadState(row, updateServerMark: true);
+    }
+    await _commitChatContent([(rows.first, row)]);
+    if (ownRead && row['unread_count'] == 0) {
       unawaited(PushService.clearChatNotification(chatId));
     }
   }
@@ -1727,10 +1794,12 @@ class ChatsModule {
       return parsed;
     }
     final row = parsed.toDbRow();
+    await _applyLocalReadState(row, updateServerMark: true);
     row['in_list'] = listState;
     await AppDatabase.saveChats([row]);
-    _applyChatToMemory(parsed, inList: listState);
-    return parsed;
+    final adjusted = CachedChat.fromDbRow(row);
+    _applyChatToMemory(adjusted, inList: listState);
+    return adjusted;
   }
 
   // #***! чаты из ответа login
@@ -1812,6 +1881,7 @@ class ChatsModule {
       );
       if (parsed == null) continue;
       final row = parsed.toDbRow();
+      await _applyLocalReadState(row, updateServerMark: true);
       row['in_list'] = chatListStateForStatus(
         map['status'],
         previous: existingListState[parsed.id],

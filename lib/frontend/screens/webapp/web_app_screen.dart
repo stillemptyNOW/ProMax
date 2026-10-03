@@ -234,7 +234,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
           actions: [
             IconButton(
               icon: const Icon(Symbols.refresh),
-              onPressed: _launch == null ? null : () => _controller?.reload(),
+              onPressed: _load,
             ),
           ],
           bottom: _progress > 0 && _progress < 1

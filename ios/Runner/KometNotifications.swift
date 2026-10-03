@@ -10,6 +10,9 @@ final class KometNotifications: NSObject {
   private var sink: FlutterEventSink?
   private var pendingChatId: Int64 = 0
   private var activeChatId: Int64 = 0
+  private var pushResult: FlutterResult?
+  private var pushTimeout: Timer?
+  private var pushToken: String?
 
   func start() {
     UNUserNotificationCenter.current().delegate = self
@@ -17,10 +20,32 @@ final class KometNotifications: NSObject {
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
+    case "registerNativePush":
+      registerNativePush(result)
+    case "testLocalNotification":
+      UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+        DispatchQueue.main.async {
+          guard granted else {
+            result(FlutterError(code: "PERMISSION_DENIED", message: "Notification permission is denied", details: nil))
+            return
+          }
+          let content = UNMutableNotificationContent()
+          content.title = "ProMax"
+          content.body = "Локальные уведомления разрешены. Для фоновых сообщений подключите доставку push."
+          content.sound = .default
+          let request = UNNotificationRequest(identifier: "promax-test", content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false))
+          UNUserNotificationCenter.current().add(request) { error in
+            DispatchQueue.main.async {
+              if let error = error { result(FlutterError(code: "LOCAL_FAILED", message: error.localizedDescription, details: nil)) }
+              else { result(nil) }
+            }
+          }
+        }
+      }
     case "consumeInitialChat":
       let chatId = pendingChatId
       pendingChatId = 0
-      result(chatId > 0 ? NSNumber(value: chatId) : nil)
+      result(chatId != 0 ? NSNumber(value: chatId) : nil)
     case "setActiveChat":
       activeChatId = Self.chatId(from: call.arguments)
       dismissDelivered(chatId: activeChatId)
@@ -38,7 +63,7 @@ final class KometNotifications: NSObject {
   }
 
   func deliver(chatId: Int64) {
-    guard chatId > 0 else { return }
+    guard chatId != 0 else { return }
     if let sink = sink {
       sink(NSNumber(value: chatId))
     } else {
@@ -47,7 +72,7 @@ final class KometNotifications: NSObject {
   }
 
   private func dismissDelivered(chatId: Int64) {
-    guard chatId > 0 else { return }
+    guard chatId != 0 else { return }
     let center = UNUserNotificationCenter.current()
     center.getDeliveredNotifications { delivered in
       let identifiers = delivered
@@ -56,6 +81,44 @@ final class KometNotifications: NSObject {
       guard !identifiers.isEmpty else { return }
       center.removeDeliveredNotifications(withIdentifiers: identifiers)
     }
+  }
+
+  private func registerNativePush(_ result: @escaping FlutterResult) {
+    guard pushResult == nil else {
+      result(FlutterError(code: "BUSY", message: "APNs registration is in progress", details: nil))
+      return
+    }
+    pushResult = result
+    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+      DispatchQueue.main.async {
+        guard granted else {
+          self.finishPushRegistration(FlutterError(code: "PERMISSION_DENIED", message: "Notification permission is denied", details: nil))
+          return
+        }
+        self.pushTimeout = Timer.scheduledTimer(withTimeInterval: 20, repeats: false) { _ in
+          self.finishPushRegistration(FlutterError(code: "APNS_TIMEOUT", message: "APNs registration timed out. Check connection and signing profile.", details: nil))
+        }
+        UIApplication.shared.registerForRemoteNotifications()
+      }
+    }
+  }
+
+  func registeredForPush(_ deviceToken: Data) {
+    pushToken = deviceToken.map { String(format: "%02x", $0) }.joined()
+    finishPushRegistration(pushToken)
+  }
+
+  func failedPushRegistration(_ error: Error) {
+    pushToken = nil
+    finishPushRegistration(FlutterError(code: "APNS_REGISTRATION_FAILED", message: error.localizedDescription, details: nil))
+  }
+
+  private func finishPushRegistration(_ value: Any?) {
+    pushTimeout?.invalidate()
+    pushTimeout = nil
+    let result = pushResult
+    pushResult = nil
+    result?(value)
   }
 
   private static func chatId(from raw: Any?) -> Int64 {
@@ -83,7 +146,7 @@ extension KometNotifications: UNUserNotificationCenterDelegate {
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
     let chatId = Self.chatId(from: notification.request.content.userInfo)
-    if chatId > 0, chatId == activeChatId {
+    if chatId != 0, chatId == activeChatId {
       completionHandler([])
       return
     }

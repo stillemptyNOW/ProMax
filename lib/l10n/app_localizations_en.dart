@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get loginTitle => 'Sign in to Komet';
+  String get loginTitle => 'Sign in to ProMax';
 
   @override
   String get loginSubtitle =>
@@ -711,7 +711,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsFkmEnableSubtitle =>
-      'Komet keeps its own connection to the server and shows notifications itself. A service notification will stay in the shade while this is on.';
+      'ProMax keeps its own connection to the server and shows notifications itself. A service notification will stay in the shade while this is on.';
 
   @override
   String get notificationsFkmUnsupported => 'FKM is Android-only';
@@ -1016,7 +1016,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearancePreviewNotBad => 'Not bad at all!';
 
   @override
-  String get callKometDetectedNotification => 'This person uses Komet! :3';
+  String get callKometDetectedNotification => 'This person uses ProMax! :3';
 
   @override
   String get callStatusConnecting => 'Connecting';
@@ -1058,7 +1058,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get callTooltipExpand => 'Expand';
 
   @override
-  String get callTooltipKometHub => 'Komet';
+  String get callTooltipKometHub => 'ProMax';
 
   @override
   String get callInfoTitle => 'About call';
@@ -1241,7 +1241,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get callInfoNoDataYet => 'Data will appear after connecting…';
 
   @override
-  String get hubTitleMenu => 'Komet';
+  String get hubTitleMenu => 'ProMax';
 
   @override
   String get hubChatPageTitle => 'Anonymous chat';
@@ -2862,7 +2862,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webPushIntro =>
-      'Komet has no ordinary push on iOS: Apple issues a notification token only to apps signed with a developer certificate, and a sideloaded build never gets one.\n\nThe way around it is a web app on the Home Screen. MAX\'s own server sends the notifications through Apple, and a separate icon displays them.\n\nThat needs a web session. Komet creates one and approves it itself, from this very device — no phone number or code required.';
+      'ProMax has no ordinary push on iOS: Apple issues a notification token only to apps signed with a developer certificate, and a sideloaded build never gets one.\n\nThe way around it is a web app on the Home Screen. MAX\'s own server sends the notifications through Apple, and a separate icon displays them.\n\nThat needs a web session. ProMax creates one and approves it itself, from this very device — no phone number or code required.';
 
   @override
   String get webPushConfirm => 'Continue';
@@ -2884,7 +2884,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webPushInstallBody =>
-      'Open push.komet.pw in Safari, add it to the Home Screen and launch the icon that appears. Notifications do not work from a browser tab — that is how iOS works.\n\nIn the app, allow notifications, create a subscription and tap \"Open Komet\". The subscription registers itself from there.';
+      'Open push.komet.pw in Safari, add it to the Home Screen and launch the icon that appears. Notifications do not work from a browser tab — that is how iOS works.\n\nIn the app, allow notifications, create a subscription and tap \"Open ProMax\". The subscription registers itself from there.';
 
   @override
   String get webPushLinkedTitle => 'Notifications connected';
@@ -2916,7 +2916,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webPushWaitingBody =>
-      'Komet is approving the web session from this device. This usually takes a few seconds.';
+      'ProMax is approving the web session from this device. This usually takes a few seconds.';
 
   @override
   String get webPushNeedsOnline =>
@@ -3139,7 +3139,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String e2eeNeedsKomet(String name) {
-    return '$name needs Komet for this to work.';
+    return '$name needs ProMax for this to work.';
   }
 
   @override
@@ -3335,7 +3335,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockTitle => 'Enter your passcode';
 
   @override
-  String get lockBiometricReason => 'Unlock Komet';
+  String get lockBiometricReason => 'Unlock ProMax';
 
   @override
   String lockBlocked(String time) {
@@ -3348,7 +3348,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get lockNow => 'Lock Komet';
+  String get lockNow => 'Lock ProMax';
 
   @override
   String get passcodeTitle => 'Passcode';
@@ -3389,7 +3389,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passcodeAutoLockHint =>
-      'Lock Komet when you don\'t touch it for a while';
+      'Lock ProMax when you don\'t touch it for a while';
 
   @override
   String get passcodeAutoLockOff => 'Off';
@@ -3407,7 +3407,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passcodeDisableMessage =>
-      'Komet will open without asking for the passcode.';
+      'ProMax will open without asking for the passcode.';
 
   @override
   String get passcodeDisableAction => 'Turn off';
@@ -3420,15 +3420,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passcodeOnDescription =>
-      'Komet asks for the passcode every time you open it. The lock in the chat list header locks it right away.';
+      'ProMax asks for the passcode every time you open it. The lock in the chat list header locks it right away.';
 
   @override
   String get passcodeOffDescription =>
-      'Protect your chats: Komet will ask for a passcode every time you open it.';
+      'Protect your chats: ProMax will ask for a passcode every time you open it.';
 
   @override
   String get passcodeForgotHint =>
-      'If you forget the passcode, you\'ll have to clear Komet\'s data or reinstall it and sign in again. After five wrong attempts input is blocked for five minutes.';
+      'If you forget the passcode, you\'ll have to clear ProMax\'s data or reinstall it and sign in again. After five wrong attempts input is blocked for five minutes.';
 
   @override
   String get mediaDevicesTitle => 'Camera and microphone';
@@ -5200,7 +5200,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get findUserIdHint => 'Enter a contact ID';
 
   @override
-  String get loginSuccessGreetingWelcome => 'Welcome to Komet!';
+  String get loginSuccessGreetingWelcome => 'Welcome to ProMax!';
 
   @override
   String get loginSuccessGreetingEmergencyExit =>
@@ -5390,7 +5390,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pluginsScreenInstallUrl => 'Install from URL';
 
   @override
-  String get pluginsScreenBundled => 'Built-in Komet plugin';
+  String get pluginsScreenBundled => 'Built-in ProMax plugin';
 
   @override
   String pluginsScreenSigned(String fingerprint) {
@@ -6421,4 +6421,134 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get avatarPickerFilesSubtitle =>
       'If the photo you need isn\'t in the gallery';
+
+  @override
+  String get proMaxShareContact => 'Share contact';
+
+  @override
+  String get proMaxContactSent => 'Contact sent';
+
+  @override
+  String get proMaxContactSendFailed => 'Could not send contact';
+
+  @override
+  String get proMaxSearchMembers => 'Search members';
+
+  @override
+  String get proMaxNoMembers => 'No members found';
+
+  @override
+  String get proMaxSwitchCamera => 'Flip camera';
+
+  @override
+  String get proMaxQuickReaction => 'Quick reaction';
+
+  @override
+  String proMaxQuickReactionSubtitle(String emoji) {
+    return '$emoji · double tap a message';
+  }
+
+  @override
+  String get proMaxReactionUnavailable =>
+      'This reaction is unavailable in this chat';
+
+  @override
+  String get proMaxReactionsLoadFailed => 'Could not load MAX reactions';
+
+  @override
+  String get proMaxProfileDateUnavailable =>
+      'MAX did not provide a registration date';
+
+  @override
+  String get proMaxProfileDcUnavailable => 'Data center: not provided by MAX';
+
+  @override
+  String get proMaxRecordCircle => 'Record a video note';
+
+  @override
+  String get proMaxCircleFromGallery => 'Choose video from gallery';
+
+  @override
+  String get proMaxCircleGalleryHint =>
+      'Turn a video into a note up to 60 seconds';
+
+  @override
+  String get proMaxCircleGalleryConfirm =>
+      'Send this video as a round video note? It will be center cropped to a square. Videos longer than one minute use the first 60 seconds.';
+
+  @override
+  String get proMaxSendCircle => 'Send video note';
+
+  @override
+  String get proMaxCirclePreparing => 'Preparing video note…';
+
+  @override
+  String get proMaxCallVoice => 'Voice';
+
+  @override
+  String get proMaxCallMasks => 'Masks';
+
+  @override
+  String get proMaxVoiceNormal => 'Original';
+
+  @override
+  String get proMaxVoiceDeep => 'Deep';
+
+  @override
+  String get proMaxVoiceHelium => 'Helium';
+
+  @override
+  String get proMaxVoiceRobot => 'Robot';
+
+  @override
+  String get proMaxVoiceRadio => 'Radio';
+
+  @override
+  String get proMaxMaskNone => 'None';
+
+  @override
+  String get proMaxMaskGlasses => 'Glasses';
+
+  @override
+  String get proMaxMaskVisor => 'Neon visor';
+
+  @override
+  String get proMaxMaskCat => 'Cat';
+
+  @override
+  String get proMaxEffectFailed => 'Could not enable effect';
+
+  @override
+  String get proMaxNativePush => 'ProMax push · experimental';
+
+  @override
+  String get proMaxNativePushExplanation =>
+      'Direct app notifications require APNs-enabled signing and your own delivery server. An arbitrary eSign certificate does not guarantee push. MAX delivery still needs a live test. Safari notifications are available separately. The ProMax server receives no MAX password or login token; it handles push events and sends notifications without message text.';
+
+  @override
+  String get proMaxPushSigningHint =>
+      'The signing profile must allow Push Notifications for the ProMax bundle identifier.';
+
+  @override
+  String get proMaxTestNotification => 'Test notification permission';
+
+  @override
+  String get proMaxTestNotificationScheduled =>
+      'A local test notification will appear in 3 seconds. This does not test background delivery.';
+
+  @override
+  String get proMaxPushWebLogin => '1. Authorize a MAX WEB session';
+
+  @override
+  String get proMaxPushRelayUrl => 'HTTPS delivery server URL';
+
+  @override
+  String get proMaxPushRelayKey => 'Server access key';
+
+  @override
+  String get proMaxPushRegistered =>
+      'Subscription registered. Test an incoming message while ProMax is closed.';
+
+  @override
+  String get proMaxPushConnect => '2. Connect APNs';
 }

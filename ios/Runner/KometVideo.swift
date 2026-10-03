@@ -37,11 +37,11 @@ private struct VideoExportSpec {
     centerSquare = false
   }
 
-  init(input: String, output: String, edge: Int) {
+  init(input: String, output: String, edge: Int, maxDurationMs: Int? = nil) {
     self.input = input
     self.output = output
     startMs = nil
-    endMs = nil
+    endMs = maxDurationMs
     removeAudio = false
     rotationDegrees = 0
     flipH = false
@@ -153,7 +153,8 @@ final class KometVideo {
       return
     }
     let edge = (args["size"] as? NSNumber)?.intValue ?? 480
-    export(VideoExportSpec(input: input, output: output, edge: edge)) { ok in
+    let maxDuration = (args["maxDurationMs"] as? NSNumber)?.intValue
+    export(VideoExportSpec(input: input, output: output, edge: edge, maxDurationMs: maxDuration)) { ok in
       if ok {
         result(output)
       } else {
@@ -173,7 +174,8 @@ final class KometVideo {
 
       let totalSeconds = CMTimeGetSeconds(asset.duration)
       let start = CMTime(value: CMTimeValue(spec.startMs ?? 0), timescale: 1000)
-      let endMs = spec.endMs ?? (totalSeconds.isFinite ? Int((totalSeconds * 1000).rounded()) : 0)
+      let totalMs = totalSeconds.isFinite ? Int((totalSeconds * 1000).rounded()) : 0
+      let endMs = min(spec.endMs ?? totalMs, totalMs)
       let end = CMTime(value: CMTimeValue(max(endMs, spec.startMs ?? 0)), timescale: 1000)
       let range = CMTimeRange(start: start, end: end)
       guard range.duration.seconds > 0 else {

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:promax_effects/promax_effects.dart';
 
 import '../config/app_camera.dart';
 import '../config/app_microphone.dart';
@@ -116,6 +117,8 @@ class CallSession {
   Set<int> _speaking = const {};
 
   bool _localVideo = false;
+  ProMaxVoice _voiceEffect = ProMaxVoice.normal;
+  ProMaxMask _faceMask = ProMaxMask.none;
   bool _localScreen = false;
   MediaStream? _cameraStream;
   MediaStream? _screenStream;
@@ -190,6 +193,27 @@ class CallSession {
   int? get peerUserId => _peerId;
 
   bool get localVideo => _localVideo;
+  bool get effectsAvailable => defaultTargetPlatform == TargetPlatform.iOS;
+  ProMaxVoice get voiceEffect => _voiceEffect;
+  ProMaxMask get faceMask => _faceMask;
+
+  Future<void> setVoiceEffect(ProMaxVoice voice) async {
+    if (!effectsAvailable) throw UnsupportedError('iOS call effects only');
+    await ProMaxEffects.setVoice(voice);
+    _voiceEffect = voice;
+    _notifyInfo();
+  }
+
+  Future<void> setFaceMask(ProMaxMask mask) async {
+    final tracks = _cameraStream?.getVideoTracks();
+    if (!effectsAvailable || tracks == null || tracks.isEmpty) {
+      throw StateError('Camera is off');
+    }
+    await ProMaxEffects.setMask(tracks.first.id!, mask);
+    _faceMask = mask;
+    _notifyInfo();
+  }
+
   bool get localScreen => _localScreen;
   MediaStream? get localVideoStream =>
       _localScreen ? _screenStream : _cameraStream;
@@ -2228,6 +2252,12 @@ class CallSession {
       'audio': false,
     });
 
+    if (_pc != pc || stream.getVideoTracks().isEmpty) {
+      await _disposeStream(stream);
+      if (_pc == pc) throw StateError('Camera did not return a video track');
+      return;
+    }
+
     await _disposeStream(_cameraStream);
     _cameraStream = stream;
 
@@ -2242,6 +2272,9 @@ class CallSession {
     }
 
     _localVideo = true;
+    if (effectsAvailable && _faceMask != ProMaxMask.none) {
+      await setFaceMask(_faceMask);
+    }
     await _renegotiate();
     await _sendMediaSettings();
     _notifyInfo();
@@ -2256,6 +2289,14 @@ class CallSession {
     _localVideo = false;
     await _sendMediaSettings();
     _notifyInfo();
+  }
+
+  Future<bool> switchCamera() async {
+    final tracks = _cameraStream?.getVideoTracks();
+    if (!_localVideo || tracks == null || tracks.isEmpty) return false;
+    final front = await Helper.switchCamera(tracks.first);
+    _notifyInfo();
+    return front;
   }
 
   // #***! демонстрация экрана, на мобилках нужно своё разрешение
@@ -2401,6 +2442,11 @@ class CallSession {
 
   // #***! освобождаем всё, соединение дорожки подписки стримы
   Future<void> _dispose() async {
+    if (effectsAvailable) {
+      try {
+        await ProMaxEffects.reset();
+      } catch (_) {}
+    }
     _levelTimer?.cancel();
     _videoStatsTimer?.cancel();
     try {

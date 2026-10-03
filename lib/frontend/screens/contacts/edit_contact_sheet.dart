@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../../../core/utils/names.dart';
 
 import 'package:komet/backend/modules/contacts.dart';
 import 'package:komet/frontend/screens/contacts/contact_sheet_common.dart';
@@ -211,14 +212,18 @@ class _EditContactCardState extends State<_EditContactCard> {
 
     final first = _firstCtrl.text.trim();
     final last = _lastCtrl.text.trim();
-    final sendFirst = first.isEmpty ? widget.onemeFirst : first;
-    final sendLast = last.isEmpty ? widget.onemeLast : last;
+    final name = contactNameForSave(
+      firstName: first,
+      lastName: last,
+      profileFirstName: widget.onemeFirst,
+      profileLastName: widget.onemeLast,
+    );
 
     final updated = await ContactsModule.updateContact(
       api,
       contactId: widget.contactId,
-      firstName: sendFirst,
-      lastName: sendLast,
+      firstName: name.firstName,
+      lastName: name.lastName,
     );
     if (!mounted) return;
 

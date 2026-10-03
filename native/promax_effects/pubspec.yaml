@@ -1,0 +1,15 @@
+name: promax_effects
+description: Native iOS processing of outgoing WebRTC media for ProMax.
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: ^3.10.4
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_webrtc: 1.5.2
+flutter:
+  plugin:
+    platforms:
+      ios:
+        pluginClass: ProMaxEffectsPlugin

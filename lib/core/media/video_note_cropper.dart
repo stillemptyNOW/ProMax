@@ -13,7 +13,7 @@ class VideoNoteCropper {
   static const _channel = MethodChannel('ru.komet.app/video');
 
   // #***! на десктопе нет, там кружки не пишутся
-  static Future<String?> cropSquare(String input, {int size = 480}) async {
+  static Future<String?> cropSquare(String input, {int size = 480, int? maxDurationMs}) async {
     if (!Platform.isAndroid && !Platform.isIOS) return null;
     try {
       final dot = input.lastIndexOf('.');
@@ -23,6 +23,7 @@ class VideoNoteCropper {
         'input': input,
         'output': output,
         'size': size,
+        'maxDurationMs': ?maxDurationMs,
       });
       return res;
     } catch (e) {

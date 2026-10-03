@@ -16,8 +16,6 @@ class ContactName {
 
   // #***! как показать имя одной строкой
   String? get label {
-    final n = name;
-    if (n != null && n.trim().isNotEmpty) return n.trim();
     return fullName;
   }
 

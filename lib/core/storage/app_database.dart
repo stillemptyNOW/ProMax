@@ -800,6 +800,20 @@ class AppDatabase {
     return rows.first['value'] as String;
   }
 
+  static Future<int> countLocallyReadMessages(
+    int accountId,
+    int chatId,
+    int serverMark,
+    int localMark,
+  ) async {
+    final db = await _instance;
+    final rows = await db.rawQuery(
+      'SELECT COUNT(*) AS count FROM messages WHERE account_id = ? AND chat_id = ? AND time > ? AND time <= ? AND sender_id != ? AND deleted = 0',
+      [accountId, chatId, serverMark, localMark, accountId],
+    );
+    return (rows.first['count'] as int?) ?? 0;
+  }
+
   static Future<void> setWelcomeStickerIds(int accountId, List<int> ids) =>
       setSyncValue(accountId, SyncKey.welcomeStickerIds, ids.join(','));
 

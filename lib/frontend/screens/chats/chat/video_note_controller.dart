@@ -9,6 +9,7 @@ import 'package:flutter/services.dart' show PlatformException, rootBundle;
 import 'package:lottie/lottie.dart' show AssetLottie;
 import 'package:path_provider/path_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../widgets/glossy_pill.dart';
 
@@ -16,10 +17,13 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../core/config/app_camera.dart';
 import '../../../../core/config/app_video_note_quality.dart';
 import '../../../../core/media/native_video_note_recorder.dart';
+import '../../../../core/media/video_note_cropper.dart';
+import '../../../../core/media/video_transcoder.dart';
 import '../../../../core/utils/haptics.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/screen_wake.dart';
 import '../../../widgets/custom_notification.dart';
+import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/lottie_slash_icon.dart';
 import 'voice_record_controller.dart';
 import '../../../../core/config/app_frost.dart';
@@ -57,6 +61,7 @@ class VideoNoteController {
   bool _stopRequested = false;
   bool? _frontOverride;
   bool _switchingCamera = false;
+  bool _choiceBusy = false;
 
   bool get _front => _frontOverride ?? !AppVideoNoteRearCamera.current.value;
 
@@ -91,6 +96,97 @@ class VideoNoteController {
       await _initCamera();
     } else {
       await _disposeCamera();
+    }
+  }
+
+  Future<void> showCaptureChoice() async {
+    if (_choiceBusy || _isRecording.value || !isMounted()) return;
+    _choiceBusy = true;
+    try {
+      final context = contextOf();
+      final l10n = AppLocalizations.of(context)!;
+      final choice = await showModalBottomSheet<int>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Symbols.videocam),
+                  title: Text(l10n.proMaxRecordCircle),
+                  onTap: () => Navigator.pop(sheetContext, 0),
+                ),
+                ListTile(
+                  leading: const Icon(Symbols.video_library),
+                  title: Text(l10n.proMaxCircleFromGallery),
+                  subtitle: Text(l10n.proMaxCircleGalleryHint),
+                  onTap: () => Navigator.pop(sheetContext, 1),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (!isMounted()) return;
+      if (choice == 0) {
+        await start();
+        if (_isRecording.value) _locked.value = true;
+      } else if (choice == 1) {
+        await _importGalleryCircle();
+      }
+    } finally {
+      _choiceBusy = false;
+    }
+  }
+
+  Future<void> _importGalleryCircle() async {
+    File? input;
+    String? output;
+    var handedOff = false;
+    try {
+      final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
+      if (picked == null || !isMounted()) return;
+      final meta = await VideoTranscoder.probe(picked.path);
+      if (meta == null || meta.durationMs < VoiceRecordController.minMs) {
+        _notify((l10n) => l10n.videoNoteSaveFailed);
+        return;
+      }
+      if (!isMounted()) return;
+      final l10n = AppLocalizations.of(contextOf())!;
+      final send = await showConfirmDialog(
+        contextOf(),
+        title: l10n.proMaxCircleFromGallery,
+        message: l10n.proMaxCircleGalleryConfirm,
+        confirmLabel: l10n.proMaxSendCircle,
+      );
+      if (!send || !isMounted()) return;
+      _notify((l10n) => l10n.proMaxCirclePreparing);
+      final dir = await getTemporaryDirectory();
+      input = await File(picked.path).copy(
+        '${dir.path}/promax_circle_${DateTime.now().microsecondsSinceEpoch}.mp4',
+      );
+      output = await VideoNoteCropper.cropSquare(
+        input.path,
+        size: AppVideoNoteResolution.current.value,
+        maxDurationMs: maxMs,
+      );
+      if (output == null || !isMounted()) {
+        _notify((l10n) => l10n.videoNoteSaveFailed);
+        return;
+      }
+      handedOff = true;
+      await onRecorded(File(output), math.min(meta.durationMs, maxMs));
+    } catch (e) {
+      logger.w('ProMax circle import failed: ${e.runtimeType}');
+      _notify((l10n) => l10n.videoNoteSaveFailed);
+    } finally {
+      if (input != null && await input.exists()) await input.delete();
+      if (!handedOff && output != null && await File(output).exists()) {
+        await File(output).delete();
+      }
     }
   }
 

@@ -17,6 +17,7 @@ class KometSettings {
   static const _kShowHiddenChats = 'komet_show_hidden_chats';
   static const _kArchiveOnPull = 'komet_archive_on_pull';
   static const _kRecordDebugLogs = 'komet_record_debug_logs';
+  static const _kQuickReaction = 'promax_quick_reaction';
 
   // #***! каждая настройка это ValueNotifier, юишка подписана напрямую
   static final ValueNotifier<bool> viewDeleted = ValueNotifier(false);
@@ -30,7 +31,8 @@ class KometSettings {
   static final ValueNotifier<bool> hideAllChatsFolder = ValueNotifier(false);
   static final ValueNotifier<bool> showHiddenChats = ValueNotifier(false);
   static final ValueNotifier<bool> archiveOnPull = ValueNotifier(false);
-  static final ValueNotifier<bool> recordDebugLogs = ValueNotifier(true);
+  static final ValueNotifier<bool> recordDebugLogs = ValueNotifier(false);
+  static final ValueNotifier<String> quickReaction = ValueNotifier('❤️');
 
   // #***! читаем всё разом на старте
   static Future<void> load() async {
@@ -47,11 +49,12 @@ class KometSettings {
     showTypingTime.value = prefs.getBool(_kShowTypingTime) ?? false;
     ghostMode.value = prefs.getBool(_kGhostMode) ?? false;
     antiRead.value = prefs.getBool(_kAntiRead) ?? false;
+    quickReaction.value = prefs.getString(_kQuickReaction) ?? '❤️';
     selfOnlineCheck.value = prefs.getBool(_kSelfOnlineCheck) ?? true;
     hideAllChatsFolder.value = prefs.getBool(_kHideAllChatsFolder) ?? false;
     showHiddenChats.value = prefs.getBool(_kShowHiddenChats) ?? false;
     archiveOnPull.value = prefs.getBool(_kArchiveOnPull) ?? false;
-    recordDebugLogs.value = prefs.getBool(_kRecordDebugLogs) ?? true;
+    recordDebugLogs.value = prefs.getBool(_kRecordDebugLogs) ?? false;
   }
 
   // #***! дальше по сеттеру на настройку, память потом диск
@@ -96,6 +99,13 @@ class KometSettings {
     antiRead.value = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kAntiRead, value);
+  }
+
+  static Future<void> setQuickReaction(String value) async {
+    if (value.trim().isEmpty) return;
+    quickReaction.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kQuickReaction, value);
   }
 
   static Future<void> setSelfOnlineCheck(bool value) async {

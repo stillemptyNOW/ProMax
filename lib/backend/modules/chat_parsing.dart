@@ -1,5 +1,6 @@
 import '../../core/utils/logger.dart';
 import '../../models/chat_call.dart';
+import '../../models/contact_info.dart';
 import 'chat_preview.dart';
 import 'chats.dart';
 
@@ -299,8 +300,7 @@ String? _nameFromContact(Map<dynamic, dynamic> contact) {
     orElse: () => names.firstWhere((n) => n is Map, orElse: () => null),
   );
   if (nameRaw is! Map) return null;
-  final name = nameRaw;
-  return name['name'] as String?;
+  return ContactInfo.fromMap(Map<String, dynamic>.from(contact)).fullName;
 }
 
 // #***! разбор поиска по чатам

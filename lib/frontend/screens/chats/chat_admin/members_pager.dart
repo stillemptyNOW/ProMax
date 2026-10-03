@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
@@ -8,7 +9,13 @@ import '../../../../main.dart';
 class MembersPager extends ChangeNotifier {
   final int chatId;
 
-  MembersPager({required this.chatId});
+  MembersPager({
+    required this.chatId,
+    Future<ChatMembersPage?> Function(int marker)? loadPage,
+  }) : _loadPage = loadPage;
+
+  final Future<ChatMembersPage?> Function(int marker)? _loadPage;
+  Timer? _searchTimer;
 
   final List<ChatMemberEntry> _members = [];
   final Set<int> _seen = {};
@@ -35,7 +42,21 @@ class MembersPager extends ChangeNotifier {
   set query(String value) {
     if (value == _query) return;
     _query = value;
+    _searchTimer?.cancel();
+    if (searching) {
+      _searchTimer = Timer(
+        const Duration(milliseconds: 350),
+        () => _searchBatch(value),
+      );
+    }
     notifyListeners();
+  }
+
+  Future<void> _searchBatch(String query) async {
+    for (var page = 0; page < 5; page++) {
+      if (_disposed || _query != query || _end || _failed || _loading) return;
+      await loadMore();
+    }
   }
 
   Future<void> loadMore() async {
@@ -44,7 +65,9 @@ class MembersPager extends ChangeNotifier {
     _loading = true;
     _failed = false;
     notifyListeners();
-    final page = await chats.getChatMembers(api, chatId, marker: _marker);
+    final page =
+        await (_loadPage?.call(_marker) ??
+            chats.getChatMembers(api, chatId, marker: _marker));
     if (_disposed || generation != _generation) return;
     _loading = false;
     if (page == null) {
@@ -53,9 +76,8 @@ class MembersPager extends ChangeNotifier {
       return;
     }
     final fresh = page.members.where((member) => _seen.add(member.id)).toList();
-    final before = _members.length;
     _members.addAll(fresh);
-    if (_members.length == before || page.marker == _marker) _end = true;
+    if (page.members.isEmpty || page.marker == _marker) _end = true;
     _marker = page.marker;
     notifyListeners();
   }
@@ -81,6 +103,7 @@ class MembersPager extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _searchTimer?.cancel();
     super.dispose();
   }
 }

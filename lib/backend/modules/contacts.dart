@@ -146,18 +146,7 @@ class ContactsModule {
         : int.tryParse(normalized.substring(1)) ?? 0;
     ContactCache.putPhone(id, resolvedPhone);
 
-    String? name;
-    final names = contact['names'];
-    if (names is List) {
-      final n = names.firstWhere((e) => e is Map, orElse: () => null);
-      if (n is Map) {
-        final first =
-            (n['firstName'] as String?) ?? (n['name'] as String?) ?? '';
-        final last = (n['lastName'] as String?) ?? '';
-        final full = '$first $last'.trim();
-        if (full.isNotEmpty) name = full;
-      }
-    }
+    final name = ContactInfo.fromMap(Map<String, dynamic>.from(contact)).fullName;
 
     return PhoneLookupResult(
       id: id,
@@ -179,12 +168,14 @@ class ContactsModule {
     Api api,
     int id,
     String firstName, {
+    String lastName = '',
     int phone = 0,
   }) async {
     final resp = await api.sendRequest(Opcode.contactUpdate, {
       'action': 'ADD',
       'contactId': id,
       if (firstName.isNotEmpty) 'firstName': firstName,
+      if (firstName.isNotEmpty || lastName.isNotEmpty) 'lastName': lastName,
     });
 
     final profile = await AppDatabase.loadActiveProfile();
@@ -202,7 +193,7 @@ class ContactsModule {
             'id': id,
             'account_id': profile.id,
             'first_name': firstName,
-            'last_name': null,
+            'last_name': lastName,
             'phone': 0,
             'photo_id': null,
             'base_url': null,
@@ -537,12 +528,8 @@ class ContactsModule {
     if (names is List && names.isNotEmpty) {
       final nameRaw = _preferredNameEntry(names);
       if (nameRaw != null) {
-        final firstName = (nameRaw['firstName'] as String?) ?? '';
-        final lastName = nameRaw['lastName'] as String?;
-        final fullName = (lastName != null && lastName.isNotEmpty)
-            ? '$firstName $lastName'
-            : firstName;
-        if (fullName.isNotEmpty) ContactCache.put(id, fullName);
+        final fullName = ContactName.fromMap(nameRaw).fullName;
+        if (fullName != null) ContactCache.put(id, fullName);
       }
     }
 
@@ -699,6 +686,7 @@ class ContactsModule {
     Map? any;
     for (final n in names) {
       if (n is! Map) continue;
+      if (ContactName.fromMap(n).fullName == null) continue;
       any ??= n;
       final type = n['type'];
       if (type == 'CUSTOM') return n;
@@ -722,7 +710,7 @@ class ContactsModule {
     if (names is List && names.isNotEmpty) {
       final nameRaw = _preferredNameEntry(names);
       if (nameRaw == null) return null;
-      firstName = (nameRaw['firstName'] as String?) ?? '';
+      firstName = (nameRaw['firstName'] as String?) ?? (nameRaw['name'] as String?) ?? '';
       lastName = nameRaw['lastName'] as String?;
     }
 

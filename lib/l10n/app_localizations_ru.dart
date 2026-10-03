@@ -9,7 +9,7 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
-  String get loginTitle => 'Войдите в Komet';
+  String get loginTitle => 'Войдите в ProMax';
 
   @override
   String get loginSubtitle =>
@@ -144,7 +144,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get codeConfirmation2faWarning =>
-      'По умолчанию код приходит в МАХ. Если код не приходит по SMS - не заходите в Komet/MAX 30 минут, и попробуйте заново.';
+      'По умолчанию код приходит в МАХ. Если код не приходит по SMS - не заходите в ProMax/MAX 30 минут, и попробуйте заново.';
 
   @override
   String get proxySettingsTitle => 'Прокси';
@@ -713,7 +713,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get notificationsFkmEnableSubtitle =>
-      'Komet сам держит соединение с сервером и показывает уведомления. Пока это включено, в шторке висит служебное уведомление.';
+      'ProMax сам держит соединение с сервером и показывает уведомления. Пока это включено, в шторке висит служебное уведомление.';
 
   @override
   String get notificationsFkmUnsupported => 'FKM работает только на Android';
@@ -801,7 +801,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get devicesTitle => 'Устройства';
 
   @override
-  String get devicesPromoTitle => 'Устройства в Komet';
+  String get devicesPromoTitle => 'Устройства в ProMax';
 
   @override
   String get devicesPromoSubtitle => 'Кто имеет доступ к вашему аккаунту?';
@@ -1017,7 +1017,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get callKometDetectedNotification =>
-      'Этот человек использует Komet! :3';
+      'Этот человек использует ProMax! :3';
 
   @override
   String get callStatusConnecting => 'Соединение...';
@@ -1059,7 +1059,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get callTooltipExpand => 'Развернуть';
 
   @override
-  String get callTooltipKometHub => 'Komet';
+  String get callTooltipKometHub => 'ProMax';
 
   @override
   String get callInfoTitle => 'О звонке';
@@ -1242,7 +1242,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get callInfoNoDataYet => 'Данные появятся после соединения…';
 
   @override
-  String get hubTitleMenu => 'Komet';
+  String get hubTitleMenu => 'ProMax';
 
   @override
   String get hubChatPageTitle => 'Анонимный чат';
@@ -3154,7 +3154,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String e2eeNeedsKomet(String name) {
-    return 'Чтобы это работало, $name должен пользоваться Komet.';
+    return 'Чтобы это работало, $name должен пользоваться ProMax.';
   }
 
   @override
@@ -3352,7 +3352,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lockTitle => 'Введите код-пароль';
 
   @override
-  String get lockBiometricReason => 'Разблокируйте Komet';
+  String get lockBiometricReason => 'Разблокируйте ProMax';
 
   @override
   String lockBlocked(String time) {
@@ -3365,7 +3365,7 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get lockNow => 'Заблокировать Komet';
+  String get lockNow => 'Заблокировать ProMax';
 
   @override
   String get passcodeTitle => 'Код-пароль';
@@ -3405,7 +3405,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get passcodeAutoLockHint =>
-      'Блокировать Komet, если им не пользоваться';
+      'Блокировать ProMax, если им не пользоваться';
 
   @override
   String get passcodeAutoLockOff => 'Выключена';
@@ -3423,7 +3423,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get passcodeDisableMessage =>
-      'Komet будет открываться без кода-пароля.';
+      'ProMax будет открываться без кода-пароля.';
 
   @override
   String get passcodeDisableAction => 'Выключить';
@@ -3436,15 +3436,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get passcodeOnDescription =>
-      'Komet спрашивает код при каждом входе. Замок в шапке списка чатов закрывает его сразу.';
+      'ProMax спрашивает код при каждом входе. Замок в шапке списка чатов закрывает его сразу.';
 
   @override
   String get passcodeOffDescription =>
-      'Защитите переписку: Komet будет спрашивать код при каждом входе.';
+      'Защитите переписку: ProMax будет спрашивать код при каждом входе.';
 
   @override
   String get passcodeForgotHint =>
-      'Если забудете код, придётся очистить данные Komet или переустановить его и войти заново. После пяти неверных попыток ввод блокируется на пять минут.';
+      'Если забудете код, придётся очистить данные ProMax или переустановить его и войти заново. После пяти неверных попыток ввод блокируется на пять минут.';
 
   @override
   String get mediaDevicesTitle => 'Камера и микрофон';
@@ -5237,7 +5237,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get findUserIdHint => 'Введите ID контакта';
 
   @override
-  String get loginSuccessGreetingWelcome => 'Добро пожаловать в Komet!';
+  String get loginSuccessGreetingWelcome => 'Добро пожаловать в ProMax!';
 
   @override
   String get loginSuccessGreetingEmergencyExit =>
@@ -5432,7 +5432,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pluginsScreenInstallUrl => 'Установить по URL';
 
   @override
-  String get pluginsScreenBundled => 'Встроенный плагин Komet';
+  String get pluginsScreenBundled => 'Встроенный плагин ProMax';
 
   @override
   String pluginsScreenSigned(String fingerprint) {
@@ -6466,4 +6466,132 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get avatarPickerFilesSubtitle => 'Если нужного фото нет в галерее';
+
+  @override
+  String get proMaxShareContact => 'Поделиться контактом';
+
+  @override
+  String get proMaxContactSent => 'Контакт отправлен';
+
+  @override
+  String get proMaxContactSendFailed => 'Не удалось отправить контакт';
+
+  @override
+  String get proMaxSearchMembers => 'Поиск участников';
+
+  @override
+  String get proMaxNoMembers => 'Участники не найдены';
+
+  @override
+  String get proMaxSwitchCamera => 'Повернуть';
+
+  @override
+  String get proMaxQuickReaction => 'Быстрая реакция';
+
+  @override
+  String proMaxQuickReactionSubtitle(String emoji) {
+    return '$emoji · двойное нажатие на сообщение';
+  }
+
+  @override
+  String get proMaxReactionUnavailable => 'Эта реакция недоступна в этом чате';
+
+  @override
+  String get proMaxReactionsLoadFailed => 'Не удалось загрузить реакции MAX';
+
+  @override
+  String get proMaxProfileDateUnavailable => 'MAX не сообщил дату регистрации';
+
+  @override
+  String get proMaxProfileDcUnavailable =>
+      'Дата-центр: MAX не сообщает эти данные';
+
+  @override
+  String get proMaxRecordCircle => 'Заснять кружок';
+
+  @override
+  String get proMaxCircleFromGallery => 'Выбрать видео из галереи';
+
+  @override
+  String get proMaxCircleGalleryHint => 'Видео станет кружком до 60 секунд';
+
+  @override
+  String get proMaxCircleGalleryConfirm =>
+      'Отправить выбранное видео как кружок? Оно будет обрезано по центру до квадрата. Если видео длиннее минуты, будут использованы первые 60 секунд.';
+
+  @override
+  String get proMaxSendCircle => 'Отправить кружок';
+
+  @override
+  String get proMaxCirclePreparing => 'Подготавливаю кружок…';
+
+  @override
+  String get proMaxCallVoice => 'Голос';
+
+  @override
+  String get proMaxCallMasks => 'Маски';
+
+  @override
+  String get proMaxVoiceNormal => 'Обычный';
+
+  @override
+  String get proMaxVoiceDeep => 'Низкий';
+
+  @override
+  String get proMaxVoiceHelium => 'Гелий';
+
+  @override
+  String get proMaxVoiceRobot => 'Робот';
+
+  @override
+  String get proMaxVoiceRadio => 'Рация';
+
+  @override
+  String get proMaxMaskNone => 'Без маски';
+
+  @override
+  String get proMaxMaskGlasses => 'Очки';
+
+  @override
+  String get proMaxMaskVisor => 'Неоновый визор';
+
+  @override
+  String get proMaxMaskCat => 'Кот';
+
+  @override
+  String get proMaxEffectFailed => 'Не удалось включить эффект';
+
+  @override
+  String get proMaxNativePush => 'Push от ProMax · экспериментально';
+
+  @override
+  String get proMaxNativePushExplanation =>
+      'Уведомления прямо от приложения требуют сертификата с разрешением APNs и собственного сервера доставки. Произвольная подпись eSign не гарантирует push. Этот способ ещё требует проверки доставки с MAX. Для обычной установки доступен вариант через Safari в соседнем разделе. Сервер ProMax не получает ваш пароль или токен входа MAX; он обрабатывает push-события и отправляет уведомление без текста сообщения.';
+
+  @override
+  String get proMaxPushSigningHint =>
+      'Нужен профиль с разрешением Push Notifications для идентификатора ProMax.';
+
+  @override
+  String get proMaxTestNotification => 'Проверить разрешение уведомлений';
+
+  @override
+  String get proMaxTestNotificationScheduled =>
+      'Локальное тестовое уведомление появится через 3 секунды. Это не проверка фоновой доставки.';
+
+  @override
+  String get proMaxPushWebLogin => '1. Авторизовать WEB-сессию MAX';
+
+  @override
+  String get proMaxPushRelayUrl => 'HTTPS-адрес сервера доставки';
+
+  @override
+  String get proMaxPushRelayKey => 'Ключ доступа к серверу';
+
+  @override
+  String get proMaxPushRegistered =>
+      'Подписка зарегистрирована. Проверьте входящее сообщение при закрытом ProMax.';
+
+  @override
+  String get proMaxPushConnect => '2. Подключить APNs';
 }

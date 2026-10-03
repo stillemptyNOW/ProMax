@@ -1475,6 +1475,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.1"
+  promax_effects:
+    dependency: "direct main"
+    description:
+      path: "native/promax_effects"
+      relative: true
+    source: path
+    version: "0.1.0"
   pub_semver:
     dependency: transitive
     description:

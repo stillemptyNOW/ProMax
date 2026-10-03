@@ -4,6 +4,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../../backend/modules/webapp.dart' show WebAppLaunch;
 import '../../../core/utils/logger.dart';
+import '../../../core/utils/link_opener.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart' show digitalIdModule, webAppModule;
 import '../webapp/web_app_screen.dart';
@@ -37,15 +38,8 @@ class DigitalIdWebScreen extends StatelessWidget {
       loader: () async => initialLaunch ?? await webAppModule.fetchDigitalId(),
       onExternalCallback: webAppModule.handleExternalCallback,
       onConsoleMessage: (controller, consoleMessage) {
-        final msg = '[DID] ${consoleMessage.message}';
         final lvl = consoleMessage.messageLevel.toString().toUpperCase();
-        if (lvl.contains('ERROR')) {
-          logger.e(msg);
-        } else if (lvl.contains('WARNING')) {
-          logger.w(msg);
-        } else {
-          logger.i(msg);
-        }
+        if (kDebugMode) logger.i('[DID] console level: $lvl');
       },
       onLoadStart: (controller, url) {
         if (url != null) {
@@ -58,10 +52,11 @@ class DigitalIdWebScreen extends StatelessWidget {
         final scheme = uri?.scheme ?? '';
         if (kDebugMode) {
           debugPrint(
-            '[KOMET-DID] nav: ${url.length > 140 ? url.substring(0, 140) : url}',
+            '[PROMAX-DID] nav: ${uri?.scheme}://${uri?.host}',
           );
         }
         if (scheme != 'http' && scheme != 'https') {
+          if (context.mounted) await openExternalUrl(context, url);
           return NavigationActionPolicy.CANCEL;
         }
         return NavigationActionPolicy.ALLOW;

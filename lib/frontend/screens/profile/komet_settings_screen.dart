@@ -10,6 +10,7 @@ import '../../../main.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/settings_card.dart';
 import 'plugins_screen.dart';
+import 'quick_reaction_screen.dart';
 
 class KometSettingsScreen extends StatelessWidget {
   const KometSettingsScreen({super.key});
@@ -22,7 +23,7 @@ class KometSettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: ConnectionTitleBar(
-        titleText: 'Komet',
+        titleText: 'ProMax',
         backgroundColor: cs.surface,
       ),
       body: SafeArea(
@@ -38,6 +39,19 @@ class KometSettingsScreen extends StatelessWidget {
             ),
             SettingsCard(
               children: [
+                ValueListenableBuilder<String>(
+                  valueListenable: KometSettings.quickReaction,
+                  builder: (context, emoji, _) => SettingsNavTile(
+                    icon: Symbols.add_reaction,
+                    label: '${l10n.proMaxQuickReaction} $emoji',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const QuickReactionScreen(),
+                      ),
+                    ),
+                  ),
+                ),
                 if (BuildProfile.plugins)
                   SettingsNavTile(
                     icon: Symbols.extension,
