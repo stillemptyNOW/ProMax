@@ -22,13 +22,14 @@ class PluginStore {
     'assets/plugins/info',
     'assets/plugins/nekos',
     'assets/plugins/weather',
+    'assets/plugins/promax',
   ];
 
   final ValueNotifier<List<PluginDescriptor>> plugins = ValueNotifier(const []);
   Directory? _root;
   Map<String, dynamic> _state = {};
 
-  static bool isBundledId(String id) => id.startsWith('pw.komet.');
+  static bool isBundledId(String id) => id.startsWith('pw.komet.') || id == 'io.github.stillemptynow.promax.toolbox';
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();

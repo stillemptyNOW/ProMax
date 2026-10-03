@@ -28,7 +28,6 @@ import '../../widgets/photo_viewer.dart';
 import '../../widgets/avatar_photo_actions.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/glossy_pill.dart';
-import '../../widgets/info_action_sheet.dart';
 import '../../widgets/komet_avatar.dart';
 import '../../widgets/profile_header_scroll.dart';
 import '../../widgets/reload_on_reconnect.dart';
@@ -47,7 +46,6 @@ import '../digital_id/digital_id_web_screen.dart';
 import '../webapp/web_app_bridge.dart';
 import '../webapp/web_app_screen.dart';
 import 'avatar_carousel.dart';
-import 'cloud_storage_screen.dart';
 import 'customization_section.dart';
 import 'debug_menu_screen.dart';
 import 'devices_screen.dart';
@@ -55,6 +53,7 @@ import '../../widgets/spectrum_tint.dart';
 import 'edit_profile_screen.dart';
 import 'info_screen.dart';
 import 'komet_settings_screen.dart';
+import 'promax_transfer_card.dart';
 import 'notifications_screen.dart';
 import 'profile_qr_sheet.dart';
 import 'security_screen.dart';
@@ -457,42 +456,6 @@ class _SettingsTabState extends State<SettingsTab>
     }
   }
 
-  Future<void> _openCloudStorage(BuildContext context) async {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    final ok = await showInfoActionSheet(
-      context,
-      headerIcon: Symbols.cloud,
-      title: l10n.cloudStorageTitle,
-      subtitle: l10n.settingsTabCloudStorageSubtitle,
-      items: [
-        InfoActionSheetItem(
-          icon: Symbols.cloud_done,
-          title: l10n.settingsTabCloudStorageWhitelistTitle,
-          body: l10n.settingsTabCloudStorageWhitelistBody,
-        ),
-        InfoActionSheetItem(
-          icon: Symbols.inventory_2,
-          title: l10n.settingsTabCloudStorageLimitsTitle,
-          body: l10n.settingsTabCloudStorageLimitsBody,
-        ),
-        InfoActionSheetItem(
-          icon: Symbols.gpp_maybe,
-          title: l10n.settingsTabCloudStoragePrivacyTitle,
-          body: l10n.settingsTabCloudStoragePrivacyBody,
-          titleColor: cs.error,
-        ),
-      ],
-      confirmLabel: l10n.photoEditorOk,
-      confirmDelay: const Duration(seconds: 3),
-      seenKey: 'cloud_storage_intro_seen',
-    );
-    if (!ok || !context.mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const CloudStorageScreen()),
-    );
-  }
 
   Future<void> _confirmLogout() async {
     final cs = Theme.of(context).colorScheme;
@@ -730,11 +693,7 @@ class _SettingsTabState extends State<SettingsTab>
                             );
                           },
                         ),
-                        _SettingsItem(
-                          icon: Symbols.cloud,
-                          label: l10n.settingsTabCloudStorageBeta,
-                          onTap: () => _openCloudStorage(context),
-                        ),
+
                         _SettingsItem(
                           icon: Symbols.vpn_lock,
                           label: l10n.proxySettingsTitle,
@@ -925,6 +884,7 @@ class _SettingsTabState extends State<SettingsTab>
                       ),
                     ),
                   ),
+                const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.fromLTRB(16, 16, 16, 0), child: ProMaxTransferCard())),
                 const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),

@@ -6,6 +6,7 @@
 #import <CoreImage/CoreImage.h>
 #import <UIKit/UIKit.h>
 #include <atomic>
+#include <cmath>
 
 @interface ProMaxAudioProcessor : NSObject<ExternalAudioProcessingDelegate>
 - (void)setMode:(int)mode;
@@ -67,14 +68,25 @@
     int orientation = frame.rotation == RTCVideoRotation_90 ? 6 : frame.rotation == RTCVideoRotation_180 ? 3 : frame.rotation == RTCVideoRotation_270 ? 8 : 1;
     image = [image imageByApplyingOrientation:orientation];
     image = [image imageByApplyingTransform:CGAffineTransformMakeTranslation(-image.extent.origin.x, -image.extent.origin.y)];
-    if (_frame++ % 4 == 0 || !CGRectEqualToRect(image.extent, _lastExtent)) {
+    if (mode == 4 || _frame++ % 4 == 0 || !CGRectEqualToRect(image.extent, _lastExtent)) {
       _faces = (NSArray<CIFaceFeature *> *)[_detector featuresInImage:image];
       _lastExtent = image.extent;
     }
-    if (_faces.count == 0) return frame;
+    if (_faces.count == 0 && mode != 4) return frame;
     const size_t width = static_cast<size_t>(image.extent.size.width);
     const size_t height = static_cast<size_t>(image.extent.size.height);
     CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+    if (mode == 4) {
+      CIImage *pixelated = [image imageByApplyingFilter:@"CIPixellate" withInputParameters:@{kCIInputScaleKey: @(MAX(24, MIN(width, height) / 18.0))}];
+      if (_faces.count == 0) {
+        image = [pixelated imageByCroppingToRect:image.extent];
+      } else {
+        for (CIFaceFeature *face in _faces) {
+          CGRect region = CGRectIntersection(image.extent, CGRectInset(face.bounds, -face.bounds.size.width * 0.18, -face.bounds.size.height * 0.18));
+          if (!CGRectIsEmpty(region)) image = [[pixelated imageByCroppingToRect:region] imageByCompositingOverImage:image];
+        }
+      }
+    } else {
     CGContextRef canvas = CGBitmapContextCreate(NULL, width, height, 8, 0, space, kCGImageAlphaPremultipliedLast);
     if (!canvas) { CGColorSpaceRelease(space); return frame; }
     for (CIFaceFeature *face in _faces) {
@@ -133,6 +145,7 @@
     if (!overlay) { CGColorSpaceRelease(space); return frame; }
     image = [[CIImage imageWithCGImage:overlay] imageByCompositingOverImage:image];
     CGImageRelease(overlay);
+    }
     CVPixelBufferRef output = NULL;
     CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)@{(id)kCVPixelBufferIOSurfacePropertiesKey: @{}}, &output);
     if (status != kCVReturnSuccess || !output) { CGColorSpaceRelease(space); return frame; }
@@ -150,6 +163,8 @@
   ProMaxFaceProcessor *_face;
   LocalVideoTrack *_track;
   BOOL _audioAttached;
+  NSNumber *_originalBrightness;
+  NSNumber *_lightBrightness;
 }
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
   FlutterMethodChannel *channel = [FlutterMethodChannel methodChannelWithName:@"promax/effects" binaryMessenger:registrar.messenger];
@@ -157,12 +172,39 @@
   [registrar addMethodCallDelegate:instance channel:channel];
 }
 - (instancetype)init {
-  if ((self = [super init])) { _audio = [[ProMaxAudioProcessor alloc] init]; _face = [[ProMaxFaceProcessor alloc] init]; }
+  if ((self = [super init])) {
+    _audio = [[ProMaxAudioProcessor alloc] init];
+    _face = [[ProMaxFaceProcessor alloc] init];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pauseLight) name:UIApplicationWillResignActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(resumeLight) name:UIApplicationDidBecomeActiveNotification object:nil];
+  }
   return self;
 }
+- (void)pauseLight {
+  if (_originalBrightness) UIScreen.mainScreen.brightness = _originalBrightness.doubleValue;
+}
+- (void)resumeLight {
+  if (_lightBrightness) UIScreen.mainScreen.brightness = _lightBrightness.doubleValue;
+}
+- (void)restoreBrightness {
+  [self pauseLight];
+  _originalBrightness = nil;
+  _lightBrightness = nil;
+}
+- (void)dealloc { [[NSNotificationCenter defaultCenter] removeObserver:self]; }
 - (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result {
   NSDictionary *args = [call.arguments isKindOfClass:[NSDictionary class]] ? call.arguments : @{};
-  if ([call.method isEqualToString:@"setVoice"]) {
+  if ([call.method isEqualToString:@"setScreenLight"]) {
+    NSNumber *value = args[@"brightness"];
+    if (![value isKindOfClass:[NSNumber class]] || !std::isfinite(value.doubleValue) || value.doubleValue < 0.1 || value.doubleValue > 1) {
+      result([FlutterError errorWithCode:@"BAD_BRIGHTNESS" message:@"Некорректная яркость" details:nil]); return;
+    }
+    if (!_originalBrightness) _originalBrightness = @(UIScreen.mainScreen.brightness);
+    _lightBrightness = value;
+    [self resumeLight];
+  } else if ([call.method isEqualToString:@"restoreScreenBrightness"]) {
+    [self restoreBrightness];
+  } else if ([call.method isEqualToString:@"setVoice"]) {
     NSNumber *value = args[@"voice"];
     if (![value isKindOfClass:[NSNumber class]] || value.intValue < 0 || value.intValue > 4) {
       result([FlutterError errorWithCode:@"BAD_VOICE" message:@"Unknown voice effect" details:nil]); return;
@@ -172,7 +214,7 @@
   } else if ([call.method isEqualToString:@"setMask"]) {
     NSNumber *value = args[@"mask"];
     NSString *trackId = args[@"trackId"];
-    if (![value isKindOfClass:[NSNumber class]] || value.intValue < 0 || value.intValue > 3 || ![trackId isKindOfClass:[NSString class]]) {
+    if (![value isKindOfClass:[NSNumber class]] || value.intValue < 0 || value.intValue > 4 || ![trackId isKindOfClass:[NSString class]]) {
       result([FlutterError errorWithCode:@"BAD_MASK" message:@"Unknown face mask" details:nil]); return;
     }
     id track = [FlutterWebRTCPlugin sharedSingleton].localTracks[trackId];
@@ -182,6 +224,7 @@
     if (_track != track) { [_track removeProcessing:_face]; _track = track; [_track addProcessing:_face]; }
     [_face setMode:value.intValue];
   } else if ([call.method isEqualToString:@"reset"]) {
+    [self restoreBrightness];
     [_audio setMode:0];
     [_face setMode:0];
     [_track removeProcessing:_face];

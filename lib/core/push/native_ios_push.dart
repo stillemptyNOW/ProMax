@@ -17,6 +17,14 @@ class NativeIosPush {
   static Future<void> testLocal() =>
       _channel.invokeMethod('testLocalNotification');
 
+  static Future<Map<String, dynamic>> capabilities() async =>
+      await _channel.invokeMapMethod<String, dynamic>('pushCapabilities') ?? {};
+
+  static Future<bool> testRegistration() async {
+    final token = await _channel.invokeMethod<String>('registerNativePush');
+    return token != null && token.isNotEmpty;
+  }
+
   static Future<void> connect(String baseUrl, String secret) async {
     final base = Uri.tryParse(baseUrl.trim());
     if (base == null ||
@@ -39,6 +47,10 @@ class NativeIosPush {
     if (token == null || token.isEmpty) {
       throw StateError('APNs не выдал токен. Проверьте сертификат в eSign.');
     }
+    final profile = await capabilities();
+    final environment = profile['apsEnvironment'] == 'development'
+        ? 'sandbox'
+        : 'production';
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 15);
     try {
@@ -50,7 +62,7 @@ class NativeIosPush {
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $secret');
       request.headers.contentType = ContentType.json;
       request.write(
-        jsonEncode({'apnsToken': token, 'environment': 'production'}),
+        jsonEncode({'apnsToken': token, 'environment': environment}),
       );
       final response = await request.close().timeout(
         const Duration(seconds: 20),

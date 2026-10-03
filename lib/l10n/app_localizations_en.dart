@@ -799,7 +799,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get devicesTitle => 'Devices';
 
   @override
-  String get devicesPromoTitle => 'Devices in KOMET';
+  String get devicesPromoTitle => 'Devices in ProMax';
 
   @override
   String get devicesPromoSubtitle => 'Who has access to your account?';
@@ -1017,7 +1017,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get callKometDetectedNotification =>
-      'This person uses a compatible Komet/ProMax client.';
+      'This person uses a compatible ProMax/ProMax client.';
 
   @override
   String get callStatusConnecting => 'Connecting';
@@ -2863,7 +2863,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webPushIntro =>
-      'ProMax has no ordinary push on iOS: Apple issues a notification token only to apps signed with a developer certificate, and a sideloaded build never gets one.\n\nThe way around it is a web app on the Home Screen. MAX\'s own server sends the notifications through Apple, and a separate icon displays them.\n\nThat needs a web session. ProMax creates one and approves it itself, from this very device — no phone number or code required.';
+      'This MAX web session is used for experimental ProMax notification delivery. Your current account approves the login without entering a phone number again.';
 
   @override
   String get webPushConfirm => 'Continue';
@@ -2885,7 +2885,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webPushInstallBody =>
-      'Open push.komet.pw in Safari, add it to the Home Screen and launch the icon that appears. Notifications do not work from a browser tab — that is how iOS works.\n\nIn the app, allow notifications, create a subscription and tap \"Open ProMax\". The subscription registers itself from there.';
+      'Use native IPA notification settings in this ProMax version.';
 
   @override
   String get webPushLinkedTitle => 'Notifications connected';
@@ -3140,7 +3140,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String e2eeNeedsKomet(String name) {
-    return '$name needs a compatible Komet or ProMax client for this to work.';
+    return '$name needs a compatible ProMax or ProMax client for this to work.';
   }
 
   @override
@@ -6524,7 +6524,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proMaxNativePushExplanation =>
-      'Direct app notifications require APNs-enabled signing and your own delivery server. An arbitrary eSign certificate does not guarantee push. MAX delivery still needs a live test. Safari notifications are available separately. The ProMax server receives no MAX password or login token; it handles push events and sends notifications without message text.';
+      'Check whether your eSign signature allows APNs registration. The experimental web-session delivery method needs a server with APNs access. An Apple token does not confirm MAX message delivery. The server receives no MAX password or login token and sends notifications without message text.';
 
   @override
   String get proMaxPushSigningHint =>
@@ -6552,4 +6552,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proMaxPushConnect => '2. Connect APNs';
+
+  @override
+  String get proMaxMaskPixels => 'Pixelated face';
+
+  @override
+  String get proMaxSettingLabel0 => 'View deleted message';
+
+  @override
+  String get proMaxSettingLabel1 => 'View redacted message history';
+
+  @override
+  String get proMaxSettingLabel2 => 'View full timestamp';
+
+  @override
+  String get proMaxSettingLabel3 => 'Show Forward';
+
+  @override
+  String get proMaxSettingLabel4 => 'Show typing time';
+
+  @override
+  String get proMaxSettingLabel5 => 'Hide \"All\" folder';
+
+  @override
+  String get proMaxSettingLabel6 => 'Show hidden chats';
+
+  @override
+  String get proMaxSettingLabel7 => 'Pull-down archive';
+
+  @override
+  String get proMaxSettingLabel8 => 'Ghost Mode';
+
+  @override
+  String get proMaxSettingLabel9 => 'Anti read';
+
+  @override
+  String get proMaxSettingLabel10 => 'Self Online Check';
+
+  @override
+  String get proMaxArchiveBusy => 'Preparing file…';
+
+  @override
+  String get proMaxArchiveExport => 'Export ProMax · .promax';
+
+  @override
+  String get proMaxArchiveImport => 'Import ProMax · .promax';
+
+  @override
+  String get proMaxArchiveKey => 'History recovery key';
+
+  @override
+  String get proMaxArchiveTitle => 'ProMax file · .promax';
 }

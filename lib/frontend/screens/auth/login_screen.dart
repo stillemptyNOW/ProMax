@@ -295,76 +295,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return country.phoneMask.replaceAll('#', '0');
   }
 
-  void _showLanguagePicker() {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    final appContext = context;
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      shape: kSheetShape,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 24.0,
-              horizontal: 16.0,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8, bottom: 8),
-                  child: Text(
-                    l10n.loginLanguage,
-                    style: TextStyle(
-                      color: cs.onSurface,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                ListTile(
-                  title: Text(
-                    l10n.languageNameRu,
-                    style: TextStyle(
-                      color: cs.onSurface,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    KometApp.stateOf(
-                      appContext,
-                    )?.applyLocale(const Locale('ru'));
-                  },
-                ),
-                ListTile(
-                  title: Text(
-                    l10n.languageNameEn,
-                    style: TextStyle(
-                      color: cs.onSurface,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    KometApp.stateOf(
-                      appContext,
-                    )?.applyLocale(const Locale('en'));
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   void _showTOS(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final termsLocale = Localizations.localeOf(context);
@@ -918,14 +848,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                       weight: 400,
                                     ),
                                   ),
-                                  IconButton(
-                                    onPressed: _showLanguagePicker,
-                                    icon: Icon(
-                                      Symbols.language,
-                                      color: cs.onSurfaceVariant,
-                                      weight: 400,
-                                    ),
-                                  ),
                                 ],
                               ),
                             ],
@@ -940,7 +862,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Image.asset(
                                     'assets/komet.png',
                                     height: 80,
-                                    color: cs.onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 16),

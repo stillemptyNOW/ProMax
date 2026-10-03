@@ -1595,7 +1595,7 @@ abstract class AppLocalizations {
   /// No description provided for @devicesPromoTitle.
   ///
   /// In en, this message translates to:
-  /// **'Devices in KOMET'**
+  /// **'Devices in ProMax'**
   String get devicesPromoTitle;
 
   /// No description provided for @devicesPromoSubtitle.
@@ -2003,7 +2003,7 @@ abstract class AppLocalizations {
   /// No description provided for @callKometDetectedNotification.
   ///
   /// In en, this message translates to:
-  /// **'This person uses a compatible Komet/ProMax client.'**
+  /// **'This person uses a compatible ProMax/ProMax client.'**
   String get callKometDetectedNotification;
 
   /// No description provided for @callStatusConnecting.
@@ -5441,7 +5441,7 @@ abstract class AppLocalizations {
   /// No description provided for @webPushIntro.
   ///
   /// In en, this message translates to:
-  /// **'ProMax has no ordinary push on iOS: Apple issues a notification token only to apps signed with a developer certificate, and a sideloaded build never gets one.\n\nThe way around it is a web app on the Home Screen. MAX\'s own server sends the notifications through Apple, and a separate icon displays them.\n\nThat needs a web session. ProMax creates one and approves it itself, from this very device — no phone number or code required.'**
+  /// **'This MAX web session is used for experimental ProMax notification delivery. Your current account approves the login without entering a phone number again.'**
   String get webPushIntro;
 
   /// No description provided for @webPushConfirm.
@@ -5477,7 +5477,7 @@ abstract class AppLocalizations {
   /// No description provided for @webPushInstallBody.
   ///
   /// In en, this message translates to:
-  /// **'Open push.komet.pw in Safari, add it to the Home Screen and launch the icon that appears. Notifications do not work from a browser tab — that is how iOS works.\n\nIn the app, allow notifications, create a subscription and tap \"Open ProMax\". The subscription registers itself from there.'**
+  /// **'Use native IPA notification settings in this ProMax version.'**
   String get webPushInstallBody;
 
   /// No description provided for @webPushLinkedTitle.
@@ -5897,7 +5897,7 @@ abstract class AppLocalizations {
   /// No description provided for @e2eeNeedsKomet.
   ///
   /// In en, this message translates to:
-  /// **'{name} needs a compatible Komet or ProMax client for this to work.'**
+  /// **'{name} needs a compatible ProMax or ProMax client for this to work.'**
   String e2eeNeedsKomet(String name);
 
   /// No description provided for @e2eeOfferSent.
@@ -11597,7 +11597,7 @@ abstract class AppLocalizations {
   /// No description provided for @proMaxNativePushExplanation.
   ///
   /// In en, this message translates to:
-  /// **'Direct app notifications require APNs-enabled signing and your own delivery server. An arbitrary eSign certificate does not guarantee push. MAX delivery still needs a live test. Safari notifications are available separately. The ProMax server receives no MAX password or login token; it handles push events and sends notifications without message text.'**
+  /// **'Check whether your eSign signature allows APNs registration. The experimental web-session delivery method needs a server with APNs access. An Apple token does not confirm MAX message delivery. The server receives no MAX password or login token and sends notifications without message text.'**
   String get proMaxNativePushExplanation;
 
   /// No description provided for @proMaxPushSigningHint.
@@ -11647,6 +11647,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'2. Connect APNs'**
   String get proMaxPushConnect;
+
+  /// No description provided for @proMaxMaskPixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Pixelated face'**
+  String get proMaxMaskPixels;
+
+  /// No description provided for @proMaxSettingLabel0.
+  ///
+  /// In en, this message translates to:
+  /// **'View deleted message'**
+  String get proMaxSettingLabel0;
+
+  /// No description provided for @proMaxSettingLabel1.
+  ///
+  /// In en, this message translates to:
+  /// **'View redacted message history'**
+  String get proMaxSettingLabel1;
+
+  /// No description provided for @proMaxSettingLabel2.
+  ///
+  /// In en, this message translates to:
+  /// **'View full timestamp'**
+  String get proMaxSettingLabel2;
+
+  /// No description provided for @proMaxSettingLabel3.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Forward'**
+  String get proMaxSettingLabel3;
+
+  /// No description provided for @proMaxSettingLabel4.
+  ///
+  /// In en, this message translates to:
+  /// **'Show typing time'**
+  String get proMaxSettingLabel4;
+
+  /// No description provided for @proMaxSettingLabel5.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide \"All\" folder'**
+  String get proMaxSettingLabel5;
+
+  /// No description provided for @proMaxSettingLabel6.
+  ///
+  /// In en, this message translates to:
+  /// **'Show hidden chats'**
+  String get proMaxSettingLabel6;
+
+  /// No description provided for @proMaxSettingLabel7.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull-down archive'**
+  String get proMaxSettingLabel7;
+
+  /// No description provided for @proMaxSettingLabel8.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost Mode'**
+  String get proMaxSettingLabel8;
+
+  /// No description provided for @proMaxSettingLabel9.
+  ///
+  /// In en, this message translates to:
+  /// **'Anti read'**
+  String get proMaxSettingLabel9;
+
+  /// No description provided for @proMaxSettingLabel10.
+  ///
+  /// In en, this message translates to:
+  /// **'Self Online Check'**
+  String get proMaxSettingLabel10;
+
+  /// No description provided for @proMaxArchiveBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing file…'**
+  String get proMaxArchiveBusy;
+
+  /// No description provided for @proMaxArchiveExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export ProMax · .promax'**
+  String get proMaxArchiveExport;
+
+  /// No description provided for @proMaxArchiveImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import ProMax · .promax'**
+  String get proMaxArchiveImport;
+
+  /// No description provided for @proMaxArchiveKey.
+  ///
+  /// In en, this message translates to:
+  /// **'History recovery key'**
+  String get proMaxArchiveKey;
+
+  /// No description provided for @proMaxArchiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax file · .promax'**
+  String get proMaxArchiveTitle;
 }
 
 class _AppLocalizationsDelegate

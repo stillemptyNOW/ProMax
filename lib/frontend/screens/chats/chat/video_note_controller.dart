@@ -5,7 +5,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show PlatformException, rootBundle;
+import 'package:flutter/services.dart'
+    show MethodChannel, PlatformException, rootBundle;
 import 'package:lottie/lottie.dart' show AssetLottie;
 import 'package:path_provider/path_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -22,6 +23,7 @@ import '../../../../core/media/video_transcoder.dart';
 import '../../../../core/utils/haptics.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/screen_wake.dart';
+import '../../../../core/security/app_lock.dart';
 import '../../../widgets/custom_notification.dart';
 import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/lottie_slash_icon.dart';
@@ -147,9 +149,15 @@ class VideoNoteController {
     String? output;
     var handedOff = false;
     try {
-      final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
-      if (picked == null || !isMounted()) return;
-      final meta = await VideoTranscoder.probe(picked.path);
+      final path = await AppLock.instance.external(() async => Platform.isIOS
+          ? await const MethodChannel(
+              'ru.komet.app/video',
+            ).invokeMethod<String>('pickGalleryVideo')
+          : (await ImagePicker().pickVideo(source: ImageSource.gallery))?.path);
+      if (path == null) return;
+      if (Platform.isIOS) input = File(path);
+      if (!isMounted()) return;
+      final meta = await VideoTranscoder.probe(path);
       if (meta == null || meta.durationMs < VoiceRecordController.minMs) {
         _notify((l10n) => l10n.videoNoteSaveFailed);
         return;
@@ -165,7 +173,7 @@ class VideoNoteController {
       if (!send || !isMounted()) return;
       _notify((l10n) => l10n.proMaxCirclePreparing);
       final dir = await getTemporaryDirectory();
-      input = await File(picked.path).copy(
+      input ??= await File(path).copy(
         '${dir.path}/promax_circle_${DateTime.now().microsecondsSinceEpoch}.mp4',
       );
       output = await VideoNoteCropper.cropSquare(

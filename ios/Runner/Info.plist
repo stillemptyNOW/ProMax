@@ -80,7 +80,7 @@
 	<key>NSContactsUsageDescription</key>
 	<string>Доступ к контактам нужен, чтобы показывать имена собеседников так, как они записаны в вашей телефонной книге.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Face ID разблокирует Komet вместо кода-пароля.</string>
+	<string>Face ID разблокирует ProMax вместо кода-пароля.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Геолокация нужна, чтобы отправлять ваше текущее местоположение в чатах.</string>
 	<key>NSMicrophoneUsageDescription</key>

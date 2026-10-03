@@ -24,11 +24,15 @@ class _FakeBiometry implements WebAppBiometry {
   List<String> available = ['finger'];
   bool? consent = true;
   bool passes = true;
+  bool throws = false;
   final List<String?> consentReasons = [];
   final List<String?> authReasons = [];
 
   @override
-  Future<List<String>> types() async => available;
+  Future<List<String>> types() async {
+    if (throws) throw StateError('Synthetic device failure');
+    return available;
+  }
 
   @override
   Future<bool?> confirmAccess(String? reason) async {
@@ -85,10 +89,7 @@ void main() {
 
     expect(sent, hasLength(1));
     expect(sent.first.$1, 'WebAppGetLaunchContext');
-    expect(sent.first.$2, {
-      'requestId': 'r1',
-      'entryPoint': 'inline_button',
-    });
+    expect(sent.first.$2, {'requestId': 'r1', 'entryPoint': 'inline_button'});
   });
 
   test('answers viewport requests with the current webview size', () async {
@@ -108,7 +109,11 @@ void main() {
   test('rejects an unknown method with the client error code', () async {
     final bridge = buildBridge();
 
-    await bridge.handleEvent('WebAppSomethingElse', '{"requestId":"r3"}', false);
+    await bridge.handleEvent(
+      'WebAppSomethingElse',
+      '{"requestId":"r3"}',
+      false,
+    );
 
     expect(sent.first.$2['error'], {
       'code': 'client.unsupported_method.unsupported_method',
@@ -135,13 +140,11 @@ void main() {
     expect(sent, isEmpty);
 
     bridge.registerGesture();
-    await bridge.handleEvent(
-      'WebAppShare',
-      '{"requestId":"r5"}',
-      false,
-    );
+    await bridge.handleEvent('WebAppShare', '{"requestId":"r5"}', false);
 
-    expect(sent.single.$2['error'], {'code': 'client.web_app_share.invalid_request'});
+    expect(sent.single.$2['error'], {
+      'code': 'client.web_app_share.invalid_request',
+    });
   });
 
   test('ignores private-channel events when the channel is off', () async {
@@ -164,29 +167,32 @@ void main() {
     expect(sent, isEmpty);
   });
 
-  test('tracks the back button and closing behaviour the app asked for', () async {
-    final bridge = buildBridge();
+  test(
+    'tracks the back button and closing behaviour the app asked for',
+    () async {
+      final bridge = buildBridge();
 
-    expect(bridge.handlesBackButton, isFalse);
-    expect(bridge.needsCloseConfirmation, isFalse);
+      expect(bridge.handlesBackButton, isFalse);
+      expect(bridge.needsCloseConfirmation, isFalse);
 
-    await bridge.handleEvent(
-      'WebAppSetupBackButton',
-      '{"isVisible":true}',
-      false,
-    );
-    await bridge.handleEvent(
-      'WebAppSetupClosingBehavior',
-      '{"needConfirmation":true}',
-      false,
-    );
+      await bridge.handleEvent(
+        'WebAppSetupBackButton',
+        '{"isVisible":true}',
+        false,
+      );
+      await bridge.handleEvent(
+        'WebAppSetupClosingBehavior',
+        '{"needConfirmation":true}',
+        false,
+      );
 
-    expect(bridge.handlesBackButton, isTrue);
-    expect(bridge.needsCloseConfirmation, isTrue);
+      expect(bridge.handlesBackButton, isTrue);
+      expect(bridge.needsCloseConfirmation, isTrue);
 
-    bridge.notifyBackPressed();
-    expect(sent.single.$1, 'WebAppBackButtonPressed');
-  });
+      bridge.notifyBackPressed();
+      expect(sent.single.$1, 'WebAppBackButtonPressed');
+    },
+  );
 
   test('closes the screen when the app asks to', () async {
     final bridge = buildBridge();
@@ -205,10 +211,7 @@ void main() {
       false,
     );
 
-    expect(sent.first.$2, {
-      'requestId': 'r7',
-      'isScreenCaptureEnabled': true,
-    });
+    expect(sent.first.$2, {'requestId': 'r7', 'isScreenCaptureEnabled': true});
   });
 
   test('answers NFC availability without pretending to support it', () async {
@@ -328,6 +331,24 @@ void main() {
       expect(biometry.consentReasons, isEmpty);
       expect(biometry.authReasons, isEmpty);
     });
+
+    test(
+      'a failing device answers on the private channel instead of hanging',
+      () async {
+        biometry.throws = true;
+        final bridge = buildBridge(privateChannel: true, biometry: biometry);
+        await bridge.handleEvent(
+          'WebAppBiometryGetInfo',
+          '{"requestId":"synthetic-failure"}',
+          true,
+        );
+        expect(
+          sent.single.$2,
+          errorOf('biometry_get_info', 'request_error', 'synthetic-failure'),
+        );
+        expect(sent.single.$3, true);
+      },
+    );
 
     test('reports biometry as unavailable on a device without it', () async {
       biometry.available = [];

@@ -17,6 +17,7 @@ import '../../../core/calls/call_info.dart';
 import '../../../core/calls/call_session.dart';
 import '../../../core/config/app_colors.dart';
 import '../../../core/config/call_no_mute.dart';
+import '../../../core/config/call_lighting.dart';
 import '../../../core/utils/format.dart';
 import '../../../core/utils/screen_wake.dart';
 import '../../../l10n/app_localizations.dart';
@@ -24,9 +25,11 @@ import '../../widgets/call_video_view.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/glossy_pill.dart';
 import '../../widgets/animated_slash_icon.dart';
+import '../../widgets/lottie_slash_icon.dart';
 import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
 import 'call_mic_sheet.dart';
+import 'call_lighting_sheet.dart';
 import 'call_participants_sheet.dart';
 import 'komet_hub.dart';
 import '../../../core/config/app_fonts.dart';
@@ -67,6 +70,10 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
 
   bool _isMuted = false;
   bool _isSpeaker = false;
+  bool _selfOnMain = false;
+  bool _lightOn = false;
+  bool _lightBusy = false;
+  CallLighting _lighting = const CallLighting();
 
   late final AnimationController _dotsController;
   late final AnimationController _videoController;
@@ -134,6 +141,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    unawaited(_loadLighting());
     ActiveCall.instance.enterScreen();
     unawaited(ScreenWake.instance.acquire(this));
     _dotsController = AnimationController(
@@ -421,6 +429,82 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   void _syncLocalPreview() {
     if (!_localRendererReady) return;
     _localRenderer.srcObject = _session?.localVideoStream;
+    if (_session?.localVideo != true && _session?.localScreen != true) {
+      _selfOnMain = false;
+    }
+    if (_session?.localVideo != true && _lightOn) {
+      _lightOn = false;
+      unawaited(ProMaxEffects.restoreScreenBrightness());
+    }
+  }
+
+  Future<void> _loadLighting() async {
+    final value = await CallLighting.load();
+    if (mounted) setState(() => _lighting = value);
+  }
+
+  Future<void> _turnLightOff() async {
+    final session = _session;
+    if (session?.effectsAvailable == true) {
+      await ProMaxEffects.restoreScreenBrightness();
+    }
+    if (session?.localVideo == true && !session!.frontCamera) {
+      await session.setCameraTorch(false);
+    }
+    if (mounted) setState(() => _lightOn = false);
+  }
+
+  Future<void> _toggleLight() async {
+    final session = _session;
+    if (session == null || !session.localVideo || _lightBusy) return;
+    setState(() => _lightBusy = true);
+    try {
+      if (_lightOn) {
+        await _turnLightOff();
+      } else {
+        if (session.frontCamera) {
+          await ProMaxEffects.setScreenLight(_lighting.brightness);
+        } else {
+          await session.setCameraTorch(true);
+        }
+        if (mounted) setState(() => _lightOn = true);
+      }
+    } catch (_) {
+      if (mounted) {
+        showCustomNotification(
+          context,
+          'Не удалось включить подсветку выбранной камеры',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _lightBusy = false);
+    }
+  }
+
+  Future<void> _showLighting() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => FractionallySizedBox(
+        heightFactor: 0.85,
+        child: CallLightingSheet(
+          initial: _lighting,
+          onChanged: (value) {
+            setState(() => _lighting = value);
+            if (_lightOn && _session?.frontCamera == true) {
+              unawaited(ProMaxEffects.setScreenLight(value.brightness));
+            }
+          },
+        ),
+      ),
+    );
+    await _lighting.save();
+  }
+
+  void _swapVideo() {
+    if (_session?.localVideo != true && _session?.localScreen != true) return;
+    setState(() => _selfOnMain = !_selfOnMain);
   }
 
   Future<void> _switchCamera() async {
@@ -429,6 +513,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _videoBusy = true);
     try {
+      await _turnLightOff();
       await session.switchCamera();
     } catch (e) {
       if (mounted) {
@@ -469,6 +554,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       l10n.proMaxMaskGlasses,
       l10n.proMaxMaskVisor,
       l10n.proMaxMaskCat,
+      l10n.proMaxMaskPixels,
     ], session.faceMask.index);
     if (selected == null || !mounted || _session != session) return;
     try {
@@ -532,6 +618,12 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    if (_session?.effectsAvailable == true) {
+      unawaited(ProMaxEffects.restoreScreenBrightness());
+    }
+    if (_lightOn && _session?.frontCamera == false) {
+      unawaited(_session!.setCameraTorch(false));
+    }
     ActiveCall.instance.leaveScreen();
     unawaited(ScreenWake.instance.release(this));
     _stateSub?.cancel();
@@ -617,7 +709,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     final cs = _darkScheme(context);
     final group = _isGroup && !_incomingPending;
 
-    final Widget body = group
+    final Widget body = group && !_selfOnMain
         ? _buildGroupBody(cs)
         : AnimatedBuilder(
             animation: _videoController,
@@ -646,6 +738,24 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
               body,
               if (_session?.localVideo == true || _session?.localScreen == true)
                 _localPreview(cs),
+              if (_lightOn &&
+                  _session?.frontCamera == true &&
+                  _session?.localVideo == true)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: _lighting.color.withValues(
+                            alpha: _lighting.opacity,
+                          ),
+                          width: _lighting.width,
+                        ),
+                        borderRadius: BorderRadius.circular(_lighting.radius),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -654,27 +764,34 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   }
 
   Widget _localPreview(ColorScheme cs) {
+    final renderer = _selfOnMain ? _remoteRenderer : _localRenderer;
     return Positioned(
       right: 16,
       top: MediaQuery.of(context).padding.top + 56,
       child: SafeArea(
-        child: Container(
-          width: 96,
-          height: 140,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            color: cs.surfaceContainerHighest,
-            border: Border.all(color: cs.outlineVariant, width: 1),
+        child: GestureDetector(
+          onTap: _swapVideo,
+          child: Container(
+            width: 96,
+            height: 140,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: cs.surfaceContainerHighest,
+              border: Border.all(color: cs.outlineVariant, width: 1),
+            ),
+            child: renderer.srcObject != null
+                ? CallVideoView(
+                    renderer: renderer,
+                    mirror:
+                        !_selfOnMain &&
+                        _session?.localScreen != true &&
+                        _session?.frontCamera == true,
+                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                    placeholder: _localPreviewIcon(cs),
+                  )
+                : _localPreviewIcon(cs),
           ),
-          child: _localRendererReady && _localRenderer.srcObject != null
-              ? CallVideoView(
-                  renderer: _localRenderer,
-                  mirror: _session?.localScreen != true,
-                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                  placeholder: _localPreviewIcon(cs),
-                )
-              : _localPreviewIcon(cs),
         ),
       ),
     );
@@ -988,8 +1105,11 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     required Widget? peerBar,
     required Widget controls,
   }) {
-    final t = Curves.easeInOut.transform(_videoController.value);
-    final showVideo = t > 0.001 && _remoteRenderer.srcObject != null;
+    final t = _selfOnMain
+        ? 1.0
+        : Curves.easeInOut.transform(_videoController.value);
+    final renderer = _selfOnMain ? _localRenderer : _remoteRenderer;
+    final showVideo = t > 0.001 && renderer.srcObject != null;
 
     return Stack(
       fit: StackFit.expand,
@@ -1004,7 +1124,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24 * (1 - t)),
                   child: ValueListenableBuilder<RTCVideoValue>(
-                    valueListenable: _remoteRenderer,
+                    valueListenable: renderer,
                     builder: (context, value, _) {
                       final ar = value.aspectRatio > 0
                           ? value.aspectRatio
@@ -1014,7 +1134,11 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                           aspectRatio: ar,
                           child: RepaintBoundary(
                             child: CallVideoView(
-                              renderer: _remoteRenderer,
+                              renderer: renderer,
+                              mirror:
+                                  _selfOnMain &&
+                                  _session?.localScreen != true &&
+                                  _session?.frontCamera == true,
                               objectFit: RTCVideoViewObjectFit
                                   .RTCVideoViewObjectFitCover,
                             ),
@@ -1386,94 +1510,174 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     );
   }
 
+  Future<void> _showMoreControls() async {
+    final session = _session;
+    if (session == null) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        Widget item(IconData icon, String label, VoidCallback action) =>
+            ListTile(
+              leading: Icon(icon),
+              title: Text(label),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                action();
+              },
+            );
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (session.effectsAvailable)
+                  item(
+                    Symbols.record_voice_over,
+                    'Изменить голос',
+                    _showVoiceEffects,
+                  ),
+                if (session.effectsAvailable && session.localVideo)
+                  item(
+                    Symbols.face_retouching_natural,
+                    'Маски для лица',
+                    _showFaceMasks,
+                  ),
+                if (session.effectsAvailable)
+                  item(
+                    Symbols.tune,
+                    'Настроить подсветку для селфи',
+                    _showLighting,
+                  ),
+                item(
+                  Symbols.screen_share,
+                  session.localScreen
+                      ? 'Остановить показ экрана'
+                      : 'Показать экран',
+                  _toggleScreen,
+                ),
+                item(Symbols.mic, 'Выбрать микрофон', _showMicrophones),
+                item(Symbols.group, 'Участники звонка', _showParticipants),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _activeControls(ColorScheme cs) {
     final l10n = AppLocalizations.of(context)!;
     final video = _session?.localVideo == true;
-    final screen = _session?.localScreen == true;
+    Widget action(
+      IconData icon,
+      String label,
+      VoidCallback onTap, {
+      Widget? graphic,
+      bool busy = false,
+    }) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ActionChip(
+        avatar: graphic ?? Icon(icon, size: 20, color: cs.onSurface),
+        label: Text(label),
+        backgroundColor: cs.surfaceContainerHigh,
+        onPressed: busy ? null : onTap,
+      ),
+    );
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 12,
-        runSpacing: 14,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _CallButton(
-            icon: _isSpeaker ? Symbols.volume_up : Symbols.volume_down,
-            label: l10n.callSpeaker,
-            background: _isSpeaker ? cs.primary : cs.surfaceContainerHighest,
-            foreground: _isSpeaker ? cs.onPrimary : cs.onSurface,
-            onTap: _toggleSpeaker,
-          ),
-          _CallButton(
-            icon: Symbols.videocam,
-            slashedIcon: Symbols.videocam_off,
-            slashed: !video,
-            label: l10n.callVideoLabel,
-            background: video ? cs.primary : cs.surfaceContainerHighest,
-            foreground: video ? cs.onPrimary : cs.onSurface,
-            busy: _videoBusy,
-            onTap: _toggleVideo,
-          ),
-          if (video)
-            _CallButton(
-              icon: Symbols.cameraswitch,
-              label: l10n.proMaxSwitchCamera,
-              background: cs.surfaceContainerHighest,
-              foreground: cs.onSurface,
-              busy: _videoBusy,
-              onTap: _switchCamera,
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (video)
+                  action(
+                    Symbols.cameraswitch,
+                    'Камера',
+                    _switchCamera,
+                    busy: _videoBusy,
+                  ),
+                if (video)
+                  action(
+                    Symbols.swap_horiz,
+                    _selfOnMain ? 'Собеседник крупно' : 'Я крупно',
+                    _swapVideo,
+                  ),
+                if (video && _session?.effectsAvailable == true)
+                  action(
+                    Symbols.flash_on,
+                    'Свет',
+                    _toggleLight,
+                    busy: _lightBusy,
+                    graphic: LottieSlashIcon(
+                      asset: 'assets/lottie/ic_flash_on_to_off.json',
+                      slashed: !_lightOn,
+                      color: cs.onSurface,
+                      size: 20,
+                    ),
+                  ),
+                action(Symbols.more_horiz, 'Ещё', _showMoreControls),
+              ],
             ),
-          if (_session?.effectsAvailable == true) ...[
-            _CallButton(
-              icon: Symbols.record_voice_over,
-              label: l10n.proMaxCallVoice,
-              background: _session?.voiceEffect != ProMaxVoice.normal
-                  ? cs.primary
-                  : cs.surfaceContainerHighest,
-              foreground: _session?.voiceEffect != ProMaxVoice.normal
-                  ? cs.onPrimary
-                  : cs.onSurface,
-              onTap: _showVoiceEffects,
-            ),
-            if (video)
-              _CallButton(
-                icon: Symbols.face_retouching_natural,
-                label: l10n.proMaxCallMasks,
-                background: _session?.faceMask != ProMaxMask.none
-                    ? cs.primary
-                    : cs.surfaceContainerHighest,
-                foreground: _session?.faceMask != ProMaxMask.none
-                    ? cs.onPrimary
-                    : cs.onSurface,
-                onTap: _showFaceMasks,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _CallButton(
+                  icon: _isSpeaker ? Symbols.volume_up : Symbols.volume_down,
+                  label: l10n.callSpeaker,
+                  background: _isSpeaker
+                      ? cs.primary
+                      : cs.surfaceContainerHighest,
+                  foreground: _isSpeaker ? cs.onPrimary : cs.onSurface,
+                  onTap: _toggleSpeaker,
+                ),
               ),
-          ],
-          _CallButton(
-            icon: Symbols.screen_share,
-            label: l10n.callScreenLabel,
-            background: screen ? cs.primary : cs.surfaceContainerHighest,
-            foreground: screen ? cs.onPrimary : cs.onSurface,
-            busy: _videoBusy,
-            onTap: _toggleScreen,
-          ),
-          _CallButton(
-            icon: Symbols.mic,
-            slashedIcon: Symbols.mic_off,
-            slashed: _isMuted,
-            label: _isMuted
-                ? (CallNoMute.enabled ? l10n.callMicStillLive : l10n.callUnmute)
-                : l10n.callMute,
-            background: _isMuted ? cs.primary : cs.surfaceContainerHighest,
-            foreground: _isMuted ? cs.onPrimary : cs.onSurface,
-            onTap: _toggleMute,
-            onLongPress: _showMicrophones,
-          ),
-          _CallButton(
-            icon: Symbols.call_end,
-            label: l10n.callEndButton,
-            background: kDangerRed,
-            foreground: Colors.white,
-            onTap: _hangup,
+              Expanded(
+                child: _CallButton(
+                  icon: Symbols.videocam,
+                  slashedIcon: Symbols.videocam_off,
+                  slashed: !video,
+                  label: l10n.callVideoLabel,
+                  background: video ? cs.primary : cs.surfaceContainerHighest,
+                  foreground: video ? cs.onPrimary : cs.onSurface,
+                  busy: _videoBusy,
+                  onTap: _toggleVideo,
+                ),
+              ),
+              Expanded(
+                child: _CallButton(
+                  icon: Symbols.mic,
+                  slashedIcon: Symbols.mic_off,
+                  slashed: _isMuted,
+                  label: _isMuted
+                      ? (CallNoMute.enabled
+                            ? l10n.callMicStillLive
+                            : l10n.callUnmute)
+                      : l10n.callMute,
+                  background: _isMuted
+                      ? cs.primary
+                      : cs.surfaceContainerHighest,
+                  foreground: _isMuted ? cs.onPrimary : cs.onSurface,
+                  onTap: _toggleMute,
+                  onLongPress: _showMicrophones,
+                ),
+              ),
+              Expanded(
+                child: _CallButton(
+                  icon: Symbols.call_end,
+                  label: l10n.callEndButton,
+                  background: kDangerRed,
+                  foreground: Colors.white,
+                  onTap: _hangup,
+                ),
+              ),
+            ],
           ),
         ],
       ),

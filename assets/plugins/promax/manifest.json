@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.stillemptynow.promax.toolbox",
+  "name": "ProMax Tools",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "description": "Исправление раскладки, очистка текста, чек-листы и выбор варианта. Работает без внешних сервисов.",
+  "author": "ProMax",
+  "main": "main.js",
+  "permissions": ["chat.write", "ui.notify", "message.readReply"],
+  "commands": [
+    {"name": "/promax", "description": "показать возможности ProMax Tools", "handler": "help"},
+    {"name": "/pmfix", "description": "исправить русскую или английскую раскладку", "handler": "fix", "arguments": [{"name": "text", "description": "текст или ответ на сообщение", "required": false, "rest": true}]},
+    {"name": "/pmclean", "description": "убрать невидимые символы и лишние пробелы", "handler": "clean", "arguments": [{"name": "text", "description": "текст или ответ на сообщение", "required": false, "rest": true}]},
+    {"name": "/pmchecklist", "description": "создать чек-лист: пункт | пункт", "handler": "checklist", "arguments": [{"name": "items", "description": "пункты через |", "required": true, "rest": true}]},
+    {"name": "/pmchoose", "description": "случайно выбрать: вариант | вариант", "handler": "choose", "arguments": [{"name": "items", "description": "варианты через |", "required": true, "rest": true}]}
+  ]
+}

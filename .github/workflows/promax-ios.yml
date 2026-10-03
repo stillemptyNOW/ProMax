@@ -38,7 +38,14 @@ jobs:
       - name: Analyze
         run: flutter analyze lib test tool native/promax_effects/lib
       - name: Test
+        env:
+          KOMET_CRYPTO_TEST_LIB: ${{ github.workspace }}/native/crypto-core/build/libkomet_crypto.so
         run: flutter test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify ProMax Tools
+        run: node --experimental-vm-modules test/promax_toolbox_test.mjs
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
@@ -75,8 +82,18 @@ jobs:
           cp -R build/ios/iphoneos/Runner.app build/ios/Payload/
           cd build/ios
           zip -qr ../../dist/ProMax-ios-unsigned.ipa Payload
+      - name: Package ProMax Tools
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('dist/ProMax-Tools.kinet', 'w', compression=zipfile.ZIP_DEFLATED) as package:
+              for name in ('manifest.json', 'main.js'):
+                  package.write('assets/plugins/promax/' + name, name)
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: ProMax-ios-unsigned
-          path: dist/ProMax-ios-unsigned.ipa
+          path: |
+            dist/ProMax-ios-unsigned.ipa
+            dist/ProMax-Tools.kinet
           retention-days: 14

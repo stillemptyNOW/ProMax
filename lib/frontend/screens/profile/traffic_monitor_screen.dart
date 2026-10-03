@@ -74,7 +74,7 @@ class _TrafficMonitorScreenState extends State<TrafficMonitorScreen> {
       await AppLock.instance.external(
         () => Share.shareXFiles(
           [XFile(file.path, mimeType: 'application/json')],
-          subject: 'Komet traffic capture',
+          subject: 'Трафик ProMax',
           sharePositionOrigin: box == null
               ? null
               : box.localToGlobal(Offset.zero) & box.size,

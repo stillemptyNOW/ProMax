@@ -20,13 +20,15 @@ final class KometNotifications: NSObject {
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
+    case "pushCapabilities":
+      result(pushCapabilities())
     case "registerNativePush":
       registerNativePush(result)
     case "testLocalNotification":
       UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
         DispatchQueue.main.async {
           guard granted else {
-            result(FlutterError(code: "PERMISSION_DENIED", message: "Notification permission is denied", details: nil))
+            result(FlutterError(code: "PERMISSION_DENIED", message: "Уведомления запрещены в настройках iPhone", details: nil))
             return
           }
           let content = UNMutableNotificationContent()
@@ -58,6 +60,23 @@ final class KometNotifications: NSObject {
     }
   }
 
+  private func pushCapabilities() -> [String: Any] {
+    var info: [String: Any] = ["profileFound": false, "bundleMatches": false, "apsEnvironment": "", "expired": false]
+    guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+          let bytes = try? Data(contentsOf: url), bytes.count < 4 * 1024 * 1024,
+          let start = bytes.range(of: Data("<plist".utf8)),
+          let end = bytes.range(of: Data("</plist>".utf8), in: start.lowerBound..<bytes.endIndex),
+          let profile = (try? PropertyListSerialization.propertyList(from: bytes.subdata(in: start.lowerBound..<end.upperBound), format: nil)) as? [String: Any],
+          let entitlements = profile["Entitlements"] as? [String: Any] else { return info }
+    info["profileFound"] = true
+    info["apsEnvironment"] = entitlements["aps-environment"] as? String ?? ""
+    let appId = entitlements["application-identifier"] as? String ?? ""
+    let bundle = Bundle.main.bundleIdentifier ?? ""
+    info["bundleMatches"] = !bundle.isEmpty && appId.hasSuffix(".\(bundle)")
+    if let expiration = profile["ExpirationDate"] as? Date { info["expired"] = expiration < Date() }
+    return info
+  }
+
   func attach(_ sink: FlutterEventSink?) {
     self.sink = sink
   }
@@ -85,18 +104,18 @@ final class KometNotifications: NSObject {
 
   private func registerNativePush(_ result: @escaping FlutterResult) {
     guard pushResult == nil else {
-      result(FlutterError(code: "BUSY", message: "APNs registration is in progress", details: nil))
+      result(FlutterError(code: "BUSY", message: "Регистрация в APNs уже выполняется", details: nil))
       return
     }
     pushResult = result
     UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
       DispatchQueue.main.async {
         guard granted else {
-          self.finishPushRegistration(FlutterError(code: "PERMISSION_DENIED", message: "Notification permission is denied", details: nil))
+          self.finishPushRegistration(FlutterError(code: "PERMISSION_DENIED", message: "Уведомления запрещены в настройках iPhone", details: nil))
           return
         }
         self.pushTimeout = Timer.scheduledTimer(withTimeInterval: 20, repeats: false) { _ in
-          self.finishPushRegistration(FlutterError(code: "APNS_TIMEOUT", message: "APNs registration timed out. Check connection and signing profile.", details: nil))
+          self.finishPushRegistration(FlutterError(code: "APNS_TIMEOUT", message: "Apple не ответила вовремя. Проверьте интернет и профиль подписи.", details: nil))
         }
         UIApplication.shared.registerForRemoteNotifications()
       }

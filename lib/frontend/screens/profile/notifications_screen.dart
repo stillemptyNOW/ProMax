@@ -18,7 +18,6 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
-import 'web_push_screen.dart';
 import 'native_push_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -92,12 +91,6 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     await Haptics.setEnabled(value);
     if (value) Haptics.success();
     if (mounted) setState(() => _hapticsEnabled = value);
-  }
-
-  void _openWebPush() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const WebPushScreen()),
-    );
   }
 
   Future<void> _onFkmChanged(bool value) async {
@@ -176,13 +169,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                         SettingsNavTile(
                           icon: Symbols.notifications_active,
                           label: l10n.proMaxNativePush,
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NativePushScreen())),
-                        ),
-                        SettingsNavTile(
-                          icon: Symbols.install_mobile,
-                          label: l10n.webPushTitle,
-                          onTap: _openWebPush,
-                          isLast: true,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NativePushScreen(),
+                            ),
+                          ),
                         ),
                       ],
                     ),

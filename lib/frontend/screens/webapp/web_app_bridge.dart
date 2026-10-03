@@ -29,9 +29,8 @@ abstract class WebAppEntryPoint {
   static const String fromSearch = 'from_search';
 }
 
-typedef WebAppMobileIdVerifier = Future<Map<String, dynamic>?> Function(
-  String url,
-);
+typedef WebAppMobileIdVerifier =
+    Future<Map<String, dynamic>?> Function(String url);
 
 typedef WebAppEmitter =
     void Function(String method, String payload, bool private);
@@ -276,113 +275,114 @@ class WebAppBridge {
     }
     final requestId = data['requestId']?.toString();
 
-    switch (method) {
-      case 'WebAppClose':
-        onClose();
-        return;
-      case 'WebAppSetupBackButton':
-        _customBackButton = data['isVisible'] == true;
-        return;
-      case 'WebAppSetupClosingBehavior':
-        _closeConfirmation = data['needConfirmation'] == true;
-        return;
-      case 'WebAppSetupScreenCaptureBehavior':
-        _send(method, {
-          'requestId': ?requestId,
-          'isScreenCaptureEnabled': data['isScreenCaptureEnabled'] == true,
-        });
-        return;
-      case 'WebAppGetLaunchContext':
-        _send(method, {
-          'requestId': ?requestId,
-          'entryPoint': entryPoint,
-        });
-        return;
-      case 'WebAppGetViewportSize':
-        final size = viewportResolver();
-        _send(method, {
-          'requestId': ?requestId,
-          'height': size.height.round(),
-          'width': size.width.round(),
-          'isStateStable': true,
-        });
-        return;
-      case 'WebAppRequestPhone':
-        await _requestPhone(method, requestId);
-        return;
-      case 'WebAppOpenLink':
-      case 'WebAppOpenMaxLink':
-        await _openLink(data['url']?.toString());
-        return;
-      case 'WebAppShare':
-        await _share(method, requestId, data);
-        return;
-      case 'WebAppMaxShare':
-        await _maxShare(method, requestId, data);
-        return;
-      case 'WebAppDeviceStorageSaveKey':
-      case 'WebAppSecureStorageSaveKey':
-        await _storageSave(method, requestId, data);
-        return;
-      case 'WebAppDeviceStorageGetKey':
-      case 'WebAppSecureStorageGetKey':
-        await _storageGet(method, requestId, data);
-        return;
-      case 'WebAppDeviceStorageClear':
-      case 'WebAppSecureStorageClear':
-        await _storageClear(method, requestId);
-        return;
-      case 'WebAppBiometryGetInfo':
-        await _biometryInfo(method, requestId, private);
-        return;
-      case 'WebAppBiometryRequestAccess':
-        await _biometryRequestAccess(method, requestId, data, private);
-        return;
-      case 'WebAppBiometryRequestAuth':
-        await _biometryAuth(method, requestId, data, private);
-        return;
-      case 'WebAppBiometryUpdateToken':
-        await _biometryUpdateToken(method, requestId, data, private);
-        return;
-      case 'WebAppBiometryOpenSettings':
-        await _biometryOpenSettings(method, requestId, private);
-        return;
-      case 'WebAppHapticFeedbackImpact':
-        await _impact(data['impactStyle']?.toString());
-        _ok(method, requestId, 'impactOccured');
-        return;
-      case 'WebAppHapticFeedbackNotification':
-        await _notification(data['notificationType']?.toString());
-        _ok(method, requestId, 'notificationOccured');
-        return;
-      case 'WebAppHapticFeedbackSelectionChange':
-        await Haptics.selection();
-        _ok(method, requestId, 'selectionChanged');
-        return;
-      case 'WebAppDownloadFile':
-        await _downloadFile(method, requestId, data);
-        return;
-      case 'WebAppOpenCodeReader':
-        await _openCodeReader(method, requestId);
-        return;
-      case 'WebAppNfcGetInfo':
-        _send(method, {
-          'requestId': ?requestId,
-          'available': false,
-          'enabled': false,
-        });
-        return;
-      case 'WebAppVerifyMobileId':
-        await _verifyMobileId(method, requestId, data, private);
-        return;
-      case 'WebAppChangeScreenBrightness':
-      case 'WebAppNfcEmulateNfcTag':
-      case 'WebAppNfcOpenSystemSettings':
-        _fail(method, requestId, 'not_supported', private: private);
-        return;
-      default:
-        if (_silentMethods.contains(method)) return;
-        _fail(method, requestId, 'unsupported_method', private: private);
+    try {
+      switch (method) {
+        case 'WebAppClose':
+          onClose();
+          return;
+        case 'WebAppSetupBackButton':
+          _customBackButton = data['isVisible'] == true;
+          return;
+        case 'WebAppSetupClosingBehavior':
+          _closeConfirmation = data['needConfirmation'] == true;
+          return;
+        case 'WebAppSetupScreenCaptureBehavior':
+          _send(method, {
+            'requestId': ?requestId,
+            'isScreenCaptureEnabled': data['isScreenCaptureEnabled'] == true,
+          });
+          return;
+        case 'WebAppGetLaunchContext':
+          _send(method, {'requestId': ?requestId, 'entryPoint': entryPoint});
+          return;
+        case 'WebAppGetViewportSize':
+          final size = viewportResolver();
+          _send(method, {
+            'requestId': ?requestId,
+            'height': size.height.round(),
+            'width': size.width.round(),
+            'isStateStable': true,
+          });
+          return;
+        case 'WebAppRequestPhone':
+          await _requestPhone(method, requestId);
+          return;
+        case 'WebAppOpenLink':
+        case 'WebAppOpenMaxLink':
+          await _openLink(data['url']?.toString());
+          return;
+        case 'WebAppShare':
+          await _share(method, requestId, data);
+          return;
+        case 'WebAppMaxShare':
+          await _maxShare(method, requestId, data);
+          return;
+        case 'WebAppDeviceStorageSaveKey':
+        case 'WebAppSecureStorageSaveKey':
+          await _storageSave(method, requestId, data);
+          return;
+        case 'WebAppDeviceStorageGetKey':
+        case 'WebAppSecureStorageGetKey':
+          await _storageGet(method, requestId, data);
+          return;
+        case 'WebAppDeviceStorageClear':
+        case 'WebAppSecureStorageClear':
+          await _storageClear(method, requestId);
+          return;
+        case 'WebAppBiometryGetInfo':
+          await _biometryInfo(method, requestId, private);
+          return;
+        case 'WebAppBiometryRequestAccess':
+          await _biometryRequestAccess(method, requestId, data, private);
+          return;
+        case 'WebAppBiometryRequestAuth':
+          await _biometryAuth(method, requestId, data, private);
+          return;
+        case 'WebAppBiometryUpdateToken':
+          await _biometryUpdateToken(method, requestId, data, private);
+          return;
+        case 'WebAppBiometryOpenSettings':
+          await _biometryOpenSettings(method, requestId, private);
+          return;
+        case 'WebAppHapticFeedbackImpact':
+          await _impact(data['impactStyle']?.toString());
+          _ok(method, requestId, 'impactOccured');
+          return;
+        case 'WebAppHapticFeedbackNotification':
+          await _notification(data['notificationType']?.toString());
+          _ok(method, requestId, 'notificationOccured');
+          return;
+        case 'WebAppHapticFeedbackSelectionChange':
+          await Haptics.selection();
+          _ok(method, requestId, 'selectionChanged');
+          return;
+        case 'WebAppDownloadFile':
+          await _downloadFile(method, requestId, data);
+          return;
+        case 'WebAppOpenCodeReader':
+          await _openCodeReader(method, requestId);
+          return;
+        case 'WebAppNfcGetInfo':
+          _send(method, {
+            'requestId': ?requestId,
+            'available': false,
+            'enabled': false,
+          });
+          return;
+        case 'WebAppVerifyMobileId':
+          await _verifyMobileId(method, requestId, data, private);
+          return;
+        case 'WebAppChangeScreenBrightness':
+        case 'WebAppNfcEmulateNfcTag':
+        case 'WebAppNfcOpenSystemSettings':
+          _fail(method, requestId, 'not_supported', private: private);
+          return;
+        default:
+          if (_silentMethods.contains(method)) return;
+          _fail(method, requestId, 'unsupported_method', private: private);
+      }
+    } catch (_) {
+      _fail(method, requestId, 'request_error', private: private);
     }
   }
 
@@ -441,10 +441,12 @@ class WebAppBridge {
       return;
     }
     try {
-      final result = await AppLock.instance.external(() => Share.share(
-        text,
-        sharePositionOrigin: shareOriginOf(contextResolver()),
-      ));
+      final result = await AppLock.instance.external(
+        () => Share.share(
+          text,
+          sharePositionOrigin: shareOriginOf(contextResolver()),
+        ),
+      );
       _send(method, {
         'requestId': ?requestId,
         'status': result.status == ShareResultStatus.dismissed
@@ -473,10 +475,7 @@ class WebAppBridge {
     }
     final target = await openForwardScreen(context: context);
     if (target == null) {
-      _send(method, {
-        'requestId': ?requestId,
-        'status': 'cancelled',
-      });
+      _send(method, {'requestId': ?requestId, 'status': 'cancelled'});
       return;
     }
     final accountId = await TokenStorage.getActiveAccountId();
@@ -486,10 +485,7 @@ class WebAppBridge {
     }
     try {
       await messagesModule.sendMessage(accountId, target.chatId, text);
-      _send(method, {
-        'requestId': ?requestId,
-        'status': 'shared',
-      });
+      _send(method, {'requestId': ?requestId, 'status': 'shared'});
     } catch (_) {
       _fail(method, requestId, 'invalid_request');
     }
@@ -572,11 +568,7 @@ class WebAppBridge {
       _fail(method, requestId, 'not_found');
       return;
     }
-    _send(method, {
-      'requestId': ?requestId,
-      'key': key,
-      'value': value,
-    });
+    _send(method, {'requestId': ?requestId, 'key': key, 'value': value});
   }
 
   Future<void> _storageClear(String method, String? requestId) async {
@@ -843,10 +835,7 @@ class WebAppBridge {
       _fail(method, requestId, 'cancelled');
       return;
     }
-    _send(method, {
-      'requestId': ?requestId,
-      'value': value,
-    });
+    _send(method, {'requestId': ?requestId, 'value': value});
   }
 
   Future<void> _verifyMobileId(

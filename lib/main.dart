@@ -147,15 +147,6 @@ const PageTransitionsTheme _appPageTransitions = PageTransitionsTheme(
 );
 
 Future<Locale> _loadInitialLocale() async {
-  final prefs = await SharedPreferences.getInstance();
-  final code = prefs.getString('app_locale');
-  if (code != null && (code == 'en' || code == 'ru')) {
-    return Locale(code);
-  }
-  final platform = WidgetsBinding.instance.platformDispatcher.locale;
-  if (platform.languageCode == 'en' || platform.languageCode == 'ru') {
-    return Locale(platform.languageCode);
-  }
   return const Locale('ru');
 }
 
@@ -443,7 +434,7 @@ class KometAppState extends State<KometApp>
   @override
   void initState() {
     super.initState();
-    _locale = widget.initialLocale;
+    _locale = const Locale('ru');
     _fontId = widget.initialFontId;
 
     WidgetsBinding.instance.addObserver(this);
@@ -890,15 +881,10 @@ class KometAppState extends State<KometApp>
   }
 
   Future<void> applyLocale(Locale locale) async {
-    if (!AppLocalizations.supportedLocales.any(
-      (l) => l.languageCode == locale.languageCode,
-    )) {
-      return;
-    }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('app_locale', locale.languageCode);
+    await prefs.setString('app_locale', 'ru');
     if (mounted) {
-      setState(() => _locale = locale);
+      setState(() => _locale = const Locale('ru'));
     }
   }
 
@@ -1153,7 +1139,8 @@ class KometAppState extends State<KometApp>
                         final gradientWallpaper = _globalGradientActive
                             ? _globalWallpaper
                             : null;
-                        final gradientColors = gradientWallpaper?.gradientColors;
+                        final gradientColors =
+                            gradientWallpaper?.gradientColors;
                         final brightness = Theme.of(context).brightness;
                         final overlayStyle = brightness == Brightness.dark
                             ? SystemUiOverlayStyle.light
@@ -1163,47 +1150,58 @@ class KometAppState extends State<KometApp>
                             statusBarColor: Colors.transparent,
                           ),
                           child: Listener(
-                          behavior: HitTestBehavior.translucent,
-                          onPointerDown: (_) =>
-                              AppLock.instance.noteInteraction(),
-                          child: AppLockLayer(
-                          child: Stack(
-                          fit: StackFit.expand,
-                          clipBehavior: Clip.none,
-                          children: [
-                            if (gradientColors != null && gradientColors.isNotEmpty)
-                              Positioned.fill(
-                                child: MeshGradientBackground(
-                                  colors: gradientColors,
-                                  animate: gradientWallpaper!.gradientAnimated,
-                                  rotation: gradientWallpaper.gradientRotation,
-                                ),
+                            behavior: HitTestBehavior.translucent,
+                            onPointerDown: (_) =>
+                                AppLock.instance.noteInteraction(),
+                            child: AppLockLayer(
+                              child: Stack(
+                                fit: StackFit.expand,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  if (gradientColors != null &&
+                                      gradientColors.isNotEmpty)
+                                    Positioned.fill(
+                                      child: MeshGradientBackground(
+                                        colors: gradientColors,
+                                        animate:
+                                            gradientWallpaper!.gradientAnimated,
+                                        rotation:
+                                            gradientWallpaper.gradientRotation,
+                                      ),
+                                    ),
+                                  RepaintBoundary(
+                                    key: _captureBoundaryKey,
+                                    child:
+                                        NotificationListener<
+                                          ScrollNotification
+                                        >(
+                                          onNotification: (notification) {
+                                            if (notification
+                                                is ScrollEndNotification) {
+                                              PerformanceMonitor.instance
+                                                  .markActivityEnd();
+                                            } else {
+                                              PerformanceMonitor.instance.mark(
+                                                'scroll',
+                                              );
+                                            }
+                                            return false;
+                                          },
+                                          child: KeyboardDismissal(
+                                            child: sChild!,
+                                          ),
+                                        ),
+                                  ),
+                                  const Positioned.fill(
+                                    child: FloatingVideoNoteLayer(),
+                                  ),
+                                  const Positioned.fill(
+                                    child: FloatingCallBadgeLayer(),
+                                  ),
+                                  if (fpsOn) const FpsOverlayLayer(),
+                                ],
                               ),
-                            RepaintBoundary(
-                              key: _captureBoundaryKey,
-                              child: NotificationListener<ScrollNotification>(
-                                onNotification: (notification) {
-                                  if (notification is ScrollEndNotification) {
-                                    PerformanceMonitor.instance
-                                        .markActivityEnd();
-                                  } else {
-                                    PerformanceMonitor.instance.mark('scroll');
-                                  }
-                                  return false;
-                                },
-                                child: KeyboardDismissal(child: sChild!),
-                              ),
                             ),
-                            const Positioned.fill(
-                              child: FloatingVideoNoteLayer(),
-                            ),
-                            const Positioned.fill(
-                              child: FloatingCallBadgeLayer(),
-                            ),
-                            if (fpsOn) const FpsOverlayLayer(),
-                          ],
-                          ),
-                          ),
                           ),
                         );
                       },

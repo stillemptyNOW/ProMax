@@ -1404,6 +1404,32 @@ class AppDatabase {
     });
   }
 
+  static Future<({List<Map<String, dynamic>> messages, List<Map<String, dynamic>> chats})> deletedMessageArchive(int accountId) async {
+    final db = await _instance;
+    final messages = await db.query('messages', where: 'account_id = ? AND deleted = 1', whereArgs: [accountId], orderBy: 'time ASC');
+    final chats = await db.rawQuery('SELECT * FROM chats_cache WHERE account_id = ? AND id IN (SELECT chat_id FROM messages WHERE account_id = ? AND deleted = 1)', [accountId, accountId]);
+    return (messages: messages, chats: chats);
+  }
+
+  static Future<int> restoreDeletedMessageArchive(int accountId, List<Map<String, dynamic>> messages, List<Map<String, dynamic>> chats) async {
+    final db = await _instance;
+    return db.transaction((txn) async {
+      for (final chat in chats) {
+        if (chat['account_id'] != accountId) throw const FormatException('Архив другого аккаунта');
+        await txn.insert('chats_cache', chat, conflictAlgorithm: ConflictAlgorithm.ignore);
+      }
+      var restored = 0;
+      for (final row in messages) {
+        if (row['account_id'] != accountId || row['deleted'] != 1) throw const FormatException('Некорректное сообщение в архиве');
+        final existing = await txn.query('messages', columns: ['id'], where: 'account_id = ? AND id = ?', whereArgs: [accountId, row['id']], limit: 1);
+        if (existing.isNotEmpty) continue;
+        await txn.insert('messages', row);
+        restored++;
+      }
+      return restored;
+    });
+  }
+
   static Future<bool> updateSendingMessageStatus(
     int accountId,
     int chatId,

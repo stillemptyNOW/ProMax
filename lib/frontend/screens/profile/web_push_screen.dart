@@ -4,8 +4,6 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../backend/api.dart';
 import '../../../core/utils/format.dart';
-import '../../../core/utils/haptics.dart';
-import '../../../core/utils/link_opener.dart';
 import '../../../core/webpush/max_web_socket.dart';
 import '../../../core/webpush/web_push_service.dart';
 import '../../../l10n/app_localizations.dart';
@@ -16,8 +14,6 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
-
-const String kWebPushSiteUrl = 'https://push.komet.pw';
 
 enum _Stage { loading, intro, waiting, password, ready }
 
@@ -37,7 +33,6 @@ class _WebPushScreenState extends State<WebPushScreen> {
 
   _Stage _stage = _Stage.loading;
   bool _busy = false;
-  bool _linked = false;
   WebPushLinkInfo? _link;
   String? _trackId;
   String? _passwordHint;
@@ -71,7 +66,6 @@ class _WebPushScreenState extends State<WebPushScreen> {
     if (!mounted) return;
     setState(() {
       _link = link;
-      _linked = link != null;
       _stage = authorized ? _Stage.ready : _Stage.intro;
     });
   }
@@ -177,7 +171,6 @@ class _WebPushScreenState extends State<WebPushScreen> {
       await WebPushService.instance.signOut();
       if (!mounted) return;
       setState(() {
-        _linked = false;
         _link = null;
         _trackId = null;
         _stage = _Stage.intro;
@@ -261,20 +254,19 @@ class _WebPushScreenState extends State<WebPushScreen> {
     ],
     _Stage.ready => [
       SectionHeader(
-        _linked ? l10n.webPushLinkedTitle : l10n.webPushInstallTitle,
+        l10n.proMaxPushWebLogin,
         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
         fontSize: 14,
       ),
-      _explainer(cs, _linked ? l10n.webPushLinkedBody : l10n.webPushInstallBody),
+      _explainer(
+        cs,
+        'WEB-сессия MAX подключена. Вернитесь к настройкам уведомлений ProMax и подключите свой сервер APNs.',
+      ),
       if (_link != null) ...[
         const SizedBox(height: 12),
         _linkDetails(cs, l10n, _link!),
       ],
       const SizedBox(height: 20),
-      _primary(l10n.webPushOpenSite, () {
-        Haptics.tap();
-        openExternalUrl(context, kWebPushSiteUrl);
-      }),
       const SizedBox(height: 24),
       SettingsCard(
         children: [

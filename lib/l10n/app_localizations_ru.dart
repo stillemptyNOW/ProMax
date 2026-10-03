@@ -1017,7 +1017,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get callKometDetectedNotification =>
-      'Собеседник использует совместимый клиент Komet/ProMax.';
+      'Собеседник использует совместимый клиент.';
 
   @override
   String get callStatusConnecting => 'Соединение...';
@@ -2874,7 +2874,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get webPushIntro =>
-      'На iOS у Комета нет обычных пушей: Apple выдаёт токен уведомлений только приложениям, подписанным сертификатом разработчика, а sideload-сборка такого не получает.\n\nОбход — веб-приложение на экране «Домой». Уведомления шлёт сам сервер MAX через Apple, а показывает их отдельная иконка.\n\nДля этого нужна веб-сессия. Комет создаст её и подтвердит сам, с этого же устройства — вводить номер и код не придётся.';
+      'Эта WEB-сессия MAX нужна для экспериментальной доставки уведомлений ProMax. Вход подтверждается текущим аккаунтом без повторного ввода номера.';
 
   @override
   String get webPushConfirm => 'Продолжить';
@@ -2896,7 +2896,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get webPushInstallBody =>
-      'Откройте push.komet.pw в Safari, добавьте на экран «Домой» и запустите появившуюся иконку. Из вкладки браузера уведомления не работают — так устроена iOS.\n\nВ приложении разрешите уведомления, создайте подписку и нажмите «Открыть Комет». Дальше подписка зарегистрируется сама.';
+      'Для этой версии ProMax используйте настройки уведомлений от IPA.';
 
   @override
   String get webPushLinkedTitle => 'Уведомления подключены';
@@ -2906,7 +2906,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Подписка зарегистрирована на сервере. Не удаляйте иконку с экрана «Домой» — вместе с ней пропадут уведомления.\n\nЕсли пуши перестанут приходить, откройте приложение и свяжите заново: Apple иногда меняет адрес подписки.';
 
   @override
-  String get webPushOpenSite => 'Открыть push.komet.pw';
+  String get webPushOpenSite => 'Открыть push.ProMax.pw';
 
   @override
   String get webPushSignOut => 'Отключить уведомления';
@@ -2928,7 +2928,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get webPushWaitingBody =>
-      'Комет подтверждает вход веб-сессии с этого устройства. Обычно занимает несколько секунд.';
+      'ProMax подтверждает вход веб-сессии с этого устройства. Обычно занимает несколько секунд.';
 
   @override
   String get webPushNeedsOnline =>
@@ -3154,7 +3154,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String e2eeNeedsKomet(String name) {
-    return 'Чтобы это работало, $name должен пользоваться совместимым клиентом Komet или ProMax.';
+    return 'Для шифрования собеседнику $name нужен совместимый клиент с поддержкой E2EE.';
   }
 
   @override
@@ -6566,7 +6566,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proMaxNativePushExplanation =>
-      'Уведомления прямо от приложения требуют сертификата с разрешением APNs и собственного сервера доставки. Произвольная подпись eSign не гарантирует push. Этот способ ещё требует проверки доставки с MAX. Для обычной установки доступен вариант через Safari в соседнем разделе. Сервер ProMax не получает ваш пароль или токен входа MAX; он обрабатывает push-события и отправляет уведомление без текста сообщения.';
+      'Здесь можно проверить, разрешает ли подпись eSign регистрацию в APNs. Для экспериментального способа доставки через WEB-сессию нужен собственный сервер с доступом к APNs. Получение токена Apple не подтверждает доставку сообщений MAX. Сервер не получает пароль или токен входа MAX и отправляет уведомления без текста сообщения.';
 
   @override
   String get proMaxPushSigningHint =>
@@ -6594,4 +6594,55 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proMaxPushConnect => '2. Подключить APNs';
+
+  @override
+  String get proMaxMaskPixels => 'Пиксели лица';
+
+  @override
+  String get proMaxSettingLabel0 => 'Показывать удалённые сообщения';
+
+  @override
+  String get proMaxSettingLabel1 => 'История изменений сообщений';
+
+  @override
+  String get proMaxSettingLabel2 => 'Полная дата сообщения';
+
+  @override
+  String get proMaxSettingLabel3 => 'Показывать пересылку';
+
+  @override
+  String get proMaxSettingLabel4 => 'Время набора сообщения';
+
+  @override
+  String get proMaxSettingLabel5 => 'Скрыть папку «Все»';
+
+  @override
+  String get proMaxSettingLabel6 => 'Показывать скрытые чаты';
+
+  @override
+  String get proMaxSettingLabel7 => 'Архив при потягивании вниз';
+
+  @override
+  String get proMaxSettingLabel8 => 'Режим невидимки';
+
+  @override
+  String get proMaxSettingLabel9 => 'Не отправлять прочтение';
+
+  @override
+  String get proMaxSettingLabel10 => 'Проверять свой статус в сети';
+
+  @override
+  String get proMaxArchiveBusy => 'Подготовка файла…';
+
+  @override
+  String get proMaxArchiveExport => 'Экспорт ProMax · .promax';
+
+  @override
+  String get proMaxArchiveImport => 'Импорт ProMax · .promax';
+
+  @override
+  String get proMaxArchiveKey => 'Ключ восстановления моей истории';
+
+  @override
+  String get proMaxArchiveTitle => 'Файл ProMax · .promax';
 }

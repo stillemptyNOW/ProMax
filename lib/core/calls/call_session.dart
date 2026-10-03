@@ -117,6 +117,7 @@ class CallSession {
   Set<int> _speaking = const {};
 
   bool _localVideo = false;
+  bool _frontCamera = true;
   ProMaxVoice _voiceEffect = ProMaxVoice.normal;
   ProMaxMask _faceMask = ProMaxMask.none;
   bool _localScreen = false;
@@ -193,6 +194,7 @@ class CallSession {
   int? get peerUserId => _peerId;
 
   bool get localVideo => _localVideo;
+  bool get frontCamera => _frontCamera;
   bool get effectsAvailable => defaultTargetPlatform == TargetPlatform.iOS;
   ProMaxVoice get voiceEffect => _voiceEffect;
   ProMaxMask get faceMask => _faceMask;
@@ -2248,7 +2250,11 @@ class CallSession {
     if (pc == null) return;
 
     final stream = await navigator.mediaDevices.getUserMedia(<String, dynamic>{
-      'video': CameraDevices.constraints(AppCamera.deviceId),
+      'video':
+          defaultTargetPlatform == TargetPlatform.iOS &&
+              AppCamera.deviceId == null
+          ? <String, dynamic>{'facingMode': 'user'}
+          : CameraDevices.constraints(AppCamera.deviceId),
       'audio': false,
     });
 
@@ -2272,6 +2278,10 @@ class CallSession {
     }
 
     _localVideo = true;
+    if (track != null) {
+      final facing = CameraDevices.facingOf(track.label ?? '');
+      _frontCamera = facing != CameraFacing.back;
+    }
     if (effectsAvailable && _faceMask != ProMaxMask.none) {
       await setFaceMask(_faceMask);
     }
@@ -2281,6 +2291,9 @@ class CallSession {
   }
 
   Future<void> _stopCamera() async {
+    try {
+      await setCameraTorch(false);
+    } catch (_) {}
     try {
       await _videoSender?.replaceTrack(null);
     } catch (_) {}
@@ -2295,8 +2308,18 @@ class CallSession {
     final tracks = _cameraStream?.getVideoTracks();
     if (!_localVideo || tracks == null || tracks.isEmpty) return false;
     final front = await Helper.switchCamera(tracks.first);
+    _frontCamera = front;
     _notifyInfo();
     return front;
+  }
+
+  Future<void> setCameraTorch(bool enabled) async {
+    final tracks = _cameraStream?.getVideoTracks();
+    if (tracks == null || tracks.isEmpty || !_localVideo) return;
+    if (enabled && !await tracks.first.hasTorch()) {
+      throw StateError('Фонарик недоступен у выбранной камеры');
+    }
+    await tracks.first.setTorch(enabled);
   }
 
   // #***! демонстрация экрана, на мобилках нужно своё разрешение

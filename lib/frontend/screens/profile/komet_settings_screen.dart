@@ -11,6 +11,7 @@ import '../../widgets/section_header.dart';
 import '../../widgets/settings_card.dart';
 import 'plugins_screen.dart';
 import 'quick_reaction_screen.dart';
+import 'promax_transfer_card.dart';
 
 class KometSettingsScreen extends StatelessWidget {
   const KometSettingsScreen({super.key});
@@ -66,7 +67,7 @@ class KometSettingsScreen extends StatelessWidget {
                     valueListenable: KometSettings.viewDeleted,
                     builder: (context, value, _) => SettingsToggleTile(
                       icon: Symbols.delete_history,
-                      label: 'View deleted message',
+                      label: l10n.proMaxSettingLabel0,
                       subtitle: l10n.kometSettingsViewDeletedSubtitle,
                       value: value,
                       onChanged: KometSettings.setViewDeleted,
@@ -76,7 +77,7 @@ class KometSettingsScreen extends StatelessWidget {
                     valueListenable: KometSettings.viewRedacted,
                     builder: (context, value, _) => SettingsToggleTile(
                       icon: Symbols.history_edu,
-                      label: 'View redacted message history',
+                      label: l10n.proMaxSettingLabel1,
                       subtitle: l10n.kometSettingsViewRedactedSubtitle,
                       value: value,
                       onChanged: KometSettings.setViewRedacted,
@@ -87,7 +88,7 @@ class KometSettingsScreen extends StatelessWidget {
                   valueListenable: KometSettings.fullTimestamp,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.schedule,
-                    label: 'View full timestamp',
+                    label: l10n.proMaxSettingLabel2,
                     subtitle: l10n.kometSettingsFullTimestampSubtitle,
                     value: value,
                     onChanged: KometSettings.setFullTimestamp,
@@ -97,7 +98,7 @@ class KometSettingsScreen extends StatelessWidget {
                   valueListenable: KometSettings.showForward,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.forward,
-                    label: 'Show Forward',
+                    label: l10n.proMaxSettingLabel3,
                     subtitle: l10n.kometSettingsShowForwardSubtitle,
                     value: value,
                     onChanged: KometSettings.setShowForward,
@@ -107,7 +108,7 @@ class KometSettingsScreen extends StatelessWidget {
                   valueListenable: KometSettings.showTypingTime,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.timer,
-                    label: 'Show typing time',
+                    label: l10n.proMaxSettingLabel4,
                     subtitle: l10n.kometSettingsTypingTimeSubtitle,
                     value: value,
                     onChanged: KometSettings.setShowTypingTime,
@@ -127,7 +128,7 @@ class KometSettingsScreen extends StatelessWidget {
                   valueListenable: KometSettings.hideAllChatsFolder,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.folder_off,
-                    label: 'Hide "All" folder',
+                    label: l10n.proMaxSettingLabel5,
                     subtitle: l10n.kometSettingsHideAllFolderSubtitle,
                     value: value,
                     onChanged: KometSettings.setHideAllChatsFolder,
@@ -137,7 +138,7 @@ class KometSettingsScreen extends StatelessWidget {
                   valueListenable: KometSettings.showHiddenChats,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.visibility_lock,
-                    label: 'Show hidden chats',
+                    label: l10n.proMaxSettingLabel6,
                     subtitle: l10n.kometSettingsShowHiddenChatsSubtitle,
                     value: value,
                     onChanged: KometSettings.setShowHiddenChats,
@@ -147,7 +148,7 @@ class KometSettingsScreen extends StatelessWidget {
                   valueListenable: KometSettings.archiveOnPull,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.archive,
-                    label: 'Pull-down archive',
+                    label: l10n.proMaxSettingLabel7,
                     subtitle: l10n.kometSettingsArchiveOnPullSubtitle,
                     value: value,
                     onChanged: KometSettings.setArchiveOnPull,
@@ -156,9 +157,9 @@ class KometSettingsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            const SectionHeader(
-              'Ghost Mode',
-              padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+            SectionHeader(
+              l10n.proMaxSettingLabel8,
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
               fontSize: 14,
             ),
             SettingsCard(
@@ -167,7 +168,7 @@ class KometSettingsScreen extends StatelessWidget {
                   valueListenable: KometSettings.ghostMode,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.visibility_off,
-                    label: 'Ghost Mode',
+                    label: l10n.proMaxSettingLabel8,
                     subtitle: l10n.kometSettingsGhostModeSubtitle,
                     value: value,
                     onChanged: _setGhostMode,
@@ -177,7 +178,7 @@ class KometSettingsScreen extends StatelessWidget {
                   valueListenable: KometSettings.antiRead,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.mark_chat_read,
-                    label: 'Anti read',
+                    label: l10n.proMaxSettingLabel9,
                     subtitle: l10n.kometSettingsAntiReadSubtitle,
                     value: value,
                     onChanged: KometSettings.setAntiRead,
@@ -187,7 +188,7 @@ class KometSettingsScreen extends StatelessWidget {
                   valueListenable: KometSettings.selfOnlineCheck,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.radar,
-                    label: 'Self Online Check',
+                    label: l10n.proMaxSettingLabel10,
                     subtitle: l10n.kometSettingsSelfOnlineCheckSubtitle,
                     value: value,
                     onChanged: KometSettings.setSelfOnlineCheck,
@@ -215,6 +216,9 @@ class KometSettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 20),
+            SectionHeader(l10n.proMaxArchiveTitle, padding: const EdgeInsets.fromLTRB(8, 0, 8, 8), fontSize: 14),
+            const ProMaxTransferCard(),
           ],
         ),
       ),

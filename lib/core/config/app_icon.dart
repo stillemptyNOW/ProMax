@@ -8,14 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum AppIcon {
   defaultIcon(
     'default',
-    'Default',
+    'Основная',
     'assets/komet_icon.png',
     'MainActivity',
     null,
   ),
   minimal(
     'minimal',
-    'Minimal',
+    'Альтернативная',
     'assets/meteor_icon.png',
     'MinimalIcon',
     'MinimalIcon',

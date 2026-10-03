@@ -1,6 +1,8 @@
 import AVFoundation
 import CoreImage
 import Flutter
+import PhotosUI
+import UniformTypeIdentifiers
 import UIKit
 
 private struct VideoExportSpec {
@@ -54,15 +56,21 @@ private struct VideoExportSpec {
   }
 }
 
-final class KometVideo {
+final class KometVideo: NSObject, PHPickerViewControllerDelegate, UIDocumentPickerDelegate {
   static let shared = KometVideo()
 
   private let queue = DispatchQueue(label: "ru.komet.app.video", qos: .userInitiated)
   private var session: AVAssetExportSession?
   private var cancelled = false
+  private var pickerResult: FlutterResult?
+  private var documentResult: FlutterResult?
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
+    case "exportPromaxArchive":
+      exportPromaxArchive(call.arguments, result)
+    case "pickGalleryVideo":
+      pickGalleryVideo(result)
     case "probe":
       probe(call.arguments, result)
     case "frames":
@@ -87,6 +95,80 @@ final class KometVideo {
     }
   }
 
+  private func pickGalleryVideo(_ result: @escaping FlutterResult) {
+    guard pickerResult == nil else {
+      result(FlutterError(code: "PICKER_BUSY", message: "Выбор видео уже открыт", details: nil))
+      return
+    }
+    guard var presenter = UIApplication.shared.connectedScenes
+      .compactMap({ $0 as? UIWindowScene }).flatMap({ $0.windows })
+      .first(where: { $0.isKeyWindow })?.rootViewController else {
+      result(FlutterError(code: "NO_WINDOW", message: "Не удалось открыть галерею", details: nil))
+      return
+    }
+    while let presented = presenter.presentedViewController { presenter = presented }
+    var configuration = PHPickerConfiguration()
+    configuration.filter = .videos
+    configuration.selectionLimit = 1
+    configuration.preferredAssetRepresentationMode = .current
+    let picker = PHPickerViewController(configuration: configuration)
+    picker.delegate = self
+    pickerResult = result
+    presenter.present(picker, animated: true)
+  }
+
+  private func exportPromaxArchive(_ arguments: Any?, _ result: @escaping FlutterResult) {
+    guard documentResult == nil,
+          let args = arguments as? [String: Any], let path = args["path"] as? String,
+          path.hasSuffix(".promax"), FileManager.default.fileExists(atPath: path),
+          var presenter = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).flatMap({ $0.windows })
+            .first(where: { $0.isKeyWindow })?.rootViewController else {
+      result(FlutterError(code: "EXPORT_UNAVAILABLE", message: "Не удалось открыть сохранение файла", details: nil))
+      return
+    }
+    while let presented = presenter.presentedViewController { presenter = presented }
+    let picker = UIDocumentPickerViewController(forExporting: [URL(fileURLWithPath: path)], asCopy: true)
+    picker.delegate = self
+    documentResult = result
+    presenter.present(picker, animated: true)
+  }
+
+  func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+    documentResult?(urls.first?.absoluteString)
+    documentResult = nil
+  }
+
+  func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+    documentResult?(nil)
+    documentResult = nil
+  }
+
+  func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+    guard let callback = pickerResult else { return }
+    pickerResult = nil
+    picker.dismiss(animated: true)
+    guard let provider = results.first?.itemProvider else {
+      callback(nil)
+      return
+    }
+    provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, _ in
+      guard let source = url else {
+        Self.reply(callback, FlutterError(code: "VIDEO_UNAVAILABLE", message: "Не удалось загрузить видео из галереи", details: nil))
+        return
+      }
+      let destination = FileManager.default.temporaryDirectory
+        .appendingPathComponent("promax_gallery_\(UUID().uuidString)")
+        .appendingPathExtension(source.pathExtension.isEmpty ? "mov" : source.pathExtension)
+      do {
+        try FileManager.default.copyItem(at: source, to: destination)
+        Self.reply(callback, destination.path)
+      } catch {
+        Self.reply(callback, FlutterError(code: "VIDEO_COPY_FAILED", message: "Не удалось сохранить выбранное видео", details: nil))
+      }
+    }
+  }
+
   private func probe(_ arguments: Any?, _ result: @escaping FlutterResult) {
     guard let args = arguments as? [String: Any], let input = args["input"] as? String else {
       result(FlutterError(code: "BAD_ARGS", message: "input required", details: nil))
@@ -100,13 +182,20 @@ final class KometVideo {
       }
       let size = track.naturalSize.applying(track.preferredTransform)
       let seconds = CMTimeGetSeconds(asset.duration)
-      let durationMs = seconds.isFinite && seconds > 0 ? Int((seconds * 1000).rounded()) : 0
+      guard size.width.isFinite, size.height.isFinite,
+            abs(size.width) > 0, abs(size.height) > 0,
+            abs(size.width) < 65536, abs(size.height) < 65536,
+            seconds.isFinite, seconds > 0, seconds < 86400000 else {
+        Self.reply(result, nil)
+        return
+      }
+      let durationMs = Int((seconds * 1000).rounded())
       let fps = Double(track.nominalFrameRate)
       let payload: [String: Any] = [
         "width": Int(abs(size.width).rounded()),
         "height": Int(abs(size.height).rounded()),
         "durationMs": durationMs,
-        "fps": fps > 0 ? fps : 30.0,
+        "fps": fps.isFinite && fps > 0 ? fps : 30.0,
         "hasAudio": !asset.tracks(withMediaType: .audio).isEmpty,
       ]
       Self.reply(result, payload)
@@ -173,6 +262,11 @@ final class KometVideo {
       }
 
       let totalSeconds = CMTimeGetSeconds(asset.duration)
+      guard totalSeconds.isFinite, totalSeconds > 0, totalSeconds < 86400000,
+            (spec.startMs ?? 0) >= 0 else {
+        Self.reply { completion(false) }
+        return
+      }
       let start = CMTime(value: CMTimeValue(spec.startMs ?? 0), timescale: 1000)
       let totalMs = totalSeconds.isFinite ? Int((totalSeconds * 1000).rounded()) : 0
       let endMs = min(spec.endMs ?? totalMs, totalMs)
@@ -205,9 +299,15 @@ final class KometVideo {
       }
 
       let natural = videoTrack.naturalSize.applying(videoTrack.preferredTransform)
+      guard natural.width.isFinite, natural.height.isFinite,
+            abs(natural.width) > 0, abs(natural.height) > 0,
+            abs(natural.width) < 65536, abs(natural.height) < 65536 else {
+        Self.reply { completion(false) }
+        return
+      }
       let outWidth = spec.outWidth > 0 ? spec.outWidth : Int(abs(natural.width).rounded())
       let outHeight = spec.outHeight > 0 ? spec.outHeight : Int(abs(natural.height).rounded())
-      guard outWidth > 0, outHeight > 0 else {
+      guard outWidth > 0, outHeight > 0, outWidth <= 8192, outHeight <= 8192 else {
         Self.reply { completion(false) }
         return
       }
@@ -216,14 +316,40 @@ final class KometVideo {
       let overlay = spec.overlay.flatMap { UIImage(contentsOfFile: $0) }.flatMap { CIImage(image: $0) }
       let renderSize = CGSize(width: outWidth, height: outHeight)
 
-      let videoComposition = AVMutableVideoComposition(asset: composition) { request in
-        let image = Self.render(
-          request.sourceImage,
-          spec: spec,
-          transform: transform,
-          overlay: overlay,
-          renderSize: renderSize)
-        request.finish(with: image, context: nil)
+      let videoComposition: AVMutableVideoComposition
+      if spec.centerSquare {
+        let bounds = CGRect(origin: .zero, size: videoTrack.naturalSize).applying(transform)
+        guard bounds.width.isFinite, bounds.height.isFinite,
+              bounds.width > 0, bounds.height > 0 else {
+          Self.reply { completion(false) }
+          return
+        }
+        let scale = max(renderSize.width / bounds.width, renderSize.height / bounds.height)
+        let cropTransform = transform
+          .concatenating(CGAffineTransform(translationX: -bounds.minX, y: -bounds.minY))
+          .concatenating(CGAffineTransform(scaleX: scale, y: scale))
+          .concatenating(CGAffineTransform(
+            translationX: (renderSize.width - bounds.width * scale) / 2,
+            y: (renderSize.height - bounds.height * scale) / 2))
+        compositionVideo.preferredTransform = .identity
+        let layer = AVMutableVideoCompositionLayerInstruction(assetTrack: compositionVideo)
+        layer.setTransform(cropTransform, at: .zero)
+        let instruction = AVMutableVideoCompositionInstruction()
+        instruction.timeRange = CMTimeRange(start: .zero, duration: range.duration)
+        instruction.layerInstructions = [layer]
+        videoComposition = AVMutableVideoComposition()
+        videoComposition.instructions = [instruction]
+        videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
+      } else {
+        videoComposition = AVMutableVideoComposition(asset: composition) { request in
+          let image = Self.render(
+            request.sourceImage,
+            spec: spec,
+            transform: transform,
+            overlay: overlay,
+            renderSize: renderSize)
+          request.finish(with: image, context: nil)
+        }
       }
       videoComposition.renderSize = renderSize
 

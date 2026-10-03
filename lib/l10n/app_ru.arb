@@ -331,7 +331,7 @@
   "appearancePreviewHowIsIt": "Как тебе?",
   "appearancePreviewHmm": "хм...",
   "appearancePreviewNotBad": "Вполне неплохо!",
-  "callKometDetectedNotification": "Собеседник использует совместимый клиент Komet/ProMax.",
+  "callKometDetectedNotification": "Собеседник использует совместимый клиент.",
   "callStatusConnecting": "Соединение...",
   "callGroupConnecting": "Соединение...",
   "callGroupWaitingParticipants": "Ожидание участников…",
@@ -960,7 +960,7 @@
   "videoEditorFrameFailed": "Не удалось получить кадр",
   "videoEditorQualityTooltip": "Качество",
   "webPushTitle": "Уведомления на iOS",
-  "webPushIntro": "На iOS у Комета нет обычных пушей: Apple выдаёт токен уведомлений только приложениям, подписанным сертификатом разработчика, а sideload-сборка такого не получает.\n\nОбход — веб-приложение на экране «Домой». Уведомления шлёт сам сервер MAX через Apple, а показывает их отдельная иконка.\n\nДля этого нужна веб-сессия. Комет создаст её и подтвердит сам, с этого же устройства — вводить номер и код не придётся.",
+  "webPushIntro": "Эта WEB-сессия MAX нужна для экспериментальной доставки уведомлений ProMax. Вход подтверждается текущим аккаунтом без повторного ввода номера.",
   "webPushConfirm": "Продолжить",
   "webPushPasswordExplainer": "На аккаунте включена двухфакторная защита.",
   "webPushPasswordHintLabel": "Подсказка: {hint}",
@@ -973,10 +973,10 @@
   },
   "webPushPasswordHint": "Пароль",
   "webPushInstallTitle": "Установите приложение",
-  "webPushInstallBody": "Откройте push.komet.pw в Safari, добавьте на экран «Домой» и запустите появившуюся иконку. Из вкладки браузера уведомления не работают — так устроена iOS.\n\nВ приложении разрешите уведомления, создайте подписку и нажмите «Открыть Комет». Дальше подписка зарегистрируется сама.",
+  "webPushInstallBody": "Для этой версии ProMax используйте настройки уведомлений от IPA.",
   "webPushLinkedTitle": "Уведомления подключены",
   "webPushLinkedBody": "Подписка зарегистрирована на сервере. Не удаляйте иконку с экрана «Домой» — вместе с ней пропадут уведомления.\n\nЕсли пуши перестанут приходить, откройте приложение и свяжите заново: Apple иногда меняет адрес подписки.",
-  "webPushOpenSite": "Открыть push.komet.pw",
+  "webPushOpenSite": "Открыть push.ProMax.pw",
   "webPushSignOut": "Отключить уведомления",
   "webPushLinked": "Уведомления подключены",
   "webPushLinkFailed": "Не удалось подключить уведомления: {error}",
@@ -989,7 +989,7 @@
   },
   "webPushNotAuthorized": "Сначала войдите в разделе «Уведомления через PWA»",
   "webPushConnect": "Подключить уведомления",
-  "webPushWaitingBody": "Комет подтверждает вход веб-сессии с этого устройства. Обычно занимает несколько секунд.",
+  "webPushWaitingBody": "ProMax подтверждает вход веб-сессии с этого устройства. Обычно занимает несколько секунд.",
   "webPushNeedsOnline": "Нет связи с сервером. Дождитесь подключения и попробуйте снова.",
   "webPushSignOutConfirm": "Веб-сессия будет завершена и исчезнет из списка устройств. Чтобы вернуть уведомления, подключение придётся пройти заново.",
   "webPushSignOutAction": "Отключить",
@@ -1067,12 +1067,30 @@
   "e2eeTitle": "Сквозное шифрование",
   "e2eeStatusNone": "Выключено",
   "e2eeStatusOffered": "Ждём, пока {name} примет запрос",
-  "@e2eeStatusOffered": {"placeholders": {"name": {"type": "String"}}},
+  "@e2eeStatusOffered": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "e2eeStatusPending": "{name} предлагает включить шифрование",
-  "@e2eeStatusPending": {"placeholders": {"name": {"type": "String"}}},
+  "@e2eeStatusPending": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "e2eeStatusEstablished": "Включено",
   "e2eeStatusKeyChanged": "Ключ шифрования {name} изменился",
-  "@e2eeStatusKeyChanged": {"placeholders": {"name": {"type": "String"}}},
+  "@e2eeStatusKeyChanged": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "e2eeEnable": "Включить",
   "e2eeAccept": "Принять",
   "e2eeDecline": "Отклонить",
@@ -1081,18 +1099,42 @@
   "e2eeResetConfirm": "Сбросить зашифрованную сессию? Обеим сторонам придётся включить шифрование заново.",
   "e2eeFingerprint": "Код безопасности",
   "e2eeFingerprintHint": "Сравните эти 60 цифр с {name} вне MAX — при встрече или по другому каналу. Совпадают — значит, сервер не подменил ключи.",
-  "@e2eeFingerprintHint": {"placeholders": {"name": {"type": "String"}}},
+  "@e2eeFingerprintHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "e2eeVerified": "Проверено лично",
   "e2eeCeiling": "Шифруется только текст сообщений и фото. Сервер по-прежнему видит, кто с кем и когда переписывается, видит, что переписка зашифрована, и может не доставлять сообщения. Скрыть это нельзя.",
-  "e2eeNeedsKomet": "Чтобы это работало, {name} должен пользоваться совместимым клиентом Komet или ProMax.",
-  "@e2eeNeedsKomet": {"placeholders": {"name": {"type": "String"}}},
+  "e2eeNeedsKomet": "Для шифрования собеседнику {name} нужен совместимый клиент с поддержкой E2EE.",
+  "@e2eeNeedsKomet": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "e2eeOfferSent": "Запрос отправлен",
   "e2eeOfferFailed": "Не удалось отправить запрос",
   "e2eeAcceptFailed": "Не удалось принять запрос",
   "e2eeBannerPending": "{name} предлагает включить сквозное шифрование",
-  "@e2eeBannerPending": {"placeholders": {"name": {"type": "String"}}},
+  "@e2eeBannerPending": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "e2eeBannerKeyChanged": "Ключ шифрования {name} изменился. Проверьте код безопасности, прежде чем принять.",
-  "@e2eeBannerKeyChanged": {"placeholders": {"name": {"type": "String"}}},
+  "@e2eeBannerKeyChanged": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "e2eeTransferTitle": "Перенос на другое устройство",
   "e2eeTransferHint": "Файл переноса содержит ваш ключ и сессии. После импорта на новом устройстве перестаньте пользоваться этим для зашифрованных чатов.",
   "e2eeExport": "Экспортировать",
@@ -1100,7 +1142,13 @@
   "e2eeTransferPassword": "Пароль переноса",
   "e2eeExportFailed": "Не удалось экспортировать",
   "e2eeImported": "Перенесено сессий: {count}",
-  "@e2eeImported": {"placeholders": {"count": {"type": "int"}}},
+  "@e2eeImported": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "e2eeImportFailed": "Не удалось импортировать — неверный пароль или повреждённый файл",
   "e2eeLegacyNote": "Парольный режим для групп: без forward secrecy, любой, кто знает пароль, читает всю историю.",
   "e2eeTooLong": "Сообщение слишком длинное для зашифрованного чата. Разделите его.",
@@ -1115,7 +1163,13 @@
   "e2eeSearchBlocked": "В зашифрованном чате поиск недоступен: запрос ушёл бы на сервер, а сервер видит только шифртекст.",
   "e2eeAwaitingPeer": "Сессия перенесена с другого устройства. Дождитесь одного сообщения от собеседника, иначе оба устройства выведут одинаковый ключ.",
   "e2eeBannerRehandshake": "{name} заново включает шифрование. Принимайте, только если этого ждали — иначе сервер повторяет старый запрос, чтобы сбросить вашу сессию.",
-  "@e2eeBannerRehandshake": {"placeholders": {"name": {"type": "String"}}},
+  "@e2eeBannerRehandshake": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "e2eeExportedAndDisabled": "Перенос создан. На этом устройстве шифрование выключено: импортируйте файл на новом и включите там.",
   "chatNoAccessMessage": "У вас нет доступа к этому чату",
   "chatNoAccessOk": "Ок",
@@ -2039,7 +2093,7 @@
   "proMaxMaskCat": "Кот",
   "proMaxEffectFailed": "Не удалось включить эффект",
   "proMaxNativePush": "Push от ProMax · экспериментально",
-  "proMaxNativePushExplanation": "Уведомления прямо от приложения требуют сертификата с разрешением APNs и собственного сервера доставки. Произвольная подпись eSign не гарантирует push. Этот способ ещё требует проверки доставки с MAX. Для обычной установки доступен вариант через Safari в соседнем разделе. Сервер ProMax не получает ваш пароль или токен входа MAX; он обрабатывает push-события и отправляет уведомление без текста сообщения.",
+  "proMaxNativePushExplanation": "Здесь можно проверить, разрешает ли подпись eSign регистрацию в APNs. Для экспериментального способа доставки через WEB-сессию нужен собственный сервер с доступом к APNs. Получение токена Apple не подтверждает доставку сообщений MAX. Сервер не получает пароль или токен входа MAX и отправляет уведомления без текста сообщения.",
   "proMaxPushSigningHint": "Нужен профиль с разрешением Push Notifications для идентификатора ProMax.",
   "proMaxTestNotification": "Проверить разрешение уведомлений",
   "proMaxTestNotificationScheduled": "Локальное тестовое уведомление появится через 3 секунды. Это не проверка фоновой доставки.",
@@ -2054,5 +2108,22 @@
         "type": "String"
       }
     }
-  }
+  },
+  "proMaxMaskPixels": "Пиксели лица",
+  "proMaxSettingLabel0": "Показывать удалённые сообщения",
+  "proMaxSettingLabel1": "История изменений сообщений",
+  "proMaxSettingLabel2": "Полная дата сообщения",
+  "proMaxSettingLabel3": "Показывать пересылку",
+  "proMaxSettingLabel4": "Время набора сообщения",
+  "proMaxSettingLabel5": "Скрыть папку «Все»",
+  "proMaxSettingLabel6": "Показывать скрытые чаты",
+  "proMaxSettingLabel7": "Архив при потягивании вниз",
+  "proMaxSettingLabel8": "Режим невидимки",
+  "proMaxSettingLabel9": "Не отправлять прочтение",
+  "proMaxSettingLabel10": "Проверять свой статус в сети",
+  "proMaxArchiveBusy": "Подготовка файла…",
+  "proMaxArchiveExport": "Экспорт ProMax · .promax",
+  "proMaxArchiveImport": "Импорт ProMax · .promax",
+  "proMaxArchiveKey": "Ключ восстановления моей истории",
+  "proMaxArchiveTitle": "Файл ProMax · .promax"
 }
