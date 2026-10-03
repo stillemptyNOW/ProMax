@@ -115,7 +115,7 @@ class _CallLightingSheetState extends State<CallLightingSheet> {
               onPressed: () => _change(
                 color: Colors.white,
                 brightness: 0.75,
-                width: 24,
+                width: 64,
                 opacity: 1,
                 radius: 36,
               ),

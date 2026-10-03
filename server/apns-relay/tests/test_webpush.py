@@ -7,6 +7,7 @@ from unittest.mock import patch
 import jwt
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import serialization
 from fastapi.testclient import TestClient
 
 from webpush import b64decode, b64encode, decrypt_webpush, public_bytes, verify_vapid
@@ -54,7 +55,13 @@ class WebPushTests(unittest.TestCase):
             'PROMAX_RELAY_SECRET': 'synthetic-access-key-0000000000000000',
             'PROMAX_RELAY_URL': 'https://push.example.test',
             'PROMAX_PUSH_DB': str(Path(directory) / 'subscriptions.sqlite'),
+            'APNS_KEY_FILE': str(Path(directory) / 'synthetic.p8'),
+            'APNS_KEY_ID': 'SYNTHKEY01',
+            'APNS_TEAM_ID': 'SYNTHTEAM1',
+            'APNS_BUNDLE_ID': 'test.synthetic.promax',
         }):
+            Path(directory, 'synthetic.p8').write_bytes(ec.generate_private_key(ec.SECP256R1()).private_bytes(
+                serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
             with TestClient(app) as client:
                 registration = {'apnsToken': 'ab' * 32, 'environment': 'production'}
                 self.assertEqual(client.post('/v1/subscriptions', json=registration).status_code, 401)
@@ -67,6 +74,28 @@ class WebPushTests(unittest.TestCase):
                 again = client.post('/v1/subscriptions', headers=headers, json=registration)
                 self.assertEqual(again.json()['id'], record['id'])
                 self.assertEqual(client.delete(f"/v1/subscriptions/{record['id']}", headers=headers).status_code, 204)
+
+    def test_missing_apns_blocks_registration_and_reports_pending_delivery(self):
+        with patch.dict('os.environ', {'PROMAX_RELAY_SECRET': 'synthetic-access-key-0000000000000000'}, clear=True):
+            with TestClient(app) as client:
+                health = client.get('/health')
+                self.assertEqual(health.status_code, 200)
+                self.assertFalse(health.json()['deliveryReady'])
+                response = client.post('/v1/subscriptions', headers={
+                    'Authorization': 'Bearer synthetic-access-key-0000000000000000'},
+                    json={'apnsToken': 'ab' * 32})
+                self.assertEqual(response.status_code, 503)
+                self.assertEqual(response.json()['detail'], 'apns_not_configured')
+
+    def test_malformed_key_is_not_reported_as_ready(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict('os.environ', {
+            'APNS_KEY_FILE': str(Path(directory) / 'synthetic.p8'),
+            'APNS_KEY_ID': 'SYNTHKEY01', 'APNS_TEAM_ID': 'SYNTHTEAM1',
+            'APNS_BUNDLE_ID': 'test.synthetic.promax',
+        }, clear=True):
+            Path(directory, 'synthetic.p8').write_text('synthetic invalid key')
+            with TestClient(app) as client:
+                self.assertFalse(client.get('/health').json()['deliveryReady'])
 
 
 if __name__ == '__main__':

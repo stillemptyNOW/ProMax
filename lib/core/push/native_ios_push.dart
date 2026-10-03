@@ -54,6 +54,26 @@ class NativeIosPush {
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 15);
     try {
+      final check = await client.getUrl(
+        base.replace(
+          path: '${base.path.replaceAll(RegExp(r'/+$'), '')}/health',
+        ),
+      );
+      check.followRedirects = false;
+      final checked = await check.close().timeout(const Duration(seconds: 20));
+      final healthText = await checked
+          .transform(utf8.decoder)
+          .join()
+          .timeout(const Duration(seconds: 15));
+      if (checked.statusCode != 200) {
+        throw HttpException('Проверка сервера push: ${checked.statusCode}');
+      }
+      final health = jsonDecode(healthText);
+      if (health is! Map || health['deliveryReady'] != true) {
+        throw StateError(
+          'Сервер ProMax доступен, но отправка APNs ещё не настроена.',
+        );
+      }
       final endpoint = base.replace(
         path: '${base.path.replaceAll(RegExp(r'/+$'), '')}/v1/subscriptions',
       );

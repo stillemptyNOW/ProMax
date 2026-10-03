@@ -18,7 +18,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
-import 'native_push_screen.dart';
+import 'web_push_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -172,7 +172,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const NativePushScreen(),
+                              builder: (_) => const WebPushScreen(),
                             ),
                           ),
                         ),

@@ -10,6 +10,7 @@ import '../crypto/e2ee_service.dart';
 import '../storage/app_database.dart';
 import '../storage/token_storage.dart';
 import 'komet_settings.dart';
+import 'call_lighting.dart';
 
 class ProMaxArchive {
   static const maxBytes = 64 * 1024 * 1024;
@@ -28,6 +29,7 @@ class ProMaxArchive {
     'komet_record_debug_logs',
     'app_amoled',
     'dev_video_note_rear_camera',
+    'call_light_wide_default',
   };
   static const stringValues = {
     'app_theme_mode': {'system', 'light', 'dark', 'schedule'},
@@ -65,9 +67,13 @@ class ProMaxArchive {
   }
 
   static Future<Map<String, Object>> settings() async {
+    await CallLighting.load();
     final prefs = await SharedPreferences.getInstance();
     return {
-      for (final key in boolKeys) key: key == 'komet_self_online_check',
+      for (final key in boolKeys)
+        key:
+            key == 'komet_self_online_check' ||
+            key == 'call_light_wide_default',
       'promax_quick_reaction': '❤️',
       'app_theme_mode': 'system',
       'app_font': 'system',
@@ -76,7 +82,7 @@ class ProMaxArchive {
       'dev_video_note_fps': 30,
       'call_light_color': 0xffffffff,
       'call_light_brightness': 0.75,
-      'call_light_width': 24.0,
+      'call_light_width': 64.0,
       'call_light_opacity': 1.0,
       'call_light_radius': 36.0,
       for (final key in prefs.getKeys())

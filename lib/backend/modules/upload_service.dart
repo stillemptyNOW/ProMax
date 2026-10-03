@@ -173,9 +173,21 @@ class UploadJob {
 
 // #***! фасад загрузок для юишки
 class UploadService {
-  UploadService._();
+  UploadService({
+    required MessagesModule messages,
+    required FileUploader uploader,
+  }) : _messages = messages,
+       _uploader = uploader;
 
-  static final UploadService instance = UploadService._();
+  static final UploadService instance = UploadService(
+    messages: messagesModule,
+    uploader: fileUploader,
+  );
+
+  final MessagesModule _messages;
+  final FileUploader _uploader;
+
+  Future<void> dispose() => _events.close();
 
   // #***! история завершённых чистится чтоб не росла вечно
   static const int _historyLimit = 60;
@@ -249,7 +261,7 @@ class UploadService {
         if (tokens.any((token) => token == null)) {
           throw const UploadFailure('upload_failed');
         }
-        final sent = await messagesModule.sendPhotoMessage(
+        final sent = await _messages.sendPhotoMessage(
           chatId,
           tokens.cast<String>(),
           caption: caption.isEmpty ? null : caption,
@@ -282,18 +294,18 @@ class UploadService {
         scheduledTime: scheduledTime,
       ),
       (job) async {
-        final info = await messagesModule.requestVideoUploadUrl();
+        final info = await _messages.requestVideoUploadUrl();
         if (info == null || info.url.isEmpty) {
           throw const UploadFailure('no_upload_url');
         }
-        final ok = await fileUploader.uploadVideoFile(
+        final ok = await _uploader.uploadVideoFile(
           Uri.parse(info.url),
           file,
           onProgress: (sent, total) => job.report(0, sent, total),
         );
         if (!ok) throw const UploadFailure('upload_failed');
         job.markUploaded();
-        final sent = await messagesModule.sendVideoMessage(
+        final sent = await _messages.sendVideoMessage(
           chatId,
           info.token,
           caption: caption.isEmpty ? null : caption,
@@ -323,10 +335,10 @@ class UploadService {
       kind: UploadKind.voice,
       placeholder: placeholder,
       requestUpload: () async {
-        final info = await messagesModule.requestAudioUploadUrl();
+        final info = await _messages.requestAudioUploadUrl();
         return info == null ? null : (url: info.url, token: info.token);
       },
-      send: (token) => messagesModule.sendAudioMessage(
+      send: (token) => _messages.sendAudioMessage(
         chatId,
         token,
         duration: durationMs,
@@ -352,14 +364,11 @@ class UploadService {
       kind: UploadKind.videoNote,
       placeholder: placeholder,
       requestUpload: () async {
-        final info = await messagesModule.requestVideoNoteUploadUrl();
+        final info = await _messages.requestVideoNoteUploadUrl();
         return info == null ? null : (url: info.url, token: info.token);
       },
-      send: (token) => messagesModule.sendVideoNoteMessage(
-        chatId,
-        token,
-        duration: durationMs,
-      ),
+      send: (token) =>
+          _messages.sendVideoNoteMessage(chatId, token, duration: durationMs),
     );
   }
 
@@ -384,26 +393,29 @@ class UploadService {
         placeholder: placeholder,
       ),
       (job) async {
-        try {
-          final info = await requestUpload();
-          if (info == null || info.url.isEmpty) {
-            throw const UploadFailure('no_upload_url');
-          }
-          final ok = await fileUploader.uploadMediaFile(
-            Uri.parse(info.url),
-            file,
-            onProgress: (sent, total) => job.report(0, sent, total),
-          );
-          if (!ok) throw const UploadFailure('upload_failed');
-          job.markUploaded();
-          final sent = await send(info.token);
-          if (sent == null) return null;
-          return CachedMessage.fromPushPayload(accountId, chatId, sent);
-        } finally {
-          try {
-            await file.delete();
-          } catch (_) {}
+        final info = await requestUpload();
+        if (info == null || info.url.isEmpty) {
+          throw const UploadFailure('no_upload_url');
         }
+        final ok = kind == UploadKind.videoNote
+            ? await _uploader.uploadVideoFile(
+                Uri.parse(info.url),
+                file,
+                onProgress: (sent, total) => job.report(0, sent, total),
+              )
+            : await _uploader.uploadMediaFile(
+                Uri.parse(info.url),
+                file,
+                onProgress: (sent, total) => job.report(0, sent, total),
+              );
+        if (!ok) throw const UploadFailure('upload_failed');
+        job.markUploaded();
+        final sent = await send(info.token);
+        if (sent == null) return null;
+        try {
+          await file.delete();
+        } catch (_) {}
+        return CachedMessage.fromPushPayload(accountId, chatId, sent);
       },
     );
   }
@@ -494,7 +506,7 @@ class UploadService {
   }) async {
     final result = Completer<UploadDone>();
     late final StreamSubscription<UploadEvent> sub;
-    sub = fileUploader
+    sub = _uploader
         .upload(
           chatId: chatId,
           file: source,
@@ -563,7 +575,7 @@ class UploadService {
       if (!job.scheduled) {
         _replaceInSessionCache(job.accountId, job.chatId, job.id, null);
         _remember(job.id, null);
-        _syncChatPreview(job.placeholder, 'error');
+        await _syncChatPreview(job.placeholder, 'error');
       }
       _events.add(
         UploadJobFailed(
@@ -605,7 +617,11 @@ class UploadService {
     }
     _replaceInSessionCache(job.accountId, job.chatId, job.id, message);
     _remember(job.id, message);
-    _syncChatPreview(message, 'sent', replacesTime: job.placeholder?.time);
+    await _syncChatPreview(
+      message,
+      'sent',
+      replacesTime: job.placeholder?.time,
+    );
     _events.add(
       UploadJobDone(
         chatId: job.chatId,
@@ -621,19 +637,21 @@ class UploadService {
 
   // #***! строку в списке чатов двигаем отсюда, а не с экрана чата: его
   // могли закрыть сразу после выбора файла, а загрузка живёт дальше
-  void _syncChatPreview(
+  Future<void> _syncChatPreview(
     CachedMessage? message,
     String status, {
     int? replacesTime,
-  }) {
+  }) async {
     if (message == null) return;
-    unawaited(
-      chats.applyOutgoingMessage(
+    try {
+      await chats.applyOutgoingMessage(
         message,
         status: status,
         replacesTime: replacesTime,
-      ),
-    );
+      );
+    } catch (e) {
+      logger.w('UploadService: не удалось обновить список чатов: $e');
+    }
   }
 
   // #***! память о завершённых пока экран чата не подхватит
@@ -697,9 +715,9 @@ class UploadService {
         job.resetSlot(index);
       }
       try {
-        final url = await messagesModule.requestPhotoUploadUrl();
+        final url = await _messages.requestPhotoUploadUrl();
         if (url == null || url.isEmpty) continue;
-        final token = await fileUploader.uploadPhoto(
+        final token = await _uploader.uploadPhoto(
           Uri.parse(url),
           file,
           filename: _photoFilename(file),

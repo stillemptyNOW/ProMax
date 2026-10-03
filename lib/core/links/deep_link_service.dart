@@ -196,7 +196,7 @@ class DeepLinkService {
   }
 
   ({int? chatId, int? userId})? _parsePushTarget(Uri uri) {
-    if (uri.scheme.toLowerCase() != 'komet') return null;
+    if (!{'komet', 'promax'}.contains(uri.scheme.toLowerCase())) return null;
 
     final segments = <String>[
       if (uri.host.isNotEmpty) uri.host,
@@ -244,7 +244,7 @@ class DeepLinkService {
 
   WebPushSubscription? _parseWebPushLink(Uri uri) {
     if (!Platform.isIOS) return null;
-    if (uri.scheme.toLowerCase() != 'komet') return null;
+    if (!{'komet', 'promax'}.contains(uri.scheme.toLowerCase())) return null;
 
     final segments = <String>[
       if (uri.host.isNotEmpty) uri.host,
@@ -324,7 +324,7 @@ class DeepLinkService {
       return null;
     }
 
-    if (scheme == 'komet' || scheme == 'max') {
+    if (scheme == 'komet' || scheme == 'promax' || scheme == 'max') {
       final segments = <String>[
         if (uri.host.isNotEmpty && uri.host.toLowerCase() != 'max.ru') uri.host,
         ...uri.pathSegments,

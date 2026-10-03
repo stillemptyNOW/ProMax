@@ -2480,7 +2480,7 @@
   "proMaxMaskVisor": "Neon visor",
   "proMaxMaskCat": "Cat",
   "proMaxEffectFailed": "Could not enable effect",
-  "proMaxNativePush": "ProMax push · experimental",
+  "proMaxNativePush": "ProMax notifications",
   "proMaxNativePushExplanation": "Check whether your eSign signature allows APNs registration. The experimental web-session delivery method needs a server with APNs access. An Apple token does not confirm MAX message delivery. The server receives no MAX password or login token and sends notifications without message text.",
   "proMaxPushSigningHint": "The signing profile must allow Push Notifications for the ProMax bundle identifier.",
   "proMaxTestNotification": "Test notification permission",

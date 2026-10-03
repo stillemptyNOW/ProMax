@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#09090c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ProMax Уведомления">
+  <title>ProMax Уведомления</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/push-core.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+<main>
+  <header><img src="/icons/icon-1024.png" width="72" height="72" alt=""><p class="eyebrow">ProMax</p><h1>Сообщения<br>всегда рядом</h1><p>Уведомления MAX на вашем iPhone.</p></header>
+  <section id="loading" class="card"><h2>Проверяем подключение…</h2></section>
+  <section id="install" class="card" hidden><span class="step">01 / Установка</span><h2>Добавьте на экран «Домой»</h2><p>Откройте этот адрес в Safari. Нажмите «Поделиться» → «На экран Домой». Затем запустите новую иконку <strong>ProMax Уведомления</strong>.</p><p class="note">Нужна iOS 16.4 или новее. Уведомления будут приходить от этой отдельной иконки.</p></section>
+  <section id="unsupported" class="card" hidden><h2>Уведомления недоступны</h2><p>Используйте iPhone с iOS 16.4 или новее. Откройте приложение с экрана «Домой», а не из вкладки браузера.</p></section>
+  <section id="denied" class="card" hidden><h2>Разрешите уведомления</h2><p>Проверьте разрешение для ProMax Уведомления в настройках iPhone. Если включить его не получается, удалите эту иконку, добавьте сайт на экран «Домой» заново и разрешите уведомления.</p><button id="btn-refresh-denied" class="secondary">Проверить снова</button></section>
+  <section id="permission" class="card" hidden><span class="step">02 / Разрешение</span><h2>Включите уведомления</h2><p>Баннеры, звук и сообщения на экране блокировки.</p><button id="btn-permission">Разрешить уведомления</button></section>
+  <section id="subscribe" class="card" hidden><span class="step">03 / Подписка</span><h2>Создайте подписку</h2><p>iPhone создаст адрес доставки. Номер телефона и пароль на этот сайт вводить не нужно.</p><button id="btn-subscribe">Создать подписку</button></section>
+  <section id="link" class="card" hidden><span class="step">04 / Связь с MAX</span><h2>Свяжите с ProMax</h2><p>Сначала в ProMax откройте «Настройки → Уведомления → Уведомления ProMax» и подключите WEB-сессию. Затем нажмите кнопку ниже и дождитесь подтверждения регистрации в ProMax.</p><button id="btn-link">Связать с ProMax</button><button id="btn-copy" class="secondary">Скопировать ссылку привязки</button><p id="link-result" role="status" class="note"></p></section>
+  <section id="status" class="card" hidden><h2>Проверка доставки</h2><div class="status-row"><span>Разрешение iPhone</span><strong id="status-permission">—</strong></div><div class="status-row"><span>Подписка браузера</span><strong id="status-subscription">—</strong></div><p id="remote-status" role="status">Удалённая доставка ещё не проверена.</p><p class="note">После подтверждения в ProMax заблокируйте iPhone и попросите прислать новое сообщение с другого аккаунта. Проверьте также режим «Фокусирование» и сводку уведомлений iOS.</p><button id="btn-test" class="secondary">Проверить показ на iPhone</button><p id="test-result" role="status" class="note">Эта кнопка проверяет только местный показ. Она не подтверждает доставку из MAX.</p><button id="btn-relink" class="secondary">Перепривязать подписку</button></section>
+  <section id="failed" class="card" hidden><h2>Не удалось подключить</h2><p id="error-detail" role="alert"></p><button id="btn-retry">Повторить проверку</button></section>
+  <footer>Сайт создаёт подписку iPhone. Вход в MAX и её регистрация выполняются в ProMax.</footer>
+</main>
+</body>
+</html>

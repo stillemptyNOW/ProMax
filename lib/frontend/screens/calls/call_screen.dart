@@ -5,7 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart'
-    show MediaStream, RTCVideoRenderer, RTCVideoValue, RTCVideoViewObjectFit;
+    show MediaStream, RTCVideoRenderer, RTCVideoViewObjectFit;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:promax_effects/promax_effects.dart';
 
@@ -22,6 +22,7 @@ import '../../../core/utils/format.dart';
 import '../../../core/utils/screen_wake.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/call_video_view.dart';
+import '../../widgets/call_screen_light.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/glossy_pill.dart';
 import '../../widgets/animated_slash_icon.dart';
@@ -74,6 +75,8 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   bool _lightOn = false;
   bool _lightBusy = false;
   CallLighting _lighting = const CallLighting();
+  bool get _selfieLight =>
+      _lightOn && _session?.frontCamera == true && _session?.localVideo == true;
 
   late final AnimationController _dotsController;
   late final AnimationController _videoController;
@@ -467,7 +470,12 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
         } else {
           await session.setCameraTorch(true);
         }
-        if (mounted) setState(() => _lightOn = true);
+        if (mounted && identical(_session, session) && session.localVideo) {
+          setState(() => _lightOn = true);
+        } else {
+          await ProMaxEffects.restoreScreenBrightness();
+          if (!session.frontCamera) await session.setCameraTorch(false);
+        }
       }
     } catch (_) {
       if (mounted) {
@@ -738,24 +746,6 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
               body,
               if (_session?.localVideo == true || _session?.localScreen == true)
                 _localPreview(cs),
-              if (_lightOn &&
-                  _session?.frontCamera == true &&
-                  _session?.localVideo == true)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: _lighting.color.withValues(
-                            alpha: _lighting.opacity,
-                          ),
-                          width: _lighting.width,
-                        ),
-                        borderRadius: BorderRadius.circular(_lighting.radius),
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
@@ -808,23 +798,32 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   Widget _buildGroupBody(ColorScheme cs) {
     final l10n = AppLocalizations.of(context)!;
     final participants = _session?.participants ?? const <CallParticipant>[];
-    return SafeArea(
-      child: Column(
-        children: [
-          _buildTopBar(cs, 0),
-          const SizedBox(height: 4),
-          _groupHeader(cs, participants.length),
-          const SizedBox(height: 8),
-          Expanded(
-            child: participants.isEmpty
-                ? Center(child: _statusWithDots(cs, l10n.callStatusConnecting))
-                : _participantGrid(cs, participants),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (_selfieLight)
+          Positioned.fill(child: CallScreenLight(lighting: _lighting)),
+        SafeArea(
+          child: Column(
+            children: [
+              _buildTopBar(cs, 0),
+              const SizedBox(height: 4),
+              _groupHeader(cs, participants.length),
+              const SizedBox(height: 8),
+              Expanded(
+                child: participants.isEmpty
+                    ? Center(
+                        child: _statusWithDots(cs, l10n.callStatusConnecting),
+                      )
+                    : _participantGrid(cs, participants),
+              ),
+              const SizedBox(height: 12),
+              _activeControls(cs),
+              const SizedBox(height: 24),
+            ],
           ),
-          const SizedBox(height: 12),
-          _activeControls(cs),
-          const SizedBox(height: 24),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1123,29 +1122,23 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                 heightFactor: 0.46 + 0.54 * t,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24 * (1 - t)),
-                  child: ValueListenableBuilder<RTCVideoValue>(
-                    valueListenable: renderer,
-                    builder: (context, value, _) {
-                      final ar = value.aspectRatio > 0
-                          ? value.aspectRatio
-                          : 16 / 9;
-                      return Center(
-                        child: AspectRatio(
-                          aspectRatio: ar,
-                          child: RepaintBoundary(
-                            child: CallVideoView(
-                              renderer: renderer,
-                              mirror:
-                                  _selfOnMain &&
-                                  _session?.localScreen != true &&
-                                  _session?.frontCamera == true,
-                              objectFit: RTCVideoViewObjectFit
-                                  .RTCVideoViewObjectFitCover,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                  child: RepaintBoundary(
+                    child: CallVideoView(
+                      renderer: renderer,
+                      mirror:
+                          _selfOnMain &&
+                          _session?.localScreen != true &&
+                          _session?.frontCamera == true,
+                      objectFit:
+                          (_selfOnMain
+                              ? _session?.localScreen == true
+                              : _session?.participants.any(
+                                      (p) => !p.isSelf && p.screenSharing,
+                                    ) ==
+                                    true)
+                          ? RTCVideoViewObjectFit.RTCVideoViewObjectFitContain
+                          : RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                    ),
                   ),
                 ),
               ),
@@ -1155,6 +1148,8 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
           IgnorePointer(
             child: Opacity(opacity: t, child: _videoScrim(cs)),
           ),
+        if (_selfieLight)
+          Positioned.fill(child: CallScreenLight(lighting: _lighting)),
         SafeArea(
           child: Column(
             children: [
@@ -1219,8 +1214,14 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
         _session != null &&
         _state == CallSessionState.active &&
         _session!.mediaConnected;
-    return SizedBox(
+    return Container(
       height: 48,
+      decoration: _selfieLight
+          ? BoxDecoration(
+              color: cs.surface.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(24),
+            )
+          : null,
       child: Stack(
         children: [
           Align(

@@ -51,6 +51,7 @@
 			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
+			<string>promax</string>
 				<string>komet</string>
 				<string>max</string>
 			</array>

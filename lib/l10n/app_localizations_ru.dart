@@ -2874,7 +2874,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get webPushIntro =>
-      'Эта WEB-сессия MAX нужна для экспериментальной доставки уведомлений ProMax. Вход подтверждается текущим аккаунтом без повторного ввода номера.';
+      'Подключите WEB-сессию MAX, затем установите ProMax Уведомления через Safari. Уведомления будут приходить от отдельной иконки на экране «Домой» даже при закрытом ProMax. Требуется iOS 16.4 или новее.';
 
   @override
   String get webPushConfirm => 'Продолжить';
@@ -2896,7 +2896,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get webPushInstallBody =>
-      'Для этой версии ProMax используйте настройки уведомлений от IPA.';
+      'WEB-сессия подключена. Откройте boriskino.qd.je в Safari → «Поделиться» → «На экран Домой». Запустите новую иконку ProMax Уведомления, разрешите уведомления, создайте подписку и нажмите «Связать с ProMax». Дождитесь подтверждения регистрации в приложении. Затем проверьте входящее сообщение с другого аккаунта на заблокированном iPhone.';
 
   @override
   String get webPushLinkedTitle => 'Уведомления подключены';
@@ -2906,13 +2906,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Подписка зарегистрирована на сервере. Не удаляйте иконку с экрана «Домой» — вместе с ней пропадут уведомления.\n\nЕсли пуши перестанут приходить, откройте приложение и свяжите заново: Apple иногда меняет адрес подписки.';
 
   @override
-  String get webPushOpenSite => 'Открыть push.ProMax.pw';
+  String get webPushOpenSite => 'Открыть ProMax Уведомления';
 
   @override
   String get webPushSignOut => 'Отключить уведомления';
 
   @override
-  String get webPushLinked => 'Уведомления подключены';
+  String get webPushLinked =>
+      'Подписка зарегистрирована в MAX. Проверьте входящее сообщение на заблокированном iPhone.';
 
   @override
   String webPushLinkFailed(String error) {
@@ -2921,7 +2922,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get webPushNotAuthorized =>
-      'Сначала войдите в разделе «Уведомления через PWA»';
+      'Сначала подключите WEB-сессию: Настройки → Уведомления → Уведомления ProMax.';
 
   @override
   String get webPushConnect => 'Подключить уведомления';
@@ -6562,7 +6563,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get proMaxEffectFailed => 'Не удалось включить эффект';
 
   @override
-  String get proMaxNativePush => 'Push от ProMax · экспериментально';
+  String get proMaxNativePush => 'Уведомления ProMax';
 
   @override
   String get proMaxNativePushExplanation =>

@@ -46,6 +46,8 @@ jobs:
           node-version: '22'
       - name: Verify ProMax Tools
         run: node --experimental-vm-modules test/promax_toolbox_test.mjs
+      - name: Verify ProMax Web Push
+        run: node --experimental-vm-modules test/promax_web_push_test.mjs
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'

@@ -307,7 +307,8 @@ class _SettingsTabState extends State<SettingsTab>
 
   AvatarPhoto? get _currentAvatar {
     if (_avatarPhotos.isEmpty) return null;
-    return _avatarPhotos[_avatarIndex.clamp(0, _avatarPhotos.length - 1)
+    return _avatarPhotos[_avatarIndex
+        .clamp(0, _avatarPhotos.length - 1)
         .toInt()];
   }
 
@@ -455,7 +456,6 @@ class _SettingsTabState extends State<SettingsTab>
         return;
     }
   }
-
 
   Future<void> _confirmLogout() async {
     final cs = Theme.of(context).colorScheme;
@@ -715,8 +715,9 @@ class _SettingsTabState extends State<SettingsTab>
                         if (BuildProfile.spoofUi)
                           _SettingsItem(
                             icon: Symbols.shield_lock,
-                            label: AppLocalizations.of(context)!
-                                .profileMenuSpoof,
+                            label: AppLocalizations.of(
+                              context,
+                            )!.profileMenuSpoof,
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -832,7 +833,6 @@ class _SettingsTabState extends State<SettingsTab>
                             'assets/komet.png',
                             width: 22,
                             height: 22,
-                            color: cs.onSurfaceVariant,
                           ),
                           label: 'ProMax',
                           onTap: () {
@@ -884,7 +884,12 @@ class _SettingsTabState extends State<SettingsTab>
                       ),
                     ),
                   ),
-                const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.fromLTRB(16, 16, 16, 0), child: ProMaxTransferCard())),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: ProMaxTransferCard(),
+                  ),
+                ),
                 const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),

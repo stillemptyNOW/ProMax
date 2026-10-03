@@ -357,7 +357,8 @@ final class KometVideo: NSObject, PHPickerViewControllerDelegate, UIDocumentPick
       try? FileManager.default.removeItem(at: outputURL)
 
       guard let session = AVAssetExportSession(
-        asset: composition, presetName: AVAssetExportPresetHighestQuality) else {
+        asset: composition,
+        presetName: spec.centerSquare ? AVAssetExportPreset1920x1080 : AVAssetExportPresetHighestQuality) else {
         Self.reply { completion(false) }
         return
       }

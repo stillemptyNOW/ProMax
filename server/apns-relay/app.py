@@ -13,6 +13,7 @@ from contextlib import contextmanager
 import httpx
 import jwt
 from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
@@ -54,6 +55,30 @@ def require_auth(request):
         raise HTTPException(401)
 
 
+def apns_configured():
+    if not all(os.environ.get(name, '').strip() for name in
+               ('APNS_KEY_FILE', 'APNS_KEY_ID', 'APNS_TEAM_ID', 'APNS_BUNDLE_ID')):
+        return False
+    if not all(re.fullmatch(r'[A-Za-z0-9]{10}', os.environ[name]) for name in
+               ('APNS_KEY_ID', 'APNS_TEAM_ID')):
+        return False
+    try:
+        private = load_pem_private_key(Path(os.environ['APNS_KEY_FILE']).read_bytes(), password=None)
+        return isinstance(private, ec.EllipticCurvePrivateKey) and isinstance(private.curve, ec.SECP256R1)
+    except (OSError, ValueError, TypeError):
+        return False
+
+
+@app.get('/health')
+@app.get('/')
+async def health():
+    ready = apns_configured()
+    return {'service': 'ProMax push', 'deliveryReady': ready,
+            'status': 'configured' if ready else 'awaiting_apns',
+            'message': 'Конфигурация APNs загружена; доставка требует проверки.' if ready
+            else 'Сервер доступен. Отправка уведомлений ожидает настройки APNs.'}
+
+
 class Registration(BaseModel):
     apnsToken: str = Field(min_length=64, max_length=512, pattern=r'^[0-9a-fA-F]+$')
     environment: str = Field(default='production', pattern=r'^(production|sandbox)$')
@@ -62,6 +87,8 @@ class Registration(BaseModel):
 @app.post('/v1/subscriptions')
 async def register(data: Registration, request: Request):
     require_auth(request)
+    if not apns_configured():
+        raise HTTPException(503, detail='apns_not_configured')
     base = setting('PROMAX_RELAY_URL').rstrip('/')
     uri = urlsplit(base)
     if uri.scheme != 'https' or not uri.hostname or uri.username or uri.query or uri.fragment or uri.path not in ('', '/'):
@@ -134,6 +161,8 @@ async def receive_push(subscription_id: str, request: Request):
         verify_vapid(request.headers.get('authorization', ''), request.headers.get('crypto-key', ''), setting('PROMAX_RELAY_URL'))
     except (ValueError, KeyError, jwt.InvalidTokenError):
         raise HTTPException(403) from None
+    if not apns_configured():
+        raise HTTPException(503, detail='apns_not_configured')
     async with _database_lock:
         with database() as connection:
             record = connection.execute('SELECT token, environment, private_key, auth FROM subscriptions WHERE id = ?', (subscription_id,)).fetchone()

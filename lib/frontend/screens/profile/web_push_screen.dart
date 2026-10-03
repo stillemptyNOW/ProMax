@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../backend/api.dart';
 import '../../../core/utils/format.dart';
@@ -260,8 +261,21 @@ class _WebPushScreenState extends State<WebPushScreen> {
       ),
       _explainer(
         cs,
-        'WEB-сессия MAX подключена. Вернитесь к настройкам уведомлений ProMax и подключите свой сервер APNs.',
+        _link == null ? l10n.webPushInstallBody : l10n.webPushLinkedBody,
       ),
+      const SizedBox(height: 16),
+      _primary(l10n.webPushOpenSite, () async {
+        final opened = await launchUrl(
+          Uri.parse('https://boriskino.qd.je'),
+          mode: LaunchMode.externalApplication,
+        );
+        if (!opened && context.mounted) {
+          showCustomNotification(
+            context,
+            'Не удалось открыть Safari. Откройте boriskino.qd.je вручную.',
+          );
+        }
+      }),
       if (_link != null) ...[
         const SizedBox(height: 12),
         _linkDetails(cs, l10n, _link!),

@@ -1870,27 +1870,7 @@ class MessagesModule {
   }
 
   Future<VideoUploadInfo?> requestVideoNoteUploadUrl() async {
-    final response = await _api.sendRequest(Opcode.videoUpload, {
-      'uploaderType': 1,
-      'type': 1,
-      'count': 1,
-    });
-    if (!response.isOk) return null;
-
-    final data = response.payload;
-    if (data is! Map) return null;
-
-    final infoList = data['info'] as List?;
-    if (infoList == null || infoList.isEmpty) return null;
-
-    final info = infoList.first;
-    if (info is! Map) return null;
-
-    return VideoUploadInfo(
-      url: info['url'] as String? ?? '',
-      videoId: info['videoId'] as int? ?? 0,
-      token: info['token'] as String? ?? '',
-    );
+    return requestVideoUploadUrl(type: 1);
   }
 
   Future<Map<String, dynamic>?> sendVideoNoteMessage(

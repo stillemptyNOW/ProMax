@@ -6520,7 +6520,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proMaxEffectFailed => 'Could not enable effect';
 
   @override
-  String get proMaxNativePush => 'ProMax push · experimental';
+  String get proMaxNativePush => 'ProMax notifications';
 
   @override
   String get proMaxNativePushExplanation =>

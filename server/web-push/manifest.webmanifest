@@ -1,0 +1,7 @@
+{
+  "id": "/", "name": "ProMax Уведомления", "short_name": "ProMax Push",
+  "start_url": "/", "scope": "/", "display": "standalone", "lang": "ru",
+  "background_color": "#09090c", "theme_color": "#09090c",
+  "description": "Уведомления MAX для ProMax на iPhone",
+  "icons": [{"src": "/icons/icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any"}]
+}

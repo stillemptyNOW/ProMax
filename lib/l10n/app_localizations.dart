@@ -11591,7 +11591,7 @@ abstract class AppLocalizations {
   /// No description provided for @proMaxNativePush.
   ///
   /// In en, this message translates to:
-  /// **'ProMax push · experimental'**
+  /// **'ProMax notifications'**
   String get proMaxNativePush;
 
   /// No description provided for @proMaxNativePushExplanation.
