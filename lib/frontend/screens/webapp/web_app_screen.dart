@@ -35,6 +35,7 @@ class WebAppScreen extends StatefulWidget {
   final Future<WebAppLaunch> Function(String url)? onExternalCallback;
   final bool closeAfterExternalCallback;
   final bool preferSystemUserAgent;
+  final bool recoverTechnicalError;
   final Future<NavigationActionPolicy?> Function(
     InAppWebViewController controller,
     NavigationAction navigationAction,
@@ -56,6 +57,7 @@ class WebAppScreen extends StatefulWidget {
     this.onExternalCallback,
     this.closeAfterExternalCallback = false,
     this.preferSystemUserAgent = false,
+    this.recoverTechnicalError = false,
     this.shouldOverrideUrlLoading,
   });
 
@@ -70,6 +72,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
   String? _loadError;
   String _userAgent = '';
   double _progress = 0;
+  bool _recovering = false;
   Size _viewport = Size.zero;
 
   @override
@@ -130,7 +133,27 @@ class _WebAppScreenState extends State<WebAppScreen> {
     onClose: _closeFromWebApp,
   );
 
-  void _closeFromWebApp() {
+  Future<void> _closeFromWebApp() async {
+    if (_recovering) return;
+    if (widget.recoverTechnicalError && _controller != null) {
+      _recovering = true;
+      try {
+        final technicalError = await _controller!
+            .evaluateJavascript(
+              source:
+                  "document.body && document.body.innerText.includes('Техническая заминка')",
+            )
+            .timeout(const Duration(seconds: 2));
+        if (!mounted) return;
+        if (technicalError == true) {
+          await _load();
+          return;
+        }
+      } catch (_) {
+      } finally {
+        _recovering = false;
+      }
+    }
     if (!mounted) return;
     Navigator.of(context).pop();
   }
@@ -232,10 +255,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
             onPressed: _closeByUser,
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Symbols.refresh),
-              onPressed: _load,
-            ),
+            IconButton(icon: const Icon(Symbols.refresh), onPressed: _load),
           ],
           bottom: _progress > 0 && _progress < 1
               ? PreferredSize(
@@ -275,6 +295,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
 
   Widget _buildWebView(WebAppLaunch launch, WebAppBridge bridge) {
     return InAppWebView(
+      key: ObjectKey(bridge),
       initialUrlRequest: URLRequest(url: WebUri(launch.url)),
       initialUserScripts: UnmodifiableListView<UserScript>([
         bridge.userScript,

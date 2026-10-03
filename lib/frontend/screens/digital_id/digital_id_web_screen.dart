@@ -23,10 +23,26 @@ Future<void> resetDigitalIdSession() async {
   } catch (_) {}
 }
 
-class DigitalIdWebScreen extends StatelessWidget {
+class DigitalIdWebScreen extends StatefulWidget {
   final WebAppLaunch? initialLaunch;
 
   const DigitalIdWebScreen({super.key, this.initialLaunch});
+
+  @override
+  State<DigitalIdWebScreen> createState() => _DigitalIdWebScreenState();
+}
+
+class _DigitalIdWebScreenState extends State<DigitalIdWebScreen> {
+  bool _initialLaunchUsed = false;
+
+  Future<WebAppLaunch> _loadLaunch() async {
+    if (!_initialLaunchUsed) {
+      _initialLaunchUsed = true;
+      final initial = widget.initialLaunch;
+      if (initial != null) return initial;
+    }
+    return webAppModule.fetchDigitalId();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +50,9 @@ class DigitalIdWebScreen extends StatelessWidget {
       title: AppLocalizations.of(context)!.digitalIdTitle,
       preferSystemUserAgent: true,
       privateChannel: true,
+      recoverTechnicalError: true,
       mobileIdVerifier: digitalIdModule.fetchMobileIdVerification,
-      loader: () async => initialLaunch ?? await webAppModule.fetchDigitalId(),
+      loader: _loadLaunch,
       onExternalCallback: webAppModule.handleExternalCallback,
       onConsoleMessage: (controller, consoleMessage) {
         final lvl = consoleMessage.messageLevel.toString().toUpperCase();
@@ -51,9 +68,7 @@ class DigitalIdWebScreen extends StatelessWidget {
         final url = uri?.toString() ?? '';
         final scheme = uri?.scheme ?? '';
         if (kDebugMode) {
-          debugPrint(
-            '[PROMAX-DID] nav: ${uri?.scheme}://${uri?.host}',
-          );
+          debugPrint('[PROMAX-DID] nav: ${uri?.scheme}://${uri?.host}');
         }
         if (scheme != 'http' && scheme != 'https') {
           if (context.mounted) await openExternalUrl(context, url);

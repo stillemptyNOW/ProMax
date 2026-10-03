@@ -24,3 +24,6 @@ runs:
 
     - name: Cache Rust build
       uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: native/komet_tlottie/rust -> target
+        cache-all-crates: true
