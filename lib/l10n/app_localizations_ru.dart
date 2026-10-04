@@ -4641,6 +4641,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chatListCreateGroup => 'Создать группу';
 
   @override
+  String get chatListCreateGroupCall => 'Создать групповой звонок';
+
+  @override
+  String get chatListSearchByPhone => 'Найти по номеру';
+
+  @override
+  String get chatListInviteByLink => 'Пригласить по ссылке';
+
+  @override
+  String get chatListInviteLinkUnavailable =>
+      'Ссылка-приглашение сейчас недоступна';
+
+  @override
   String get chatListCreateChannel => 'Создать канал';
 
   @override
@@ -5705,6 +5718,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get contactsTabTitle => 'Контакты';
 
   @override
+  String get contactsMenuWrite => 'Написать';
+
+  @override
+  String get contactsMenuCall => 'Позвонить';
+
+  @override
+  String get contactsMenuVideoCall => 'Видеозвонок';
+
+  @override
+  String get contactsMenuBlock => 'Заблокировать';
+
+  @override
   String get contactsTabEmpty => 'Нет контактов';
 
   @override
@@ -6478,6 +6503,18 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proMaxShareContact => 'Поделиться контактом';
+
+  @override
+  String get chatInfoAddToFolder => 'Добавить в папку';
+
+  @override
+  String get chatInfoNoFolders => 'Сначала создайте папку чатов';
+
+  @override
+  String get chatInfoAddedToFolder => 'Чат добавлен в папку';
+
+  @override
+  String get chatInfoAddToFolderFailed => 'Не удалось добавить чат в папку';
 
   @override
   String get proMaxContactSent => 'Контакт отправлен';

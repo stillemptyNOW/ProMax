@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:komet/backend/modules/messages.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'dart:math';
@@ -4097,6 +4098,33 @@ class _ChatListScreenState extends State<ChatListScreen>
         ),
         const SizedBox(height: 4),
         _buildFabMenuItem(
+          Symbols.call,
+          l10n.chatListCreateGroupCall,
+          onTap: () {
+            _toggleFab();
+            unawaited(createGroupCallFromContext(context));
+          },
+        ),
+        const SizedBox(height: 4),
+        _buildFabMenuItem(
+          Symbols.dialpad,
+          l10n.chatListSearchByPhone,
+          onTap: () {
+            _toggleFab();
+            unawaited(_searchByPhone());
+          },
+        ),
+        const SizedBox(height: 4),
+        _buildFabMenuItem(
+          Symbols.link,
+          l10n.chatListInviteByLink,
+          onTap: () {
+            _toggleFab();
+            unawaited(_shareInviteLink());
+          },
+        ),
+        const SizedBox(height: 4),
+        _buildFabMenuItem(
           Symbols.person_add,
           l10n.chatListCreateContact,
           onTap: () {
@@ -4130,6 +4158,36 @@ class _ChatListScreenState extends State<ChatListScreen>
       found.avatarUrl,
       'DIALOG',
     );
+  }
+
+  Future<void> _searchByPhone() async {
+    final l10n = AppLocalizations.of(context)!;
+    final found = await showFindUserSheet(
+      context,
+      title: l10n.chatListSearchByPhone,
+      actionLabel: l10n.contactsTabFind,
+    );
+    if (found == null || !mounted) return;
+    _openChatFromList(
+      found.chatId.toString(),
+      found.name,
+      found.avatarUrl,
+      'DIALOG',
+    );
+  }
+
+  Future<void> _shareInviteLink() async {
+    final l10n = AppLocalizations.of(context)!;
+    final accountId = await TokenStorage.getActiveAccountId();
+    final link = accountId == null
+        ? null
+        : await AppDatabase.getSyncValue(accountId, SyncKey.profileInviteLink);
+    if (!mounted) return;
+    if (link == null || link.trim().isEmpty) {
+      showCustomNotification(context, l10n.chatListInviteLinkUnavailable);
+      return;
+    }
+    await Share.share(link.trim());
   }
 
   Widget _buildFabMenuItem(IconData icon, String title, {VoidCallback? onTap}) {

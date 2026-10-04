@@ -38,6 +38,7 @@ import '../../widgets/chat_info/shared_content_tabs.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/hint_bubble.dart';
+import '../../widgets/sheet_helpers.dart';
 import 'chat_removal_undo.dart';
 import '../../widgets/formatted_message_text.dart';
 import '../../widgets/reload_on_reconnect.dart';
@@ -48,6 +49,9 @@ import '../../widgets/profile_hero.dart';
 import '../../widgets/swipe_route.dart';
 import '../../widgets/local_avatar_builder.dart';
 import '../../../backend/modules/chats.dart';
+import '../../../backend/models/chat_folder.dart';
+import '../../../backend/modules/folders.dart';
+import '../../../core/storage/token_storage.dart';
 import '../calls/call_screen.dart';
 import '../contacts/open_contact_profile.dart';
 import '../profile/profile_qr_sheet.dart';
@@ -1226,6 +1230,12 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
           onTap: _shareContact,
         ));
       }
+      entries.add((
+        icon: Symbols.create_new_folder,
+        label: l10n.chatInfoAddToFolder,
+        destructive: false,
+        onTap: _addChatToFolder,
+      ));
       if (!_isBot && _otherId != null && _otherId != _myId) {
         entries.add((
           icon: _blocked ? Symbols.lock_open : Symbols.block,
@@ -1259,6 +1269,60 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     ));
 
     return entries;
+  }
+
+  Future<void> _addChatToFolder() async {
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null || !mounted) return;
+    final folders = (await FoldersModule.loadFolders(accountId))
+        .where((folder) => !FoldersModule.isAllChatsFolder(folder))
+        .toList();
+    if (!mounted) return;
+    if (folders.isEmpty) {
+      showCustomNotification(context, l10n.chatInfoNoFolders);
+      return;
+    }
+    final selected = await showModalBottomSheet<ChatFolder>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      shape: kSheetShape,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SheetGrabber(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              child: Text(
+                l10n.chatInfoAddToFolder,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            for (final folder in folders)
+              ListTile(
+                leading: const Icon(Symbols.folder),
+                title: Text(folder.title),
+                onTap: () => Navigator.pop(sheetContext, folder),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (selected == null || !mounted) return;
+    try {
+      await FoldersModule.updateFolder(
+        api,
+        accountId,
+        selected,
+        include: {...selected.include, _mediaChatId}.toList(),
+      );
+      if (mounted) showCustomNotification(context, l10n.chatInfoAddedToFolder);
+    } catch (_) {
+      if (mounted) {
+        showCustomNotification(context, l10n.chatInfoAddToFolderFailed);
+      }
+    }
   }
 
   void _openJoinRequests() {

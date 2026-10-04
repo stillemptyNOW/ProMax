@@ -8348,6 +8348,14 @@ abstract class AppLocalizations {
   /// **'New group'**
   String get chatListCreateGroup;
 
+  String get chatListCreateGroupCall;
+
+  String get chatListSearchByPhone;
+
+  String get chatListInviteByLink;
+
+  String get chatListInviteLinkUnavailable;
+
   /// No description provided for @chatListCreateChannel.
   ///
   /// In en, this message translates to:
@@ -10154,6 +10162,14 @@ abstract class AppLocalizations {
   /// **'Contacts'**
   String get contactsTabTitle;
 
+  String get contactsMenuWrite;
+
+  String get contactsMenuCall;
+
+  String get contactsMenuVideoCall;
+
+  String get contactsMenuBlock;
+
   /// No description provided for @contactsTabEmpty.
   ///
   /// In en, this message translates to:
@@ -11425,6 +11441,14 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share contact'**
   String get proMaxShareContact;
+
+  String get chatInfoAddToFolder;
+
+  String get chatInfoNoFolders;
+
+  String get chatInfoAddedToFolder;
+
+  String get chatInfoAddToFolderFailed;
 
   /// No description provided for @proMaxContactSent.
   ///

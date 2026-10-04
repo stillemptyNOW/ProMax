@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../../core/calls/call_controller.dart';
 import '../../../core/config/debug_test.dart';
 import '../../../core/config/ios_release.dart';
 import '../../../core/contacts/contact_labels.dart';
@@ -18,12 +19,15 @@ import '../../widgets/connection_status.dart';
 import '../../widgets/small_spinner.dart';
 import '../../widgets/spectrum_tint.dart';
 import '../../widgets/springy_tap.dart';
+import '../calls/call_screen.dart';
 import '../chats/chat_info_screen.dart';
+import '../chats/chat_screen.dart';
 import 'find_user_sheet.dart';
 import 'nfc_exchange_sheet.dart';
 import 'open_contact_profile.dart';
 import '../../../core/config/app_frost.dart';
 import '../../../core/config/app_fonts.dart';
+import '../../../core/storage/token_storage.dart';
 
 class ContactsTab extends StatefulWidget {
   const ContactsTab({super.key});
@@ -185,6 +189,27 @@ class _ContactsTabState extends State<ContactsTab> with SpectrumSurface {
       anchorRect: box.localToGlobal(Offset.zero) & box.size,
       items: [
         ChatMenuItem(
+          icon: Symbols.chat,
+          label: l10n.contactsMenuWrite,
+          onTap: () => _openContactChat(contact),
+        ),
+        ChatMenuItem(
+          icon: Symbols.call,
+          label: l10n.contactsMenuCall,
+          onTap: () => _startContactCall(contact),
+        ),
+        ChatMenuItem(
+          icon: Symbols.videocam,
+          label: l10n.contactsMenuVideoCall,
+          onTap: () => _startContactCall(contact, video: true),
+        ),
+        ChatMenuItem(
+          icon: Symbols.block,
+          label: l10n.contactsMenuBlock,
+          destructive: true,
+          onTap: () => _toggleContactBlock(contact),
+        ),
+        ChatMenuItem(
           icon: Symbols.delete,
           label: l10n.editContactDelete,
           destructive: true,
@@ -192,6 +217,90 @@ class _ContactsTabState extends State<ContactsTab> with SpectrumSurface {
         ),
       ],
     );
+  }
+
+  Future<void> _openContactChat(CachedContact contact) async {
+    final accountId = await TokenStorage.getActiveAccountId();
+    final existing = accountId == null
+        ? null
+        : await AppDatabase.findDialogChatByParticipant(accountId, contact.id);
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          chatId: existing ?? ((accountId ?? 0) ^ contact.id),
+          name: _labelsOf(contact).title,
+          imageUrl: contact.baseUrl ?? '',
+          chatType: 'DIALOG',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startContactCall(CachedContact contact, {bool video = false}) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (CallController.instance.isBusy) {
+      showCustomNotification(context, l10n.callsTabAlreadyInCall);
+      return;
+    }
+    final confirmed = await showConfirmDialog(
+      context,
+      title: video ? l10n.contactsMenuVideoCall : l10n.chatInfoCallConfirmTitle,
+      message: l10n.chatInfoCallConfirmMessage(_labelsOf(contact).title),
+      confirmLabel: l10n.chatInfoConfirmYes,
+      cancelLabel: l10n.chatInfoConfirmNo,
+    );
+    if (!confirmed || !mounted) return;
+    try {
+      final session = await CallController.instance.startOutgoing(
+        contact.id,
+        isVideo: video,
+      );
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => CallScreen(
+            name: _labelsOf(contact).title,
+            avatarUrl: contact.baseUrl,
+            session: session,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) showCustomNotification(context, l10n.chatInfoCallFailed);
+    }
+  }
+
+  Future<void> _toggleContactBlock(CachedContact contact) async {
+    final l10n = AppLocalizations.of(context)!;
+    final blocked = await ContactsModule.isBlocked(api, contact.id);
+    if (!mounted) return;
+    if (blocked) {
+      final ok = await ContactsModule.setBlocked(api, contact.id, false);
+      if (!mounted) return;
+      showCustomNotification(
+        context,
+        ok ? l10n.chatInfoUnblockDone : l10n.chatInfoBlockFailed,
+      );
+      await _loadContacts();
+      return;
+    }
+    final confirmed = await showConfirmDialog(
+      context,
+      title: l10n.chatInfoBlockConfirmTitle,
+      message: l10n.chatInfoBlockConfirmMessage(_labelsOf(contact).title),
+      confirmLabel: l10n.chatInfoMenuBlock,
+      cancelLabel: l10n.chatInfoConfirmNo,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    final ok = await ContactsModule.setBlocked(api, contact.id, true);
+    if (!mounted) return;
+    showCustomNotification(
+      context,
+      ok ? l10n.chatInfoBlockDone : l10n.chatInfoBlockFailed,
+    );
+    await _loadContacts();
   }
 
   Future<void> _deleteContact(CachedContact contact) async {

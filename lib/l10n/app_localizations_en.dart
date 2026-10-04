@@ -4602,6 +4602,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatListCreateGroup => 'New group';
 
   @override
+  String get chatListCreateGroupCall => 'Create group call';
+
+  @override
+  String get chatListSearchByPhone => 'Search by number';
+
+  @override
+  String get chatListInviteByLink => 'Invite via link';
+
+  @override
+  String get chatListInviteLinkUnavailable =>
+      'The invite link is unavailable right now';
+
+  @override
   String get chatListCreateChannel => 'New channel';
 
   @override
@@ -5662,6 +5675,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsTabTitle => 'Contacts';
 
   @override
+  String get contactsMenuWrite => 'Write';
+
+  @override
+  String get contactsMenuCall => 'Call';
+
+  @override
+  String get contactsMenuVideoCall => 'Video call';
+
+  @override
+  String get contactsMenuBlock => 'Block';
+
+  @override
   String get contactsTabEmpty => 'No contacts';
 
   @override
@@ -6433,6 +6458,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proMaxShareContact => 'Share contact';
+
+  @override
+  String get chatInfoAddToFolder => 'Add to folder';
+
+  @override
+  String get chatInfoNoFolders => 'Create a chat folder first';
+
+  @override
+  String get chatInfoAddedToFolder => 'Chat added to folder';
+
+  @override
+  String get chatInfoAddToFolderFailed => "Couldn't add the chat to the folder";
 
   @override
   String get proMaxContactSent => 'Contact sent';

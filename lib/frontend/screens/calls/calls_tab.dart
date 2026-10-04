@@ -29,6 +29,46 @@ class CallsTab extends StatefulWidget {
   State<CallsTab> createState() => _CallsTabState();
 }
 
+/// Starts a new group call from entry points outside the Calls tab.
+Future<void> createGroupCallFromContext(BuildContext context) async {
+  final controller = CallController.instance;
+  final l10n = AppLocalizations.of(context)!;
+  if (controller.isBusy) {
+    showCustomNotification(context, l10n.callsTabAlreadyInCall);
+    return;
+  }
+
+  CreatedCall created;
+  try {
+    created = await controller.createConference();
+  } catch (e) {
+    if (context.mounted) {
+      showCustomNotification(context, '${l10n.callLinkCreateFailed}: $e');
+    }
+    return;
+  }
+  if (!context.mounted) return;
+
+  final start = await showCreatedCallSheet(context, call: created);
+  if (!start || !context.mounted) return;
+
+  final navigator = Navigator.of(context);
+  final name = created.callName ?? l10n.callLinkGroupCall;
+  try {
+    final session = await controller.joinByLink(created.joinToken);
+    if (!context.mounted) return;
+    await navigator.push(
+      MaterialPageRoute(
+        builder: (_) => CallScreen(name: name, session: session, isGroup: true),
+      ),
+    );
+  } catch (e) {
+    if (context.mounted) {
+      showCustomNotification(context, l10n.callsTabStartFailed('$e'));
+    }
+  }
+}
+
 class _CallsTabState extends State<CallsTab>
     with ReloadOnReconnect, SpectrumSurface {
   List<CallLogEntry> _calls = [];

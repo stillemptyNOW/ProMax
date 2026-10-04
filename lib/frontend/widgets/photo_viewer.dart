@@ -1042,13 +1042,20 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
     }
 
     final isHero = widget.hero != null && item.id == _heroId;
+    final transform = _transformFor(item.id);
     final page = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _toggleChrome,
+      onDoubleTap: () {
+        final isZoomed = transform.value.getMaxScaleOnAxis() > 1.01;
+        transform.value = isZoomed
+            ? Matrix4.identity()
+            : (Matrix4.identity()..scale(2.5));
+      },
       child: InteractiveViewer(
         minScale: 1,
         maxScale: 5,
-        transformationController: _transformFor(item.id),
+        transformationController: transform,
         child: Center(
           child: RotatedBox(
             quarterTurns: _quarterTurns[item.id] ?? 0,
@@ -1940,7 +1947,7 @@ String _formatViewerDuration(Duration duration) {
 }
 
 class _VideoSettingsButton extends StatelessWidget {
-  static const speeds = [0.5, 1.0, 1.2, 1.5, 1.7, 2.0];
+  static const speeds = [0.25, 0.5, 0.75, 1.0, 1.2, 1.5, 1.7, 2.0, 2.5, 3.0];
 
   final double speed;
   final String? quality;
