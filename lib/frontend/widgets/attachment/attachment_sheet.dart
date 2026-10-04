@@ -1272,7 +1272,7 @@ class _AttachmentSheetState extends State<AttachmentSheet> {
       key: const ValueKey('nav'),
       builder: (context, constraints) {
         final geometry = PillNavGeometry.fromInnerWidth(
-          constraints.maxWidth - 4,
+          constraints.maxWidth - 8,
           navItems.length,
         );
         return GestureDetector(

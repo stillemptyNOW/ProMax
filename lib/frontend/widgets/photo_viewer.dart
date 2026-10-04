@@ -1045,7 +1045,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
     final transform = _transformFor(item.id);
     final page = GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: _toggleChrome,
+      onTapDown: (_) => _toggleChrome(),
       onDoubleTap: () {
         final isZoomed = transform.value.getMaxScaleOnAxis() > 1.01;
         transform.value = isZoomed
