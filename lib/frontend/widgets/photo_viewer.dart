@@ -1050,7 +1050,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
         final isZoomed = transform.value.getMaxScaleOnAxis() > 1.01;
         transform.value = isZoomed
             ? Matrix4.identity()
-            : (Matrix4.identity()..scaleByDouble(2.5, 2.5, 1));
+            : (Matrix4.identity()..scaleByDouble(2.5, 2.5, 1, 1));
       },
       child: InteractiveViewer(
         minScale: 1,
