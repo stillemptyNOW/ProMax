@@ -22,7 +22,7 @@ class AppComposerBackground {
 
   static final _setting = PersistedEnum<ComposerBackground>(
     prefKey: prefKey,
-    defaultValue: ComposerBackground.standard,
+    defaultValue: ComposerBackground.liquidGlass,
     encode: (value) => value.name,
     decode: _parse,
   );
@@ -36,6 +36,6 @@ class AppComposerBackground {
   static ComposerBackground _parse(String? val) => enumFromName(
     ComposerBackground.values,
     val,
-    ComposerBackground.standard,
+    ComposerBackground.liquidGlass,
   );
 }

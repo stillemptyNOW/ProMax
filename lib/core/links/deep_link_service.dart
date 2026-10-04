@@ -22,7 +22,7 @@ import 'desktop_url_scheme.dart';
 import 'max_link.dart';
 import '../config/build_profile.dart';
 
-// #***! диплинки komet:// и max:// и переходы из пушей
+// #***! диплинки ProMax и MAX, а также переходы из пушей
 class DeepLinkService {
   DeepLinkService._();
 
@@ -196,7 +196,7 @@ class DeepLinkService {
   }
 
   ({int? chatId, int? userId})? _parsePushTarget(Uri uri) {
-    if (!{'komet', 'promax'}.contains(uri.scheme.toLowerCase())) return null;
+    if (uri.scheme.toLowerCase() != 'promax') return null;
 
     final segments = <String>[
       if (uri.host.isNotEmpty) uri.host,
@@ -244,7 +244,7 @@ class DeepLinkService {
 
   WebPushSubscription? _parseWebPushLink(Uri uri) {
     if (!Platform.isIOS) return null;
-    if (!{'komet', 'promax'}.contains(uri.scheme.toLowerCase())) return null;
+    if (uri.scheme.toLowerCase() != 'promax') return null;
 
     final segments = <String>[
       if (uri.host.isNotEmpty) uri.host,
@@ -300,15 +300,15 @@ class DeepLinkService {
     final scheme = uri.scheme.toLowerCase();
     final host = uri.host.toLowerCase();
     final segments = <String>[
-      if (scheme == 'komet' && host.isNotEmpty) host,
+      if (scheme == 'promax' && host.isNotEmpty) host,
       ...uri.pathSegments,
     ].where((s) => s.isNotEmpty).toList();
 
-    if (scheme == 'komet') {
+    if (scheme == 'promax') {
       return segments.length == 1 && segments.first == 'export-logs';
     }
     if (scheme == 'https' || scheme == 'http') {
-      return (host == 'komet.pw' || host == 'www.komet.pw') &&
+      return host == 'boriskino.qd.je' &&
           segments.length == 1 &&
           segments.first == 'export-logs';
     }
@@ -324,7 +324,7 @@ class DeepLinkService {
       return null;
     }
 
-    if (scheme == 'komet' || scheme == 'promax' || scheme == 'max') {
+    if (scheme == 'promax' || scheme == 'max') {
       final segments = <String>[
         if (uri.host.isNotEmpty && uri.host.toLowerCase() != 'max.ru') uri.host,
         ...uri.pathSegments,

@@ -1227,6 +1227,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get callBadgeEncrypted => 'Зашифрован';
 
   @override
+  String get callEncryptionScope =>
+      'Аудио и видео защищены DTLS-SRTP на транспортном участке. Это не подтверждает сквозное шифрование через сервер конференции.';
+
+  @override
   String get callBadgeAudio => 'Аудио';
 
   @override
@@ -2597,6 +2601,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get updateAction => 'Обновить';
 
   @override
+  String get updateIosInstallHint =>
+      'После загрузки выберите eSign в меню «Поделиться», чтобы подписать и установить IPA.';
+
+  @override
   String get updateLater => 'Позже';
 
   @override
@@ -3155,7 +3163,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String e2eeNeedsKomet(String name) {
-    return 'Для шифрования собеседнику $name нужен совместимый клиент с поддержкой E2EE.';
+    return 'Для этого у собеседника $name должен быть ProMax с включённым сквозным шифрованием.';
   }
 
   @override

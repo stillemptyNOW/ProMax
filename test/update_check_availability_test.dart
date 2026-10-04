@@ -10,7 +10,9 @@ void main() {
     test('${platform.name} keeps the update check outside store builds', () {
       debugDefaultTargetPlatformOverride = platform;
       expect(BuildProfile.selfUpdate, !BuildProfile.isStore);
-      expect(UpdateConfig.isConfigured, UpdateConfig.baseUrl.trim().isNotEmpty);
+      expect(UpdateConfig.isConfigured, isTrue);
+      expect(UpdateConfig.manifestUri.host, 'api.github.com');
+      expect(UpdateConfig.downloadsPage, contains('stillemptyNOW/ProMax'));
     });
   }
 }

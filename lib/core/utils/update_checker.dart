@@ -69,7 +69,9 @@ class AppUpdateInfo {
     if (version == null || version.isEmpty) return null;
 
     final rawBuild = manifest['build'];
-    final build = rawBuild is int ? rawBuild : int.tryParse('${rawBuild ?? ''}');
+    final build = rawBuild is int
+        ? rawBuild
+        : int.tryParse('${rawBuild ?? ''}');
 
     final tag = (manifest['tag'] as String?)?.trim();
     final url = (manifest['url'] as String?)?.trim();
@@ -111,9 +113,9 @@ class UpdateCheckResult {
   const UpdateCheckResult.failed() : this._(UpdateCheckStatus.failed);
 }
 
-// #***! проверка обновлений, манифест с S3 и сравнение версий
+// #***! проверка последнего публичного GitHub-релиза
 abstract class UpdateChecker {
-  static const String _userAgent = 'KometUpdateChecker';
+  static const String _userAgent = 'ProMaxUpdateChecker';
 
   static const String _lastCheckKey = 'update_last_check_ms';
   static const String _skippedTagKey = 'update_skipped_tag';
@@ -212,22 +214,64 @@ abstract class UpdateChecker {
       final req = await client.getUrl(uri);
       req.headers
         ..set(HttpHeaders.userAgentHeader, _userAgent)
-        ..set(HttpHeaders.acceptHeader, 'application/json')
+        ..set(HttpHeaders.acceptHeader, 'application/vnd.github+json')
+        ..set('X-GitHub-Api-Version', '2022-11-28')
         ..set(HttpHeaders.cacheControlHeader, 'no-cache');
       final resp = await req.close().timeout(_timeout);
       if (resp.statusCode != HttpStatus.ok) {
         await resp.drain<void>();
-        throw HttpException('Update manifest returned HTTP ${resp.statusCode}', uri: uri);
+        throw HttpException(
+          'Update manifest returned HTTP ${resp.statusCode}',
+          uri: uri,
+        );
       }
       final body = await resp
           .transform(const Utf8Decoder())
           .join()
           .timeout(_timeout);
       final decoded = jsonDecode(body);
-      if (decoded is! Map) {
+      final release = decoded is List && decoded.isNotEmpty
+          ? decoded.first
+          : decoded;
+      if (release is! Map) {
         throw const FormatException('Invalid update manifest');
       }
-      return decoded.cast<String, dynamic>();
+      final tag = release['tag_name'];
+      if (tag is! String || tag.isEmpty) {
+        throw const FormatException('GitHub release has no tag');
+      }
+      final match = RegExp(r'^v?(\d+\.\d+\.\d+)(?:\+(\d+))?').firstMatch(tag);
+      if (match == null) {
+        throw const FormatException('GitHub release tag has no app version');
+      }
+      final rawAssets = release['assets'];
+      final assets = <Map<String, Object?>>[];
+      if (rawAssets is List) {
+        for (final value in rawAssets.whereType<Map>()) {
+          final name = value['name'];
+          final url = value['browser_download_url'];
+          if (name is! String || url is! String) continue;
+          final digest = value['digest'];
+          assets.add({
+            'name': name,
+            'url': url,
+            'size': value['size'] is int ? value['size'] : 0,
+            'sha256': digest is String
+                ? digest.replaceFirst(RegExp(r'^sha256:'), '').toLowerCase()
+                : '',
+          });
+        }
+      }
+      return {
+        'version': match.group(1),
+        'build': int.tryParse(match.group(2) ?? ''),
+        'tag': tag,
+        'url': release['html_url'] is String
+            ? release['html_url']
+            : UpdateConfig.downloadsPage,
+        'notes': release['body'] is String ? release['body'] : '',
+        'assets': assets,
+      };
     } finally {
       client.close(force: true);
     }

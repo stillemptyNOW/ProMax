@@ -82,7 +82,7 @@ void main() {
   testWidgets('a text share drops the preview row', (tester) async {
     final controller = await _pump(
       tester,
-      share: const PreparedShare(files: [], text: 'https://komet.pw'),
+      share: const PreparedShare(files: [], text: 'https://max.ru'),
       recipients: const ['ЛУКА'],
     );
 

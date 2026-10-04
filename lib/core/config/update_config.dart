@@ -1,30 +1,20 @@
 import 'build_profile.dart';
 
-// #***! откуда берём обновления, адрес зашит через --dart-define
+// #***! источник обновлений
 abstract final class UpdateConfig {
-  static const String baseUrl = String.fromEnvironment(
-    'KOMET_UPDATE_BASE_URL',
-    defaultValue: '',
-  );
+  static const String repository = 'stillemptyNOW/ProMax';
+  static const String apiUrl =
+      'https://api.github.com/repos/$repository/releases?per_page=1';
 
-  // #***! пустой адрес значит обновления выключены, в App Store сборке их нет вовсе
-  static bool get isConfigured =>
-      !BuildProfile.isAppStoreBuild && _normalizedBase.isNotEmpty;
+  // #***! в App Store сборке проверка обновлений не используется
+  static bool get isConfigured => !BuildProfile.isAppStoreBuild;
 
-  // #***! цепляем метку минуты иначе CDN отдаст старый манифест
+  // #***! добавляем метку минуты для обхода промежуточного кеша
   static Uri get manifestUri => Uri.parse(
-    '$_normalizedBase/latest.json',
-  ).replace(queryParameters: {'t': _cacheBuster});
+    apiUrl,
+  ).replace(queryParameters: {'per_page': '1', 't': _cacheBuster});
 
-  static String get downloadsPage => _normalizedBase;
-
-  static String get _normalizedBase {
-    var url = baseUrl.trim();
-    while (url.endsWith('/')) {
-      url = url.substring(0, url.length - 1);
-    }
-    return url;
-  }
+  static String get downloadsPage => 'https://github.com/$repository/releases';
 
   static String get _cacheBuster =>
       (DateTime.now().millisecondsSinceEpoch ~/ 60000).toString();

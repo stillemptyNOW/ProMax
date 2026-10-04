@@ -18,7 +18,7 @@ class AppChatChrome {
 
   static final _setting = PersistedEnum<ChatChromeStyle>(
     prefKey: prefKey,
-    defaultValue: ChatChromeStyle.color,
+    defaultValue: ChatChromeStyle.liquidGlass,
     encode: _encode,
     decode: _parse,
   );
@@ -26,7 +26,7 @@ class AppChatChrome {
   static ValueNotifier<ChatChromeStyle> get current => _setting.current;
 
   static ChatChromeStyle _parse(String? value) =>
-      enumFromName(ChatChromeStyle.values, value, ChatChromeStyle.color);
+      enumFromName(ChatChromeStyle.values, value, ChatChromeStyle.liquidGlass);
 
   static String _encode(ChatChromeStyle value) => value.name;
 

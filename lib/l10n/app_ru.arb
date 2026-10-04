@@ -398,6 +398,7 @@
   "callInfoVideoSize": "Размер видео",
   "callInfoFrameRendering": "Отрисовка кадров",
   "callBadgeEncrypted": "Зашифрован",
+  "callEncryptionScope": "Аудио и видео защищены DTLS-SRTP на транспортном участке. Это не подтверждает сквозное шифрование через сервер конференции.",
   "callBadgeAudio": "Аудио",
   "callBadgeRecording": "Запись",
   "callBadgeNoiseSuppression": "Шумоподавление",
@@ -829,6 +830,7 @@
   },
   "updateWhatsNew": "ЧТО НОВОГО",
   "updateAction": "Обновить",
+  "updateIosInstallHint": "После загрузки выберите eSign в меню «Поделиться», чтобы подписать и установить IPA.",
   "updateLater": "Позже",
   "updateSkip": "Пропустить",
   "updateDownloading": "Загрузка обновления…",
@@ -1108,7 +1110,7 @@
   },
   "e2eeVerified": "Проверено лично",
   "e2eeCeiling": "Шифруется только текст сообщений и фото. Сервер по-прежнему видит, кто с кем и когда переписывается, видит, что переписка зашифрована, и может не доставлять сообщения. Скрыть это нельзя.",
-  "e2eeNeedsKomet": "Для шифрования собеседнику {name} нужен совместимый клиент с поддержкой E2EE.",
+  "e2eeNeedsKomet": "Для этого у собеседника {name} должен быть ProMax с включённым сквозным шифрованием.",
   "@e2eeNeedsKomet": {
     "placeholders": {
       "name": {

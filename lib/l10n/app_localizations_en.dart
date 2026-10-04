@@ -1227,6 +1227,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get callBadgeEncrypted => 'Encrypted';
 
   @override
+  String get callEncryptionScope =>
+      'Audio and video use DTLS-SRTP on the transport link. This does not confirm end-to-end encryption through the conference server.';
+
+  @override
   String get callBadgeAudio => 'Audio';
 
   @override
@@ -2586,6 +2590,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateAction => 'Update';
 
   @override
+  String get updateIosInstallHint =>
+      'After downloading, choose eSign from the Share menu to sign and install the IPA.';
+
+  @override
   String get updateLater => 'Later';
 
   @override
@@ -2895,7 +2903,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'The subscription is registered on the server. Do not delete the Home Screen icon — the notifications go with it.\n\nIf push stops arriving, open the web app and link again: Apple sometimes rotates the subscription address.';
 
   @override
-  String get webPushOpenSite => 'Open push.komet.pw';
+  String get webPushOpenSite => 'Open ProMax Web Push';
 
   @override
   String get webPushSignOut => 'Disconnect notifications';
@@ -3140,7 +3148,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String e2eeNeedsKomet(String name) {
-    return '$name needs a compatible ProMax or ProMax client for this to work.';
+    return '$name needs ProMax with end-to-end encryption enabled for this to work.';
   }
 
   @override

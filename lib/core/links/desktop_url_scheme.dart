@@ -3,7 +3,7 @@ import 'dart:io';
 import '../utils/logger.dart';
 
 // #***! схемы которые вешаем на себя
-const List<String> _schemes = ['komet', 'max'];
+const List<String> _schemes = ['promax', 'max'];
 
 // #***! регистрация схем в системе, на мобилках это манифест
 abstract class DesktopUrlScheme {
@@ -48,11 +48,12 @@ abstract class DesktopUrlScheme {
     final appsDir = Directory('$home/.local/share/applications');
     await appsDir.create(recursive: true);
 
-    const fileName = 'komet-url-handler.desktop';
+    const fileName = 'promax-url-handler.desktop';
     final mimeTypes = _schemes.map((s) => 'x-scheme-handler/$s').join(';');
-    final desktop = '[Desktop Entry]\n'
+    final desktop =
+        '[Desktop Entry]\n'
         'Type=Application\n'
-        'Name=Komet\n'
+        'Name=ProMax\n'
         'Exec="$exe" %u\n'
         'Terminal=false\n'
         'NoDisplay=true\n'

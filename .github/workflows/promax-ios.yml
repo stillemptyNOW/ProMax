@@ -3,6 +3,7 @@ name: ProMax iOS
 on:
   push:
     branches: [main]
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -60,6 +61,8 @@ jobs:
   ios:
     runs-on: macos-15
     timeout-minutes: 60
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -92,6 +95,16 @@ jobs:
               for name in ('manifest.json', 'main.js'):
                   package.write('assets/plugins/promax/' + name, name)
           PY
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/ProMax-ios-unsigned.ipa \
+            dist/ProMax-Tools.kinet \
+            --title "ProMax $GITHUB_REF_NAME" \
+            --generate-notes
       - uses: actions/upload-artifact@v4
         with:
           name: ProMax-ios-unsigned

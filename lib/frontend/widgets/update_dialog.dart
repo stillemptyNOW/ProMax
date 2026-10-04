@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
 import '../../core/utils/update_checker.dart';
 import '../../core/utils/update_installer.dart';
 import '../../core/utils/link_opener.dart';
@@ -39,6 +40,17 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
                 height: 1.35,
               ),
             ),
+            if (Platform.isIOS) ...[
+              const SizedBox(height: 12),
+              Text(
+                l10n.updateIosInstallHint,
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 13,
+                  height: 1.35,
+                ),
+              ),
+            ],
             if (notes.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text(
@@ -100,7 +112,8 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
 }
 
 Future<void> _startUpdate(BuildContext context, AppUpdateInfo info) async {
-  if (!UpdateInstaller.isSupported) {
+  if (!UpdateInstaller.isSupported ||
+      (Platform.isIOS && UpdateInstaller.resolveIpa(info) == null)) {
     await openExternalUrl(context, info.url);
     return;
   }

@@ -64,6 +64,8 @@
   if (mode == 0 || ![frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) return frame;
   @autoreleasepool {
     CVPixelBufferRef input = ((RTCCVPixelBuffer *)frame.buffer).pixelBuffer;
+    const size_t sourceWidth = CVPixelBufferGetWidth(input);
+    const size_t sourceHeight = CVPixelBufferGetHeight(input);
     CIImage *image = [CIImage imageWithCVPixelBuffer:input];
     int orientation = frame.rotation == RTCVideoRotation_90 ? 6 : frame.rotation == RTCVideoRotation_180 ? 3 : frame.rotation == RTCVideoRotation_270 ? 8 : 1;
     image = [image imageByApplyingOrientation:orientation];
@@ -146,12 +148,15 @@
     image = [[CIImage imageWithCGImage:overlay] imageByCompositingOverImage:image];
     CGImageRelease(overlay);
     }
+    const int inverseOrientation = orientation == 6 ? 8 : orientation == 8 ? 6 : orientation;
+    CIImage *outputImage = [image imageByApplyingOrientation:inverseOrientation];
+    outputImage = [outputImage imageByApplyingTransform:CGAffineTransformMakeTranslation(-outputImage.extent.origin.x, -outputImage.extent.origin.y)];
     CVPixelBufferRef output = NULL;
-    CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)@{(id)kCVPixelBufferIOSurfacePropertiesKey: @{}}, &output);
+    CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, sourceWidth, sourceHeight, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)@{(id)kCVPixelBufferIOSurfacePropertiesKey: @{}}, &output);
     if (status != kCVReturnSuccess || !output) { CGColorSpaceRelease(space); return frame; }
-    [_context render:image toCVPixelBuffer:output bounds:image.extent colorSpace:space];
+    [_context render:outputImage toCVPixelBuffer:output bounds:CGRectMake(0, 0, sourceWidth, sourceHeight) colorSpace:space];
     CGColorSpaceRelease(space);
-    RTCVideoFrame *processed = [[RTCVideoFrame alloc] initWithBuffer:[[RTCCVPixelBuffer alloc] initWithPixelBuffer:output] rotation:RTCVideoRotation_0 timeStampNs:frame.timeStampNs];
+    RTCVideoFrame *processed = [[RTCVideoFrame alloc] initWithBuffer:[[RTCCVPixelBuffer alloc] initWithPixelBuffer:output] rotation:frame.rotation timeStampNs:frame.timeStampNs];
     CVPixelBufferRelease(output);
     return processed;
   }

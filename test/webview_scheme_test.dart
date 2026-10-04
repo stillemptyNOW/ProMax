@@ -18,7 +18,14 @@ void main() {
     });
 
     test('hands app schemes over to the app', () {
-      for (final scheme in ['max', 'MAX', 'komet', 'tel', 'mailto', 'intent']) {
+      for (final scheme in [
+        'max',
+        'MAX',
+        'promax',
+        'tel',
+        'mailto',
+        'intent',
+      ]) {
         expect(leavesWebView(scheme), isTrue, reason: scheme);
       }
     });

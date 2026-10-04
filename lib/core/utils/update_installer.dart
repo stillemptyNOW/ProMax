@@ -5,6 +5,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'update_checker.dart';
 
@@ -37,16 +38,16 @@ class _DigestSink implements Sink<Digest> {
   void close() {}
 }
 
-// #***! скачивание и установка APK, только андроид
+// #***! загрузка обновления для текущей платформы
 abstract class UpdateInstaller {
-  static bool get isSupported => Platform.isAndroid;
+  static bool get isSupported => Platform.isAndroid || Platform.isIOS;
 
   // #***! весь путь, выбрать скачать проверить отдать установщику
   static Future<UpdateInstallResult> downloadAndInstall(
     AppUpdateInfo info, {
     void Function(double progress)? onProgress,
   }) async {
-    final asset = await resolveApk(info);
+    final asset = Platform.isIOS ? resolveIpa(info) : await resolveApk(info);
     if (asset == null) {
       return const UpdateInstallResult(UpdateInstallStatus.noAsset);
     }
@@ -66,17 +67,28 @@ abstract class UpdateInstaller {
       );
     }
 
-    final opened = await OpenFilex.open(
-      file.path,
-      type: 'application/vnd.android.package-archive',
-    );
-    if (opened.type != ResultType.done) {
-      return UpdateInstallResult(
-        UpdateInstallStatus.installFailed,
-        error: opened.message,
+    if (Platform.isIOS) {
+      await Share.shareXFiles([
+        XFile(file.path, mimeType: 'application/octet-stream'),
+      ], subject: 'ProMax ${info.version}');
+    } else {
+      final opened = await OpenFilex.open(
+        file.path,
+        type: 'application/vnd.android.package-archive',
       );
+      if (opened.type != ResultType.done) {
+        return UpdateInstallResult(
+          UpdateInstallStatus.installFailed,
+          error: opened.message,
+        );
+      }
     }
     return const UpdateInstallResult(UpdateInstallStatus.done);
+  }
+
+  static UpdateAsset? resolveIpa(AppUpdateInfo info) {
+    if (!Platform.isIOS) return null;
+    return info.assetWithSuffix('.ipa');
   }
 
   // #***! APK под ABI устройства и флейвор, иначе универсальный
@@ -84,7 +96,9 @@ abstract class UpdateInstaller {
     if (!Platform.isAndroid || info.assets.isEmpty) return null;
 
     final packageInfo = await PackageInfo.fromPlatform();
-    final flavor = packageInfo.packageName == 'ru.oneme.app' ? 'oneme' : 'komet';
+    final flavor = packageInfo.packageName == 'ru.oneme.app'
+        ? 'oneme'
+        : 'komet';
 
     final androidInfo = await DeviceInfoPlugin().androidInfo;
     final abis = androidInfo.supportedAbis;
@@ -104,13 +118,14 @@ abstract class UpdateInstaller {
   ) async {
     final dir = await getTemporaryDirectory();
     final safeTag = tag.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-    final file = File('${dir.path}/komet-update-$safeTag.apk');
+    final extension = asset.name.toLowerCase().endsWith('.ipa') ? 'ipa' : 'apk';
+    final file = File('${dir.path}/promax-update-$safeTag.$extension');
     final part = File('${file.path}.part');
 
     final client = HttpClient();
     try {
       final request = await client.getUrl(Uri.parse(asset.url));
-      request.headers.set(HttpHeaders.userAgentHeader, 'KometUpdateInstaller');
+      request.headers.set(HttpHeaders.userAgentHeader, 'ProMaxUpdateInstaller');
       final response = await request.close();
       if (response.statusCode != HttpStatus.ok) {
         await response.drain<void>();
@@ -151,7 +166,7 @@ abstract class UpdateInstaller {
       if (await file.exists()) await file.delete();
       await part.rename(file.path);
       return file;
-    // #***! при любой ошибке недокачанное удаляем
+      // #***! при любой ошибке недокачанное удаляем
     } catch (e) {
       if (await part.exists()) {
         try {
@@ -172,5 +187,6 @@ class _ChecksumMismatch implements Exception {
   const _ChecksumMismatch(this.expected, this.actual);
 
   @override
-  String toString() => 'Update payload mismatch: expected $expected, got $actual';
+  String toString() =>
+      'Update payload mismatch: expected $expected, got $actual';
 }

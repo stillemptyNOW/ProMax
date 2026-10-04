@@ -71,11 +71,11 @@ void main() {
     test('a text-only share survives with no files', () {
       final payload = SharedPayload.fromMap({
         'files': const [],
-        'text': '  https://komet.pw  ',
+        'text': '  https://max.ru  ',
       });
 
       expect(payload!.isTextOnly, isTrue);
-      expect(payload.text, 'https://komet.pw');
+      expect(payload.text, 'https://max.ru');
     });
 
     test('an empty share is rejected', () {

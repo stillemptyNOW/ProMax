@@ -1915,6 +1915,8 @@ class _CallInfoSheet extends StatelessWidget {
 
     final badges = <Widget>[
       _badge(cs, Symbols.call, l10n.callBadgeAudio),
+      if (session?.mediaConnected == true)
+        _badge(cs, Symbols.enhanced_encryption, 'DTLS-SRTP'),
       if (info?.record == true)
         _badge(cs, Symbols.radio_button_checked, l10n.callBadgeRecording),
       if (info?.denoise == true)
@@ -1948,6 +1950,17 @@ class _CallInfoSheet extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Wrap(spacing: 8, runSpacing: 8, children: badges),
+              if (session?.mediaConnected == true) ...[
+                const SizedBox(height: 10),
+                Text(
+                  l10n.callEncryptionScope,
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               if (rows.isEmpty)
                 Text(

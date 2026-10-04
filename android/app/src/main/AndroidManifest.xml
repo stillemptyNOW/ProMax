@@ -44,6 +44,12 @@
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+            android:name="firebase_analytics_collection_deactivated"
+            android:value="true" />
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
+            android:value="false" />
         <activity
             android:name="ru.komet.app.MainActivity"
             android:exported="true"
@@ -99,8 +105,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="komet.pw"/>
-                <data android:scheme="https" android:host="www.komet.pw"/>
+                <data android:scheme="https" android:host="boriskino.qd.je"/>
                 <data android:path="/export-logs"/>
                 <data android:path="/export-logs/"/>
             </intent-filter>
@@ -108,7 +113,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="komet"/>
+                <data android:scheme="promax"/>
             </intent-filter>
             <intent-filter android:label="@string/share_target_label">
                 <action android:name="android.intent.action.SEND"/>

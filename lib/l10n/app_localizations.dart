@@ -2402,6 +2402,12 @@ abstract class AppLocalizations {
   /// **'Encrypted'**
   String get callBadgeEncrypted;
 
+  /// No description provided for @callEncryptionScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio and video use DTLS-SRTP on the transport link. This does not confirm end-to-end encryption through the conference server.'**
+  String get callEncryptionScope;
+
   /// No description provided for @callBadgeAudio.
   ///
   /// In en, this message translates to:
@@ -4946,6 +4952,12 @@ abstract class AppLocalizations {
   /// **'Update'**
   String get updateAction;
 
+  /// No description provided for @updateIosInstallHint.
+  ///
+  /// In en, this message translates to:
+  /// **'After downloading, choose eSign from the Share menu to sign and install the IPA.'**
+  String get updateIosInstallHint;
+
   /// No description provided for @updateLater.
   ///
   /// In en, this message translates to:
@@ -5495,7 +5507,7 @@ abstract class AppLocalizations {
   /// No description provided for @webPushOpenSite.
   ///
   /// In en, this message translates to:
-  /// **'Open push.komet.pw'**
+  /// **'Open ProMax Web Push'**
   String get webPushOpenSite;
 
   /// No description provided for @webPushSignOut.
@@ -5897,7 +5909,7 @@ abstract class AppLocalizations {
   /// No description provided for @e2eeNeedsKomet.
   ///
   /// In en, this message translates to:
-  /// **'{name} needs a compatible ProMax or ProMax client for this to work.'**
+  /// **'{name} needs ProMax with end-to-end encryption enabled for this to work.'**
   String e2eeNeedsKomet(String name);
 
   /// No description provided for @e2eeOfferSent.
