@@ -219,6 +219,8 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
   int _pointers = 0;
   bool _zoomed = false;
   bool _swipeEnabled = true;
+  Duration? _lastPhotoTapAt;
+  Offset? _lastPhotoTapPosition;
   bool _feedLoaded = false;
   bool _feedFailed = false;
   bool _loadingMore = false;
@@ -1008,7 +1010,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
     );
 
     return Listener(
-      onPointerDown: (_) => _updatePointers(1),
+      onPointerDown: _onPagerPointerDown,
       onPointerUp: (_) => _updatePointers(-1),
       onPointerCancel: (_) => _updatePointers(-1),
       child: MediaQuery(
@@ -1029,6 +1031,39 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
     );
   }
 
+  void _onPagerPointerDown(PointerDownEvent event) {
+    _updatePointers(1);
+    if (_current.photo == null) return;
+
+    final previousAt = _lastPhotoTapAt;
+    final previousPosition = _lastPhotoTapPosition;
+    final isDoubleTap =
+        previousAt != null &&
+        event.timeStamp - previousAt <= const Duration(milliseconds: 300) &&
+        previousPosition != null &&
+        (event.localPosition - previousPosition).distance <= 48;
+    if (!isDoubleTap) {
+      _lastPhotoTapAt = event.timeStamp;
+      _lastPhotoTapPosition = event.localPosition;
+      return;
+    }
+
+    _lastPhotoTapAt = null;
+    _lastPhotoTapPosition = null;
+    final transform = _transformFor(_current.id);
+    final scale = transform.value.getMaxScaleOnAxis() > 1.01 ? 1.0 : 2.5;
+    if (scale == 1) {
+      transform.value = Matrix4.identity();
+    } else {
+      final point = event.localPosition;
+      transform.value = Matrix4.identity()
+        ..setEntry(0, 0, scale)
+        ..setEntry(1, 1, scale)
+        ..setEntry(0, 3, point.dx * (1 - scale))
+        ..setEntry(1, 3, point.dy * (1 - scale));
+    }
+  }
+
   Widget _buildPage(int i) {
     final item = _items[i];
     final video = item.video;
@@ -1045,13 +1080,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
     final transform = _transformFor(item.id);
     final page = GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => _toggleChrome(),
-      onDoubleTap: () {
-        final isZoomed = transform.value.getMaxScaleOnAxis() > 1.01;
-        transform.value = isZoomed
-            ? Matrix4.identity()
-            : (Matrix4.identity()..scaleByDouble(2.5, 2.5, 1, 1));
-      },
+      onTap: _toggleChrome,
       child: InteractiveViewer(
         minScale: 1,
         maxScale: 5,
