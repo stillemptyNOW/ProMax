@@ -117,6 +117,7 @@ import 'frontend/widgets/keyboard_dismissal.dart';
 import 'frontend/widgets/atmosphere_overlay.dart';
 import 'frontend/widgets/privacy_shields.dart';
 import 'core/config/promax_atmosphere.dart';
+import 'core/disappearing/disappearing_messages.dart';
 import 'core/config/promax_glass.dart';
 import 'core/config/promax_theme_presets.dart';
 
@@ -217,6 +218,14 @@ void main(List<String> args) async {
     await ContactsModule.primeCacheFromDb(activeAccountId);
   }
   attachInfoCacheApi(api);
+  unawaited(
+    DisappearingMessages.instance.start(
+      events: chats.messageEvents,
+      delete: (chatId, ids) =>
+          messagesModule.deleteMessages(chatId, ids, forEveryone: true),
+      myId: TokenStorage.getActiveAccountId,
+    ),
+  );
   chats.attachGlobalPushHandlers(api);
   unawaited(FkmController.instance.init(api));
   FoldersModule.attachGlobalPushHandlers(api);

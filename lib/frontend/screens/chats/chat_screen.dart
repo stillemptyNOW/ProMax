@@ -102,6 +102,8 @@ import '../../widgets/atmosphere_overlay.dart';
 import '../profile/atmosphere_screen.dart';
 import 'chat_stats_screen.dart';
 import 'message_shot_sheet.dart';
+import 'disappearing_sheet.dart';
+import '../../../core/disappearing/disappearing_messages.dart';
 import '../../../core/config/app_chat_chrome.dart';
 import 'package:promax/core/config/app_composer_background.dart';
 import 'package:promax/core/config/app_composer_style.dart';
@@ -3388,6 +3390,13 @@ class _ChatScreenState extends State<ChatScreen>
           icon: Symbols.wallpaper,
           label: l10n.chatScreenMenuChangeWallpaper,
           onTap: _openWallpaperSheet,
+        ),
+        ChatMenuItem(
+          icon: Symbols.timer,
+          label: DisappearingMessages.instance.timerFor(widget.chatId) > 0
+              ? 'Исчезающие: ${DisappearingMessages.label(DisappearingMessages.instance.timerFor(widget.chatId))}'
+              : 'Исчезающие сообщения',
+          onTap: () => showDisappearingSheet(context, widget.chatId),
         ),
         ChatMenuItem(
           icon: Symbols.bar_chart,
