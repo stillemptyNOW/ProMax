@@ -15,10 +15,9 @@ class FkmBridge {
   VoidCallback? _onDisabled;
   bool _handlerSet = false;
 
-  // #***! только андроид
   bool get isSupported {
     try {
-      return Platform.isAndroid;
+      return Platform.isAndroid || Platform.isIOS;
     } catch (_) {
       return false;
     }

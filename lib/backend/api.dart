@@ -33,6 +33,8 @@ enum SessionState { disconnected, connecting, connected, online }
 // #***! весь жизненный цикл соединения
 /// Клиент API
 class Api {
+  static bool keepAliveInBackground = false;
+
   KolibriSession? _session;
 
   final PacketDispatcher _dispatcher = PacketDispatcher();
@@ -963,7 +965,7 @@ class Api {
 
   // #***! задержка реконнекта 2 4 8, в фоне потолок выше чтоб батарею не жрать
   void _scheduleReconnect() {
-    final capSec = AppForeground.value
+    final capSec = AppForeground.value || keepAliveInBackground
         ? _foregroundReconnectCapSec
         : _backgroundReconnectCapSec;
     final delaySec = (2 * (1 << _reconnectAttempts.clamp(0, 6))).clamp(

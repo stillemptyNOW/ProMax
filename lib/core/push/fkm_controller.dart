@@ -48,6 +48,7 @@ class FkmController {
 
     FkmBridge.instance.setDisabledCallback(_onDisabledFromNotification);
     enabled.value = await FkmBridge.instance.isEnabled();
+    Api.keepAliveInBackground = enabled.value;
 
     _pushSub = api.pushStream
         .where(
@@ -75,6 +76,7 @@ class FkmController {
     if (value) await initLocalNotificationActions();
     await FkmBridge.instance.setEnabled(value);
     enabled.value = value;
+    Api.keepAliveInBackground = value;
     if (value) await _pushConnectionState();
     return true;
   }

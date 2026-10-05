@@ -193,8 +193,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                           builder: (context, fkmEnabled, _) =>
                               SettingsToggleTile(
                                 icon: Symbols.notifications_active,
-                                label: l10n.notificationsFkmEnableLabel,
-                                subtitle: l10n.notificationsFkmEnableSubtitle,
+                                label: Platform.isIOS
+                                    ? 'Живое соединение'
+                                    : l10n.notificationsFkmEnableLabel,
+                                subtitle: Platform.isIOS
+                                    ? 'ProMax держит связь с MAX в фоне и сразу показывает уведомления. Тратит больше батареи. Если смахнуть ProMax из списка приложений, уведомления остановятся до следующего запуска'
+                                    : l10n.notificationsFkmEnableSubtitle,
                                 value: fkmEnabled,
                                 enabled: !_fkmBusy,
                                 onChanged: _onFkmChanged,

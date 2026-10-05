@@ -35,6 +35,7 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
     ProMaxNotifications.shared.start()
+    ProMaxLiveConnection.shared.start()
 
     if let controller = window?.rootViewController as? FlutterViewController {
       let messenger = controller.binaryMessenger
@@ -44,6 +45,9 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
       registerNotifications(messenger)
       registerScreen(messenger)
       registerClipboard(messenger)
+      method("io.github.stillemptynow.promax/fkm", messenger) { call, result in
+        ProMaxLiveConnection.shared.handle(call, result: result)
+      }
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
