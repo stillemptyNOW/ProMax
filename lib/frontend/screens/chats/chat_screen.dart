@@ -100,6 +100,7 @@ import '../../../core/security/double_bottom.dart';
 import '../../../core/config/promax_atmosphere.dart';
 import '../../widgets/atmosphere_overlay.dart';
 import '../profile/atmosphere_screen.dart';
+import 'chat_stats_screen.dart';
 import '../../../core/config/app_chat_chrome.dart';
 import 'package:promax/core/config/app_composer_background.dart';
 import 'package:promax/core/config/app_composer_style.dart';
@@ -3368,6 +3369,20 @@ class _ChatScreenState extends State<ChatScreen>
           icon: Symbols.wallpaper,
           label: l10n.chatScreenMenuChangeWallpaper,
           onTap: _openWallpaperSheet,
+        ),
+        ChatMenuItem(
+          icon: Symbols.bar_chart,
+          label: 'Статистика чата',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatStatsScreen(
+                accountId: _myId,
+                chatId: widget.chatId,
+                title: widget.name,
+              ),
+            ),
+          ),
         ),
         ChatMenuItem(
           icon: Symbols.ac_unit,
