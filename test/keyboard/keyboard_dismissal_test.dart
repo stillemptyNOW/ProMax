@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/keyboard_dismissal.dart';
+import 'package:promax/frontend/widgets/keyboard_dismissal.dart';
 
 Widget _app(Widget body, {List<NavigatorObserver> observers = const []}) {
   return MaterialApp(

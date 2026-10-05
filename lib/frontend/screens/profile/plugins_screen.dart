@@ -34,8 +34,8 @@ class _PluginsScreenState extends State<PluginsScreen> {
     if (picked == null || !mounted) return;
     final l10n = AppLocalizations.of(context)!;
     try {
-      if (!picked.name.toLowerCase().endsWith('.kinet')) {
-        throw FormatException(l10n.pluginsScreenPickKinetFile);
+      if (!picked.name.toLowerCase().endsWith('.pmx')) {
+        throw FormatException(l10n.pluginsScreenPickPmxFile);
       }
       final path = picked.path;
       final bytes =
@@ -402,7 +402,7 @@ class _PluginUrlDialogState extends State<PluginUrlDialog> {
         autofocus: true,
         keyboardType: TextInputType.url,
         decoration: const InputDecoration(
-          hintText: 'https://example.org/plugin.kinet',
+          hintText: 'https://example.org/plugin.pmx',
         ),
         onSubmitted: (_) => _submit(),
       ),

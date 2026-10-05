@@ -6,7 +6,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:komet_tlottie/komet_tlottie.dart';
+import 'package:promax_tlottie/promax_tlottie.dart';
 
 import '../../utils/logger.dart';
 import 'tlottie_disk_cache.dart';

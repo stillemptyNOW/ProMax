@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/chat_preview.dart';
-import 'package:komet/models/chat_preview_media.dart';
+import 'package:promax/backend/modules/chat_preview.dart';
+import 'package:promax/models/chat_preview_media.dart';
 
 const String _thumbA = 'data:image/webp;base64,AAAA';
 const String _thumbB = 'data:image/webp;base64,BBBB';

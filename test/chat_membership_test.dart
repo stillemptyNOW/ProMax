@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/storage/app_database.dart';
+import 'package:promax/core/storage/app_database.dart';
 
 void main() {
   test('chat list state distinguishes previews from memberships', () {

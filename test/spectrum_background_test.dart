@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:komet/core/config/app_spectrum_background.dart';
-import 'package:komet/frontend/widgets/komet_avatar.dart';
-import 'package:komet/frontend/widgets/spectrum_background.dart';
+import 'package:promax/core/config/app_spectrum_background.dart';
+import 'package:promax/frontend/widgets/promax_avatar.dart';
+import 'package:promax/frontend/widgets/spectrum_background.dart';
 
 class _CountingCanvas implements Canvas {
   final List<Rect> rects = <Rect>[];
@@ -169,7 +169,7 @@ void main() {
         brightness: Brightness.dark,
         overlay: const Align(
           alignment: Alignment.bottomLeft,
-          child: KometAvatar(
+          child: ProMaxAvatar(
             name: 'Nova',
             size: 48,
             backgroundColor: Color(0xFFFF0000),

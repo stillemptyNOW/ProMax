@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
-import 'package:komet/core/utils/image_format.dart';
+import 'package:promax/core/utils/image_format.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -124,7 +124,7 @@ void main() {
 
     setUp(() {
       TestWidgetsFlutterBinding.ensureInitialized();
-      workspace = Directory.systemTemp.createTempSync('komet_image_format');
+      workspace = Directory.systemTemp.createTempSync('promax_image_format');
       PathProviderPlatform.instance = _FakePathProvider(workspace.path);
     });
 

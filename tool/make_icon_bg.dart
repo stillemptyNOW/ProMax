@@ -2,8 +2,7 @@ import 'dart:io';
 import 'package:image/image.dart' as img;
 
 const _pairs = {
-  'assets/komet.png': 'assets/komet_icon.png',
-  'assets/meteor.png': 'assets/meteor_icon.png',
+  'assets/promax.png': 'assets/promax_icon.png',
 };
 
 void main() {

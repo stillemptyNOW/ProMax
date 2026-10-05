@@ -11,7 +11,5 @@ String termsOfServiceBody(Locale locale) {
   if (BuildProfile.isStore) {
     return russian ? kTermsOfServiceStoreRu : kTermsOfServiceStoreEn;
   }
-  return (russian ? kTermsOfServiceRu : kTermsOfServiceEn)
-      .replaceAll('KometClient', 'ProMax')
-      .replaceAll('Komet', 'ProMax');
+  return russian ? kTermsOfServiceRu : kTermsOfServiceEn;
 }

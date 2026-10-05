@@ -3,30 +3,30 @@ import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:komet_crypto/komet_crypto.dart';
+import 'package:promax_crypto/promax_crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../crypto/e2ee_service.dart';
 import '../storage/app_database.dart';
 import '../storage/token_storage.dart';
-import 'komet_settings.dart';
+import 'promax_settings.dart';
 import 'call_lighting.dart';
 
 class ProMaxArchive {
   static const maxBytes = 64 * 1024 * 1024;
   static const boolKeys = {
-    'komet_view_deleted',
-    'komet_view_redacted',
-    'komet_full_timestamp',
-    'komet_show_forward',
-    'komet_show_typing_time',
-    'komet_ghost_mode',
-    'komet_anti_read',
-    'komet_self_online_check',
-    'komet_hide_all_chats_folder',
-    'komet_show_hidden_chats',
-    'komet_archive_on_pull',
-    'komet_record_debug_logs',
+    'promax_view_deleted',
+    'promax_view_redacted',
+    'promax_full_timestamp',
+    'promax_show_forward',
+    'promax_show_typing_time',
+    'promax_ghost_mode',
+    'promax_anti_read',
+    'promax_self_online_check',
+    'promax_hide_all_chats_folder',
+    'promax_show_hidden_chats',
+    'promax_archive_on_pull',
+    'promax_record_debug_logs',
     'app_amoled',
     'dev_video_note_rear_camera',
     'call_light_wide_default',
@@ -75,7 +75,7 @@ class ProMaxArchive {
     return {
       for (final key in boolKeys)
         key:
-            key == 'komet_self_online_check' ||
+            key == 'promax_self_online_check' ||
             key == 'call_light_wide_default',
       'promax_quick_reaction': '❤️',
       'app_theme_mode': 'system',
@@ -159,7 +159,7 @@ class ProMaxArchive {
     if (bytes.length > maxBytes * 0.7) {
       throw const FormatException('Архив сообщений превышает лимит 44 МБ');
     }
-    return KometCrypto.localSeal(
+    return ProMaxCrypto.localSeal(
       key: _key(recoveryKey),
       plaintext: bytes,
       aad: Uint8List.fromList(utf8.encode('ProMax:deleted:1:$accountId')),
@@ -171,7 +171,7 @@ class ProMaxArchive {
     String recoveryKey,
     Uint8List ciphertext,
   ) {
-    final bytes = KometCrypto.localOpen(
+    final bytes = ProMaxCrypto.localOpen(
       key: _key(recoveryKey),
       blob: ciphertext,
       aad: Uint8List.fromList(utf8.encode('ProMax:deleted:1:$accountId')),
@@ -221,9 +221,9 @@ class ProMaxArchive {
           'chats': rows.chats,
         };
         final key = await recoveryKey(accountId);
-        final libraryPath = KometCrypto.libraryPath;
+        final libraryPath = ProMaxCrypto.libraryPath;
         final encrypted = await Isolate.run(() {
-          KometCrypto.libraryPath = libraryPath;
+          ProMaxCrypto.libraryPath = libraryPath;
           return seal(accountId, key, archive);
         });
         data['deleted'] = {
@@ -254,9 +254,9 @@ class ProMaxArchive {
       throw const FormatException('Для истории нужен ключ восстановления');
     }
     final encrypted = base64Decode(backup['ciphertext'] as String);
-    final libraryPath = KometCrypto.libraryPath;
+    final libraryPath = ProMaxCrypto.libraryPath;
     final archive = await Isolate.run(() {
-      KometCrypto.libraryPath = libraryPath;
+      ProMaxCrypto.libraryPath = libraryPath;
       return open(accountId, key, encrypted);
     });
     final messages = (archive['messages'] as List)
@@ -332,7 +332,7 @@ class ProMaxArchive {
         await prefs.setString(key, value);
       }
     }
-    await KometSettings.load();
+    await ProMaxSettings.load();
     return restored;
   }
 }

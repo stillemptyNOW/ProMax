@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/security/app_lock.dart';
+import 'package:promax/core/security/app_lock.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

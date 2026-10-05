@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/sheet_helpers.dart';
+import 'package:promax/frontend/widgets/sheet_helpers.dart';
 
 void main() {
   Future<void> pumpBar(WidgetTester tester, Widget action) {

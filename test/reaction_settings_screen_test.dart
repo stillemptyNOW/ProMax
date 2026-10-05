@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/screens/chats/chat_admin/chat_admin_state.dart';
-import 'package:komet/frontend/screens/chats/chat_admin/reaction_settings_screen.dart';
-import 'package:komet/frontend/widgets/settings_card.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/main.dart' show api;
-import 'package:komet/models/chat_info.dart';
-import 'package:komet/models/chat_reaction_settings.dart';
+import 'package:promax/frontend/screens/chats/chat_admin/chat_admin_state.dart';
+import 'package:promax/frontend/screens/chats/chat_admin/reaction_settings_screen.dart';
+import 'package:promax/frontend/widgets/settings_card.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/main.dart' show api;
+import 'package:promax/models/chat_info.dart';
+import 'package:promax/models/chat_reaction_settings.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class _SeededState extends ChatAdminState {

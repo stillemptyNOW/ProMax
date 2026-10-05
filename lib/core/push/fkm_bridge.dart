@@ -5,12 +5,12 @@ import 'package:flutter/services.dart';
 import '../utils/logger.dart';
 
 // #***! канал к нативному FKM, своё фоновое уведомление вместо фаербейза
-/// Канал к нативному сервису FKM (foreground komet messaging).
+/// Канал к нативному сервису FKM (foreground promax messaging).
 class FkmBridge {
   FkmBridge._();
   static final FkmBridge instance = FkmBridge._();
 
-  static const _method = MethodChannel('ru.komet.app/fkm');
+  static const _method = MethodChannel('io.github.stillemptynow.promax/fkm');
 
   VoidCallback? _onDisabled;
   bool _handlerSet = false;

@@ -365,7 +365,7 @@ class _SpoofScreenState extends State<SpoofScreen> {
       // #***! перелогин — токен удалён, впереди экран входа, прошлая версия
       await api.connect(authenticated: false);
       if (mounted) {
-        final navState = KometApp.navigatorKey.currentState;
+        final navState = ProMaxApp.navigatorKey.currentState;
         if (navState != null) {
           await navState.pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const LoginScreen()),

@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/utils/media_cache.dart';
-import 'package:komet/frontend/widgets/message_bubble.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/models/attachment.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/utils/media_cache.dart';
+import 'package:promax/frontend/widgets/message_bubble.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/models/attachment.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';

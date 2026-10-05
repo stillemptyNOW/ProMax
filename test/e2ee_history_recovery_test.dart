@@ -4,10 +4,10 @@ import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/crypto/e2ee_service.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet_crypto/komet_crypto.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/crypto/e2ee_service.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax_crypto/promax_crypto.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -29,26 +29,26 @@ Uint8List _bytes(String text) => Uint8List.fromList(utf8.encode(text));
 
 ({Uint8List sender, Uint8List receiver, String offer, String answer})
 _session() {
-  final senderIdentity = KometCrypto.identityCreate(
+  final senderIdentity = ProMaxCrypto.identityCreate(
     seed: Uint8List.fromList(List.filled(32, 3)),
   );
-  final receiverIdentity = KometCrypto.identityCreate(
+  final receiverIdentity = ProMaxCrypto.identityCreate(
     seed: Uint8List.fromList(List.filled(32, 7)),
   );
-  final offer = KometCrypto.sessionOffer(
+  final offer = ProMaxCrypto.sessionOffer(
     identity: senderIdentity,
     chatId: _chatId,
     myId: _peerId,
     peerId: _accountId,
   );
-  final answer = KometCrypto.sessionAnswer(
+  final answer = ProMaxCrypto.sessionAnswer(
     identity: receiverIdentity,
     chatId: _chatId,
     myId: _accountId,
     peerId: _peerId,
     offerText: offer.text,
   );
-  final senderState = KometCrypto.sessionAccept(
+  final senderState = ProMaxCrypto.sessionAccept(
     identity: senderIdentity,
     pending: offer.pending,
     answerText: answer.text,
@@ -72,9 +72,9 @@ CachedMessage _incoming(String id, String text, int time) => CachedMessage(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  final libraryPath = Platform.environment['KOMET_CRYPTO_TEST_LIB'];
-  if (libraryPath != null) KometCrypto.libraryPath = libraryPath;
-  final available = KometCrypto.isAvailable;
+  final libraryPath = Platform.environment['PROMAX_CRYPTO_TEST_LIB'];
+  if (libraryPath != null) ProMaxCrypto.libraryPath = libraryPath;
+  final available = ProMaxCrypto.isAvailable;
   late E2eeService service;
   late Uint8List localKey;
 
@@ -85,7 +85,7 @@ void main() {
     'phase': 'established',
     'verified': 1,
     'updated': 1,
-    'state': KometCrypto.localSeal(
+    'state': ProMaxCrypto.localSeal(
       key: localKey,
       plaintext: state,
       aad: _bytes('session/101/202'),
@@ -136,17 +136,17 @@ void main() {
       'recovers cached ciphertext and keeps the recovered ratchet state',
       () async {
         final pair = _session();
-        final missed = KometCrypto.sessionEncrypt(
+        final missed = ProMaxCrypto.sessionEncrypt(
           state: pair.sender,
           contentType: ContentType.text,
           plaintext: _bytes('Synthetic missed message'),
         );
-        final next = KometCrypto.sessionEncrypt(
+        final next = ProMaxCrypto.sessionEncrypt(
           state: missed.state,
           contentType: ContentType.text,
           plaintext: _bytes('Synthetic next message'),
         );
-        final advanced = KometCrypto.sessionDecrypt(
+        final advanced = ProMaxCrypto.sessionDecrypt(
           state: pair.receiver,
           text: next.text,
         );
@@ -179,7 +179,7 @@ void main() {
           (await AppDatabase.loadE2eeSession(_accountId, _chatId))?['state'],
           recoveredState?['state'],
         );
-        final following = KometCrypto.sessionEncrypt(
+        final following = ProMaxCrypto.sessionEncrypt(
           state: next.state,
           contentType: ContentType.text,
           plaintext: _bytes('Synthetic following message'),
@@ -199,7 +199,7 @@ void main() {
       'concurrent history recovery reuses the first decrypted result',
       () async {
         final pair = _session();
-        final encrypted = KometCrypto.sessionEncrypt(
+        final encrypted = ProMaxCrypto.sessionEncrypt(
           state: pair.sender,
           contentType: ContentType.text,
           plaintext: _bytes('Synthetic concurrent message'),
@@ -234,7 +234,7 @@ void main() {
         () async {
           final pair = _session();
           await saveSession(pair.receiver);
-          final original = KometCrypto.sessionEncrypt(
+          final original = ProMaxCrypto.sessionEncrypt(
             state: pair.sender,
             contentType: ContentType.text,
             plaintext: _bytes('Synthetic original message'),
@@ -247,7 +247,7 @@ void main() {
           );
           expect(first.e2ee, CachedMessage.e2eeText);
 
-          final edited = KometCrypto.sessionEncrypt(
+          final edited = ProMaxCrypto.sessionEncrypt(
             state: original.state,
             contentType: ContentType.text,
             plaintext: _bytes('Synthetic edited message'),
@@ -267,7 +267,7 @@ void main() {
             await service.openText(_accountId, _chatId, recovered.sealedText!),
             'Synthetic edited message',
           );
-          final following = KometCrypto.sessionEncrypt(
+          final following = ProMaxCrypto.sessionEncrypt(
             state: edited.state,
             contentType: ContentType.text,
             plaintext: _bytes('Synthetic following edit'),
@@ -291,8 +291,8 @@ void main() {
         await saveSession(pair.receiver);
         final legacyKey = Uint8List.fromList(List.filled(32, 11));
         final plaintext = 'Synthetic legacy payload'.padRight(58, '.');
-        final ciphertext = KometCrypto.encryptMessage(plaintext, legacyKey);
-        expect(KometCrypto.classifyText(ciphertext), TextClass.legacy);
+        final ciphertext = ProMaxCrypto.encryptMessage(plaintext, legacyKey);
+        expect(ProMaxCrypto.classifyText(ciphertext), TextClass.legacy);
         final message = _incoming('synthetic-legacy', ciphertext, 1);
         await AppDatabase.saveMessages([message.toDbRow()]);
         await service.ensureLoaded(_accountId);
@@ -307,7 +307,7 @@ void main() {
         expect(result.single.e2ee, CachedMessage.e2eeNone);
         expect(result.single.sealedText, isNull);
         expect(
-          KometCrypto.decryptMessage(result.single.text!, legacyKey),
+          ProMaxCrypto.decryptMessage(result.single.text!, legacyKey),
           plaintext,
         );
         expect(

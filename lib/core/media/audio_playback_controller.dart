@@ -74,7 +74,7 @@ class AudioPlaybackController {
       _ => await AudioService.init(
         builder: BackgroundAudioHandler.new,
         config: AudioServiceConfig(
-          androidNotificationChannelId: 'komet.audio.playback',
+          androidNotificationChannelId: 'promax.audio.playback',
           androidNotificationChannelName: channelName,
           androidNotificationOngoing: false,
           androidStopForegroundOnPause: true,

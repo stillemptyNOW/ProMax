@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:komet/backend/modules/chats.dart' show CachedChat;
-import 'package:komet/core/config/app_chat_chrome.dart';
-import 'package:komet/core/config/app_visual_style.dart';
-import 'package:komet/core/storage/chat_wallpaper_store.dart' show ChatWallpaper;
-import 'package:komet/frontend/screens/chats/chat/command_panel_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/chat_search_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/mention_panel_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/video_note_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/message_search_result.dart';
-import 'package:komet/frontend/widgets/chat_wallpaper_view.dart';
-import 'package:komet/frontend/widgets/toast_placement.dart';
+import 'package:promax/backend/modules/chats.dart' show CachedChat;
+import 'package:promax/core/config/app_chat_chrome.dart';
+import 'package:promax/core/config/app_visual_style.dart';
+import 'package:promax/core/storage/chat_wallpaper_store.dart' show ChatWallpaper;
+import 'package:promax/frontend/screens/chats/chat/command_panel_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/chat_search_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/mention_panel_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/video_note_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/message_search_result.dart';
+import 'package:promax/frontend/widgets/chat_wallpaper_view.dart';
+import 'package:promax/frontend/widgets/toast_placement.dart';
 
 import 'chat_call_banner.dart';
 import 'command_panel_view.dart';

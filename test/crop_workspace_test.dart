@@ -3,8 +3,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:komet/frontend/widgets/attachment/editor_common.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/frontend/widgets/attachment/editor_common.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 Future<ui.Image> _solidImage(int width, int height) {
   final recorder = ui.PictureRecorder();

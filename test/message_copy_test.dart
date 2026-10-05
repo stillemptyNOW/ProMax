@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/message_copy.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/backend/modules/forward_sender.dart';
-import 'package:komet/models/attachment.dart';
+import 'package:promax/backend/modules/message_copy.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/backend/modules/forward_sender.dart';
+import 'package:promax/models/attachment.dart';
 
 CachedMessage _message({
   String? text,

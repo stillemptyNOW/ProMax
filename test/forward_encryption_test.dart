@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/backend/modules/forward_sender.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/crypto/e2ee_service.dart';
-import 'package:komet/core/protocol/packet.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/core/storage/chat_encryption_store.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/backend/modules/forward_sender.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/crypto/e2ee_service.dart';
+import 'package:promax/core/protocol/packet.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/core/storage/chat_encryption_store.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';

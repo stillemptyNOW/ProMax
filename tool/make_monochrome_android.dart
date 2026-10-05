@@ -10,8 +10,7 @@ const _densities = {
 };
 
 const _layers = {
-  'assets/komet.png': 'ic_launcher_monochrome',
-  'assets/meteor.png': 'ic_launcher_minimal_monochrome',
+  'assets/promax.png': 'ic_launcher_monochrome',
 };
 
 void main() {

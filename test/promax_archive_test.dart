@@ -5,11 +5,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/config/call_lighting.dart';
-import 'package:komet/core/config/promax_archive.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/core/storage/token_storage.dart';
-import 'package:komet_crypto/komet_crypto.dart';
+import 'package:promax/core/config/call_lighting.dart';
+import 'package:promax/core/config/promax_archive.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/core/storage/token_storage.dart';
+import 'package:promax_crypto/promax_crypto.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,8 +39,8 @@ Map<String, dynamic> _chat(int account) => {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  KometCrypto.libraryPath = Platform.environment['KOMET_CRYPTO_TEST_LIB'];
-  final available = KometCrypto.isAvailable;
+  ProMaxCrypto.libraryPath = Platform.environment['PROMAX_CRYPTO_TEST_LIB'];
+  final available = ProMaxCrypto.isAvailable;
   const recoveryKey =
       '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
@@ -68,8 +68,8 @@ void main() {
     await prefs.setString('auth_token_101', 'synthetic-secret');
     await prefs.setString('promax_push_relay_secret', 'synthetic-secret');
     final settings = await ProMaxArchive.settings();
-    expect(settings['komet_self_online_check'], true);
-    expect(settings['komet_anti_read'], false);
+    expect(settings['promax_self_online_check'], true);
+    expect(settings['promax_anti_read'], false);
     expect(settings['promax_quick_reaction'], '❤️');
     expect(settings.values, isNot(contains('synthetic-secret')));
   });
@@ -78,11 +78,11 @@ void main() {
     final data = {
       'format': 'ProMax',
       'version': 1,
-      'settings': {'komet_anti_read': true, 'call_light_brightness': 5},
+      'settings': {'promax_anti_read': true, 'call_light_brightness': 5},
     };
     await expectLater(ProMaxArchive.apply(data), throwsFormatException);
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getBool('komet_anti_read'), isNull);
+    expect(prefs.getBool('promax_anti_read'), isNull);
   });
 
   test(
@@ -104,7 +104,7 @@ void main() {
           jsonEncode({
             'format': 'ProMax',
             'version': 1,
-            'settings': {'komet_anti_read': true},
+            'settings': {'promax_anti_read': true},
             'deleted': {
               'accountId': 101,
               'ciphertext': 'unreadable synthetic blob',
@@ -119,7 +119,7 @@ void main() {
         'Synthetic friend',
       );
       expect(
-        (await SharedPreferences.getInstance()).getBool('komet_anti_read'),
+        (await SharedPreferences.getInstance()).getBool('promax_anti_read'),
         true,
       );
     },

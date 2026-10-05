@@ -4,11 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:komet/core/media/gallery_source.dart';
-import 'package:komet/frontend/widgets/attachment/photo_editor.dart';
-import 'package:komet/frontend/widgets/attachment/photo_hero.dart';
-import 'package:komet/frontend/widgets/custom_notification.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/core/media/gallery_source.dart';
+import 'package:promax/frontend/widgets/attachment/photo_editor.dart';
+import 'package:promax/frontend/widgets/attachment/photo_hero.dart';
+import 'package:promax/frontend/widgets/custom_notification.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 import 'editor_common.dart';
 import 'preview_chrome.dart';

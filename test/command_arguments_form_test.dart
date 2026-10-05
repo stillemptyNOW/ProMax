@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/core/plugins/plugin_manifest.dart';
-import 'package:komet/frontend/commands/commands.dart';
-import 'package:komet/frontend/screens/chats/chat/view/command_arguments_form.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/core/plugins/plugin_manifest.dart';
+import 'package:promax/frontend/commands/commands.dart';
+import 'package:promax/frontend/screens/chats/chat/view/command_arguments_form.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 void main() {

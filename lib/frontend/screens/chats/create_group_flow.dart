@@ -12,7 +12,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../main.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/attachment/avatar_editor.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
 import '../../widgets/swipe_route.dart';
@@ -325,7 +325,7 @@ class _CreateGroupFlowState extends State<_CreateGroupFlow> {
                         ),
                         child: Row(
                           children: [
-                            KometAvatar(
+                            ProMaxAvatar(
                               name: c.firstName,
                               size: 40,
                               imageUrl: c.baseUrl,
@@ -541,7 +541,7 @@ class _SelectedChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            KometAvatar(
+            ProMaxAvatar(
               name: contact.firstName,
               size: 24,
               imageUrl: contact.baseUrl,

@@ -12,7 +12,7 @@ import '../../core/protocol/packet.dart';
 import '../crypto/e2ee_service.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/token_storage.dart';
-import '../config/komet_settings.dart';
+import '../config/promax_settings.dart';
 import '../utils/logger.dart';
 import 'fkm_bridge.dart';
 import 'push_service.dart';
@@ -24,7 +24,7 @@ const _hiddenPreview = 'Новое сообщение';
 /// FKM — уведомления через собственное фоновое соединение, без FCM.
 ///
 /// Пуш из сокета превращается в тот же набор полей, что присылает FCM, и
-/// отрисовывается нативным `KometNotifier` — общий код с пушевой версией.
+/// отрисовывается нативным `ProMaxNotifier` — общий код с пушевой версией.
 class FkmController {
   FkmController._();
   static final FkmController instance = FkmController._();
@@ -207,7 +207,7 @@ class FkmController {
       FkmBridge.instance.removeMessage({
         'mc': '$chatId',
         'msgid': msgId,
-        'keep': KometSettings.viewDeleted.value ? 'true' : 'false',
+        'keep': ProMaxSettings.viewDeleted.value ? 'true' : 'false',
       });
 
   // #***! отредактировали, правим показанное

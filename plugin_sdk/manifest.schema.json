@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/KometTeam/Komet/main/plugin_sdk/manifest.schema.json",
-  "title": "Komet plugin manifest",
-  "description": "manifest.json в корне пакета .kinet. Описание полей — PLUGINS.md.",
+  "$id": "https://raw.githubusercontent.com/stillemptyNOW/ProMax/main/plugin_sdk/manifest.schema.json",
+  "title": "ProMax plugin manifest",
+  "description": "manifest.json в корне пакета .pmx. Описание полей — PLUGINS.md.",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -23,7 +23,7 @@
       "const": 1
     },
     "id": {
-      "description": "Уникальный id в обратной доменной записи. Префикс pw.komet. зарезервирован за встроенными плагинами.",
+      "description": "Уникальный id в обратной доменной записи. Префикс promax. зарезервирован за встроенными плагинами.",
       "type": "string",
       "pattern": "^[a-z][a-z0-9]*(?:\\.[a-z0-9]+)+$"
     },
@@ -34,7 +34,7 @@
       "$ref": "#/$defs/version"
     },
     "apiVersion": {
-      "description": "Версия komet:api, которую ждёт плагин.",
+      "description": "Версия promax:api, которую ждёт плагин.",
       "type": "integer",
       "minimum": 1,
       "maximum": 1
@@ -153,7 +153,7 @@
       }
     },
     "signature": {
-      "description": "Добавляется tool/kinet_sign.dart, вручную не заполняется.",
+      "description": "Добавляется tool/plugin_sign.dart, вручную не заполняется.",
       "type": "object",
       "required": ["algorithm", "publicKey", "value"],
       "additionalProperties": false,

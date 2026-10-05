@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:komet/frontend/screens/chats/chat/mention_panel_controller.dart';
-import 'package:komet/frontend/widgets/mention_suggestions_panel.dart';
+import 'package:promax/frontend/screens/chats/chat/mention_panel_controller.dart';
+import 'package:promax/frontend/widgets/mention_suggestions_panel.dart';
 
 class MentionPanelView extends StatelessWidget {
   const MentionPanelView({super.key, required this.mentionPanel});

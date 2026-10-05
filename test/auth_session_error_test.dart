@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/protocol/packet.dart';
+import 'package:promax/core/protocol/packet.dart';
 
 void main() {
   group('обрыв связи не должен стоить пользователю нового кода', () {

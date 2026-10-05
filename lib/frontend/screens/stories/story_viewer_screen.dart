@@ -16,12 +16,12 @@ import '../../../core/media/video_request_headers.dart';
 import '../../../main.dart' show api, storiesModule;
 import '../../../models/story.dart';
 import '../../widgets/custom_notification.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../chats/profile_action_sheets.dart';
 import '../../widgets/small_spinner.dart';
 import 'story_owner_info.dart';
 import '../../../core/config/app_frost.dart';
-import '../../../core/config/komet_settings.dart';
+import '../../../core/config/promax_settings.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -287,7 +287,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   void _markViewed(Story story) {
     if (story.id == 0 ||
         _marked.contains(story.id) ||
-        KometSettings.hideStoryViews.value) {
+        ProMaxSettings.hideStoryViews.value) {
       return;
     }
     _marked.add(story.id);
@@ -639,7 +639,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                   width: 1.6,
                 ),
               ),
-              child: KometAvatar(
+              child: ProMaxAvatar(
                 name: info?.name.isNotEmpty == true ? info!.name : '?',
                 size: 34,
                 imageUrl: info?.avatarUrl,
@@ -976,7 +976,7 @@ class _OwnerCover extends StatelessWidget {
           builder: (context, info) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              KometAvatar(
+              ProMaxAvatar(
                 name: info?.name.isNotEmpty == true ? info!.name : '?',
                 size: 92,
                 imageUrl: info?.avatarUrl,

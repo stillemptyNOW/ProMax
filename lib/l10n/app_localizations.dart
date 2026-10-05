@@ -2000,11 +2000,11 @@ abstract class AppLocalizations {
   /// **'Not bad at all!'**
   String get appearancePreviewNotBad;
 
-  /// No description provided for @callKometDetectedNotification.
+  /// No description provided for @callProMaxDetectedNotification.
   ///
   /// In en, this message translates to:
-  /// **'This person uses a compatible ProMax/ProMax client.'**
-  String get callKometDetectedNotification;
+  /// **'This person uses ProMax too.'**
+  String get callProMaxDetectedNotification;
 
   /// No description provided for @callStatusConnecting.
   ///
@@ -2084,11 +2084,11 @@ abstract class AppLocalizations {
   /// **'Expand'**
   String get callTooltipExpand;
 
-  /// No description provided for @callTooltipKometHub.
+  /// No description provided for @callTooltipProMaxHub.
   ///
   /// In en, this message translates to:
   /// **'ProMax'**
-  String get callTooltipKometHub;
+  String get callTooltipProMaxHub;
 
   /// No description provided for @callInfoTitle.
   ///
@@ -5906,11 +5906,11 @@ abstract class AppLocalizations {
   /// **'Only message text and photos are encrypted. The server still sees who talks to whom and when, sees that the chat is encrypted, and can withhold messages. Nothing here hides that.'**
   String get e2eeCeiling;
 
-  /// No description provided for @e2eeNeedsKomet.
+  /// No description provided for @e2eeNeedsProMax.
   ///
   /// In en, this message translates to:
   /// **'{name} needs ProMax with end-to-end encryption enabled for this to work.'**
-  String e2eeNeedsKomet(String name);
+  String e2eeNeedsProMax(String name);
 
   /// No description provided for @e2eeOfferSent.
   ///
@@ -8348,19 +8348,35 @@ abstract class AppLocalizations {
   /// **'New group'**
   String get chatListCreateGroup;
 
-  String get chatListCreateGroupCall;
-
-  String get chatListSearchByPhone;
-
-  String get chatListInviteByLink;
-
-  String get chatListInviteLinkUnavailable;
-
   /// No description provided for @chatListCreateChannel.
   ///
   /// In en, this message translates to:
   /// **'New channel'**
   String get chatListCreateChannel;
+
+  /// No description provided for @chatListCreateGroupCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Create group call'**
+  String get chatListCreateGroupCall;
+
+  /// No description provided for @chatListSearchByPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by number'**
+  String get chatListSearchByPhone;
+
+  /// No description provided for @chatListInviteByLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite via link'**
+  String get chatListInviteByLink;
+
+  /// No description provided for @chatListInviteLinkUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The invite link is unavailable right now'**
+  String get chatListInviteLinkUnavailable;
 
   /// No description provided for @chatListCreateContact.
   ///
@@ -9562,11 +9578,11 @@ abstract class AppLocalizations {
   /// **'{days} d'**
   String infoScreenDaysShort(int days);
 
-  /// No description provided for @pluginsScreenPickKinetFile.
+  /// No description provided for @pluginsScreenPickPmxFile.
   ///
   /// In en, this message translates to:
-  /// **'Choose a file with the .kinet extension'**
-  String get pluginsScreenPickKinetFile;
+  /// **'Choose a file with the .pmx extension'**
+  String get pluginsScreenPickPmxFile;
 
   /// No description provided for @pluginsScreenReadFileFailed.
   ///
@@ -9577,7 +9593,7 @@ abstract class AppLocalizations {
   /// No description provided for @pluginsScreenOpenFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t open .kinet: {error}'**
+  /// **'Couldn\'t open .pmx: {error}'**
   String pluginsScreenOpenFailed(String error);
 
   /// No description provided for @pluginsScreenHttpsRequired.
@@ -9589,7 +9605,7 @@ abstract class AppLocalizations {
   /// No description provided for @pluginsScreenDownloadFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t download .kinet: {error}'**
+  /// **'Couldn\'t download .pmx: {error}'**
   String pluginsScreenDownloadFailed(String error);
 
   /// No description provided for @pluginsScreenVersionAuthor.
@@ -9685,7 +9701,7 @@ abstract class AppLocalizations {
   /// No description provided for @pluginsScreenInstallFile.
   ///
   /// In en, this message translates to:
-  /// **'Install .kinet'**
+  /// **'Install .pmx'**
   String get pluginsScreenInstallFile;
 
   /// No description provided for @pluginsScreenInstallUrl.
@@ -9724,95 +9740,95 @@ abstract class AppLocalizations {
   /// **'Download'**
   String get pluginsScreenDownload;
 
-  /// No description provided for @kometSettingsViewDeletedSubtitle.
+  /// No description provided for @proMaxSettingsViewDeletedSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Show deleted messages'**
-  String get kometSettingsViewDeletedSubtitle;
+  String get proMaxSettingsViewDeletedSubtitle;
 
-  /// No description provided for @kometSettingsViewRedactedSubtitle.
+  /// No description provided for @proMaxSettingsViewRedactedSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Show the edit history of messages'**
-  String get kometSettingsViewRedactedSubtitle;
+  String get proMaxSettingsViewRedactedSubtitle;
 
-  /// No description provided for @kometSettingsFullTimestampSubtitle.
+  /// No description provided for @proMaxSettingsFullTimestampSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Show message times with seconds'**
-  String get kometSettingsFullTimestampSubtitle;
+  String get proMaxSettingsFullTimestampSubtitle;
 
-  /// No description provided for @kometSettingsShowForwardSubtitle.
+  /// No description provided for @proMaxSettingsShowForwardSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Mark forwarded messages even when no author is shown on them'**
-  String get kometSettingsShowForwardSubtitle;
+  String get proMaxSettingsShowForwardSubtitle;
 
-  /// No description provided for @kometSettingsTypingTimeSubtitle.
+  /// No description provided for @proMaxSettingsTypingTimeSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Tries to estimate how long a message took to type'**
-  String get kometSettingsTypingTimeSubtitle;
+  String get proMaxSettingsTypingTimeSubtitle;
 
-  /// No description provided for @kometSettingsFoldersHeader.
+  /// No description provided for @proMaxSettingsFoldersHeader.
   ///
   /// In en, this message translates to:
   /// **'Folders'**
-  String get kometSettingsFoldersHeader;
+  String get proMaxSettingsFoldersHeader;
 
-  /// No description provided for @kometSettingsHideAllFolderSubtitle.
+  /// No description provided for @proMaxSettingsHideAllFolderSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Hide the \"All\" folder when you have other folders. Chats are sorted only by your folders'**
-  String get kometSettingsHideAllFolderSubtitle;
+  String get proMaxSettingsHideAllFolderSubtitle;
 
-  /// No description provided for @kometSettingsShowHiddenChatsSubtitle.
+  /// No description provided for @proMaxSettingsShowHiddenChatsSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Show hidden chats that usually don\'t appear in the list: from group calls, private channels and chats you\'ve left'**
-  String get kometSettingsShowHiddenChatsSubtitle;
+  String get proMaxSettingsShowHiddenChatsSubtitle;
 
-  /// No description provided for @kometSettingsArchiveOnPullSubtitle.
+  /// No description provided for @proMaxSettingsArchiveOnPullSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Hide the archive and show it when you pull the chat list down, after stories'**
-  String get kometSettingsArchiveOnPullSubtitle;
+  String get proMaxSettingsArchiveOnPullSubtitle;
 
-  /// No description provided for @kometSettingsGhostModeSubtitle.
+  /// No description provided for @proMaxSettingsGhostModeSubtitle.
   ///
   /// In en, this message translates to:
   /// **'You don\'t appear online'**
-  String get kometSettingsGhostModeSubtitle;
+  String get proMaxSettingsGhostModeSubtitle;
 
-  /// No description provided for @kometSettingsAntiReadSubtitle.
+  /// No description provided for @proMaxSettingsAntiReadSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Read messages without marking them as read'**
-  String get kometSettingsAntiReadSubtitle;
+  String get proMaxSettingsAntiReadSubtitle;
 
-  /// No description provided for @kometSettingsSelfOnlineCheckSubtitle.
+  /// No description provided for @proMaxSettingsSelfOnlineCheckSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Checks every ~10 seconds when you were last online. Useful for testing ghost mode'**
-  String get kometSettingsSelfOnlineCheckSubtitle;
+  String get proMaxSettingsSelfOnlineCheckSubtitle;
 
-  /// No description provided for @kometSettingsDebugHeader.
+  /// No description provided for @proMaxSettingsDebugHeader.
   ///
   /// In en, this message translates to:
   /// **'Debugging'**
-  String get kometSettingsDebugHeader;
+  String get proMaxSettingsDebugHeader;
 
-  /// No description provided for @kometSettingsDebugLogsLabel.
+  /// No description provided for @proMaxSettingsDebugLogsLabel.
   ///
   /// In en, this message translates to:
   /// **'Record debug logs'**
-  String get kometSettingsDebugLogsLabel;
+  String get proMaxSettingsDebugLogsLabel;
 
-  /// No description provided for @kometSettingsDebugLogsSubtitle.
+  /// No description provided for @proMaxSettingsDebugLogsSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Writes protocol traffic to a file on the device — helps diagnose bugs in reports'**
-  String get kometSettingsDebugLogsSubtitle;
+  String get proMaxSettingsDebugLogsSubtitle;
 
   /// No description provided for @sharedContentSavedToGallery.
   ///
@@ -10162,12 +10178,28 @@ abstract class AppLocalizations {
   /// **'Contacts'**
   String get contactsTabTitle;
 
+  /// No description provided for @contactsMenuWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Write'**
   String get contactsMenuWrite;
 
+  /// No description provided for @contactsMenuCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
   String get contactsMenuCall;
 
+  /// No description provided for @contactsMenuVideoCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Video call'**
   String get contactsMenuVideoCall;
 
+  /// No description provided for @contactsMenuBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
   String get contactsMenuBlock;
 
   /// No description provided for @contactsTabEmpty.
@@ -11442,12 +11474,28 @@ abstract class AppLocalizations {
   /// **'Share contact'**
   String get proMaxShareContact;
 
+  /// No description provided for @chatInfoAddToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to folder'**
   String get chatInfoAddToFolder;
 
+  /// No description provided for @chatInfoNoFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a chat folder first'**
   String get chatInfoNoFolders;
 
+  /// No description provided for @chatInfoAddedToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat added to folder'**
   String get chatInfoAddedToFolder;
 
+  /// No description provided for @chatInfoAddToFolderFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t add the chat to the folder'**
   String get chatInfoAddToFolderFailed;
 
   /// No description provided for @proMaxContactSent.

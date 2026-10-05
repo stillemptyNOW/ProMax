@@ -2,13 +2,13 @@ import 'dart:convert';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/plugins/plugin_manifest.dart';
-import 'package:komet/core/plugins/plugin_package.dart';
+import 'package:promax/core/plugins/plugin_manifest.dart';
+import 'package:promax/core/plugins/plugin_package.dart';
 
 void main() {
-  test('decodes a valid .kinet package', () {
+  test('decodes a valid .pmx package', () {
     final package = PluginPackage.decode(
-      _kinet(
+      _pmx(
         manifest: _manifest(),
         files: {'main.js': 'export async function hello() {}'},
       ),
@@ -27,7 +27,7 @@ void main() {
 
     expect(
       () => PluginPackage.decode(
-        _kinet(manifest: manifest, files: {'main.js': ''}),
+        _pmx(manifest: manifest, files: {'main.js': ''}),
       ),
       throwsFormatException,
     );
@@ -38,7 +38,7 @@ void main() {
 
     expect(
       () => PluginPackage.decode(
-        _kinet(manifest: manifest, files: {'main.js': ''}),
+        _pmx(manifest: manifest, files: {'main.js': ''}),
       ),
       throwsFormatException,
     );
@@ -47,7 +47,7 @@ void main() {
   test('rejects archive path traversal', () {
     expect(
       () => PluginPackage.decode(
-        _kinet(
+        _pmx(
           manifest: _manifest(),
           files: {'main.js': '', '../escape.js': ''},
         ),
@@ -59,7 +59,7 @@ void main() {
   test('rejects unsupported package files', () {
     expect(
       () => PluginPackage.decode(
-        _kinet(
+        _pmx(
           manifest: _manifest(),
           files: {'main.js': '', 'payload.bin': 'synthetic'},
         ),
@@ -71,7 +71,7 @@ void main() {
   test('rejects a missing entry module', () {
     expect(
       () => PluginPackage.decode(
-        _kinet(manifest: _manifest(), files: {'other.js': ''}),
+        _pmx(manifest: _manifest(), files: {'other.js': ''}),
       ),
       throwsFormatException,
     );
@@ -100,7 +100,7 @@ Map<String, dynamic> _manifest() => {
   ],
 };
 
-List<int> _kinet({
+List<int> _pmx({
   required Map<String, dynamic> manifest,
   required Map<String, String> files,
 }) {

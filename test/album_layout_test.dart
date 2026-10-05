@@ -1,9 +1,9 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/shared_content.dart';
-import 'package:komet/frontend/widgets/attachment/bubbles/album_layout.dart';
-import 'package:komet/models/attachment.dart';
+import 'package:promax/backend/modules/shared_content.dart';
+import 'package:promax/frontend/widgets/attachment/bubbles/album_layout.dart';
+import 'package:promax/models/attachment.dart';
 
 SharedMediaItem _item(String messageId, int time, int photoId) =>
     SharedMediaItem(

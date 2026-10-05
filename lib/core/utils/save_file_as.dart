@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 import 'logger.dart';
 import '../security/app_lock.dart';
 
-const _documentExport = MethodChannel('ru.komet.app/media_export');
+const _documentExport = MethodChannel('io.github.stillemptynow.promax/media_export');
 
 // #***! итог сохранить как, отмену отличаем от ошибки
 class SaveFileAsResult {

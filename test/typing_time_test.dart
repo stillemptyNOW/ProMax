@@ -2,15 +2,15 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/config/komet_settings.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/core/storage/chat_activity_store.dart';
-import 'package:komet/core/utils/format.dart';
-import 'package:komet/frontend/widgets/attachment/bubbles/meta_marks.dart';
-import 'package:komet/frontend/widgets/message_bubble.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/config/promax_settings.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/core/storage/chat_activity_store.dart';
+import 'package:promax/core/utils/format.dart';
+import 'package:promax/frontend/widgets/attachment/bubbles/meta_marks.dart';
+import 'package:promax/frontend/widgets/message_bubble.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -194,8 +194,8 @@ void main() {
   });
 
   group('Метка времени набора', () {
-    setUp(() => KometSettings.showTypingTime.value = true);
-    tearDown(() => KometSettings.showTypingTime.value = false);
+    setUp(() => ProMaxSettings.showTypingTime.value = true);
+    tearDown(() => ProMaxSettings.showTypingTime.value = false);
 
     testWidgets('стоит слева от времени и по тапу называет длительность', (
       tester,
@@ -227,7 +227,7 @@ void main() {
     });
 
     testWidgets('выключенная настройка прячет метку', (tester) async {
-      KometSettings.showTypingTime.value = false;
+      ProMaxSettings.showTypingTime.value = false;
       await _pumpBubble(tester, _message(typingMs: 7500));
 
       expect(_marks, findsNothing);

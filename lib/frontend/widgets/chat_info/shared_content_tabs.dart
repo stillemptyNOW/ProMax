@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:komet/main.dart';
+import 'package:promax/main.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../backend/modules/messages.dart'
@@ -22,7 +22,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/attachment.dart';
 import '../../screens/chats/chat_screen.dart';
 import '../custom_notification.dart';
-import '../komet_avatar.dart';
+import '../promax_avatar.dart';
 import '../photo_viewer.dart';
 import '../reload_on_reconnect.dart';
 import '../share_unopenable_file.dart';
@@ -461,7 +461,7 @@ class _CommonChatsTabState extends State<CommonChatsTab>
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
-            KometAvatar(
+            ProMaxAvatar(
               name: chat.title,
               imageUrl: chat.iconUrl,
               size: 46,

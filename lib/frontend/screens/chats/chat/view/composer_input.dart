@@ -5,24 +5,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/config/app_chat_chrome.dart';
-import 'package:komet/core/config/app_colors.dart';
-import 'package:komet/core/config/app_composer_background.dart';
-import 'package:komet/core/config/app_composer_style.dart';
-import 'package:komet/core/config/app_frost.dart';
-import 'package:komet/backend/modules/forward_sender.dart';
-import 'package:komet/frontend/screens/chats/chat/upload_status.dart';
-import 'package:komet/frontend/screens/chats/chat/video_note_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/voice_record_controller.dart';
-import 'package:komet/frontend/widgets/composer_morph_icon.dart';
-import 'package:komet/frontend/widgets/glossy_pill.dart';
-import 'package:komet/frontend/widgets/liquid_glass.dart';
-import 'package:komet/frontend/widgets/lottie_slash_icon.dart';
-import 'package:komet/frontend/widgets/paste_media_scope.dart';
-import 'package:komet/frontend/widgets/reply_preview.dart';
-import 'package:komet/frontend/widgets/rich_message_controller.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/config/app_chat_chrome.dart';
+import 'package:promax/core/config/app_colors.dart';
+import 'package:promax/core/config/app_composer_background.dart';
+import 'package:promax/core/config/app_composer_style.dart';
+import 'package:promax/core/config/app_frost.dart';
+import 'package:promax/backend/modules/forward_sender.dart';
+import 'package:promax/frontend/screens/chats/chat/upload_status.dart';
+import 'package:promax/frontend/screens/chats/chat/video_note_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/voice_record_controller.dart';
+import 'package:promax/frontend/widgets/composer_morph_icon.dart';
+import 'package:promax/frontend/widgets/glossy_pill.dart';
+import 'package:promax/frontend/widgets/liquid_glass.dart';
+import 'package:promax/frontend/widgets/lottie_slash_icon.dart';
+import 'package:promax/frontend/widgets/paste_media_scope.dart';
+import 'package:promax/frontend/widgets/reply_preview.dart';
+import 'package:promax/frontend/widgets/rich_message_controller.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 class ComposerInputBar extends StatelessWidget {
   const ComposerInputBar({

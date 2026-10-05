@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/media/gallery_source.dart';
+import 'package:promax/core/media/gallery_source.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 const int _minInt32 = -0x80000000;

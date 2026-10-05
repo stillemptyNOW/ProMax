@@ -25,7 +25,7 @@ Future<void> exportDebugLog(BuildContext context) async {
     archive.addFile(ArchiveFile(file.name, data.length, data));
   }
   final bytes = ZipEncoder().encodeBytes(archive);
-  final fileName = 'komet_debug_${formatFileStamp(DateTime.now())}.zip';
+  final fileName = 'promax_debug_${formatFileStamp(DateTime.now())}.zip';
   final isMobile = Platform.isAndroid || Platform.isIOS;
   try {
     final path = await AppLock.instance.external(

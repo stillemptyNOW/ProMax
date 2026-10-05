@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "pw.komet.weather",
+  "id": "promax.weather",
   "name": "ProMax Weather",
   "version": "1.0.0",
   "apiVersion": 1,
   "description": "Текущая погода и прогноз через wttr.in",
-  "author": "Komet",
+  "author": "ProMax",
   "main": "main.js",
   "permissions": [
     "chat.write",

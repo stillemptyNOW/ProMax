@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/custom_notification.dart';
-import 'package:komet/frontend/widgets/hint_bubble.dart';
+import 'package:promax/frontend/widgets/custom_notification.dart';
+import 'package:promax/frontend/widgets/hint_bubble.dart';
 
 const _hint = 'Время должно быть в будущем';
 const _anchorKey = ValueKey('anchor');

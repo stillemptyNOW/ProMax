@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/core/storage/message_ranges.dart';
-import 'package:komet/frontend/screens/chats/chat/chat_controller.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/core/storage/message_ranges.dart';
+import 'package:promax/frontend/screens/chats/chat/chat_controller.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 

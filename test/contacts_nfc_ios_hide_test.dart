@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/config/ios_release.dart';
-import 'package:komet/frontend/screens/contacts/contacts_tab.dart';
+import 'package:promax/core/config/ios_release.dart';
+import 'package:promax/frontend/screens/contacts/contacts_tab.dart';
 
 Future<void> _pump(WidgetTester tester, VoidCallback onPressed) =>
     tester.pumpWidget(

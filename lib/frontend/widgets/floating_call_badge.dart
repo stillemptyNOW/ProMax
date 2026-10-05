@@ -14,7 +14,7 @@ import '../../core/config/app_fonts.dart';
 import '../../core/utils/format.dart';
 import '../../core/utils/haptics.dart';
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show KometApp;
+import '../../main.dart' show ProMaxApp;
 import '../screens/calls/call_screen.dart';
 import 'call_video_view.dart';
 import 'custom_notification.dart';
@@ -263,7 +263,7 @@ class _CallBadgeState extends State<_CallBadge>
   }
 
   void _notify(String message) {
-    final overlay = KometApp.navigatorKey.currentState?.overlay;
+    final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
     if (overlay == null) return;
     showCustomNotificationOnOverlay(overlay, message);
   }
@@ -277,7 +277,7 @@ class _CallBadgeState extends State<_CallBadge>
   void _openCall() {
     Haptics.tap();
     _collapse();
-    final navigator = KometApp.navigatorKey.currentState;
+    final navigator = ProMaxApp.navigatorKey.currentState;
     if (navigator == null) return;
     navigator.push(
       MaterialPageRoute(

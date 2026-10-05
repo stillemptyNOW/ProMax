@@ -4,27 +4,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// #***! две иконки, на андроиде activity-alias на иосе alternate icon
 enum AppIcon {
   defaultIcon(
     'default',
-    'Основная',
-    'assets/komet_icon.png',
+    'Классическая',
+    'assets/promax_icon.png',
     'MainActivity',
     null,
   ),
-  minimal(
-    'minimal',
-    'Альтернативная',
-    'assets/meteor_icon.png',
-    'MinimalIcon',
-    'MinimalIcon',
-  );
+  light('light', 'Светлая', 'assets/icons/promax_light.png', null, 'IconLight'),
+  aurora('aurora', 'Аврора', 'assets/icons/promax_aurora.png', null, 'IconAurora'),
+  sunset('sunset', 'Закат', 'assets/icons/promax_sunset.png', null, 'IconSunset'),
+  glass('glass', 'Стекло', 'assets/icons/promax_glass.png', null, 'IconGlass');
 
   final String id;
   final String title;
   final String previewAsset;
-  final String androidAlias;
+  final String? androidAlias;
   final String? iosAlternateName;
 
   const AppIcon(
@@ -34,12 +30,17 @@ enum AppIcon {
     this.androidAlias,
     this.iosAlternateName,
   );
+
+  bool get availableOnAndroid => androidAlias != null;
+
+  static List<AppIcon> forPlatform({required bool ios}) =>
+      ios ? values : values.where((icon) => icon.availableOnAndroid).toList();
 }
 
 // #***! переключение иконки
 class AppIconConfig {
   static const prefKey = 'app_icon';
-  static const _channel = MethodChannel('ru.komet.app/app_icon');
+  static const _channel = MethodChannel('io.github.stillemptynow.promax/app_icon');
 
   static final ValueNotifier<AppIcon> current = ValueNotifier(
     AppIcon.defaultIcon,
@@ -47,6 +48,9 @@ class AppIconConfig {
 
   // #***! на десктопе и в вебе иконку не поменять
   static bool get isSupported => Platform.isAndroid || Platform.isIOS;
+
+  static List<AppIcon> get available =>
+      AppIcon.forPlatform(ios: !kIsWeb && Platform.isIOS);
 
   // #***! иос может сбросить иконку сам, на старте сверяемся
   static Future<void> load() async {

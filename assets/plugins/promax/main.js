@@ -1,4 +1,4 @@
-import { chat, ui } from 'komet:api';
+import { chat, ui } from 'promax:api';
 
 function textOf(context) {
   return String(context.arguments.text || (context.reply && context.reply.text) || '').trim();

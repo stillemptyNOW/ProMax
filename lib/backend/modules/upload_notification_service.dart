@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../main.dart' show KometApp;
+import '../../main.dart' show ProMaxApp;
 
 // #***! что грузим, от этого текст уведомления
 enum UploadKind { photo, video, videoNote, voice, file }
@@ -57,7 +57,7 @@ class _NotificationJob {
 // #***! уведомление с прогрессом, только андроид
 class UploadNotificationService {
   static const MethodChannel _channel = MethodChannel(
-    'ru.komet.app/upload_service',
+    'io.github.stillemptynow.promax/upload_service',
   );
   // #***! не чаще раза в 350 мс иначе шторка захлёбывается
   static const int _minIntervalMs = 350;
@@ -201,7 +201,7 @@ class UploadNotificationService {
 
   // #***! уведомление вне дерева виджетов, локаль достаём руками
   static AppLocalizations _localizations() {
-    final context = KometApp.navigatorKey.currentContext;
+    final context = ProMaxApp.navigatorKey.currentContext;
     if (context != null) {
       final scoped = Localizations.of<AppLocalizations>(
         context,

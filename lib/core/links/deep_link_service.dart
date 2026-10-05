@@ -108,7 +108,7 @@ class DeepLinkService {
 
   // #***! открываем когда есть контекст и живая сессия
   void _flushPending() {
-    final context = KometApp.overlayContext;
+    final context = ProMaxApp.overlayContext;
 
     if (_pendingLogExport) {
       if (context == null) {

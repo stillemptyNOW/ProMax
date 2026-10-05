@@ -10,26 +10,26 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:komet/backend/modules/contacts.dart';
-import 'package:komet/core/config/app_frost.dart';
-import 'package:komet/core/config/app_nav_pill_style.dart';
-import 'package:komet/core/config/app_video_note_quality.dart';
-import 'package:komet/core/config/app_visual_style.dart';
-import 'package:komet/core/media/gallery_source.dart';
-import 'package:komet/core/media/video_transcoder.dart';
-import 'package:komet/core/utils/format.dart';
-import 'package:komet/core/utils/logger.dart';
-import 'package:komet/frontend/widgets/attachment/contact_picker_page.dart';
-import 'package:komet/frontend/widgets/attachment/media_preview_screen.dart';
-import 'package:komet/frontend/widgets/attachment/photo_editor.dart';
-import 'package:komet/frontend/widgets/attachment/photo_hero.dart';
-import 'package:komet/frontend/widgets/attachment/video_edit.dart';
-import 'package:komet/frontend/widgets/attachment/video_preview_screen.dart';
-import 'package:komet/frontend/widgets/chat_menu_overlay.dart';
-import 'package:komet/frontend/widgets/custom_notification.dart';
-import 'package:komet/frontend/widgets/sheet_helpers.dart';
-import 'package:komet/frontend/widgets/sliding_pill_nav.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/backend/modules/contacts.dart';
+import 'package:promax/core/config/app_frost.dart';
+import 'package:promax/core/config/app_nav_pill_style.dart';
+import 'package:promax/core/config/app_video_note_quality.dart';
+import 'package:promax/core/config/app_visual_style.dart';
+import 'package:promax/core/media/gallery_source.dart';
+import 'package:promax/core/media/video_transcoder.dart';
+import 'package:promax/core/utils/format.dart';
+import 'package:promax/core/utils/logger.dart';
+import 'package:promax/frontend/widgets/attachment/contact_picker_page.dart';
+import 'package:promax/frontend/widgets/attachment/media_preview_screen.dart';
+import 'package:promax/frontend/widgets/attachment/photo_editor.dart';
+import 'package:promax/frontend/widgets/attachment/photo_hero.dart';
+import 'package:promax/frontend/widgets/attachment/video_edit.dart';
+import 'package:promax/frontend/widgets/attachment/video_preview_screen.dart';
+import 'package:promax/frontend/widgets/chat_menu_overlay.dart';
+import 'package:promax/frontend/widgets/custom_notification.dart';
+import 'package:promax/frontend/widgets/sheet_helpers.dart';
+import 'package:promax/frontend/widgets/sliding_pill_nav.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 import '../small_spinner.dart';
 import '../../../core/security/app_lock.dart';
@@ -1427,7 +1427,7 @@ class _CameraTile extends StatefulWidget {
 }
 
 class _CameraTileState extends State<_CameraTile> with WidgetsBindingObserver {
-  static const String _askedKey = 'komet_camera_permission_asked';
+  static const String _askedKey = 'promax_camera_permission_asked';
 
   CameraController? _controller;
   bool _starting = false;

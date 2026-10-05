@@ -77,7 +77,7 @@ PODS:
     - FlutterMacOS
   - kolibri (0.0.1):
     - Flutter
-  - komet_crypto (0.2.0):
+  - promax_crypto (0.2.0):
     - Flutter
   - media_kit_video (0.0.1):
     - Flutter
@@ -141,7 +141,7 @@ DEPENDENCIES:
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - just_audio (from `.symlinks/plugins/just_audio/darwin`)
   - kolibri (from `.symlinks/plugins/kolibri/ios`)
-  - komet_crypto (from `.symlinks/plugins/komet_crypto/ios`)
+  - promax_crypto (from `.symlinks/plugins/promax_crypto/ios`)
   - media_kit_video (from `.symlinks/plugins/media_kit_video/ios`)
   - mobile_scanner (from `.symlinks/plugins/mobile_scanner/darwin`)
   - ogg_opus_player (from `.symlinks/plugins/ogg_opus_player/darwin`)
@@ -204,8 +204,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/just_audio/darwin"
   kolibri:
     :path: ".symlinks/plugins/kolibri/ios"
-  komet_crypto:
-    :path: ".symlinks/plugins/komet_crypto/ios"
+  promax_crypto:
+    :path: ".symlinks/plugins/promax_crypto/ios"
   media_kit_video:
     :path: ".symlinks/plugins/media_kit_video/ios"
   mobile_scanner:
@@ -258,7 +258,7 @@ SPEC CHECKSUMS:
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   just_audio: 4e391f57b79cad2b0674030a00453ca5ce817eed
   kolibri: b354af8a95c7e38dbfa8f5aeab5a6ebefbe46f38
-  komet_crypto: 8a18912908935b704e3902f19c6dab6190c43b6a
+  promax_crypto: 8a18912908935b704e3902f19c6dab6190c43b6a
   media_kit_video: f3b0d035d89def15cfbbcf7dc2ae278f201e2f83
   mobile_scanner: 9157936403f5a0644ca3779a38ff8404c5434a93
   ogg_opus_player: 954784304f4e2722780018c4abf284e4f93cddf5

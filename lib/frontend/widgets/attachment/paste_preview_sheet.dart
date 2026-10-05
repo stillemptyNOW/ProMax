@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:komet/core/config/app_fonts.dart';
-import 'package:komet/core/config/app_shape.dart';
-import 'package:komet/core/media/clipboard/pasted_attachment.dart';
-import 'package:komet/core/utils/format.dart';
-import 'package:komet/frontend/widgets/sheet_helpers.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/core/config/app_fonts.dart';
+import 'package:promax/core/config/app_shape.dart';
+import 'package:promax/core/media/clipboard/pasted_attachment.dart';
+import 'package:promax/core/utils/format.dart';
+import 'package:promax/frontend/widgets/sheet_helpers.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 Future<String?> showPastePreviewSheet(
   BuildContext context, {

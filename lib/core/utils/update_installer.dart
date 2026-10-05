@@ -98,7 +98,7 @@ abstract class UpdateInstaller {
     final packageInfo = await PackageInfo.fromPlatform();
     final flavor = packageInfo.packageName == 'ru.oneme.app'
         ? 'oneme'
-        : 'komet';
+        : 'promax';
 
     final androidInfo = await DeviceInfoPlugin().androidInfo;
     final abis = androidInfo.supportedAbis;

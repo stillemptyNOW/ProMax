@@ -11,7 +11,7 @@ import '../../../main.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/glossy_pill.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../widgets/small_spinner.dart';
 import '../contacts/open_contact_profile.dart';
@@ -173,7 +173,7 @@ class _BlacklistScreenState extends State<BlacklistScreen>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                KometAvatar(name: name, size: 44, imageUrl: contact.baseUrl),
+                ProMaxAvatar(name: name, size: 44, imageUrl: contact.baseUrl),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:komet/backend/modules/messages.dart';
+import 'package:promax/backend/modules/messages.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'dart:math';
 import 'dart:ui' as ui;
@@ -76,7 +76,7 @@ import '../../../core/cache/info_cache.dart';
 import '../../../core/config/app_visual_style.dart';
 import '../../../core/config/app_stories.dart';
 import '../../../core/config/app_colors.dart';
-import '../../../core/config/komet_settings.dart';
+import '../../../core/config/promax_settings.dart';
 import '../../../backend/models/chat_folder.dart';
 import '../../../backend/modules/account.dart';
 import '../../../backend/modules/chats.dart';
@@ -939,7 +939,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   }
 
   bool get _archiveAwaitsPull =>
-      KometSettings.archiveOnPull.value &&
+      ProMaxSettings.archiveOnPull.value &&
       !_archiveRevealed &&
       _shouldShowArchiveEntry(_selectedFolderIndex, ignorePull: true);
 
@@ -1020,9 +1020,9 @@ class _ChatListScreenState extends State<ChatListScreen>
     DraftStore.instance.revision.addListener(_onDraftsChanged);
     AppStories.current.addListener(_onStoriesEnabledChanged);
     storiesModule.storiesChanged.addListener(_onStoriesDataChanged);
-    KometSettings.hideAllChatsFolder.addListener(_requestReload);
-    KometSettings.archiveOnPull.addListener(_onArchiveModeChanged);
-    KometSettings.showHiddenChats.addListener(_requestReload);
+    ProMaxSettings.hideAllChatsFolder.addListener(_requestReload);
+    ProMaxSettings.archiveOnPull.addListener(_onArchiveModeChanged);
+    ProMaxSettings.showHiddenChats.addListener(_requestReload);
     ContactsModule.revision.addListener(_requestReload);
     FoldersModule.revision.addListener(_requestReload);
     bannersModule.activeBanner.addListener(_onActiveInformerChanged);
@@ -1228,7 +1228,7 @@ class _ChatListScreenState extends State<ChatListScreen>
       await ensureLoadedFuture;
       final loadedChats = chats.chatsSnapshot(
         includeHidden:
-            widget.archiveMode || KometSettings.showHiddenChats.value,
+            widget.archiveMode || ProMaxSettings.showHiddenChats.value,
       );
       final archivedIds = ArchivedChatsStore.instance.archivedChatIds(p.id);
       var archivedCount = 0;
@@ -1247,7 +1247,7 @@ class _ChatListScreenState extends State<ChatListScreen>
         final hasRealFolders = folders.any(
           (f) => !FoldersModule.isAllChatsFolder(f),
         );
-        if (KometSettings.hideAllChatsFolder.value && hasRealFolders) {
+        if (ProMaxSettings.hideAllChatsFolder.value && hasRealFolders) {
           folders = folders
               .where((f) => !FoldersModule.isAllChatsFolder(f))
               .toList();
@@ -1416,7 +1416,7 @@ class _ChatListScreenState extends State<ChatListScreen>
           myId,
           target.id,
           limit: 20,
-          onlyVisible: !KometSettings.viewDeleted.value,
+          onlyVisible: !ProMaxSettings.viewDeleted.value,
         );
         if (rows.isEmpty) continue;
         final decoded = rows.reversed
@@ -1784,9 +1784,9 @@ class _ChatListScreenState extends State<ChatListScreen>
     DraftStore.instance.revision.removeListener(_onDraftsChanged);
     AppStories.current.removeListener(_onStoriesEnabledChanged);
     storiesModule.storiesChanged.removeListener(_onStoriesDataChanged);
-    KometSettings.hideAllChatsFolder.removeListener(_requestReload);
-    KometSettings.archiveOnPull.removeListener(_onArchiveModeChanged);
-    KometSettings.showHiddenChats.removeListener(_requestReload);
+    ProMaxSettings.hideAllChatsFolder.removeListener(_requestReload);
+    ProMaxSettings.archiveOnPull.removeListener(_onArchiveModeChanged);
+    ProMaxSettings.showHiddenChats.removeListener(_requestReload);
     ContactsModule.revision.removeListener(_requestReload);
     FoldersModule.revision.removeListener(_requestReload);
     bannersModule.activeBanner.removeListener(_onActiveInformerChanged);
@@ -2977,7 +2977,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     if (widget.archiveMode || widget.forwardMode) return false;
     if (_isInitialLoading) return false;
     if (_archivedCount <= 0) return false;
-    if (!ignorePull && KometSettings.archiveOnPull.value && !_archiveRevealed) {
+    if (!ignorePull && ProMaxSettings.archiveOnPull.value && !_archiveRevealed) {
       return false;
     }
     if (_folders.isEmpty) return pageIndex == 0;
@@ -2997,7 +2997,7 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   void _collapseArchiveIfScrolledPast(ScrollController c) {
     if (_collapsingArchive || !_archiveRevealed) return;
-    if (!KometSettings.archiveOnPull.value) return;
+    if (!ProMaxSettings.archiveOnPull.value) return;
     final box = _archiveEntryKey.currentContext?.findRenderObject();
     if (box is! RenderBox || !box.hasSize) return;
     final height = box.size.height;
@@ -4314,7 +4314,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     if (p == null) return;
     final all = await chats.getChats(
       p.id,
-      includeHidden: KometSettings.showHiddenChats.value,
+      includeHidden: ProMaxSettings.showHiddenChats.value,
     );
     final targets = all
         .where((c) => c.unreadCount > 0)

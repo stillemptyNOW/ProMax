@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/config/app_message_actions_style.dart';
-import 'package:komet/frontend/widgets/message_actions_overlay.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/core/config/app_message_actions_style.dart';
+import 'package:promax/frontend/widgets/message_actions_overlay.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 void main() {
   testWidgets('system back closes the message menu, not the chat', (

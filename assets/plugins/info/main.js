@@ -1,4 +1,4 @@
-import { chat, contact, runtime, ui } from 'komet:api';
+import { chat, contact, runtime, ui } from 'promax:api';
 
 function date(value) {
   if (!Number.isInteger(value) || value <= 0) return '—';

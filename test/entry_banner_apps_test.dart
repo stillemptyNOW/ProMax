@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/account/account_models.dart';
-import 'package:komet/backend/modules/webapp.dart';
-import 'package:komet/core/storage/app_database.dart';
+import 'package:promax/backend/modules/account/account_models.dart';
+import 'package:promax/backend/modules/webapp.dart';
+import 'package:promax/core/storage/app_database.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 

@@ -10,7 +10,7 @@ import '../../../../main.dart' show api;
 import '../../../../models/attachment.dart';
 import '../../../screens/contacts/open_contact_profile.dart';
 import '../../custom_notification.dart';
-import '../../komet_avatar.dart';
+import '../../promax_avatar.dart';
 import '../../small_spinner.dart';
 import 'bubble_context.dart';
 
@@ -218,7 +218,7 @@ class _ContactCardState extends State<_ContactCard> {
           children: [
             Row(
               children: [
-                KometAvatar(
+                ProMaxAvatar(
                   name: widget.resolvedName,
                   imageUrl: widget.photoUrl,
                   size: 48,

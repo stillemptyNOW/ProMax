@@ -1,3 +1,0 @@
-[submodule "native/crypto-core"]
-	path = native/crypto-core
-	url = https://github.com/KometTeam/crypto-core.git

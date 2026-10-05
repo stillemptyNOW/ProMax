@@ -5,7 +5,7 @@ import '../widgets/connection_status.dart';
 import 'dev_menu_widgets.dart';
 
 class DebugNetworkSection extends StatelessWidget {
-  final KometAppState? appState;
+  final ProMaxAppState? appState;
 
   const DebugNetworkSection({super.key, required this.appState});
 

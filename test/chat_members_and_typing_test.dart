@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/messages.dart';
+import 'package:promax/backend/modules/messages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:komet/core/storage/chat_activity_store.dart';
-import 'package:komet/core/storage/chat_members_store.dart';
-import 'package:komet/frontend/screens/chats/chat/typing_label.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/core/storage/chat_activity_store.dart';
+import 'package:promax/core/storage/chat_members_store.dart';
+import 'package:promax/frontend/screens/chats/chat/typing_label.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 const int _chatId = 900001;
 const int _alice = 900101;

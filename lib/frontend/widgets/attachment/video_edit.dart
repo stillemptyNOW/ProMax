@@ -260,7 +260,7 @@ Future<File?> bakeVideoOverlay(VideoEditState edit, Size output) async {
     final file = File(
       p.join(
         dir.path,
-        'komet_vov_${DateTime.now().microsecondsSinceEpoch}.png',
+        'promax_vov_${DateTime.now().microsecondsSinceEpoch}.png',
       ),
     );
     await file.writeAsBytes(data.buffer.asUint8List());

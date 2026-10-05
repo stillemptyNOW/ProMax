@@ -68,7 +68,7 @@ class PluginSigning {
       modules[path] = sha256.convert(files[path]!).toString();
     }
     final canonical = _canonicalJson({
-      'format': 'komet-plugin-signature-v1',
+      'format': 'promax-plugin-signature-v1',
       'manifest': manifest.toUnsignedJson(),
       'modules': modules,
     });

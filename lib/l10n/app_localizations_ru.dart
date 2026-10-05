@@ -1016,7 +1016,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appearancePreviewNotBad => 'Вполне неплохо!';
 
   @override
-  String get callKometDetectedNotification =>
+  String get callProMaxDetectedNotification =>
       'Собеседник использует совместимый клиент.';
 
   @override
@@ -1059,7 +1059,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get callTooltipExpand => 'Развернуть';
 
   @override
-  String get callTooltipKometHub => 'ProMax';
+  String get callTooltipProMaxHub => 'ProMax';
 
   @override
   String get callInfoTitle => 'О звонке';
@@ -3162,7 +3162,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Шифруется только текст сообщений и фото. Сервер по-прежнему видит, кто с кем и когда переписывается, видит, что переписка зашифрована, и может не доставлять сообщения. Скрыть это нельзя.';
 
   @override
-  String e2eeNeedsKomet(String name) {
+  String e2eeNeedsProMax(String name) {
     return 'Для этого у собеседника $name должен быть ProMax с включённым сквозным шифрованием.';
   }
 
@@ -4641,6 +4641,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chatListCreateGroup => 'Создать группу';
 
   @override
+  String get chatListCreateChannel => 'Создать канал';
+
+  @override
   String get chatListCreateGroupCall => 'Создать групповой звонок';
 
   @override
@@ -4652,9 +4655,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get chatListInviteLinkUnavailable =>
       'Ссылка-приглашение сейчас недоступна';
-
-  @override
-  String get chatListCreateChannel => 'Создать канал';
 
   @override
   String get chatListCreateContact => 'Создать контакт';
@@ -5371,7 +5371,7 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get pluginsScreenPickKinetFile => 'Выберите файл с расширением .kinet';
+  String get pluginsScreenPickPmxFile => 'Выберите файл с расширением .pmx';
 
   @override
   String get pluginsScreenReadFileFailed =>
@@ -5379,7 +5379,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String pluginsScreenOpenFailed(String error) {
-    return 'Не удалось открыть .kinet: $error';
+    return 'Не удалось открыть .pmx: $error';
   }
 
   @override
@@ -5387,7 +5387,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String pluginsScreenDownloadFailed(String error) {
-    return 'Не удалось загрузить .kinet: $error';
+    return 'Не удалось загрузить .pmx: $error';
   }
 
   @override
@@ -5448,7 +5448,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pluginsScreenTitle => 'Плагины';
 
   @override
-  String get pluginsScreenInstallFile => 'Установить .kinet';
+  String get pluginsScreenInstallFile => 'Установить .pmx';
 
   @override
   String get pluginsScreenInstallUrl => 'Установить по URL';
@@ -5471,58 +5471,58 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pluginsScreenDownload => 'Загрузить';
 
   @override
-  String get kometSettingsViewDeletedSubtitle =>
+  String get proMaxSettingsViewDeletedSubtitle =>
       'Показывать удалённые сообщения';
 
   @override
-  String get kometSettingsViewRedactedSubtitle =>
+  String get proMaxSettingsViewRedactedSubtitle =>
       'Показывать историю у редактированных сообщений';
 
   @override
-  String get kometSettingsFullTimestampSubtitle =>
+  String get proMaxSettingsFullTimestampSubtitle =>
       'Показывать время в секундах у сообщений';
 
   @override
-  String get kometSettingsShowForwardSubtitle =>
+  String get proMaxSettingsShowForwardSubtitle =>
       'Показывать метку на пересланных сообщениях, даже если на них не указан автор';
 
   @override
-  String get kometSettingsTypingTimeSubtitle =>
+  String get proMaxSettingsTypingTimeSubtitle =>
       'Пытается рассчитать примерное время, сколько печаталось сообщение';
 
   @override
-  String get kometSettingsFoldersHeader => 'Папки';
+  String get proMaxSettingsFoldersHeader => 'Папки';
 
   @override
-  String get kometSettingsHideAllFolderSubtitle =>
+  String get proMaxSettingsHideAllFolderSubtitle =>
       'Скрыть папку «Все», когда есть другие папки. Чаты сортируются только по вашим папкам';
 
   @override
-  String get kometSettingsShowHiddenChatsSubtitle =>
+  String get proMaxSettingsShowHiddenChatsSubtitle =>
       'Показывать скрытые чаты, которые обычно не отображаются в списке: от групповых звонков, закрытые каналы и покинутые чаты';
 
   @override
-  String get kometSettingsArchiveOnPullSubtitle =>
+  String get proMaxSettingsArchiveOnPullSubtitle =>
       'Прятать архив и показывать его, если потянуть список чатов вниз, после историй';
 
   @override
-  String get kometSettingsGhostModeSubtitle => 'Вас не видно в сети';
+  String get proMaxSettingsGhostModeSubtitle => 'Вас не видно в сети';
 
   @override
-  String get kometSettingsAntiReadSubtitle => 'Нечиталка сообщений';
+  String get proMaxSettingsAntiReadSubtitle => 'Нечиталка сообщений';
 
   @override
-  String get kometSettingsSelfOnlineCheckSubtitle =>
+  String get proMaxSettingsSelfOnlineCheckSubtitle =>
       'Каждые ~10 секунд сверяет, когда вы были онлайн. Полезно для проверки ghost mode';
 
   @override
-  String get kometSettingsDebugHeader => 'Отладка';
+  String get proMaxSettingsDebugHeader => 'Отладка';
 
   @override
-  String get kometSettingsDebugLogsLabel => 'Запись отладочных логов';
+  String get proMaxSettingsDebugLogsLabel => 'Запись отладочных логов';
 
   @override
-  String get kometSettingsDebugLogsSubtitle =>
+  String get proMaxSettingsDebugLogsSubtitle =>
       'Пишет трафик протокола в файл на устройстве — помогает диагностировать баги при репортах';
 
   @override

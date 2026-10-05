@@ -26,7 +26,7 @@ class PluginUpdater {
       ..connectionTimeout = const Duration(seconds: 15);
     try {
       final request = await client.getUrl(manifestUrl);
-      request.headers.set(HttpHeaders.userAgentHeader, 'KometPluginUpdater/1');
+      request.headers.set(HttpHeaders.userAgentHeader, 'ProMaxPluginUpdater/1');
       final response = await request.close().timeout(
         const Duration(seconds: 15),
       );

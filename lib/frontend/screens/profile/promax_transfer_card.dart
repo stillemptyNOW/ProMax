@@ -11,7 +11,7 @@ import '../../../core/config/app_amoled.dart';
 import '../../../core/config/app_theme_mode.dart';
 import '../../../core/config/app_video_note_quality.dart';
 import '../../../core/config/promax_archive.dart';
-import '../../../core/config/komet_settings.dart';
+import '../../../core/config/promax_settings.dart';
 import '../../../core/security/app_lock.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/save_file_as.dart';
@@ -44,7 +44,7 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
       await file.writeAsBytes(bytes, flush: true);
       final result = Platform.isIOS
           ? await AppLock.instance.external(() async {
-              final path = await const MethodChannel('ru.komet.app/video')
+              final path = await const MethodChannel('io.github.stillemptynow.promax/video')
                   .invokeMethod<String>('exportPromaxArchive', {
                     'path': file!.path,
                   });
@@ -159,7 +159,7 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
       if (!mounted) return;
       final prefs = await ProMaxArchive.settings();
       if (!mounted) return;
-      final app = KometApp.stateOf(context);
+      final app = ProMaxApp.stateOf(context);
       if (prefs['app_theme_mode'] is String) {
         await app?.applyThemeMode(AppThemeModeConfig.current.value);
       }
@@ -175,7 +175,7 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
       if (prefs['app_font_scale'] is num) {
         await app?.applyFontScale((prefs['app_font_scale'] as num).toDouble());
       }
-      api.sendPing(interactive: !KometSettings.ghostMode.value);
+      api.sendPing(interactive: !ProMaxSettings.ghostMode.value);
       if (mounted) {
         showCustomNotification(
           context,

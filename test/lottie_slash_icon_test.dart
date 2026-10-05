@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/lottie_slash_icon.dart';
+import 'package:promax/frontend/widgets/lottie_slash_icon.dart';
 import 'package:lottie/lottie.dart';
 
 const _asset = 'assets/lottie/ic_flash_on_to_off.json';

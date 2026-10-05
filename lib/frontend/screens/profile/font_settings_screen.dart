@@ -40,7 +40,7 @@ class _FontSettingsScreenState extends State<FontSettingsScreen> {
   }
 
   void _selectFont(String id) {
-    final app = KometApp.stateOf(context);
+    final app = ProMaxApp.stateOf(context);
     if (app == null || app.fontId == id) return;
     Haptics.selection();
     app.applyAppFont(id);
@@ -78,7 +78,7 @@ class _FontSettingsScreenState extends State<FontSettingsScreen> {
   Future<void> _applyAdded(String family) async {
     await _reloadCustom();
     if (!mounted) return;
-    KometApp.stateOf(context)?.applyAppFont(AppFonts.customId(family));
+    ProMaxApp.stateOf(context)?.applyAppFont(AppFonts.customId(family));
     Haptics.success();
     showCustomNotification(
       context,
@@ -122,7 +122,7 @@ class _FontSettingsScreenState extends State<FontSettingsScreen> {
     await CustomFontService.removeFamily(family);
     await _reloadCustom();
     if (!mounted) return;
-    final app = KometApp.stateOf(context);
+    final app = ProMaxApp.stateOf(context);
     if (app != null && app.fontId == AppFonts.customId(family)) {
       app.applyAppFont(AppFonts.fallback.id);
     }
@@ -151,7 +151,7 @@ class _FontSettingsScreenState extends State<FontSettingsScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final app = KometApp.stateOf(context);
+    final app = ProMaxApp.stateOf(context);
     final currentId = app?.fontId ?? AppFonts.fallback.id;
 
     return Scaffold(

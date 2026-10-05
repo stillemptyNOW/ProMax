@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/links/max_link.dart';
-import 'package:komet/core/links/message_link_token.dart';
+import 'package:promax/core/links/max_link.dart';
+import 'package:promax/core/links/message_link_token.dart';
 
 void main() {
   final syntheticId = BigInt.parse('0102030405060708', radix: 16).toString();

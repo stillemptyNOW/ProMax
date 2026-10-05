@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:komet_crypto/komet_crypto.dart';
+import 'package:promax_crypto/promax_crypto.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -15,7 +15,7 @@ import 'chat_crypto_service.dart';
 const String kEncryptedPhotoExtension = '.png';
 const String kE2eePhotoExtension = '.kce';
 const int _ticketHeader =
-    KometCryptoSizes.fileKey + KometCryptoSizes.fileNonce + 8;
+    ProMaxCryptoSizes.fileKey + ProMaxCryptoSizes.fileNonce + 8;
 
 // #***! имя из билета а не из дескриптора, иначе сервер подсунет чужую расшифровку
 String decryptedCacheName(int accountId, int chatId, String cacheName) =>
@@ -55,7 +55,7 @@ Future<Uint8List?> reencodeAsPng(File source) async {
 
 // #***! временная папка под шифртекст, открытого текста на диске нет
 Future<Directory> _scratchDir() async {
-  final dir = Directory('${(await getTemporaryDirectory()).path}/komet_enc');
+  final dir = Directory('${(await getTemporaryDirectory()).path}/promax_enc');
   if (!await dir.exists()) await dir.create(recursive: true);
   return dir;
 }
@@ -119,15 +119,15 @@ Future<E2eePhotoPrepared?> prepareE2eePhoto({
 }) async {
   final png = await reencodeAsPng(source);
   if (png == null) return null;
-  final key = KometCrypto.randomBytes(KometCryptoSizes.fileKey);
-  final nonce = KometCrypto.randomBytes(KometCryptoSizes.fileNonce);
+  final key = ProMaxCrypto.randomBytes(ProMaxCryptoSizes.fileKey);
+  final nonce = ProMaxCrypto.randomBytes(ProMaxCryptoSizes.fileNonce);
   final out = BytesBuilder(copy: false);
   try {
-    final sealer = KometCrypto.fileSealer(key, nonce);
+    final sealer = ProMaxCrypto.fileSealer(key, nonce);
     var offset = 0;
     while (true) {
-      final last = png.length - offset <= KometCryptoSizes.fileChunk;
-      final end = last ? png.length : offset + KometCryptoSizes.fileChunk;
+      final last = png.length - offset <= ProMaxCryptoSizes.fileChunk;
+      final end = last ? png.length : offset + ProMaxCryptoSizes.fileChunk;
       out.add(sealer.chunk(png.sublist(offset, end), last: last));
       offset = end;
       if (last) break;
@@ -143,14 +143,14 @@ Future<E2eePhotoPrepared?> prepareE2eePhoto({
   final name = Uint8List.fromList(utf8.encode('photo_$stamp.png'));
   final ticket = Uint8List(_ticketHeader + name.length);
   ticket.setAll(0, key);
-  ticket.setAll(KometCryptoSizes.fileKey, nonce);
+  ticket.setAll(ProMaxCryptoSizes.fileKey, nonce);
   var size = png.length;
   for (var i = _ticketHeader - 1; i >= _ticketHeader - 8; i--) {
     ticket[i] = size & 0xff;
     size >>= 8;
   }
   ticket.setAll(_ticketHeader, name);
-  KometCrypto.wipe(key);
+  ProMaxCrypto.wipe(key);
   return E2eePhotoPrepared(file, ticket);
 }
 
@@ -165,15 +165,15 @@ Future<EncryptedPhotoResult> openE2eePhoto({
   if (await target.exists() && await target.length() > 0) {
     return EncryptedPhotoResult.ok(target);
   }
-  final key = ticket.sublist(0, KometCryptoSizes.fileKey);
-  final nonce = ticket.sublist(KometCryptoSizes.fileKey, _ticketHeader - 8);
-  const step = KometCryptoSizes.fileChunk + KometCryptoSizes.tag;
+  final key = ticket.sublist(0, ProMaxCryptoSizes.fileKey);
+  final nonce = ticket.sublist(ProMaxCryptoSizes.fileKey, _ticketHeader - 8);
+  const step = ProMaxCryptoSizes.fileChunk + ProMaxCryptoSizes.tag;
   final total = await encrypted.length();
   // #***! блоками, размер выбирает сервер и в память вложение не влезет
   final source = await encrypted.open();
   final sink = target.openWrite();
   try {
-    final opener = KometCrypto.fileOpener(key, nonce);
+    final opener = ProMaxCrypto.fileOpener(key, nonce);
     try {
       var offset = 0;
       while (true) {
@@ -199,7 +199,7 @@ Future<EncryptedPhotoResult> openE2eePhoto({
     } catch (_) {}
     return EncryptedPhotoResult.failed(cryptoFailureOf(e));
   } finally {
-    KometCrypto.wipe(key);
+    ProMaxCrypto.wipe(key);
     await source.close();
   }
   return EncryptedPhotoResult.ok(target);

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/utils/route_settle.dart';
+import 'package:promax/core/utils/route_settle.dart';
 
 class _GatedPage extends StatefulWidget {
   const _GatedPage({required this.onSettled});

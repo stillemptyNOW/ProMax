@@ -11,7 +11,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/cache/self_presence.dart';
 import '../../../core/config/build_profile.dart';
 import '../../../core/config/app_colors.dart';
-import '../../../core/config/komet_settings.dart';
+import '../../../core/config/promax_settings.dart';
 import '../../../core/config/app_show_extra_info.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/utils/format.dart';
@@ -28,7 +28,7 @@ import '../../widgets/photo_viewer.dart';
 import '../../widgets/avatar_photo_actions.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/glossy_pill.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../../widgets/profile_header_scroll.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../widgets/settings_card.dart';
@@ -52,7 +52,7 @@ import 'devices_screen.dart';
 import '../../widgets/spectrum_tint.dart';
 import 'edit_profile_screen.dart';
 import 'info_screen.dart';
-import 'komet_settings_screen.dart';
+import 'promax_settings_screen.dart';
 import 'promax_transfer_card.dart';
 import 'notifications_screen.dart';
 import 'profile_qr_sheet.dart';
@@ -110,7 +110,7 @@ class _SettingsTabState extends State<SettingsTab>
     super.initState();
     _loadProfile();
     _loadAppVersion();
-    final appState = KometApp.stateOf(context);
+    final appState = ProMaxApp.stateOf(context);
     if (appState != null) {
       _profileUpdateSub = appState.profileUpdateStream.listen((_) {
         if (mounted) _loadProfile();
@@ -415,7 +415,7 @@ class _SettingsTabState extends State<SettingsTab>
       _rebuildAvatarPhotos();
     });
     await _loadAvatars();
-    if (mounted) KometApp.stateOf(context)?.notifyProfileUpdate();
+    if (mounted) ProMaxApp.stateOf(context)?.notifyProfileUpdate();
   }
 
   Future<void> _loadAppVersion() async {
@@ -512,7 +512,7 @@ class _SettingsTabState extends State<SettingsTab>
   }
 
   Future<void> _doLogout() async {
-    final navState = KometApp.navigatorKey.currentState;
+    final navState = ProMaxApp.navigatorKey.currentState;
     try {
       await accountModule.logout();
     } catch (e) {
@@ -557,7 +557,7 @@ class _SettingsTabState extends State<SettingsTab>
     final hasPhoto = (_profile!.baseUrl ?? '').isNotEmpty;
 
     return ValueListenableBuilder<bool>(
-      valueListenable: KometSettings.selfOnlineCheck,
+      valueListenable: ProMaxSettings.selfOnlineCheck,
       builder: (context, statusEnabled, _) {
         final collapsedH = topPad + (statusEnabled ? 268.0 : 242.0);
         final expandedH = hasPhoto
@@ -830,9 +830,10 @@ class _SettingsTabState extends State<SettingsTab>
                           ),
                         _SettingsItem(
                           leading: Image.asset(
-                            'assets/komet.png',
+                            'assets/promax.png',
                             width: 22,
                             height: 22,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           label: 'ProMax',
                           onTap: () {
@@ -840,7 +841,7 @@ class _SettingsTabState extends State<SettingsTab>
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    const KometSettingsScreen(),
+                                    const ProMaxSettingsScreen(),
                               ),
                             );
                           },
@@ -1199,7 +1200,7 @@ class _SettingsTabState extends State<SettingsTab>
             width: 2.5,
           ),
         ),
-        child: KometAvatar(name: name, size: 88, fontSize: 32),
+        child: ProMaxAvatar(name: name, size: 88, fontSize: 32),
       );
     }
     final letterFallback = ColoredBox(
@@ -1401,7 +1402,7 @@ class _SettingsTabState extends State<SettingsTab>
 
   Widget _buildOnlineStatus(ColorScheme cs, {Color? textColor}) {
     return ValueListenableBuilder<bool>(
-      valueListenable: KometSettings.selfOnlineCheck,
+      valueListenable: ProMaxSettings.selfOnlineCheck,
       builder: (context, enabled, _) {
         if (!enabled) return const SizedBox.shrink();
         return Padding(

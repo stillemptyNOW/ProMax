@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/storage/app_database.dart';
+import 'package:promax/core/storage/app_database.dart';
 
 Map<String, dynamic> _contact(String first, String last, int phone) => {
   'first_name': first,

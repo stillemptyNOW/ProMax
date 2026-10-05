@@ -11,7 +11,7 @@ const _variants = {
 };
 
 void main() {
-  final src = img.decodePng(File('assets/komet.png').readAsBytesSync())!;
+  final src = img.decodePng(File('assets/promax.png').readAsBytesSync())!;
   final dark = img.copyResize(src,
       width: _size, height: _size, interpolation: img.Interpolation.cubic);
   _write(_variants['dark']!, dark);

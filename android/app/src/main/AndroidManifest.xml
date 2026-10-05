@@ -37,8 +37,8 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation"/>
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false"/>
     <application
-        android:label="Komet"
-        android:name="ru.komet.app.KometApplication"
+        android:label="ProMax"
+        android:name="io.github.stillemptynow.promax.ProMaxApplication"
         android:enableOnBackInvokedCallback="true"
         android:allowBackup="false"
         android:fullBackupContent="@xml/backup_rules"
@@ -51,10 +51,10 @@
             android:name="google_analytics_adid_collection_enabled"
             android:value="false" />
         <activity
-            android:name="ru.komet.app.MainActivity"
+            android:name="io.github.stillemptynow.promax.MainActivity"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
-            android:label="Komet"
+            android:label="ProMax"
             android:launchMode="singleTop"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
@@ -78,26 +78,11 @@
             </intent-filter>
         </activity>
         <activity-alias
-            android:name="ru.komet.app.MinimalIcon"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_minimal"
-            android:label="Komet"
-            android:targetActivity="ru.komet.app.MainActivity">
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false"/>
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity-alias>
-        <activity-alias
-            android:name="ru.komet.app.IntentEntry"
+            android:name="io.github.stillemptynow.promax.IntentEntry"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
-            android:label="Komet"
-            android:targetActivity="ru.komet.app.MainActivity">
+            android:label="ProMax"
+            android:targetActivity="io.github.stillemptynow.promax.MainActivity">
             <meta-data
                 android:name="flutter_deeplinking_enabled"
                 android:value="false"/>
@@ -165,10 +150,10 @@
             </intent-filter>
             <meta-data
                 android:name="android.nfc.cardemulation.host_apdu_service"
-                android:resource="@xml/komet_nfc_apdu"/>
+                android:resource="@xml/promax_nfc_apdu"/>
         </service>
         <service
-            android:name=".KometFcmService"
+            android:name=".ProMaxFcmService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -210,7 +195,7 @@
             android:value="2" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="komet_messages" />
+            android:value="promax_messages" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -3,9 +3,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:komet/core/config/countries.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/l10n/terms_of_service.dart';
+import 'package:promax/core/config/countries.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/l10n/terms_of_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'code_confirmation_screen.dart';
 import 'token_login_screen.dart';
@@ -27,7 +27,6 @@ import '../../../core/protocol/packet.dart';
 import '../../../main.dart';
 import '../../../core/config/app_frost.dart';
 import '../../../core/config/build_profile.dart';
-import '../../../core/config/review_access.dart';
 import '../../../core/config/app_shape.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -540,20 +539,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             return;
                           }
 
-                          if (ReviewAccess.matchesPhone(fullPhone)) {
-                            Navigator.push(
-                              screenContext,
-                              MaterialPageRoute(
-                                builder: (context) => CodeConfirmationScreen.review(
-                                  phoneNumber:
-                                      '${_selectedCountry.phoneCode} $formattedPhone',
-                                  rawPhone: fullPhone,
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-
                           // #***! эксперим. SMS-вход: предупреждаем про сброс
                           // сессий, Отмена снимает галочку и не пускает дальше
                           if (_alwaysSendSms) {
@@ -860,8 +845,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   behavior: HitTestBehavior.opaque,
                                   onTap: _onLogoTap,
                                   child: Image.asset(
-                                    'assets/komet.png',
+                                    'assets/promax.png',
                                     height: 80,
+                                    color: cs.onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 16),

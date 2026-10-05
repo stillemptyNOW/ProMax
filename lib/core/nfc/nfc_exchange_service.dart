@@ -32,8 +32,8 @@ class NfcExchangeService {
   NfcExchangeService._();
   static final NfcExchangeService instance = NfcExchangeService._();
 
-  static const MethodChannel _method = MethodChannel('ru.komet.app/nfc');
-  static const EventChannel _events = EventChannel('ru.komet.app/nfc_events');
+  static const MethodChannel _method = MethodChannel('io.github.stillemptynow.promax/nfc');
+  static const EventChannel _events = EventChannel('io.github.stillemptynow.promax/nfc_events');
 
   bool get _supported => Platform.isAndroid;
 

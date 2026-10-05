@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "pw.komet.info",
+  "id": "promax.info",
   "name": "ProMax Info",
   "version": "1.0.0",
   "apiVersion": 1,
   "description": "Сводка данных о собеседнике",
-  "author": "Komet",
+  "author": "ProMax",
   "main": "main.js",
   "permissions": [
     "chat.write",

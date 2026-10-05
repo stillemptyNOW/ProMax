@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/chat_parsing.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/config/komet_settings.dart';
-import 'package:komet/core/media/deleted_media_keeper.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/core/utils/media_cache.dart';
+import 'package:promax/backend/modules/chat_parsing.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/config/promax_settings.dart';
+import 'package:promax/core/media/deleted_media_keeper.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/core/utils/media_cache.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -62,7 +62,7 @@ void main() {
     addTearDown(() async {
       await AppDatabase.close();
       MediaCache.resetForTesting();
-      KometSettings.viewDeleted.value = false;
+      ProMaxSettings.viewDeleted.value = false;
       if (directory.existsSync()) directory.deleteSync(recursive: true);
     });
     await AppDatabase.init();
@@ -91,7 +91,7 @@ void main() {
         participants: const {_accountId: 0, 20: 0},
       ).toDbRow()..['in_list'] = ChatListState.visible,
     ]);
-    KometSettings.viewDeleted.value = true;
+    ProMaxSettings.viewDeleted.value = true;
   });
 
   test('a deleted photo keeps a pinned copy the payload points at', () async {
@@ -109,7 +109,7 @@ void main() {
   });
 
   test('without the setting nothing is copied', () async {
-    KometSettings.viewDeleted.value = false;
+    ProMaxSettings.viewDeleted.value = false;
     await AppDatabase.saveMessages([_photoMessageRow('102')]);
     final downloaded = await MediaCache.fileFor('photo_$_photoId.jpg');
     await downloaded.writeAsBytes(_photoBytes);

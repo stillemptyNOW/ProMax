@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:komet/core/utils/text_format.dart';
-import 'package:komet/models/contact_info.dart';
-import 'package:komet/frontend/screens/chats/chat/mention_panel_controller.dart';
-import 'package:komet/frontend/widgets/rich_message_controller.dart';
+import 'package:promax/core/utils/text_format.dart';
+import 'package:promax/models/contact_info.dart';
+import 'package:promax/frontend/screens/chats/chat/mention_panel_controller.dart';
+import 'package:promax/frontend/widgets/rich_message_controller.dart';
 
 void main() {
   group('mentionQueryAt', () {

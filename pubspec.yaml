@@ -1,5 +1,5 @@
-name: komet
-description: "A new Flutter project."
+name: promax
+description: "ProMax — неофициальный клиент MAX."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -37,7 +37,7 @@ dependencies:
   intl: any
 
   # Rust networking core (kolibri) — FFI plugin, replaces the Dart transport.
-  # Published from the KometTeam/kolibri repo; the native core is compiled at
+  # Published from the ProMaxTeam/kolibri repo; the native core is compiled at
   # app build time and pulled from that repo by git tag.
   kolibri: ^0.1.4
 
@@ -46,18 +46,16 @@ dependencies:
   # что SessionOptions собираем сами. Версия обязана совпадать с пином kolibri.
   flutter_rust_bridge: 2.12.0
 
-  # Message-encryption core (C over monocypher): legacy passphrase scheme and
-  # v2 end-to-end encryption. KometTeam/crypto-core is a git submodule at
-  # native/crypto-core, so the version is pinned by the submodule commit;
-  # run `git submodule update --init --recursive` after cloning.
-  komet_crypto:
-    path: native/crypto-core/flutter/komet_crypto
+  # ProMax message-encryption core (C over monocypher), vendored in
+  # native/promax_crypto.
+  promax_crypto:
+    path: native/promax_crypto/flutter/promax_crypto
 
   # Lottie renderer (tlottie, Rust) for animated stickers, animoji and
   # reactions — local FFI plugin; its wrapper crate pins tlottie by git rev and
   # cargokit compiles it at app build time, like kolibri.
-  komet_tlottie:
-    path: native/komet_tlottie
+  promax_tlottie:
+    path: native/promax_tlottie
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -138,20 +136,20 @@ dev_dependencies:
   plugin_platform_interface: ^2.1.0
 
 flutter_launcher_icons:
-  image_path: "assets/komet_icon.png"
+  image_path: "assets/promax_icon.png"
   android: "ic_launcher"
   ios: true
   remove_alpha_ios: true
   background_color_ios: "#000000"
   adaptive_icon_background: "#000000"
-  adaptive_icon_foreground: "assets/komet.png"
+  adaptive_icon_foreground: "assets/promax.png"
   windows:
     generate: true
-    image_path: "assets/komet_icon.png"
+    image_path: "assets/promax_icon.png"
     icon_size: 256
   macos:
     generate: true
-    image_path: "assets/komet_icon.png"
+    image_path: "assets/promax_icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -169,9 +167,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - assets/komet.png
-    - assets/komet_icon.png
-    - assets/meteor_icon.png
+    - assets/promax.png
+    - assets/promax_icon.png
+    - assets/icons/
     - assets/emoji_keywords.json
     - assets/lottie/
     - assets/wallpapers/patterns/

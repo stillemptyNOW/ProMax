@@ -1,10 +1,10 @@
 <resources>
-    <string name="nfc_service_description">Komet contact exchange</string>
-    <string name="nfc_aid_group_description">Komet contact exchange</string>
+    <string name="nfc_service_description">ProMax contact exchange</string>
+    <string name="nfc_aid_group_description">ProMax contact exchange</string>
     <string name="upload_channel_name">Sending media</string>
     <string name="fkm_channel_name">Notification service</string>
     <string name="fkm_channel_description">Keeps the background connection to the server alive</string>
-    <string name="fkm_title">Komet · notification service</string>
+    <string name="fkm_title">ProMax · notification service</string>
     <string name="fkm_status_active">Connection active</string>
     <string name="fkm_status_inactive">Connection inactive</string>
     <string name="fkm_status_line">%1$s · %2$d delivered</string>

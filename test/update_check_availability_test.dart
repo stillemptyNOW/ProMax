@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/config/build_profile.dart';
-import 'package:komet/core/config/update_config.dart';
+import 'package:promax/core/config/build_profile.dart';
+import 'package:promax/core/config/update_config.dart';
 
 void main() {
   tearDown(() => debugDefaultTargetPlatformOverride = null);

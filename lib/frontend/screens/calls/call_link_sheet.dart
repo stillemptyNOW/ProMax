@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:komet/backend/modules/calls.dart';
-import 'package:komet/frontend/screens/chats/chat_list_screen.dart';
-import 'package:komet/frontend/screens/contacts/contact_sheet_common.dart';
-import 'package:komet/frontend/widgets/custom_notification.dart';
-import 'package:komet/frontend/widgets/hint_bubble.dart';
-import 'package:komet/frontend/widgets/small_spinner.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/main.dart' show messagesModule;
+import 'package:promax/backend/modules/calls.dart';
+import 'package:promax/frontend/screens/chats/chat_list_screen.dart';
+import 'package:promax/frontend/screens/contacts/contact_sheet_common.dart';
+import 'package:promax/frontend/widgets/custom_notification.dart';
+import 'package:promax/frontend/widgets/hint_bubble.dart';
+import 'package:promax/frontend/widgets/small_spinner.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/main.dart' show messagesModule;
 import '../../../core/config/app_shape.dart';
 
 Future<bool> showCreatedCallSheet(

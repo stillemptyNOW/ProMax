@@ -5,7 +5,7 @@ import '../storage/token_storage.dart';
 import '../webpush/web_push_service.dart';
 
 class NativeIosPush {
-  static const _channel = MethodChannel('ru.komet.app/notifications');
+  static const _channel = MethodChannel('io.github.stillemptynow.promax/notifications');
   static const _urlKey = 'promax_push_relay_url';
   static const _secretKey = 'promax_push_relay_secret';
 

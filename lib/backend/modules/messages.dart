@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api.dart';
-import '../../core/config/komet_settings.dart';
+import '../../core/config/promax_settings.dart';
 import '../../core/contacts/device_contacts_service.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
@@ -937,7 +937,7 @@ class MessagesModule {
       }
       var history = CachedMessage.parseEditHistory(existing['edit_history']);
       final oldText = existing['text']?.toString();
-      if (KometSettings.viewRedacted.value &&
+      if (ProMaxSettings.viewRedacted.value &&
           (oldText ?? '') != (msg.text ?? '') &&
           oldText != null &&
           oldText.isNotEmpty) {
@@ -1995,7 +1995,7 @@ class MessagesModule {
 
   // #***! печатает и записывает, ответ не ждём
   void sendTyping(int chatId, String type) {
-    if (KometSettings.noTyping.value) return;
+    if (ProMaxSettings.noTyping.value) return;
     unawaited(() async {
       try {
         await _api.sendRequest(Opcode.msgTyping, {

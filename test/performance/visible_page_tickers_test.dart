@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/visible_page_tickers.dart';
+import 'package:promax/frontend/widgets/visible_page_tickers.dart';
 
 void main() {
   testWidgets('only pages intersecting the viewport have active tickers', (

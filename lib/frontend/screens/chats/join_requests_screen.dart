@@ -9,7 +9,7 @@ import '../../../main.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/glossy_pill.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../widgets/small_spinner.dart';
 
@@ -171,7 +171,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            KometAvatar(name: name, size: 44, imageUrl: m.avatarUrl),
+            ProMaxAvatar(name: name, size: 44, imageUrl: m.avatarUrl),
             const SizedBox(width: 14),
             Expanded(
               child: Text(

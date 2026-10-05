@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/profile_hero.dart';
+import 'package:promax/frontend/widgets/profile_hero.dart';
 
 const _headerStyle = TextStyle(fontSize: 17, fontWeight: FontWeight.w600);
 const _profileStyle = TextStyle(fontSize: 22, fontWeight: FontWeight.w700);

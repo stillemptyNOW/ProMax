@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/backend/modules/stickers.dart';
-import 'package:komet/core/protocol/opcode_map.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/backend/modules/stickers.dart';
+import 'package:promax/core/protocol/opcode_map.dart';
 
 class _SyntheticCatalogApi extends Api {
   final List<Map<String, dynamic>> stickers;

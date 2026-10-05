@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/backend/modules/chat_admin.dart';
-import 'package:komet/core/cache/info_cache.dart';
-import 'package:komet/core/protocol/opcode_map.dart';
-import 'package:komet/core/protocol/packet.dart';
-import 'package:komet/frontend/screens/chats/chat_admin/chat_admin_state.dart';
-import 'package:komet/models/admin_rights.dart';
-import 'package:komet/models/chat_info.dart';
-import 'package:komet/models/chat_reaction_settings.dart';
-import 'package:komet/models/member_permission.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/backend/modules/chat_admin.dart';
+import 'package:promax/core/cache/info_cache.dart';
+import 'package:promax/core/protocol/opcode_map.dart';
+import 'package:promax/core/protocol/packet.dart';
+import 'package:promax/frontend/screens/chats/chat_admin/chat_admin_state.dart';
+import 'package:promax/models/admin_rights.dart';
+import 'package:promax/models/chat_info.dart';
+import 'package:promax/models/chat_reaction_settings.dart';
+import 'package:promax/models/member_permission.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _chatId = -1000;

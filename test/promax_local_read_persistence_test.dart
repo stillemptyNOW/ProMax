@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/config/komet_settings.dart';
-import 'package:komet/core/protocol/packet.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/core/storage/local_read_state.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/config/promax_settings.dart';
+import 'package:promax/core/protocol/packet.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/core/storage/local_read_state.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -58,9 +58,9 @@ void main() {
     final previousPaths = PathProviderPlatform.instance;
     PathProviderPlatform.instance = _Paths(directory.path);
     api = _ReadApi();
-    KometSettings.antiRead.value = true;
+    ProMaxSettings.antiRead.value = true;
     addTearDown(() async {
-      KometSettings.antiRead.value = false;
+      ProMaxSettings.antiRead.value = false;
       await api.dispose();
       await AppDatabase.close();
       PathProviderPlatform.instance = previousPaths;

@@ -5,14 +5,14 @@ allprojects {
     }
 }
 
-val debugAbi = providers.gradleProperty("komet.debugAbi").get()
+val debugAbi = providers.gradleProperty("promax.debugAbi").get()
 val debugTargetPlatform =
     when (debugAbi) {
         "armeabi-v7a" -> "android-arm"
         "arm64-v8a" -> "android-arm64"
         "x86" -> "android-x86"
         "x86_64" -> "android-x64"
-        else -> error("Unsupported komet.debugAbi: $debugAbi")
+        else -> error("Unsupported promax.debugAbi: $debugAbi")
     }
 
 val newBuildDir: Directory =

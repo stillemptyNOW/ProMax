@@ -25,7 +25,7 @@ bool leavesWebView(String? scheme) {
 }
 
 // #***! свои схемы ловим внутри, системе не отдаём
-const Set<String> _appSchemes = {'komet', 'max'};
+const Set<String> _appSchemes = {'promax', 'max'};
 
 // #***! открытие ссылки, сначала наша схема потом max потом браузер
 Future<void> openExternalUrl(BuildContext context, String url) async {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/webapp.dart';
+import 'package:promax/backend/modules/webapp.dart';
 
 void main() {
   group('ExternalCallbackResult', () {

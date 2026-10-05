@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/share/share_labels.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/models/shared_payload.dart';
+import 'package:promax/core/share/share_labels.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/models/shared_payload.dart';
 
 late Directory _dir;
 

@@ -5,9 +5,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
-import 'package:komet/core/config/chat_wallpaper_themes.dart';
-import 'package:komet/core/storage/chat_wallpaper_store.dart';
-import 'package:komet/frontend/widgets/mesh_gradient_background.dart';
+import 'package:promax/core/config/chat_wallpaper_themes.dart';
+import 'package:promax/core/storage/chat_wallpaper_store.dart';
+import 'package:promax/frontend/widgets/mesh_gradient_background.dart';
 
 class ChatWallpaperView extends StatelessWidget {
   final ChatWallpaper wallpaper;

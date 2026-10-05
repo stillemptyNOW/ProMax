@@ -57,7 +57,7 @@ class PluginMediaDownloader {
           ..followRedirects = false
           ..persistentConnection = false;
         request.headers
-          ..set(HttpHeaders.userAgentHeader, 'KometPluginMedia/1')
+          ..set(HttpHeaders.userAgentHeader, 'ProMaxPluginMedia/1')
           ..set(
             HttpHeaders.acceptHeader,
             'image/*, application/octet-stream;q=0.9, */*;q=0.1',

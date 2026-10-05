@@ -15,7 +15,7 @@ const _sizes = {
 };
 
 void main() {
-  final source = img.decodePng(File('assets/meteor_icon.png').readAsBytesSync()) ??
+  final source = img.decodePng(File('assets/promax_icon.png').readAsBytesSync()) ??
       img.decodePng(File('$_dir/app_icon_1024.png').readAsBytesSync())!;
 
   const canvas = 1024;

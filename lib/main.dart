@@ -8,7 +8,7 @@ import 'package:kolibri/kolibri.dart' show initKolibri;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:m3e_collection/m3e_collection.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,7 +32,7 @@ import 'core/config/app_show_extra_info.dart';
 import 'core/config/app_spectrum_background.dart';
 import 'core/config/app_bubble_behavior.dart';
 import 'core/config/app_camera.dart';
-import 'core/config/komet_settings.dart';
+import 'core/config/promax_settings.dart';
 import 'core/security/app_lock.dart';
 import 'core/config/call_no_mute.dart';
 import 'core/config/debug_test.dart';
@@ -192,10 +192,10 @@ void _installLogCapture() {
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   trackHintBubblePresses();
-  debugPrint('KOMET-STARTUP: binding ready');
-  debugPrint('KOMET-STARTUP: initKolibri...');
+  debugPrint('PROMAX-STARTUP: binding ready');
+  debugPrint('PROMAX-STARTUP: initKolibri...');
   await initKolibri();
-  debugPrint('KOMET-STARTUP: initKolibri done');
+  debugPrint('PROMAX-STARTUP: initKolibri done');
   DebugTest.parse(args);
   CallNoMute.parse(args);
   _installLogCapture();
@@ -203,11 +203,11 @@ void main(List<String> args) async {
   if (AppInstance.isNamed) {
     SharedPreferences.setPrefix('flutter.${AppInstance.id}.');
   }
-  debugPrint('KOMET-STARTUP: applyMincifryTrust...');
+  debugPrint('PROMAX-STARTUP: applyMincifryTrust...');
   await TlsConfig.applyMincifryTrust();
-  debugPrint('KOMET-STARTUP: AppDatabase.init...');
+  debugPrint('PROMAX-STARTUP: AppDatabase.init...');
   await AppDatabase.init();
-  debugPrint('KOMET-STARTUP: AppDatabase.init done');
+  debugPrint('PROMAX-STARTUP: AppDatabase.init done');
   final activeAccountId = await TokenStorage.getActiveAccountId();
   if (activeAccountId != null) {
     await ContactsModule.primeCacheFromDb(activeAccountId);
@@ -263,7 +263,7 @@ void main(List<String> args) async {
   final trafficCaptureFuture = TrafficMonitor.instance.load();
   final debugLogFuture = DebugSessionLog.instance.init();
 
-  debugPrint('KOMET-STARTUP: awaiting settings/prefs...');
+  debugPrint('PROMAX-STARTUP: awaiting settings/prefs...');
   await packageInfoFuture;
 
   final initialLocale = await localeFuture;
@@ -278,11 +278,11 @@ void main(List<String> args) async {
   await badgeFuture;
   await ChatEncryptionStore.instance.load();
   E2eeService.instance.attach(messagesModule);
-  await KometSettings.load();
+  await ProMaxSettings.load();
   await AppLock.instance.load();
   if (BuildProfile.plugins) await PluginStore.instance.load();
   CommandRegistry.instance.initialize();
-  if (KometSettings.ghostMode.value) SelfPresence.markOffline();
+  if (ProMaxSettings.ghostMode.value) SelfPresence.markOffline();
   await ContactCache.load();
   final initialFpsOverlay = prefs.getBool('dev_fps_overlay') ?? false;
   final initialVpnBypass =
@@ -336,13 +336,13 @@ void main(List<String> args) async {
     showExtraInfoFuture,
     spectrumBackgroundFuture,
   ]);
-  debugPrint('KOMET-STARTUP: DeviceContactsService.loadFromStartup...');
+  debugPrint('PROMAX-STARTUP: DeviceContactsService.loadFromStartup...');
   await DeviceContactsService.loadFromStartup();
   await trafficCaptureFuture;
   await debugLogFuture;
-  debugPrint('KOMET-STARTUP: runApp');
+  debugPrint('PROMAX-STARTUP: runApp');
   runApp(
-    KometApp(
+    ProMaxApp(
       initialLocale: initialLocale,
       initialFpsOverlay: initialFpsOverlay,
       initialVpnBypass: initialVpnBypass,
@@ -354,8 +354,8 @@ void main(List<String> args) async {
   );
 }
 
-class KometApp extends StatefulWidget {
-  const KometApp({
+class ProMaxApp extends StatefulWidget {
+  const ProMaxApp({
     super.key,
     required this.initialLocale,
     this.initialFpsOverlay = false,
@@ -378,15 +378,15 @@ class KometApp extends StatefulWidget {
   static BuildContext? get overlayContext =>
       navigatorKey.currentState?.overlay?.context;
 
-  static KometAppState? stateOf(BuildContext context) {
-    return context.findAncestorStateOfType<KometAppState>();
+  static ProMaxAppState? stateOf(BuildContext context) {
+    return context.findAncestorStateOfType<ProMaxAppState>();
   }
 
   @override
-  State<KometApp> createState() => KometAppState();
+  State<ProMaxApp> createState() => ProMaxAppState();
 }
 
-class KometAppState extends State<KometApp>
+class ProMaxAppState extends State<ProMaxApp>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   static const _fallbackSeed = Color(0xFFC1C4FF);
 
@@ -510,7 +510,7 @@ class KometAppState extends State<KometApp>
         await accountModule.removeAccount(accountId);
       }
 
-      final navState = KometApp.navigatorKey.currentState;
+      final navState = ProMaxApp.navigatorKey.currentState;
       if (navState != null) {
         final overlay = navState.overlay;
         if (overlay != null) {
@@ -540,7 +540,7 @@ class KometAppState extends State<KometApp>
       _lastVpnNotice = msg;
       _lastVpnNoticeAt = now;
 
-      final overlay = KometApp.navigatorKey.currentState?.overlay;
+      final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
       if (overlay != null) {
         showCustomNotificationOnOverlay(overlay, msg);
       }
@@ -557,15 +557,15 @@ class KometAppState extends State<KometApp>
       _lastServerError = msg;
       _lastServerErrorAt = now;
 
-      final overlay = KometApp.navigatorKey.currentState?.overlay;
+      final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
       if (overlay != null) {
         showCustomNotificationOnOverlay(overlay, msg);
       }
     });
 
     _accountNoticeSub = accountModule.noticeStream.listen((notice) {
-      final overlay = KometApp.navigatorKey.currentState?.overlay;
-      final ctx = KometApp.navigatorKey.currentContext;
+      final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
+      final ctx = ProMaxApp.navigatorKey.currentContext;
       if (overlay == null || ctx == null || !ctx.mounted) return;
       final l10n = AppLocalizations.of(ctx);
       if (l10n == null) return;
@@ -598,7 +598,7 @@ class KometAppState extends State<KometApp>
   void _presentIncomingCall() {
     final call = _pendingIncoming;
     if (call == null || _incomingRouteActive || !_shellReady) return;
-    final navState = KometApp.navigatorKey.currentState;
+    final navState = ProMaxApp.navigatorKey.currentState;
     if (navState == null) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _presentIncomingCall(),
@@ -658,7 +658,7 @@ class KometAppState extends State<KometApp>
     final message = AudioPlaybackController.error.value;
     if (message == null) return;
     AudioPlaybackController.error.value = null;
-    final overlay = KometApp.navigatorKey.currentState?.overlay;
+    final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
     if (overlay == null) return;
     final text = message.isEmpty
         ? AppLocalizations.of(overlay.context)?.audioPlaybackFailed
@@ -792,7 +792,7 @@ class KometAppState extends State<KometApp>
   }
 
   void _runThemeReveal(Offset center, Future<void> Function() apply) {
-    final overlay = KometApp.navigatorKey.currentState?.overlay;
+    final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
     final ctx = _captureBoundaryKey.currentContext;
     if (overlay == null || ctx == null) {
       apply();
@@ -1113,7 +1113,7 @@ class KometAppState extends State<KometApp>
               supportedLocales: AppLocalizations.supportedLocales,
               theme: _lightTheme,
               darkTheme: _darkTheme,
-              navigatorKey: KometApp.navigatorKey,
+              navigatorKey: ProMaxApp.navigatorKey,
               navigatorObservers: [
                 appRouteObserver,
                 PerfRouteObserver(),
@@ -1244,7 +1244,7 @@ class _StartupScreenState extends State<_StartupScreen> {
         context,
         MaterialPageRoute(builder: (_) => const AdaptiveShell()),
       );
-      KometApp.stateOf(context)?.markShellReady();
+      ProMaxApp.stateOf(context)?.markShellReady();
       return;
     }
 
@@ -1270,7 +1270,7 @@ class _StartupScreenState extends State<_StartupScreen> {
       context,
       MaterialPageRoute(builder: (_) => const AdaptiveShell()),
     );
-    KometApp.stateOf(context)?.markShellReady();
+    ProMaxApp.stateOf(context)?.markShellReady();
   }
 
   Future<int?> _recoverActiveAccount() async {
@@ -1292,7 +1292,7 @@ class _StartupScreenState extends State<_StartupScreen> {
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
-      KometApp.stateOf(context)?.markShellReady();
+      ProMaxApp.stateOf(context)?.markShellReady();
     }
   }
 

@@ -32,8 +32,8 @@ class PulseRouteException implements Exception {
 class PulseAudio {
   PulseAudio._();
 
-  // #***! наш источник зовётся komet_capture_<pid>
-  static const String bridgePrefix = 'komet_capture_';
+  // #***! наш источник зовётся promax_capture_<pid>
+  static const String bridgePrefix = 'promax_capture_';
 
   static String? _bridgeModule;
   static String? _bridgeMaster;

@@ -5,9 +5,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:komet/core/utils/text_format.dart';
-import 'package:komet/frontend/widgets/formatted_message_text.dart';
-import 'package:komet/models/chat_preview_media.dart';
+import 'package:promax/core/utils/text_format.dart';
+import 'package:promax/frontend/widgets/formatted_message_text.dart';
+import 'package:promax/models/chat_preview_media.dart';
 
 const String _forwardMark = '↪ ';
 

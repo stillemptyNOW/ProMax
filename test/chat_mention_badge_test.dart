@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/chat_parsing.dart';
-import 'package:komet/backend/modules/chats.dart';
+import 'package:promax/backend/modules/chat_parsing.dart';
+import 'package:promax/backend/modules/chats.dart';
 
 const int _me = 4242;
 const int _peer = 7331;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:komet/frontend/widgets/custom_notification.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/frontend/widgets/custom_notification.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class AttachmentPanel extends StatefulWidget {

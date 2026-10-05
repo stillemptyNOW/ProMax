@@ -1,0 +1,15 @@
+build/
+.DS_Store
+flutter/promax_crypto/.dart_tool/
+flutter/promax_crypto/build/
+flutter/promax_crypto/pubspec.lock
+flutter/promax_crypto/example/
+
+# артефакты Gradle/NDK от сборки плагина
+flutter/promax_crypto/android/.cxx/
+flutter/promax_crypto/android/build/
+flutter/promax_crypto/android/.gradle/
+flutter/promax_crypto/.flutter-plugins*
+flutter/promax_crypto/ios/Pods/
+flutter/promax_crypto/macos/Pods/
+flutter/promax_crypto/*/Flutter/ephemeral/

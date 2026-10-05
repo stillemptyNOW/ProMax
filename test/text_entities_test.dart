@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/utils/text_entities.dart';
+import 'package:promax/core/utils/text_entities.dart';
 
 void main() {
   group('detectTextEntities', () {

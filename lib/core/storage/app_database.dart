@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:komet/core/storage/app_instance.dart';
-import 'package:komet/core/storage/message_ranges.dart';
-import 'package:komet/core/utils/logger.dart';
+import 'package:promax/core/storage/app_instance.dart';
+import 'package:promax/core/storage/message_ranges.dart';
+import 'package:promax/core/utils/logger.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart' show databaseFactorySqflitePlugin;
@@ -255,7 +255,7 @@ class AppDatabase {
     if (Platform.isIOS) {
       try {
         final legacyDir = await databaseFactorySqflitePlugin.getDatabasesPath();
-        final legacy = join(legacyDir, 'komet${AppInstance.suffix}.db');
+        final legacy = join(legacyDir, 'promax${AppInstance.suffix}.db');
         if (legacy == target || !await File(legacy).exists()) return;
         if (!await File(target).exists()) {
           await _copyDbFiles(legacy, target);
@@ -272,11 +272,11 @@ class AppDatabase {
     if (!(Platform.isLinux || Platform.isWindows || Platform.isMacOS)) return;
     try {
       if (await File(target).exists()) return;
-      final legacy = File(join(await getDatabasesPath(), 'komet.db'));
+      final legacy = File(join(await getDatabasesPath(), 'promax.db'));
       if (legacy.path == target) return;
       if (await legacy.exists()) {
         await legacy.copy(target);
-        logger.i('[db] перенёс komet.db -> $target');
+        logger.i('[db] перенёс promax.db -> $target');
       }
     } catch (e) {
       logger.w('legacy db migration failed: $e');
@@ -287,7 +287,7 @@ class AppDatabase {
   static Future<Database> _open() async {
     final dbPath = await _databasesDir();
     await Directory(dbPath).create(recursive: true);
-    final target = join(dbPath, 'komet${AppInstance.suffix}.db');
+    final target = join(dbPath, 'promax${AppInstance.suffix}.db');
     await _migrateLegacyDb(target);
     final opened = await openDatabase(
       target,

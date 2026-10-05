@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/frontend/widgets/lottie_image.dart';
-import 'package:komet/frontend/widgets/message_bubble.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/models/animoji.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/frontend/widgets/lottie_image.dart';
+import 'package:promax/frontend/widgets/message_bubble.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/models/animoji.dart';
 
 const _reaction = '🔥';
 const _messageId = 'synthetic-message';

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/plugins/plugin_manifest.dart';
+import 'package:promax/core/plugins/plugin_manifest.dart';
 
 void main() {
   test('plugin schemas are valid JSON objects', () {
@@ -29,7 +29,7 @@ void main() {
 
   test('reference documents every public API method', () {
     final markdown = File('PLUGINS.md').readAsStringSync();
-    final declarations = File('plugin_sdk/komet-api.d.ts').readAsStringSync();
+    final declarations = File('plugin_sdk/promax-api.d.ts').readAsStringSync();
     const methods = [
       'chat.sendText',
       'chat.editText',

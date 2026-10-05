@@ -2,9 +2,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:komet/backend/modules/messages.dart' show CachedMessage;
-import 'package:komet/core/config/app_chat_chrome.dart';
-import 'package:komet/core/config/app_frost.dart';
+import 'package:promax/backend/modules/messages.dart' show CachedMessage;
+import 'package:promax/core/config/app_chat_chrome.dart';
+import 'package:promax/core/config/app_frost.dart';
 
 import 'chat_header.dart';
 import 'frosted_panel.dart';

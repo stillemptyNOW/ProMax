@@ -6,7 +6,7 @@ import '../../../../../core/utils/text_format.dart';
 import '../../../../../l10n/app_localizations.dart';
 import '../../../../../models/bot_info.dart';
 import '../../../../widgets/formatted_message_text.dart';
-import '../../../../widgets/komet_avatar.dart';
+import '../../../../widgets/promax_avatar.dart';
 
 class BotIntroCard extends StatefulWidget {
   final int botId;
@@ -37,7 +37,7 @@ class _BotIntroCardState extends State<BotIntroCard> {
         final cs = Theme.of(context).colorScheme;
         return _IntroCard(
           children: [
-            KometAvatar(
+            ProMaxAvatar(
               name: widget.name,
               imageUrl: widget.avatarUrl,
               size: 72,
@@ -115,7 +115,7 @@ class ChatReadyCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return _IntroCard(
       children: [
-        KometAvatar(name: name, imageUrl: avatarUrl, size: 72),
+        ProMaxAvatar(name: name, imageUrl: avatarUrl, size: 72),
         const SizedBox(height: 14),
         Text(
           isChannel ? l10n.channelReadyTitle : l10n.groupReadyTitle,

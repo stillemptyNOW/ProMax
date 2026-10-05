@@ -15,11 +15,11 @@ import '../../core/contacts/device_contacts_service.dart';
 import '../screens/digital_id/digital_id_web_screen.dart';
 import '../widgets/custom_notification.dart';
 import '../widgets/sheet_helpers.dart';
-import '../../main.dart' show KometAppState;
+import '../../main.dart' show ProMaxAppState;
 import 'dev_menu_widgets.dart';
 
 class DebugFeatureTogglesSection extends StatelessWidget {
-  final KometAppState? appState;
+  final ProMaxAppState? appState;
 
   const DebugFeatureTogglesSection({super.key, required this.appState});
 

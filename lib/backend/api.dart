@@ -9,7 +9,7 @@ import '../core/cache/self_presence.dart';
 import '../core/config/config.dart';
 import '../core/config/countries.dart';
 import '../core/config/device_profile.dart';
-import '../core/config/komet_settings.dart';
+import '../core/config/promax_settings.dart';
 import '../core/config/proxy_config.dart';
 import '../core/config/web_client_profile.dart';
 import '../core/protocol/opcode_map.dart';
@@ -617,7 +617,7 @@ class Api {
         deviceLocale: deviceLocale,
         clientSessionId: clientSessionId,
         pingIntervalSecs: BigInt.from(ServerConfig.pingInterval.inSeconds),
-        pingInteractive: !KometSettings.ghostMode.value,
+        pingInteractive: !ProMaxSettings.ghostMode.value,
         autoReconnect: false,
         insecureTls: insecureTls,
         proxy: proxy,
@@ -723,14 +723,14 @@ class Api {
     final payload = _decodeWireJson(e.json);
     final cmd = _wireCmdCode(e.cmd);
     if (e.direction == 'out') {
-      if (KometSettings.recordDebugLogs.value) {
+      if (ProMaxSettings.recordDebugLogs.value) {
         DebugSessionLog.instance.recordRequest(e.opcode, e.seq, payload);
       }
       TrafficMonitor.instance.recordOutgoing(e.opcode, payload, e.seq, 0);
       return;
     }
     // Входящие: ответы матчатся по seq, пуши идут только в монитор трафика.
-    if (e.cmd != 'push' && KometSettings.recordDebugLogs.value) {
+    if (e.cmd != 'push' && ProMaxSettings.recordDebugLogs.value) {
       DebugSessionLog.instance.recordResponse(e.seq, cmd, payload);
     }
     TrafficMonitor.instance.recordIncoming(
@@ -786,7 +786,7 @@ class Api {
     try {
       await session
           .requestMapFull(Opcode.ping, {
-            'interactive': !KometSettings.ghostMode.value,
+            'interactive': !ProMaxSettings.ghostMode.value,
           })
           .timeout(const Duration(seconds: 6));
     } catch (_) {
@@ -883,7 +883,7 @@ class Api {
   /// синхронизация interactive-флага пинга и присутствия.
   void _startLiveness() {
     _livenessTimer?.cancel();
-    _lastInteractive = !KometSettings.ghostMode.value;
+    _lastInteractive = !ProMaxSettings.ghostMode.value;
     _livenessTimer = Timer.periodic(_livenessInterval, (_) => _tickLiveness());
   }
 
@@ -897,7 +897,7 @@ class Api {
       _onDisconnected();
       return;
     }
-    final interactive = !KometSettings.ghostMode.value;
+    final interactive = !ProMaxSettings.ghostMode.value;
     if (interactive != _lastInteractive) {
       _lastInteractive = interactive;
       try {

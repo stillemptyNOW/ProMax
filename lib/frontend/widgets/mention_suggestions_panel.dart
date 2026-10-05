@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../screens/chats/chat/mention_panel_controller.dart';
-import 'komet_avatar.dart';
+import 'promax_avatar.dart';
 import 'small_spinner.dart';
 
 class MentionSuggestionsPanel extends StatefulWidget {
@@ -105,7 +105,7 @@ class _MentionSuggestionsPanelState extends State<MentionSuggestionsPanel> {
                       ),
                       child: Row(
                         children: [
-                          KometAvatar(
+                          ProMaxAvatar(
                             name: candidate.name,
                             imageUrl: candidate.avatarUrl,
                             size: 32,

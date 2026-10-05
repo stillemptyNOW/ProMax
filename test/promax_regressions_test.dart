@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:komet/core/config/komet_settings.dart';
-import 'package:komet/core/storage/local_read_state.dart';
-import 'package:komet/core/utils/names.dart';
-import 'package:komet/models/contact_info.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/frontend/screens/chats/chat_admin/members_pager.dart';
+import 'package:promax/core/config/promax_settings.dart';
+import 'package:promax/core/storage/local_read_state.dart';
+import 'package:promax/core/utils/names.dart';
+import 'package:promax/models/contact_info.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/frontend/screens/chats/chat_admin/members_pager.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -93,13 +93,13 @@ void main() {
 
   test('the selected quick reaction survives a restart', () async {
     SharedPreferences.setMockInitialValues({});
-    await KometSettings.setQuickReaction('🔥');
-    KometSettings.quickReaction.value = '❤️';
-    await KometSettings.load();
-    expect(KometSettings.quickReaction.value, '🔥');
-    expect(KometSettings.recordDebugLogs.value, false);
-    await KometSettings.setQuickReaction('');
-    expect(KometSettings.quickReaction.value, '🔥');
+    await ProMaxSettings.setQuickReaction('🔥');
+    ProMaxSettings.quickReaction.value = '❤️';
+    await ProMaxSettings.load();
+    expect(ProMaxSettings.quickReaction.value, '🔥');
+    expect(ProMaxSettings.recordDebugLogs.value, false);
+    await ProMaxSettings.setQuickReaction('');
+    expect(ProMaxSettings.quickReaction.value, '🔥');
   });
 
   test('a repeated member page does not conceal later members', () async {

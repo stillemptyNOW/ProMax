@@ -6,7 +6,7 @@ import '../../../../backend/modules/chats.dart';
 import '../../../../backend/modules/messages.dart';
 import '../../../../backend/modules/pending_message_deletions.dart';
 import '../../../../core/cache/message_session_cache.dart';
-import '../../../../core/config/komet_settings.dart';
+import '../../../../core/config/promax_settings.dart';
 import '../../../../core/storage/app_database.dart';
 import '../../../../core/storage/message_ranges.dart';
 import '../../../../core/utils/logger.dart';
@@ -224,7 +224,7 @@ class ChatController extends ChangeNotifier {
         backward: backward,
         count: count,
       );
-      if (fetched.isNotEmpty && KometSettings.viewDeleted.value) {
+      if (fetched.isNotEmpty && ProMaxSettings.viewDeleted.value) {
         await chats.reconcileDeletedFromFetch(myId, chatId, fetched);
       }
     } catch (e) {
@@ -299,7 +299,7 @@ class ChatController extends ChangeNotifier {
     bool Function()? stillWanted,
   }) async {
     if (myId == 0 || targetTime <= 0) return WindowLoad.missing;
-    final onlyVisible = !KometSettings.viewDeleted.value;
+    final onlyVisible = !ProMaxSettings.viewDeleted.value;
     bool wanted() => isMounted() && (stillWanted?.call() ?? true);
 
     var ranges = await AppDatabase.loadMessageRanges(myId, chatId);
@@ -371,7 +371,7 @@ class ChatController extends ChangeNotifier {
 
     isLoadingNewer = true;
     try {
-      final onlyVisible = !KometSettings.viewDeleted.value;
+      final onlyVisible = !ProMaxSettings.viewDeleted.value;
       var ranges = await AppDatabase.loadMessageRanges(myId, chatId);
       var newer = await loadNewerFromDb(edge.time, onlyVisible);
       if (!isMounted()) return 0;
@@ -418,7 +418,7 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> resetToLatest() async {
-    final onlyVisible = !KometSettings.viewDeleted.value;
+    final onlyVisible = !ProMaxSettings.viewDeleted.value;
     final latest = await loadInitialFromDb(onlyVisible: onlyVisible);
     if (!isMounted()) return;
 
@@ -464,7 +464,7 @@ class ChatController extends ChangeNotifier {
 
     final size = pageSize ?? historyPageSize;
     final oldest = messages.first;
-    final onlyVisible = !KometSettings.viewDeleted.value;
+    final onlyVisible = !ProMaxSettings.viewDeleted.value;
 
     try {
       final edge = oldest.time;
@@ -509,7 +509,7 @@ class ChatController extends ChangeNotifier {
     required void Function(List<CachedMessage> decoded, {bool markLoaded})
     onApplyMerged,
   }) async {
-    final onlyVisible = !KometSettings.viewDeleted.value;
+    final onlyVisible = !ProMaxSettings.viewDeleted.value;
     final fullDecoded = await loadInitialFromDb(onlyVisible: onlyVisible);
     if (isMounted()) {
       onApplyMerged(fullDecoded);
@@ -525,7 +525,7 @@ class ChatController extends ChangeNotifier {
     required void Function() onPreview,
     required void Function() onSenderNames,
   }) async {
-    final onlyVisible = !KometSettings.viewDeleted.value;
+    final onlyVisible = !ProMaxSettings.viewDeleted.value;
     final cachedRows = await AppDatabase.loadChat(myId, chatId);
     final preview =
         cachedRows.isEmpty || !AppDatabase.chatRowIsInList(cachedRows.first);
@@ -552,7 +552,7 @@ class ChatController extends ChangeNotifier {
     try {
       final serverMessages = await messagesModule.fetchHistory(myId, chatId);
       chats.markHistoryFetched(chatId);
-      if (KometSettings.viewDeleted.value) {
+      if (ProMaxSettings.viewDeleted.value) {
         await chats.reconcileDeletedFromFetch(myId, chatId, serverMessages);
       }
       final updatedDecoded = await loadInitialFromDb(onlyVisible: onlyVisible);

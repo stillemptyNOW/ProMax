@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/cache/info_cache.dart';
+import 'package:promax/core/cache/info_cache.dart';
 
 void main() {
   test('a missing entry is asked again instead of being cached', () async {

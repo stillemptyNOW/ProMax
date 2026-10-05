@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/models/chat_reaction_settings.dart';
+import 'package:promax/models/chat_reaction_settings.dart';
 
 ChatReactionSettings _settings({
   bool active = true,

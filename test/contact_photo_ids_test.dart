@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/backend/modules/contacts.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/backend/modules/contacts.dart';
 
 class _PhotosApi extends Api {
   _PhotosApi(this.response);

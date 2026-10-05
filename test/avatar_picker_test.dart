@@ -3,10 +3,10 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/attachment/attachment_sheet.dart';
-import 'package:komet/frontend/widgets/attachment/avatar_editor.dart';
-import 'package:komet/frontend/widgets/attachment/editor_common.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/frontend/widgets/attachment/attachment_sheet.dart';
+import 'package:promax/frontend/widgets/attachment/avatar_editor.dart';
+import 'package:promax/frontend/widgets/attachment/editor_common.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const _bounds = Rect.fromLTWH(0, 0, 300, 400);

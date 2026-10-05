@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/backend/modules/banners.dart';
-import 'package:komet/models/informer_banner.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/backend/modules/banners.dart';
+import 'package:promax/models/informer_banner.dart';
 
 void main() {
   test('a pinned banner records one presentation', () async {

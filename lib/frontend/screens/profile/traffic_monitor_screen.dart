@@ -69,7 +69,7 @@ class _TrafficMonitorScreenState extends State<TrafficMonitorScreen> {
       final json = _monitor.buildExport();
       final dir = await getTemporaryDirectory();
       final stamp = formatFileStamp(DateTime.now());
-      final file = File('${dir.path}/komet_traffic_$stamp.json');
+      final file = File('${dir.path}/promax_traffic_$stamp.json');
       await file.writeAsString(json);
       await AppLock.instance.external(
         () => Share.shareXFiles(

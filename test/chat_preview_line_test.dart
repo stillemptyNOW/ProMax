@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/screens/chats/chat/view/chat_preview_line.dart';
-import 'package:komet/models/chat_preview_media.dart';
+import 'package:promax/frontend/screens/chats/chat/view/chat_preview_line.dart';
+import 'package:promax/models/chat_preview_media.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const String _pixel =
@@ -164,7 +164,7 @@ void main() {
     await tester.pumpWidget(
       _host(
         const ChatPreviewLine(
-          text: 'глянь komet.ru',
+          text: 'глянь promax.ru',
           style: _style,
           media: ChatPreviewMedia(kind: ChatPreviewKind.share),
         ),
@@ -172,7 +172,7 @@ void main() {
     );
 
     expect(find.byIcon(Symbols.link), findsNothing);
-    expect(_plainText(tester), 'глянь komet.ru');
+    expect(_plainText(tester), 'глянь promax.ru');
   });
 
   testWidgets('без описания вложения строка остаётся обычным текстом', (

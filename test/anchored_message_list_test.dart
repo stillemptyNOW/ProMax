@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/screens/chats/chat/view/anchored_message_list.dart';
+import 'package:promax/frontend/screens/chats/chat/view/anchored_message_list.dart';
 
 const double _viewport = 600;
 const double _spacer = 40;

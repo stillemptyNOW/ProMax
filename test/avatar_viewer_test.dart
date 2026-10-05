@@ -2,10 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/frontend/widgets/avatar_gallery.dart';
-import 'package:komet/frontend/widgets/photo_viewer.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/frontend/widgets/avatar_gallery.dart';
+import 'package:promax/frontend/widgets/photo_viewer.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 String _url(int i) => 'https://example.test/avatar/$i';

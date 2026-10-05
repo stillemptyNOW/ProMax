@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
-import 'package:komet_crypto/komet_crypto.dart';
+import 'package:promax_crypto/promax_crypto.dart';
 
 import '../../backend/modules/messages.dart';
 import '../storage/app_database.dart';
@@ -168,7 +168,7 @@ class MessageDecryptionCache {
     if (flag != CachedMessage.e2eeNone || !E2eeService.instance.available) {
       return;
     }
-    switch (KometCrypto.classifyText(cipherText)) {
+    switch (ProMaxCrypto.classifyText(cipherText)) {
       case TextClass.session:
         _entryFor(messageId).value = const MessageDecryption.unavailable();
       case TextClass.offer:

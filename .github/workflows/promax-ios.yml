@@ -29,7 +29,7 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - name: Verify encryption core
-        run: make -C native/crypto-core test shared
+        run: make -C native/promax_crypto test shared
       - name: Verify voice processing
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined native/promax_effects/test/voice_processor_test.cpp -o /tmp/promax-voice-test
@@ -40,7 +40,7 @@ jobs:
         run: flutter analyze lib test tool native/promax_effects/lib
       - name: Test
         env:
-          KOMET_CRYPTO_TEST_LIB: ${{ github.workspace }}/native/crypto-core/build/libkomet_crypto.so
+          PROMAX_CRYPTO_TEST_LIB: ${{ github.workspace }}/native/promax_crypto/build/libpromax_crypto.so
         run: flutter test
       - uses: actions/setup-node@v4
         with:
@@ -91,7 +91,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import zipfile
-          with zipfile.ZipFile('dist/ProMax-Tools.kinet', 'w', compression=zipfile.ZIP_DEFLATED) as package:
+          with zipfile.ZipFile('dist/ProMax-Tools.pmx', 'w', compression=zipfile.ZIP_DEFLATED) as package:
               for name in ('manifest.json', 'main.js'):
                   package.write('assets/plugins/promax/' + name, name)
           PY
@@ -102,7 +102,7 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" \
             dist/ProMax-ios-unsigned.ipa \
-            dist/ProMax-Tools.kinet \
+            dist/ProMax-Tools.pmx \
             --title "ProMax $GITHUB_REF_NAME" \
             --generate-notes
       - uses: actions/upload-artifact@v4
@@ -110,5 +110,5 @@ jobs:
           name: ProMax-ios-unsigned
           path: |
             dist/ProMax-ios-unsigned.ipa
-            dist/ProMax-Tools.kinet
+            dist/ProMax-Tools.pmx
           retention-days: 14

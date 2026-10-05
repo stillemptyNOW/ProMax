@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:komet/main.dart';
+import 'package:promax/main.dart';
 
 import '../../../../core/media/preview_image.dart';
 import '../../../../core/utils/format.dart';

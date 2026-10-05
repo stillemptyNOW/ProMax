@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/media/video_request_headers.dart';
+import 'package:promax/core/media/video_request_headers.dart';
 
 const _agent = 'SyntheticAgent/1.0 (Android 14)';
 

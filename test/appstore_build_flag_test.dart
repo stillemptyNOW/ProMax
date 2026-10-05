@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/config/build_profile.dart';
+import 'package:promax/core/config/build_profile.dart';
 
 void main() {
   test('tests run without the App Store build flag', () {

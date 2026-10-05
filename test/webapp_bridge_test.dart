@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/frontend/screens/webapp/web_app_biometry.dart';
-import 'package:komet/frontend/screens/webapp/web_app_bridge.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/frontend/screens/webapp/web_app_biometry.dart';
+import 'package:promax/frontend/screens/webapp/web_app_bridge.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';

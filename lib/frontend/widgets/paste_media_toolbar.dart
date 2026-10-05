@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:komet/core/media/clipboard/clipboard_media.dart';
+import 'package:promax/core/media/clipboard/clipboard_media.dart';
 
 class PasteMediaToolbar extends StatefulWidget {
   const PasteMediaToolbar({

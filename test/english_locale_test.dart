@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/frontend/screens/chats/chat_admin/admins_screen.dart';
-import 'package:komet/frontend/screens/chats/chat_admin/channel_type_link_screen.dart';
-import 'package:komet/frontend/screens/chats/chat_admin/chat_admin_state.dart';
-import 'package:komet/frontend/screens/chats/chat_admin/chat_settings_screen.dart';
-import 'package:komet/frontend/screens/profile/komet_settings_screen.dart';
-import 'package:komet/frontend/widgets/message_bubble.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/main.dart' show api;
-import 'package:komet/models/chat_info.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/frontend/screens/chats/chat_admin/admins_screen.dart';
+import 'package:promax/frontend/screens/chats/chat_admin/channel_type_link_screen.dart';
+import 'package:promax/frontend/screens/chats/chat_admin/chat_admin_state.dart';
+import 'package:promax/frontend/screens/chats/chat_admin/chat_settings_screen.dart';
+import 'package:promax/frontend/screens/profile/promax_settings_screen.dart';
+import 'package:promax/frontend/widgets/message_bubble.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/main.dart' show api;
+import 'package:promax/models/chat_info.dart';
 
 final _cyrillic = RegExp('[А-Яа-яЁё]');
 
@@ -56,7 +56,7 @@ final _screens = <String, Widget Function()>{
   'channel type and link': () =>
       ChannelTypeLinkScreen(state: _state('CHANNEL'), justCreated: true),
   'admins': () => AdminsScreen(state: _state('CHANNEL')),
-  'komet settings': () => const KometSettingsScreen(),
+  'promax settings': () => const ProMaxSettingsScreen(),
   'message bubbles': () => Scaffold(
     body: ListView(
       children: [

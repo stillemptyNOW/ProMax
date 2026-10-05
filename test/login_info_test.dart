@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/models/login_info.dart';
+import 'package:promax/models/login_info.dart';
 
 void main() {
   group('LoginInfo', () {

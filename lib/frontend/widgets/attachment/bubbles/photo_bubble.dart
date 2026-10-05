@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:komet/main.dart';
+import 'package:promax/main.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../core/media/preview_image.dart';

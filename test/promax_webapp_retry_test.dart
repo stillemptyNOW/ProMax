@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/webapp.dart';
-import 'package:komet/frontend/screens/webapp/web_app_screen.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/main.dart' show api;
+import 'package:promax/backend/modules/webapp.dart';
+import 'package:promax/frontend/screens/webapp/web_app_screen.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/main.dart' show api;
 
 class _Controller extends PlatformInAppWebViewController {
   _Controller()

@@ -9,7 +9,7 @@ import '../../core/storage/token_storage.dart';
 import '../../core/utils/haptics.dart';
 import '../../l10n/app_localizations.dart';
 import 'animated_overlay_popup.dart';
-import 'komet_avatar.dart';
+import 'promax_avatar.dart';
 import '../../core/config/app_frost.dart';
 
 class AccountSwitcherController extends ChangeNotifier {
@@ -367,7 +367,7 @@ class _AccountRow extends StatelessWidget {
                         )
                       : null,
                 ),
-                child: KometAvatar(
+                child: ProMaxAvatar(
                   name: fullName,
                   imageUrl: profile.baseUrl,
                   size: 36,

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/links/max_link.dart';
-import 'package:komet/frontend/widgets/link_text.dart';
+import 'package:promax/core/links/max_link.dart';
+import 'package:promax/frontend/widgets/link_text.dart';
 
 void main() {
   group('linkPattern', () {

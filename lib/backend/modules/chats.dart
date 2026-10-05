@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import '../../core/config/komet_settings.dart';
+import '../../core/config/promax_settings.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
 import '../../core/push/push_service.dart';
@@ -506,7 +506,7 @@ class ChatsModule {
   // #***! маркер что последнее сообщение удалили
   /// Sentinel в `lastMsgText` когда последнее сообщение в чате удалено,
   /// а кеша истории нет — UI должен отрисовать курсивную плашку.
-  static const String lastMsgPlaceholder = '__komet_lastmsg_placeholder__';
+  static const String lastMsgPlaceholder = '__promax_lastmsg_placeholder__';
 
   ChatsModule._();
 
@@ -572,7 +572,7 @@ class ChatsModule {
     if ((row['unread_count'] as int? ?? 0) == 0) return;
 
     final msgIdNum = int.tryParse(messageId);
-    if (msgIdNum != null && !KometSettings.antiRead.value) {
+    if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
       try {
         await api.sendRequest(Opcode.chatMark, {
           'type': 'READ_MESSAGE',
@@ -590,7 +590,7 @@ class ChatsModule {
     final participants = Map<int, int>.from(cached.participants)
       ..[accountId] = mark > currentMark ? mark : currentMark;
     final updated = cached.copyWith(unreadCount: 0, participants: participants);
-    if (KometSettings.antiRead.value) {
+    if (ProMaxSettings.antiRead.value) {
       await LocalReadState.record(
         accountId,
         chatId,
@@ -606,7 +606,7 @@ class ChatsModule {
     Map<String, dynamic> row, {
     bool updateServerMark = false,
   }) async {
-    if (!KometSettings.antiRead.value) return;
+    if (!ProMaxSettings.antiRead.value) return;
     final accountId = row['account_id'] as int;
     final chatId = row['id'] as int;
     final local = await LocalReadState.load(accountId, chatId);
@@ -650,7 +650,7 @@ class ChatsModule {
     required int remaining,
   }) async {
     final msgIdNum = int.tryParse(messageId);
-    if (msgIdNum != null && !KometSettings.antiRead.value) {
+    if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
       try {
         await api.sendRequest(Opcode.chatMark, {
           'type': 'READ_MESSAGE',
@@ -677,7 +677,7 @@ class ChatsModule {
       unreadCount: next,
       participants: participants,
     );
-    if (KometSettings.antiRead.value) {
+    if (ProMaxSettings.antiRead.value) {
       await LocalReadState.record(
         accountId,
         chatId,
@@ -1184,7 +1184,7 @@ class ChatsModule {
     }
     if (chatId == null) return;
 
-    final keepDeleted = KometSettings.viewDeleted.value;
+    final keepDeleted = ProMaxSettings.viewDeleted.value;
     final ids = payload['messageIds'];
     if (ids is List) {
       final messageIds = ids
@@ -1212,7 +1212,7 @@ class ChatsModule {
   }
 
   int? _takeTypingTime(int chatId, Map msg) {
-    if (!KometSettings.showTypingTime.value) return null;
+    if (!ProMaxSettings.showTypingTime.value) return null;
     final status = msg['status'];
     if (status == 'EDITED' || status == 'REMOVED') return null;
     final senderId = msg['sender'];
@@ -1277,7 +1277,7 @@ class ChatsModule {
     }
 
     if (status == 'REMOVED' && msgIdStr != null) {
-      final keepDeleted = KometSettings.viewDeleted.value;
+      final keepDeleted = ProMaxSettings.viewDeleted.value;
       if (keepDeleted) {
         await AppDatabase.markMessageDeleted(accountId, chatId, msgIdStr);
         unawaited(keepDeletedMedia(accountId, chatId, [msgIdStr]));
@@ -1324,7 +1324,7 @@ class ChatsModule {
         mergedPayload[entry.key.toString()] = entry.value;
       }
       final newRow = Map<String, dynamic>.from(existing);
-      if (KometSettings.viewRedacted.value) {
+      if (ProMaxSettings.viewRedacted.value) {
         final oldText = existing['text']?.toString();
         if ((oldText ?? '') != (msgText ?? '') &&
             oldText != null &&

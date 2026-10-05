@@ -15,8 +15,8 @@ class NotificationBridge {
   NotificationBridge._();
   static final NotificationBridge instance = NotificationBridge._();
 
-  static const _method = MethodChannel('ru.komet.app/notifications');
-  static const _events = EventChannel('ru.komet.app/notification_events');
+  static const _method = MethodChannel('io.github.stillemptynow.promax/notifications');
+  static const _events = EventChannel('io.github.stillemptynow.promax/notification_events');
   static const _retryDelay = Duration(milliseconds: 300);
   static const _maxRetries = 100;
 
@@ -162,7 +162,7 @@ class NotificationBridge {
     final chatId = _pendingChatId;
     if (chatId == 0) return;
 
-    final context = KometApp.overlayContext;
+    final context = ProMaxApp.overlayContext;
     if (!_ready || context == null || api.state != SessionState.online) {
       if (_retriesLeft <= 0) {
         _pendingChatId = 0;

@@ -4,14 +4,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/utils/names.dart';
 
-import 'package:komet/backend/modules/contacts.dart';
-import 'package:komet/frontend/screens/contacts/contact_sheet_common.dart';
-import 'package:komet/frontend/widgets/attachment/avatar_editor.dart';
-import 'package:komet/frontend/widgets/custom_notification.dart';
-import 'package:komet/frontend/widgets/komet_avatar.dart';
-import 'package:komet/frontend/widgets/small_spinner.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/main.dart';
+import 'package:promax/backend/modules/contacts.dart';
+import 'package:promax/frontend/screens/contacts/contact_sheet_common.dart';
+import 'package:promax/frontend/widgets/attachment/avatar_editor.dart';
+import 'package:promax/frontend/widgets/custom_notification.dart';
+import 'package:promax/frontend/widgets/promax_avatar.dart';
+import 'package:promax/frontend/widgets/small_spinner.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/main.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../core/storage/local_contact_avatars.dart';
@@ -159,7 +159,7 @@ class _EditContactCardState extends State<_EditContactCard> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          KometAvatar(
+          ProMaxAvatar(
             name: name,
             size: 88,
             imageUrl: widget.avatarUrl.isEmpty ? null : widget.avatarUrl,

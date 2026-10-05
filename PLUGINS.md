@@ -1,21 +1,21 @@
-# Плагины Komet
+# Плагины ProMax
 
-Плагин добавляет в чат slash-команды. Пользователь пишет `/weather Москва`, Komet
+Плагин добавляет в чат slash-команды. Пользователь пишет `/weather Москва`, ProMax
 запускает обработчик плагина в изолированном движке JavaScript, и тот работает с
-чатом через модуль `komet:api`.
+чатом через модуль `promax:api`.
 
-Плагин распространяется файлом `.kinet` — это zip-архив с `manifest.json` и
-ES-модулями. Установка: настройки Komet → «Плагины» → «Установить .kinet» или
+Плагин распространяется файлом `.pmx` — это zip-архив с `manifest.json` и
+ES-модулями. Установка: настройки ProMax → «Плагины» → «Установить .pmx» или
 «Установить по URL».
 
 В этом репозитории:
 
 | Файл                                     | Что это                                   |
 |------------------------------------------|-------------------------------------------|
-| `plugin_sdk/komet-api.d.ts`              | типы `komet:api` для подсказок в редакторе |
+| `plugin_sdk/promax-api.d.ts`              | типы `promax:api` для подсказок в редакторе |
 | `plugin_sdk/manifest.schema.json`        | JSON Schema для `manifest.json`           |
 | `plugin_sdk/update-manifest.schema.json` | JSON Schema для манифеста обновлений      |
-| `tool/kinet_sign.dart`                   | ключи и подпись пакетов                   |
+| `tool/plugin_sign.dart`                   | ключи и подпись пакетов                   |
 | `assets/plugins/`                        | встроенные плагины — готовые примеры      |
 
 ## Быстрый старт
@@ -30,7 +30,7 @@ hello/
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/KometTeam/Komet/main/plugin_sdk/manifest.schema.json",
+  "$schema": "https://raw.githubusercontent.com/stillemptyNOW/ProMax/main/plugin_sdk/manifest.schema.json",
   "schemaVersion": 1,
   "id": "com.example.hello",
   "name": "Hello",
@@ -56,9 +56,9 @@ hello/
 `main.js`:
 
 ```js
-import { chat } from 'komet:api';
+import { chat } from 'promax:api';
 
-/** @param {import('komet:api').CommandContext} context */
+/** @param {import('promax:api').CommandContext} context */
 export async function hello(context) {
   const name = context.arguments.name || 'мир';
   await chat.sendText(`Привет, ${name}!`);
@@ -68,28 +68,28 @@ export async function hello(context) {
 Сборка пакета — `manifest.json` должен лежать в корне архива:
 
 ```bash
-cd hello && zip -r ../hello.kinet . -i 'manifest.json' '*.js'
+cd hello && zip -r ../hello.pmx . -i 'manifest.json' '*.js'
 ```
 
-Для подсказок в редакторе держите `komet-api.d.ts` рядом с проектом, но не кладите в
-пакет: в `.kinet` допустимы только `manifest.json` и файлы `.js`.
+Для подсказок в редакторе держите `promax-api.d.ts` рядом с проектом, но не кладите в
+пакет: в `.pmx` допустимы только `manifest.json` и файлы `.js`.
 
 ## Манифест
 
 | Поле            | Обязательно | Описание |
 |-----------------|-------------|----------|
 | `schemaVersion` | да          | всегда `1` |
-| `id`            | да          | уникальный id в обратной доменной записи: `com.example.hello`. Префикс `pw.komet.` занят встроенными плагинами |
+| `id`            | да          | уникальный id в обратной доменной записи: `com.example.hello`. Префикс `promax.` занят встроенными плагинами |
 | `name`          | да          | название в списке плагинов |
 | `version`       | да          | SemVer: `1.2.3`, `1.2.3-beta.1`, `1.2.3+5` |
-| `apiVersion`    | да          | версия `komet:api`, которую ждёт плагин. Сейчас `1`; плагин с большей версией не установится |
+| `apiVersion`    | да          | версия `promax:api`, которую ждёт плагин. Сейчас `1`; плагин с большей версией не установится |
 | `description`   | нет         | описание в списке плагинов |
 | `author`        | нет         | автор |
 | `main`          | да          | путь к главному модулю внутри пакета, `.js` |
 | `permissions`   | да          | разрешения, см. ниже. Может быть пустым массивом |
 | `commands`      | да          | хотя бы одна команда |
 | `updateUrl`     | нет         | HTTPS-адрес манифеста обновлений, см. «Обновления» |
-| `signature`     | нет         | подпись; её добавляет `tool/kinet_sign.dart` |
+| `signature`     | нет         | подпись; её добавляет `tool/plugin_sign.dart` |
 
 ### Команды
 
@@ -110,12 +110,12 @@ cd hello && zip -r ../hello.kinet . -i 'manifest.json' '*.js'
 |---------------|--------------|----------|
 | `name`        | —            | латиница, цифры, `_`, `-`, до 32 символов, начинается с буквы |
 | `description` | `""`         | подпись поля ввода |
-| `required`    | `true`       | без значения команда не запустится, Komet покажет формат вызова |
+| `required`    | `true`       | без значения команда не запустится, ProMax покажет формат вызова |
 | `rest`        | `false`      | забирает весь остаток строки; только у последнего аргумента |
 
 Аргументы разделяются пробелами. Значение с пробелами берут в двойные или одинарные
 кавычки, внутри кавычек `\` экранирует следующий символ. Если у команды есть
-аргументы, при её выборе в подсказке Komet показывает поле для каждого из них.
+аргументы, при её выборе в подсказке ProMax показывает поле для каждого из них.
 
 ## Контекст команды
 
@@ -126,11 +126,11 @@ cd hello && zip -r ../hello.kinet . -i 'manifest.json' '*.js'
 | `args`       | `string`                 | всё, что написано после имени команды |
 | `arguments`  | `Record<string, string>` | значения аргументов по имени; не заданные — пустая строка |
 | `reply`      | `object \| null`         | сообщение, на которое отвечает пользователь. Только с разрешением `message.readReply`, иначе `null` |
-| `apiVersion` | `number`                 | версия `komet:api` в приложении |
+| `apiVersion` | `number`                 | версия `promax:api` в приложении |
 
 `reply`: `{ id, senderId, text, time, attachments: [{ type }] }`. `time` — миллисекунды
 Unix, `text` может быть `null`, `type` — `photo`, `video`, `audio`, `file`, `sticker` и
-другие значения из `komet-api.d.ts`.
+другие значения из `promax-api.d.ts`.
 
 ## Разрешения
 
@@ -151,10 +151,10 @@ Unix, `text` может быть `null`, `type` — `photo`, `video`, `audio`, `
 
 Методы `runtime.*` разрешений не требуют.
 
-## API `komet:api`
+## API `promax:api`
 
 ```js
-import { chat, network, ui, contact, runtime, storage } from 'komet:api';
+import { chat, network, ui, contact, runtime, storage } from 'promax:api';
 ```
 
 Все методы возвращают `Promise`. При ошибке `Promise` отклоняется с `Error`, в
@@ -197,7 +197,7 @@ import { chat, network, ui, contact, runtime, storage } from 'komet:api';
 
 ### ui
 
-`ui.notify(message)` → `Promise<void>` — показывает уведомление Komet внутри
+`ui.notify(message)` → `Promise<void>` — показывает уведомление ProMax внутри
 приложения, пока открыт чат.
 
 ### contact
@@ -237,7 +237,7 @@ import { chat, network, ui, contact, runtime, storage } from 'komet:api';
   `JSON`, `Date`, `Math`, `Map`, `RegExp` и т. д.
 - Нет `console`, `setTimeout`, глобального `fetch`, `require` и модулей Node. Вместо
   них — `runtime.sleep` и `network.fetch`.
-- Импортировать можно только `komet:api` и модули своего пакета по относительному
+- Импортировать можно только `promax:api` и модули своего пакета по относительному
   пути (`./utils.js`). Выход за пределы пакета (`../`) запрещён.
 - Каждый запуск команды — новый движок: переменные модуля между запусками не
   сохраняются, для этого есть `storage`.
@@ -245,7 +245,7 @@ import { chat, network, ui, contact, runtime, storage } from 'komet:api';
   движок останавливается.
 - Необработанное исключение показывается пользователю как «Ошибка плагина: …».
 
-## Пакет `.kinet`
+## Пакет `.pmx`
 
 - zip-архив до 5 МБ, не больше 128 файлов;
 - каждый файл до 2 МБ, всё вместе в распакованном виде до 10 МБ;
@@ -260,9 +260,9 @@ import { chat, network, ui, contact, runtime, storage } from 'komet:api';
 подпись в обновлении тоже нельзя.
 
 ```bash
-dart run tool/kinet_sign.dart generate-key ~/.komet/hello-key.json
-dart run tool/kinet_sign.dart sign hello.kinet ~/.komet/hello-key.json hello-signed.kinet
-dart run tool/kinet_sign.dart verify hello-signed.kinet
+dart run tool/plugin_sign.dart generate-key ~/.promax/hello-key.json
+dart run tool/plugin_sign.dart sign hello.pmx ~/.promax/hello-key.json hello-signed.pmx
+dart run tool/plugin_sign.dart verify hello-signed.pmx
 ```
 
 `generate-key` создаёт ключ Ed25519 с правами `0600` и печатает отпечаток. `sign`
@@ -279,9 +279,9 @@ dart run tool/kinet_sign.dart verify hello-signed.kinet
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/KometTeam/Komet/main/plugin_sdk/update-manifest.schema.json",
+  "$schema": "https://raw.githubusercontent.com/stillemptyNOW/ProMax/main/plugin_sdk/update-manifest.schema.json",
   "version": "1.1.0",
-  "packageUrl": "hello-1.1.0.kinet",
+  "packageUrl": "hello-1.1.0.pmx",
   "size": 2048,
   "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 }
@@ -290,11 +290,11 @@ dart run tool/kinet_sign.dart verify hello-signed.kinet
 | Поле         | Описание |
 |--------------|----------|
 | `version`    | версия нового пакета, совпадает с `version` в его манифесте |
-| `packageUrl` | адрес `.kinet`, абсолютный или относительный к `updateUrl`; итоговый адрес — только HTTPS |
+| `packageUrl` | адрес `.pmx`, абсолютный или относительный к `updateUrl`; итоговый адрес — только HTTPS |
 | `size`       | размер пакета в байтах; `0` отключает проверку |
-| `sha256`     | SHA-256 пакета в hex (`shasum -a 256 hello.kinet`); пустая строка отключает проверку |
+| `sha256`     | SHA-256 пакета в hex (`shasum -a 256 hello.pmx`); пустая строка отключает проверку |
 
-Пользователь проверяет обновления из меню плагина. Komet предлагает обновление, только
+Пользователь проверяет обновления из меню плагина. ProMax предлагает обновление, только
 если `version` больше установленной по правилам SemVer, и отказывается его ставить,
 если:
 

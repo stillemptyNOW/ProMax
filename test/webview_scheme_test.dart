@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/links/max_link.dart';
-import 'package:komet/core/utils/link_opener.dart';
+import 'package:promax/core/links/max_link.dart';
+import 'package:promax/core/utils/link_opener.dart';
 
 void main() {
   group('leavesWebView', () {

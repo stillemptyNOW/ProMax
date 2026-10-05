@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/utils/channel_comments.dart';
+import 'package:promax/core/utils/channel_comments.dart';
 
 void main() {
   group('commentsInfoBatches', () {

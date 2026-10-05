@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/message_info.dart';
-import 'package:komet/backend/modules/messages.dart';
+import 'package:promax/backend/modules/message_info.dart';
+import 'package:promax/backend/modules/messages.dart';
 
 const int _accountId = 270546051;
 const int _chatId = -78807406861784;

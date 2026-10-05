@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import '../../backend/modules/chats.dart';
 import '../../backend/modules/cloud_storage.dart';
 import '../config/app_badge.dart';
-import '../config/komet_settings.dart';
+import '../config/promax_settings.dart';
 import '../storage/archived_chats_store.dart';
 import '../utils/logger.dart';
 
@@ -76,7 +76,7 @@ class LauncherBadge {
   LauncherBadge._();
   static final LauncherBadge instance = LauncherBadge._();
 
-  static const _method = MethodChannel('ru.komet.app/launcher_badge');
+  static const _method = MethodChannel('io.github.stillemptynow.promax/launcher_badge');
   static const _throttle = Duration(milliseconds: 300);
 
   final ValueNotifier<bool> supported = ValueNotifier(false);
@@ -88,7 +88,7 @@ class LauncherBadge {
   List<Listenable> get _sources => [
     chats.chatsChanged,
     ArchivedChatsStore.instance.revision,
-    KometSettings.showHiddenChats,
+    ProMaxSettings.showHiddenChats,
     AppBadge.enabled.current,
     AppBadge.includeMuted.current,
     AppBadge.countMessages.current,
@@ -132,7 +132,7 @@ class LauncherBadge {
     return BadgeCount.of(
       loaded
           ? chats.chatsSnapshot(
-              includeHidden: KometSettings.showHiddenChats.value,
+              includeHidden: ProMaxSettings.showHiddenChats.value,
             )
           : const <CachedChat>[],
       enabled: enabled,

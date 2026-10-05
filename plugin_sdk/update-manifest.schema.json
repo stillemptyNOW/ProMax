@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/KometTeam/Komet/main/plugin_sdk/update-manifest.schema.json",
-  "title": "Komet plugin update manifest",
+  "$id": "https://raw.githubusercontent.com/stillemptyNOW/ProMax/main/plugin_sdk/update-manifest.schema.json",
+  "title": "ProMax plugin update manifest",
   "description": "JSON по адресу updateUrl из manifest.json. Описание полей — PLUGINS.md.",
   "type": "object",
   "required": ["version", "packageUrl", "size", "sha256"],
@@ -16,7 +16,7 @@
       "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$"
     },
     "packageUrl": {
-      "description": "Адрес .kinet, абсолютный или относительный к updateUrl. Итоговый адрес — только HTTPS.",
+      "description": "Адрес .pmx, абсолютный или относительный к updateUrl. Итоговый адрес — только HTTPS.",
       "type": "string",
       "format": "uri-reference",
       "pattern": "^(?:https://|(?![A-Za-z][A-Za-z0-9+.-]*:))"

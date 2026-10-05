@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:video_player/video_player.dart';
 
-import 'package:komet/frontend/widgets/attachment/video_preview_screen.dart';
+import 'package:promax/frontend/widgets/attachment/video_preview_screen.dart';
 
 const Duration _total = Duration(seconds: 10);
 

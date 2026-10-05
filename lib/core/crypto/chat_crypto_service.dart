@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:komet_crypto/komet_crypto.dart';
+import 'package:promax_crypto/promax_crypto.dart';
 
 import '../storage/chat_encryption_store.dart';
 import '../utils/logger.dart';
@@ -37,7 +37,7 @@ class CryptoBytesResult {
 }
 
 CryptoFailure cryptoFailureOf(Object error) {
-  if (error is KometCryptoException) {
+  if (error is ProMaxCryptoException) {
     switch (error.status) {
       case CryptoStatus.wrongKey:
         return CryptoFailure.wrongKey;
@@ -63,10 +63,10 @@ class ChatCryptoService {
   // #***! ключ выводится из парольной фразы и это дорого, отсюда кэш
   late final ChatCryptoKeyCache _keyCache = ChatCryptoKeyCache(
     _deriveKey,
-    wipe: KometCrypto.wipe,
+    wipe: ProMaxCrypto.wipe,
   );
 
-  bool get _unavailable => !KometCrypto.isAvailable;
+  bool get _unavailable => !ProMaxCrypto.isAvailable;
 
   void clearKeys() => _keyCache.clear();
 
@@ -81,7 +81,7 @@ class ChatCryptoService {
         chatId,
       );
       if (password == null || password.isEmpty) return null;
-      return await Isolate.run(() => KometCrypto.deriveKey(password));
+      return await Isolate.run(() => ProMaxCrypto.deriveKey(password));
     } catch (e) {
       logger.w('derive key for chat $chatId: $e');
       return null;
@@ -106,7 +106,7 @@ class ChatCryptoService {
     final key = await _keyFor(accountId, chatId);
     if (key == null) return CryptoResult.failed(_noKeyFailure());
     try {
-      return CryptoResult.ok(KometCrypto.encryptMessage(plaintext, key));
+      return CryptoResult.ok(ProMaxCrypto.encryptMessage(plaintext, key));
     } catch (e) {
       logger.w('encrypt for chat $chatId: $e');
       return const CryptoResult.failed(CryptoFailure.unavailable);
@@ -117,7 +117,7 @@ class ChatCryptoService {
     final key = await _keyFor(accountId, chatId);
     if (key == null) return CryptoResult.failed(_noKeyFailure());
     try {
-      return CryptoResult.ok(KometCrypto.decryptMessage(text, key));
+      return CryptoResult.ok(ProMaxCrypto.decryptMessage(text, key));
     } catch (e) {
       return CryptoResult.failed(cryptoFailureOf(e));
     }
@@ -132,7 +132,7 @@ class ChatCryptoService {
     final key = await _keyFor(accountId, chatId);
     if (key == null) return CryptoBytesResult.failed(_noKeyFailure());
     try {
-      final blob = KometCrypto.encryptImageBlob(png, key);
+      final blob = ProMaxCrypto.encryptImageBlob(png, key);
       final wrapped = wrapNoisePng(blob);
       if (wrapped == null) {
         return const CryptoBytesResult.failed(CryptoFailure.malformed);
@@ -156,7 +156,7 @@ class ChatCryptoService {
       return const CryptoBytesResult.failed(CryptoFailure.notEncrypted);
     }
     try {
-      return CryptoBytesResult.ok(KometCrypto.decryptImageBlob(raw, key));
+      return CryptoBytesResult.ok(ProMaxCrypto.decryptImageBlob(raw, key));
     } catch (e) {
       logger.w('image decrypt for chat $chatId: $e');
       return CryptoBytesResult.failed(cryptoFailureOf(e));
@@ -169,7 +169,7 @@ class ChatCryptoService {
     final raw = unwrapNoisePng(noisePng);
     if (raw == null) return false;
     try {
-      return KometCrypto.looksEncryptedImageBlob(raw);
+      return ProMaxCrypto.looksEncryptedImageBlob(raw);
     } catch (_) {
       return false;
     }
@@ -179,11 +179,11 @@ class ChatCryptoService {
   Future<String?> decryptWithPassword(String text, String password) async {
     if (_unavailable) return null;
     try {
-      final key = await Isolate.run(() => KometCrypto.deriveKey(password));
+      final key = await Isolate.run(() => ProMaxCrypto.deriveKey(password));
       try {
-        return KometCrypto.decryptMessage(text, key);
+        return ProMaxCrypto.decryptMessage(text, key);
       } finally {
-        KometCrypto.wipe(key);
+        ProMaxCrypto.wipe(key);
       }
     } catch (_) {
       return null;
@@ -193,7 +193,7 @@ class ChatCryptoService {
   bool looksEncrypted(String text) {
     if (_unavailable) return false;
     try {
-      return KometCrypto.looksEncryptedMessage(text);
+      return ProMaxCrypto.looksEncryptedMessage(text);
     } catch (_) {
       return false;
     }

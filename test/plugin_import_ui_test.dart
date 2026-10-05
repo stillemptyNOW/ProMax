@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/core/plugins/plugin_manifest.dart';
-import 'package:komet/frontend/screens/profile/plugins_screen.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/core/plugins/plugin_manifest.dart';
+import 'package:promax/frontend/screens/profile/plugins_screen.dart';
 
 void main() {
   testWidgets('URL dialog closes without disposed controller errors', (
@@ -37,12 +37,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byType(TextField),
-      'https://example.org/synthetic.kinet',
+      'https://example.org/synthetic.pmx',
     );
     await tester.tap(find.text('Загрузить'));
     await tester.pumpAndSettle();
 
-    expect(result, 'https://example.org/synthetic.kinet');
+    expect(result, 'https://example.org/synthetic.pmx');
     expect(tester.takeException(), isNull);
   });
 
@@ -72,7 +72,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byType(TextField),
-      'https://example.org/synthetic.kinet',
+      'https://example.org/synthetic.pmx',
     );
     await tester.tap(find.text('Отмена'));
     await tester.pumpAndSettle();

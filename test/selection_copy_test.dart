@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/frontend/screens/chats/chat/view/selection_bar.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/frontend/screens/chats/chat/view/selection_bar.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const int _me = 1;

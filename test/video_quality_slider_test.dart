@@ -2,10 +2,10 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/attachment/editor_common.dart';
-import 'package:komet/frontend/widgets/attachment/video_edit.dart';
-import 'package:komet/frontend/widgets/attachment/video_editor.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/frontend/widgets/attachment/editor_common.dart';
+import 'package:promax/frontend/widgets/attachment/video_edit.dart';
+import 'package:promax/frontend/widgets/attachment/video_editor.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 const List<int> _options = [480, 720, 1080];
 const double _sliderHeight = 48;

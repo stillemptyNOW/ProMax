@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/security/app_lock.dart';
-import 'package:komet/frontend/screens/lock/app_lock_layer.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/core/security/app_lock.dart';
+import 'package:promax/frontend/screens/lock/app_lock_layer.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> _pumpApp(WidgetTester tester) async {

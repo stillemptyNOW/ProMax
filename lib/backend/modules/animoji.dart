@@ -22,7 +22,7 @@ class AnimojiModule {
     '😍',
   ];
 
-  static const String _recentsKey = 'komet_recent_animoji';
+  static const String _recentsKey = 'promax_recent_animoji';
   static const int _maxRecents = 24;
 
   // #***! два индекса, по id для сервера и по эмодзи для поиска

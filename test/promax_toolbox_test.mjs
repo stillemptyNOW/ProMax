@@ -15,7 +15,7 @@ const bridge = new vm.SyntheticModule(['chat', 'ui'], function () {
   this.setExport('chat', api.chat);
   this.setExport('ui', api.ui);
 }, { context });
-await module.link(async name => { assert.equal(name, 'komet:api'); return bridge; });
+await module.link(async name => { assert.equal(name, 'promax:api'); return bridge; });
 await module.evaluate();
 await module.namespace.fix({ arguments: { text: 'Ghbdtn' } });
 assert.equal(sent.pop(), 'Привет');

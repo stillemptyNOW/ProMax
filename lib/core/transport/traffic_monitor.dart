@@ -159,7 +159,7 @@ class TrafficMonitor extends ChangeNotifier {
   /// маскируются через [redactForLog] — файлом можно делиться.
   String buildExport({String? appVersion}) {
     final data = <String, dynamic>{
-      'tool': 'Komet traffic monitor',
+      'tool': 'ProMax traffic monitor',
       'appVersion': ?appVersion,
       'exportedAt': DateTime.now().toIso8601String(),
       'endpoint': _activeEndpoint,

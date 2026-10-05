@@ -5,14 +5,14 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
-import 'package:komet/backend/api.dart';
-import 'package:komet/backend/modules/contacts.dart';
-import 'package:komet/core/contacts/contact_labels.dart';
-import 'package:komet/core/storage/local_contact_avatars.dart';
-import 'package:komet/core/utils/image_utils.dart';
-import 'package:komet/frontend/widgets/komet_avatar.dart';
-import 'package:komet/frontend/widgets/lost_account_dialog.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/backend/modules/contacts.dart';
+import 'package:promax/core/contacts/contact_labels.dart';
+import 'package:promax/core/storage/local_contact_avatars.dart';
+import 'package:promax/core/utils/image_utils.dart';
+import 'package:promax/frontend/widgets/promax_avatar.dart';
+import 'package:promax/frontend/widgets/lost_account_dialog.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -151,7 +151,7 @@ void main() {
       );
       await tester.pumpWidget(
         const MaterialApp(
-          home: KometAvatar(name: 'Синтетика', size: 40, userId: 42),
+          home: ProMaxAvatar(name: 'Синтетика', size: 40, userId: 42),
         ),
       );
 

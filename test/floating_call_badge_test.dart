@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/calls/active_call.dart';
-import 'package:komet/core/calls/call_session.dart';
-import 'package:komet/core/calls/ws2_signaling.dart';
-import 'package:komet/frontend/widgets/floating_call_badge.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/core/calls/active_call.dart';
+import 'package:promax/core/calls/call_session.dart';
+import 'package:promax/core/calls/ws2_signaling.dart';
+import 'package:promax/frontend/widgets/floating_call_badge.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const _name = 'Тестовый собеседник';

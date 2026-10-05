@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/utils/download_history.dart';
-import 'package:komet/core/utils/media_cache.dart';
-import 'package:komet/frontend/screens/downloads_screen.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/core/utils/download_history.dart';
+import 'package:promax/core/utils/media_cache.dart';
+import 'package:promax/frontend/screens/downloads_screen.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';

@@ -5,12 +5,12 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/utils/image_utils.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../main.dart' show accountModule, fileUploader, KometApp;
+import '../../../main.dart' show accountModule, fileUploader, ProMaxApp;
 import '../../widgets/connection_status.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/attachment/avatar_editor.dart';
 import '../../widgets/hint_bubble.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../../widgets/small_spinner.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -83,7 +83,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _photoId = newProfile.photoId;
       _bioController.text = newProfile.description ?? '';
       if (!mounted) return;
-      KometApp.stateOf(context)?.notifyProfileUpdate();
+      ProMaxApp.stateOf(context)?.notifyProfileUpdate();
       if (mounted) {
         showCustomNotification(
           context,
@@ -149,7 +149,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _photoId = newProfile.photoId;
         _isSaving = false;
       });
-      KometApp.stateOf(context)?.notifyProfileUpdate();
+      ProMaxApp.stateOf(context)?.notifyProfileUpdate();
       showCustomNotification(
         context,
         AppLocalizations.of(context)!.editProfileAvatarUpdated,
@@ -172,7 +172,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _avatarUrl = newProfile.baseUrl;
       _photoId = newProfile.photoId;
       if (!mounted) return;
-      KometApp.stateOf(context)?.notifyProfileUpdate();
+      ProMaxApp.stateOf(context)?.notifyProfileUpdate();
       if (mounted) {
         showCustomNotification(
           context,
@@ -241,7 +241,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             width: 2.5,
                           ),
                         ),
-                        child: KometAvatar(
+                        child: ProMaxAvatar(
                           name: _firstNameController.text,
                           imageUrl: _avatarUrl,
                           size: 88,

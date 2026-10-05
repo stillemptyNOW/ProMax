@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/chat_preview.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/models/attachment.dart';
-import 'package:komet/models/chat_preview_media.dart';
+import 'package:promax/backend/modules/chat_preview.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/models/attachment.dart';
+import 'package:promax/models/chat_preview_media.dart';
 
 const int _accountId = 77;
 const int _chatId = 4242;
@@ -31,34 +31,34 @@ void main() {
   group('превью своего медиа, которое ещё грузится', () {
     test('фото без подписи показывает файл с диска как миниатюру', () {
       final message = _pending([
-        const PhotoAttachment(localPath: '/tmp/komet/shot.jpg'),
+        const PhotoAttachment(localPath: '/tmp/promax/shot.jpg'),
       ]);
 
       final media = _media(message);
       expect(media.kind, ChatPreviewKind.photo);
       expect(media.label, 'Изображение');
-      expect(media.thumbs.single.source, 'file:///tmp/komet/shot.jpg');
+      expect(media.thumbs.single.source, 'file:///tmp/promax/shot.jpg');
       expect(media.thumbs.single.video, isFalse);
       expect(messagePreviewText(message.previewPayload), 'Изображение');
     });
 
     test('альбом отдаёт миниатюру на каждое фото', () {
       final message = _pending([
-        const PhotoAttachment(localPath: '/tmp/komet/one.jpg'),
-        const PhotoAttachment(localPath: '/tmp/komet/two.jpg'),
+        const PhotoAttachment(localPath: '/tmp/promax/one.jpg'),
+        const PhotoAttachment(localPath: '/tmp/promax/two.jpg'),
       ]);
 
       final media = _media(message);
       expect(media.label, 'Изображения');
       expect(media.thumbs.map((t) => t.source), [
-        'file:///tmp/komet/one.jpg',
-        'file:///tmp/komet/two.jpg',
+        'file:///tmp/promax/one.jpg',
+        'file:///tmp/promax/two.jpg',
       ]);
     });
 
     test('подпись к фото вытесняет словесную метку', () {
       final message = _pending([
-        const PhotoAttachment(localPath: '/tmp/komet/shot.jpg'),
+        const PhotoAttachment(localPath: '/tmp/promax/shot.jpg'),
       ], text: 'смотри какой закат');
 
       final media = _media(message);
@@ -74,7 +74,7 @@ void main() {
       const thumb = 'data:image/jpeg;base64,AAAA';
       final message = _pending([
         const VideoAttachment(
-          localPath: '/tmp/komet/clip.mp4',
+          localPath: '/tmp/promax/clip.mp4',
           previewData: thumb,
           duration: 3000,
         ),
@@ -89,7 +89,7 @@ void main() {
     test('кружок без кадра остаётся без миниатюры', () {
       final message = _pending([
         const VideoAttachment(
-          localPath: '/tmp/komet/note.mp4',
+          localPath: '/tmp/promax/note.mp4',
           videoType: 1,
           duration: 3000,
         ),

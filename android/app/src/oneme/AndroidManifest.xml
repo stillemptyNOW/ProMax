@@ -1,9 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <activity-alias
-            android:name="ru.komet.app.IntentEntry"
+            android:name="io.github.stillemptynow.promax.IntentEntry"
             android:exported="true"
-            android:targetActivity="ru.komet.app.MainActivity">
+            android:targetActivity="io.github.stillemptynow.promax.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>

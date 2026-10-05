@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/selection_check_circle.dart';
+import 'package:promax/frontend/widgets/selection_check_circle.dart';
 
 void main() {
   test('кружок выбора помещается в строку любой высоты', () {

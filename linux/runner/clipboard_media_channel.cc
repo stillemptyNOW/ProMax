@@ -5,7 +5,7 @@
 
 #include <cstring>
 
-static constexpr char kChannelName[] = "ru.komet.app/clipboard";
+static constexpr char kChannelName[] = "io.github.stillemptynow.promax/clipboard";
 
 static GtkClipboard* system_clipboard() {
   return gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);

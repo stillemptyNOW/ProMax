@@ -2,26 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:komet/backend/modules/messages.dart'
+import 'package:promax/backend/modules/messages.dart'
     show CachedMessage, FileHistoryEntry;
-import 'package:komet/frontend/commands/commands.dart' show SlashCommand;
-import 'package:komet/core/config/app_chat_chrome.dart';
-import 'package:komet/core/config/app_composer_background.dart';
-import 'package:komet/core/config/app_composer_style.dart';
-import 'package:komet/core/config/app_frost.dart';
-import 'package:komet/core/media/clipboard/clipboard_media.dart';
-import 'package:komet/models/animoji.dart' show Animoji;
-import 'package:komet/models/sticker.dart' show StickerItem;
-import 'package:komet/backend/modules/forward_sender.dart';
-import 'package:komet/frontend/screens/chats/chat/sticker_panel_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/upload_status.dart'
+import 'package:promax/frontend/commands/commands.dart' show SlashCommand;
+import 'package:promax/core/config/app_chat_chrome.dart';
+import 'package:promax/core/config/app_composer_background.dart';
+import 'package:promax/core/config/app_composer_style.dart';
+import 'package:promax/core/config/app_frost.dart';
+import 'package:promax/core/media/clipboard/clipboard_media.dart';
+import 'package:promax/models/animoji.dart' show Animoji;
+import 'package:promax/models/sticker.dart' show StickerItem;
+import 'package:promax/backend/modules/forward_sender.dart';
+import 'package:promax/frontend/screens/chats/chat/sticker_panel_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/upload_status.dart'
     show UploadStatus;
-import 'package:komet/frontend/screens/chats/chat/video_note_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/voice_record_controller.dart';
-import 'package:komet/frontend/widgets/attachment_panel.dart';
-import 'package:komet/frontend/widgets/e2ee_banner.dart';
-import 'package:komet/frontend/widgets/rich_message_controller.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/frontend/screens/chats/chat/video_note_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/voice_record_controller.dart';
+import 'package:promax/frontend/widgets/attachment_panel.dart';
+import 'package:promax/frontend/widgets/e2ee_banner.dart';
+import 'package:promax/frontend/widgets/rich_message_controller.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 import 'command_arguments_form.dart';
 import 'composer_input.dart';

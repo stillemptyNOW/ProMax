@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/config/font_file_info.dart';
+import 'package:promax/core/config/font_file_info.dart';
 
 typedef _Name = ({int platform, int language, int nameId, List<int> bytes});
 

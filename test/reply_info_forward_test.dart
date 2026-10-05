@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/models/attachment.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/models/attachment.dart';
 
 Map<String, dynamic> _replyTo(Map<String, dynamic> quoted) => {
   'link': {'type': 'REPLY', 'chatId': 100, 'message': quoted},

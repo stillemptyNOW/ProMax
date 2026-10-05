@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../core/config/komet_settings.dart';
+import '../../core/config/promax_settings.dart';
 
 /// Subtle, non-interactive snowfall that can be toggled in ProMax settings.
 class SnowfallOverlay extends StatefulWidget {
@@ -22,12 +22,12 @@ class _SnowfallOverlayState extends State<SnowfallOverlay>
   @override
   void initState() {
     super.initState();
-    KometSettings.snowEffect.addListener(_syncAnimation);
+    ProMaxSettings.snowEffect.addListener(_syncAnimation);
     _syncAnimation();
   }
 
   void _syncAnimation() {
-    if (KometSettings.snowEffect.value) {
+    if (ProMaxSettings.snowEffect.value) {
       if (!_animation.isAnimating) _animation.repeat();
     } else if (_animation.isAnimating) {
       _animation.stop();
@@ -36,7 +36,7 @@ class _SnowfallOverlayState extends State<SnowfallOverlay>
 
   @override
   void dispose() {
-    KometSettings.snowEffect.removeListener(_syncAnimation);
+    ProMaxSettings.snowEffect.removeListener(_syncAnimation);
     _animation.dispose();
     super.dispose();
   }
@@ -44,7 +44,7 @@ class _SnowfallOverlayState extends State<SnowfallOverlay>
   @override
   Widget build(BuildContext context) => IgnorePointer(
     child: ValueListenableBuilder<bool>(
-      valueListenable: KometSettings.snowEffect,
+      valueListenable: ProMaxSettings.snowEffect,
       builder: (context, enabled, _) {
         if (!enabled) return const SizedBox.shrink();
         return RepaintBoundary(

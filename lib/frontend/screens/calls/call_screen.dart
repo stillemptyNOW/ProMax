@@ -32,7 +32,7 @@ import '../../widgets/small_spinner.dart';
 import 'call_mic_sheet.dart';
 import 'call_lighting_sheet.dart';
 import 'call_participants_sheet.dart';
-import 'komet_hub.dart';
+import 'promax_hub.dart';
 import '../../../core/config/app_fonts.dart';
 
 class CallScreen extends StatefulWidget {
@@ -62,7 +62,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   StreamSubscription<CallSessionState>? _stateSub;
   StreamSubscription<void>? _canceledSub;
   StreamSubscription<void>? _infoSub;
-  StreamSubscription<void>? _kometSub;
+  StreamSubscription<void>? _proMaxSub;
   StreamSubscription<CallChatMessage>? _chatSub;
   StreamSubscription<MediaStream>? _remoteStreamSub;
   bool _chatOpen = false;
@@ -264,10 +264,10 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     });
     _remoteStreamSub = session.remoteStreamStream.listen(_attachStream);
     _tileStreamSub = session.participantStreamUpdates.listen(_onTileStream);
-    _kometSub = session.peerKometDetected.listen((_) => _showKometBadge());
+    _proMaxSub = session.peerProMaxDetected.listen((_) => _showProMaxBadge());
     _chatSub = session.chatMessages.listen(_onChatMessage);
-    if (session.peerIsKomet) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _showKometBadge());
+    if (session.peerIsProMax) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showProMaxBadge());
     }
     final existing = session.remoteStream;
     if (existing != null) _attachStream(existing);
@@ -288,10 +288,10 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _showKometBadge() {
+  void _showProMaxBadge() {
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
-    showCustomNotification(context, l10n.callKometDetectedNotification);
+    showCustomNotification(context, l10n.callProMaxDetectedNotification);
   }
 
   void _onChatMessage(CallChatMessage message) {
@@ -299,11 +299,11 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     showCustomNotification(context, message.text);
   }
 
-  Future<void> _openKometHub() async {
+  Future<void> _openProMaxHub() async {
     final session = _session;
     if (session == null) return;
     setState(() => _chatOpen = true);
-    await showKometHub(context, session: session, scheme: _darkScheme(context));
+    await showProMaxHub(context, session: session, scheme: _darkScheme(context));
     if (mounted) setState(() => _chatOpen = false);
   }
 
@@ -637,7 +637,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     _stateSub?.cancel();
     _canceledSub?.cancel();
     _infoSub?.cancel();
-    _kometSub?.cancel();
+    _proMaxSub?.cancel();
     _chatSub?.cancel();
     _remoteStreamSub?.cancel();
     _tileStreamSub?.cancel();
@@ -1243,10 +1243,10 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (_session?.peerIsKomet == true)
+                  if (_session?.peerIsProMax == true)
                     IconButton(
-                      onPressed: _openKometHub,
-                      tooltip: l10n.callTooltipKometHub,
+                      onPressed: _openProMaxHub,
+                      tooltip: l10n.callTooltipProMaxHub,
                       icon: Icon(
                         Symbols.auto_awesome,
                         color: cs.primary,

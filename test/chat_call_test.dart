@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/chat_parsing.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/models/chat_call.dart';
+import 'package:promax/backend/modules/chat_parsing.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/models/chat_call.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 

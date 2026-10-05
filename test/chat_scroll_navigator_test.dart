@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/frontend/screens/chats/chat/chat_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/chat_scroll_navigator.dart';
-import 'package:komet/frontend/screens/chats/chat/read_marker_gate.dart';
-import 'package:komet/frontend/screens/chats/chat/view/anchored_message_list.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/frontend/screens/chats/chat/chat_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/chat_scroll_navigator.dart';
+import 'package:promax/frontend/screens/chats/chat/read_marker_gate.dart';
+import 'package:promax/frontend/screens/chats/chat/view/anchored_message_list.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 const double _viewport = 500;
 

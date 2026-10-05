@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/utils/link_opener.dart';
 
 final RegExp linkPattern = RegExp(
-  r'((?:https?|komet|max)://[^\s<>]+'
+  r'((?:https?|promax|max)://[^\s<>]+'
   r'|www\.[^\s<>]+'
   r'|(?<![\w.@/-])max\.ru(?![\w.-])(?:/[^\s<>]*)?)',
   caseSensitive: false,

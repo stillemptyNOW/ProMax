@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/draggable_floating_layer.dart';
+import 'package:promax/frontend/widgets/draggable_floating_layer.dart';
 
 const _screen = Size(400, 800);
 const _safe = EdgeInsets.only(top: 48, bottom: 24);

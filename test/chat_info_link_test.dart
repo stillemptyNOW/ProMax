@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/chat_parsing.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/models/chat_info.dart';
+import 'package:promax/backend/modules/chat_parsing.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/models/chat_info.dart';
 
 void main() {
   const myId = 7;

@@ -1,4 +1,4 @@
-import { chat, network, ui } from 'komet:api';
+import { chat, network, ui } from 'promax:api';
 
 export async function nekogirl() {
   const response = await network.fetch('https://api.nekosapi.com/v4/images/random?rating=safe', {

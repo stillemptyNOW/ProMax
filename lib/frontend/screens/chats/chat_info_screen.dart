@@ -8,7 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show listEquals, setEquals;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:komet/main.dart';
+import 'package:promax/main.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../contacts/edit_contact_sheet.dart';
 import '../../../backend/modules/complaints.dart';
@@ -43,7 +43,7 @@ import 'chat_removal_undo.dart';
 import '../../widgets/formatted_message_text.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../widgets/glossy_pill.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../../widgets/profile_header_scroll.dart';
 import '../../widgets/profile_hero.dart';
 import '../../widgets/swipe_route.dart';
@@ -989,7 +989,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     }
     final url = _avatarPages.isNotEmpty ? _avatarPages.first : _chatImageUrl;
     if (url.isEmpty) {
-      return KometAvatar(
+      return ProMaxAvatar(
         name: _chatName,
         size: _headerAvatarSize,
         fontSize: 36,

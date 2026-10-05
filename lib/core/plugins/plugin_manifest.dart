@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 const int kPluginApiVersion = 1;
-const String kPluginPackageExtension = '.kinet';
+const String kPluginPackageExtension = '.pmx';
 
 enum PluginPermission {
   chatWrite('chat.write'),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:komet/core/config/app_frost.dart';
-import 'package:komet/frontend/widgets/liquid_glass.dart';
+import 'package:promax/core/config/app_frost.dart';
+import 'package:promax/frontend/widgets/liquid_glass.dart';
 
 class FrostedPanel extends StatelessWidget {
   final Color tint;

@@ -10,7 +10,7 @@ import '../../../../main.dart';
 import '../../../../models/chat_restriction.dart';
 import '../../../widgets/custom_notification.dart';
 import '../../../widgets/attachment/avatar_editor.dart';
-import '../../../widgets/komet_avatar.dart';
+import '../../../widgets/promax_avatar.dart';
 import '../../../widgets/settings_card.dart';
 import '../../../widgets/small_spinner.dart';
 import '../../../widgets/swipe_route.dart';
@@ -502,7 +502,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
         dimension: 96,
         child: Stack(
           children: [
-            KometAvatar(name: _state.name, imageUrl: _state.imageUrl, size: 96),
+            ProMaxAvatar(name: _state.name, imageUrl: _state.imageUrl, size: 96),
             if (_photoBusy)
               Positioned.fill(
                 child: DecoratedBox(

@@ -189,7 +189,7 @@ class _ThemeModeCardState extends State<_ThemeModeCard> {
                         if (customSelected) {
                           unawaited(AppWallpaperTint.save(false));
                         }
-                        KometApp.stateOf(
+                        ProMaxApp.stateOf(
                           context,
                         )?.applyThemeModeWithReveal(item.mode, position);
                       },
@@ -326,7 +326,7 @@ class _AmoledCardState extends State<_AmoledCard> {
                   value: value,
                   onChanged: (v) {
                     Haptics.selection();
-                    KometApp.stateOf(
+                    ProMaxApp.stateOf(
                       context,
                     )?.applyAmoledWithReveal(v, _lastPointerPosition);
                   },
@@ -385,7 +385,7 @@ class _ScheduleCard extends StatelessWidget {
                           time: schedule.darkStart,
                           enabled: enabled,
                           onPick: (picked) {
-                            KometApp.stateOf(context)?.applyThemeSchedule(
+                            ProMaxApp.stateOf(context)?.applyThemeSchedule(
                               ThemeSchedule(
                                 darkStart: picked,
                                 darkEnd: schedule.darkEnd,
@@ -400,7 +400,7 @@ class _ScheduleCard extends StatelessWidget {
                           time: schedule.darkEnd,
                           enabled: enabled,
                           onPick: (picked) {
-                            KometApp.stateOf(context)?.applyThemeSchedule(
+                            ProMaxApp.stateOf(context)?.applyThemeSchedule(
                               ThemeSchedule(
                                 darkStart: schedule.darkStart,
                                 darkEnd: picked,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:komet/frontend/screens/chats/chat/sticker_panel_controller.dart';
-import 'package:komet/frontend/widgets/lottie_image.dart';
-import 'package:komet/frontend/widgets/sticker_panel.dart';
-import 'package:komet/models/animoji.dart';
-import 'package:komet/models/sticker.dart';
+import 'package:promax/frontend/screens/chats/chat/sticker_panel_controller.dart';
+import 'package:promax/frontend/widgets/lottie_image.dart';
+import 'package:promax/frontend/widgets/sticker_panel.dart';
+import 'package:promax/models/animoji.dart';
+import 'package:promax/models/sticker.dart';
 
 class StickerPanelView extends StatelessWidget {
   const StickerPanelView({

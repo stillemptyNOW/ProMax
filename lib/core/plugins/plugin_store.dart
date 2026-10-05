@@ -29,7 +29,7 @@ class PluginStore {
   Directory? _root;
   Map<String, dynamic> _state = {};
 
-  static bool isBundledId(String id) => id.startsWith('pw.komet.') || id == 'io.github.stillemptynow.promax.toolbox';
+  static bool isBundledId(String id) => id.startsWith('promax.') || id == 'io.github.stillemptynow.promax.toolbox';
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -108,7 +108,7 @@ class PluginStore {
         ),
       },
       signatureStatus: PluginSignatureStatus.bundled,
-      signerFingerprint: 'KOMET:BUNDLED',
+      signerFingerprint: 'PROMAX:BUNDLED',
     );
   }
 
@@ -192,7 +192,7 @@ class PluginStore {
       package.files,
     );
     if (isBundledId(package.manifest.id)) {
-      throw const FormatException('Этот id зарезервирован Komet');
+      throw const FormatException('Этот id зарезервирован ProMax');
     }
     if (!package.manifest.permissions.containsAll(grantedPermissions)) {
       throw const FormatException('Выданы неизвестные разрешения');

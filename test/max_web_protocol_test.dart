@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/webpush/max_web_protocol.dart';
+import 'package:promax/core/webpush/max_web_protocol.dart';
 
 Uint8List _hex(String value) {
   final bytes = Uint8List(value.length ~/ 2);
@@ -79,10 +79,10 @@ void main() {
   });
 
   test('LZ4 разворачивает перекрывающиеся совпадения', () {
-    final compressed = Uint8List.fromList([0x6E, 0x6B, 0x6F, 0x6D, 0x65, 0x74, 0x20, 0x06, 0x00, 0x46, 0x70, 0x75, 0x73, 0x68, 0x05, 0x00, 0x50, 0x20, 0x70, 0x75, 0x73, 0x68]);
+    final compressed = Uint8List.fromList([0x6E, 0x6F, 0x72, 0x62, 0x69, 0x74, 0x20, 0x06, 0x00, 0x46, 0x70, 0x75, 0x73, 0x68, 0x05, 0x00, 0x50, 0x20, 0x70, 0x75, 0x73, 0x68]);
     final result = Lz4Block.decompress(compressed, 256);
-    expect(utf8.decode(result), 'komet komet komet komet push push push push');
+    expect(utf8.decode(result), 'orbit orbit orbit orbit push push push push');
   });
 }
 
-const _requestPayloadJson = r'''{"userAgent": {"deviceType": "WEB", "pushDeviceType": "WEBPUSH", "locale": "ru", "deviceLocale": "ru", "osVersion": "macOS", "deviceName": "Safari", "headerUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15", "isPwa": true, "appVersion": "26.6.20", "screen": "956x440 3.0x", "timezone": "Europe/Moscow"}, "deviceId": "komet-codec-test"}''';
+const _requestPayloadJson = r'''{"userAgent": {"deviceType": "WEB", "pushDeviceType": "WEBPUSH", "locale": "ru", "deviceLocale": "ru", "osVersion": "macOS", "deviceName": "Safari", "headerUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15", "isPwa": true, "appVersion": "26.6.20", "screen": "956x440 3.0x", "timezone": "Europe/Moscow"}, "deviceId": "orbit-codec-test"}''';

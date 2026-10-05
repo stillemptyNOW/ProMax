@@ -5,34 +5,34 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:komet/backend/modules/animoji.dart' show AnimojiModule;
-import 'package:komet/backend/modules/message_info.dart';
-import 'package:komet/backend/modules/messages.dart' show CachedMessage;
-import 'package:komet/core/config/app_show_extra_info.dart';
-import 'package:komet/core/config/app_fonts.dart';
-import 'package:komet/core/config/app_frost.dart';
-import 'package:komet/core/config/komet_settings.dart';
-import 'package:komet/frontend/widgets/hint_bubble.dart';
-import 'package:komet/core/config/app_message_actions_style.dart';
-import 'package:komet/core/crypto/message_decryption_cache.dart';
-import 'package:komet/core/utils/haptics.dart';
-import 'package:komet/core/utils/text_format.dart';
-import 'package:komet/frontend/widgets/animated_text_swap.dart';
-import 'package:komet/frontend/widgets/directional_drag_recognizer.dart';
-import 'package:komet/frontend/widgets/liquid_glass.dart';
-import 'package:komet/frontend/widgets/message_actions_overlay.dart'
+import 'package:promax/backend/modules/animoji.dart' show AnimojiModule;
+import 'package:promax/backend/modules/message_info.dart';
+import 'package:promax/backend/modules/messages.dart' show CachedMessage;
+import 'package:promax/core/config/app_show_extra_info.dart';
+import 'package:promax/core/config/app_fonts.dart';
+import 'package:promax/core/config/app_frost.dart';
+import 'package:promax/core/config/promax_settings.dart';
+import 'package:promax/frontend/widgets/hint_bubble.dart';
+import 'package:promax/core/config/app_message_actions_style.dart';
+import 'package:promax/core/crypto/message_decryption_cache.dart';
+import 'package:promax/core/utils/haptics.dart';
+import 'package:promax/core/utils/text_format.dart';
+import 'package:promax/frontend/widgets/animated_text_swap.dart';
+import 'package:promax/frontend/widgets/directional_drag_recognizer.dart';
+import 'package:promax/frontend/widgets/liquid_glass.dart';
+import 'package:promax/frontend/widgets/message_actions_overlay.dart'
     show
         MessageActionsController,
         MessageActionsInteraction,
         MessageReader,
         ReactionEmoji,
         showMessageActions;
-import 'package:komet/frontend/widgets/rich_message_controller.dart';
-import 'package:komet/frontend/widgets/selection_check_circle.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/main.dart' show animojiModule;
-import 'package:komet/models/animoji.dart' show Animoji;
-import 'package:komet/models/chat_reaction_settings.dart';
+import 'package:promax/frontend/widgets/rich_message_controller.dart';
+import 'package:promax/frontend/widgets/selection_check_circle.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/main.dart' show animojiModule;
+import 'package:promax/models/animoji.dart' show Animoji;
+import 'package:promax/models/chat_reaction_settings.dart';
 
 class SwipeToReply extends StatefulWidget {
   final Widget child;
@@ -592,7 +592,7 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       widget.onToggleSelection();
       return;
     }
-    final emoji = KometSettings.quickReaction.value;
+    final emoji = ProMaxSettings.quickReaction.value;
     final react = widget.onReact;
     if (react != null && (_openTimer?.isActive ?? false)) {
       _openTimer?.cancel();

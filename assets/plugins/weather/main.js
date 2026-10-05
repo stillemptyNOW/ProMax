@@ -1,4 +1,4 @@
-import { chat, network, ui } from 'komet:api';
+import { chat, network, ui } from 'promax:api';
 
 function value(source, key, fallback = '—') {
   const result = source?.[key];

@@ -2,21 +2,21 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/config/app_chat_chrome.dart';
-import 'package:komet/core/config/app_composer_background.dart';
-import 'package:komet/core/config/app_composer_style.dart';
-import 'package:komet/backend/modules/forward_sender.dart';
-import 'package:komet/frontend/screens/chats/chat/upload_status.dart';
-import 'package:komet/frontend/screens/chats/chat/view/chat_header.dart';
-import 'package:komet/frontend/screens/chats/chat/video_note_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/view/composer_input.dart';
-import 'package:komet/frontend/screens/chats/chat/voice_record_controller.dart';
-import 'package:komet/frontend/widgets/composer_morph_icon.dart';
-import 'package:komet/frontend/widgets/rich_message_controller.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/config/app_chat_chrome.dart';
+import 'package:promax/core/config/app_composer_background.dart';
+import 'package:promax/core/config/app_composer_style.dart';
+import 'package:promax/backend/modules/forward_sender.dart';
+import 'package:promax/frontend/screens/chats/chat/upload_status.dart';
+import 'package:promax/frontend/screens/chats/chat/view/chat_header.dart';
+import 'package:promax/frontend/screens/chats/chat/video_note_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/view/composer_input.dart';
+import 'package:promax/frontend/screens/chats/chat/voice_record_controller.dart';
+import 'package:promax/frontend/widgets/composer_morph_icon.dart';
+import 'package:promax/frontend/widgets/rich_message_controller.dart';
 
 void main() {
   late RichMessageController messageController;

@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/media/ogg_page_writer.dart';
-import 'package:komet/core/media/opus_ogg_index.dart';
+import 'package:promax/core/media/ogg_page_writer.dart';
+import 'package:promax/core/media/opus_ogg_index.dart';
 
 const int _sampleRate = 48000;
 const int _packetSamples = 960;
@@ -29,7 +29,7 @@ Uint8List _opusHead() {
 }
 
 Uint8List _opusTags() {
-  const vendor = 'komet-test';
+  const vendor = 'promax-test';
   final out = BytesBuilder()
     ..add('OpusTags'.codeUnits)
     ..add(_le32(vendor.length))

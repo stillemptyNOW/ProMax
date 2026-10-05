@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:komet/main.dart';
+import 'package:promax/main.dart';
 
 import '../../../../core/media/media_playback.dart';
 import '../../../../core/media/video_note_frame.dart';

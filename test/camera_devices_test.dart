@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/calls/camera_devices.dart';
+import 'package:promax/core/calls/camera_devices.dart';
 
 void main() {
   test('camera facing is read from platform labels', () {

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../../core/config/komet_settings.dart';
+import '../../../../core/config/promax_settings.dart';
 import '../../../../core/utils/format.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../hint_bubble.dart';
@@ -44,7 +44,7 @@ class LikelyForwardedMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MetaHintMark(
-    enabled: KometSettings.showForward,
+    enabled: ProMaxSettings.showForward,
     icon: Symbols.forward,
     hint: AppLocalizations.of(context)!.metaMarksLikelyForwarded,
     color: color,
@@ -65,7 +65,7 @@ class TypingTimeMark extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return MetaHintMark(
-      enabled: KometSettings.showTypingTime,
+      enabled: ProMaxSettings.showTypingTime,
       icon: Symbols.timer,
       hint: l10n.metaMarksTypingTime(formatApproxDuration(l10n, typingMs)),
       color: color,

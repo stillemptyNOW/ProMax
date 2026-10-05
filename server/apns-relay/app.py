@@ -126,7 +126,7 @@ async def send_apns(token, environment, chat_id):
         authorization = _provider_token[0]
     payload = {'aps': {'alert': {'title': 'ProMax', 'body': 'Новое событие в MAX'}, 'sound': 'default'}}
     if chat_id:
-        payload['komet_chat'] = chat_id
+        payload['promax_chat'] = chat_id
     host = 'api.push.apple.com' if environment == 'production' else 'api.sandbox.push.apple.com'
     async with httpx.AsyncClient(http2=True, timeout=15) as client:
         response = await client.post(f'https://{host}/3/device/{token}', headers={
@@ -142,7 +142,7 @@ async def send_apns(token, environment, chat_id):
 def chat_id_from_payload(payload):
     if not isinstance(payload, dict):
         return 0
-    for key in ('chatId', 'chat_id', 'komet_chat'):
+    for key in ('chatId', 'chat_id', 'promax_chat'):
         value = payload.get(key)
         if isinstance(value, (str, int)) and not isinstance(value, bool) and re.fullmatch(r'-?\d{1,18}', str(value)):
             return int(value)

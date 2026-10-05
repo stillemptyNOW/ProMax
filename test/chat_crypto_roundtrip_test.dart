@@ -3,16 +3,16 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/crypto/noise_png.dart';
-import 'package:komet_crypto/komet_crypto.dart';
+import 'package:promax/core/crypto/noise_png.dart';
+import 'package:promax_crypto/promax_crypto.dart';
 
 String get _libPath {
   final name = Platform.isMacOS
-      ? 'libkomet_crypto.dylib'
+      ? 'libpromax_crypto.dylib'
       : Platform.isWindows
-      ? 'komet_crypto.dll'
-      : 'libkomet_crypto.so';
-  return 'native/crypto-core/build/$name';
+      ? 'promax_crypto.dll'
+      : 'libpromax_crypto.so';
+  return 'native/promax_crypto/build/$name';
 }
 
 const List<int> _tinyPng = [
@@ -79,58 +79,58 @@ void main() {
 
   if (!File(_libPath).existsSync()) {
     // ignore: avoid_print
-    print('skipping native tests: run `make shared` in native/crypto-core');
+    print('skipping native tests: run `make shared` in native/promax_crypto');
     return;
   }
 
   setUpAll(() {
-    KometCrypto.libraryPath = File(_libPath).absolute.path;
+    ProMaxCrypto.libraryPath = File(_libPath).absolute.path;
   });
 
   test('round-trips through the native core', () {
-    final key = KometCrypto.deriveKey('общий ключ');
+    final key = ProMaxCrypto.deriveKey('общий ключ');
     expect(key.length, 32);
     const plaintext = 'встречаемся в 19:00 у метро';
-    final encrypted = KometCrypto.encryptMessage(plaintext, key);
+    final encrypted = ProMaxCrypto.encryptMessage(plaintext, key);
     expect(encrypted, isNot(contains(RegExp(r'[a-zA-Z0-9]'))));
     expect(encrypted, contains(' '));
-    expect(KometCrypto.decryptMessage(encrypted, key), plaintext);
-    expect(KometCrypto.deriveKey('общий ключ'), key);
+    expect(ProMaxCrypto.decryptMessage(encrypted, key), plaintext);
+    expect(ProMaxCrypto.deriveKey('общий ключ'), key);
   });
 
   test('rejects a wrong key and plain text', () {
-    final key = KometCrypto.deriveKey('правильный');
-    final wrong = KometCrypto.deriveKey('неправильный');
-    final encrypted = KometCrypto.encryptMessage('секрет', key);
+    final key = ProMaxCrypto.deriveKey('правильный');
+    final wrong = ProMaxCrypto.deriveKey('неправильный');
+    final encrypted = ProMaxCrypto.encryptMessage('секрет', key);
     expect(
-      () => KometCrypto.decryptMessage(encrypted, wrong),
+      () => ProMaxCrypto.decryptMessage(encrypted, wrong),
       throwsA(
-        isA<KometCryptoException>().having(
+        isA<ProMaxCryptoException>().having(
           (e) => e.status,
           'status',
           CryptoStatus.wrongKey,
         ),
       ),
     );
-    expect(KometCrypto.looksEncryptedMessage('привет как дела'), isFalse);
+    expect(ProMaxCrypto.looksEncryptedMessage('привет как дела'), isFalse);
     final mangled = '  ${encrypted.replaceAll(' ', '   ')}\n';
-    expect(KometCrypto.decryptMessage(mangled, key), 'секрет');
+    expect(ProMaxCrypto.decryptMessage(mangled, key), 'секрет');
   });
 
   test('round-trips a photo through the noise wrapper', () {
-    final key = KometCrypto.deriveKey('фото-ключ');
+    final key = ProMaxCrypto.deriveKey('фото-ключ');
     final plain = Uint8List.fromList(_tinyPng);
-    final blob = KometCrypto.encryptImageBlob(plain, key);
+    final blob = ProMaxCrypto.encryptImageBlob(plain, key);
     final noise = wrapNoisePng(blob)!;
     expect(noise, isNot(plain));
     final raw = unwrapNoisePng(noise)!;
-    expect(KometCrypto.looksEncryptedImageBlob(raw), isTrue);
-    expect(KometCrypto.looksEncryptedImageBlob(plain), isFalse);
-    expect(KometCrypto.decryptImageBlob(raw, key), plain);
-    final wrong = KometCrypto.deriveKey('неправильный');
+    expect(ProMaxCrypto.looksEncryptedImageBlob(raw), isTrue);
+    expect(ProMaxCrypto.looksEncryptedImageBlob(plain), isFalse);
+    expect(ProMaxCrypto.decryptImageBlob(raw, key), plain);
+    final wrong = ProMaxCrypto.deriveKey('неправильный');
     expect(
-      () => KometCrypto.decryptImageBlob(raw, wrong),
-      throwsA(isA<KometCryptoException>()),
+      () => ProMaxCrypto.decryptImageBlob(raw, wrong),
+      throwsA(isA<ProMaxCryptoException>()),
     );
   });
 }

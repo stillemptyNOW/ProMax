@@ -14,7 +14,7 @@ import '../../../main.dart' show api;
 import '../../widgets/chat_menu_overlay.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/custom_notification.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/small_spinner.dart';
 import '../../widgets/spectrum_tint.dart';
@@ -362,7 +362,7 @@ class _ContactsTabState extends State<ContactsTab> with SpectrumSurface {
                       width: 1,
                     ),
                   ),
-                  child: KometAvatar(
+                  child: ProMaxAvatar(
                     name: nameToDisplay,
                     imageUrl: contact.baseUrl,
                     size: 48,

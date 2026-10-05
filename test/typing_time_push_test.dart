@@ -2,14 +2,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/core/config/komet_settings.dart';
-import 'package:komet/core/protocol/opcode_map.dart';
-import 'package:komet/core/protocol/packet.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/core/storage/chat_activity_store.dart';
-import 'package:komet/core/storage/token_storage.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/core/config/promax_settings.dart';
+import 'package:promax/core/protocol/opcode_map.dart';
+import 'package:promax/core/protocol/packet.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/core/storage/chat_activity_store.dart';
+import 'package:promax/core/storage/token_storage.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,7 +77,7 @@ void main() {
     PathProviderPlatform.instance = _SyntheticPathProvider(directory.path);
     addTearDown(() async {
       activity.clearChat(_chatId);
-      KometSettings.showTypingTime.value = false;
+      ProMaxSettings.showTypingTime.value = false;
       await AppDatabase.close();
       if (directory.existsSync()) directory.deleteSync(recursive: true);
     });
@@ -90,7 +90,7 @@ void main() {
       'status': 'ACTIVE',
       'participants': {'$_me': 0, '$_alice': 0},
     }, _me);
-    KometSettings.showTypingTime.value = true;
+    ProMaxSettings.showTypingTime.value = true;
   });
 
   Future<int?> typingMsOfDelivered(Packet packet) async {
@@ -125,7 +125,7 @@ void main() {
   });
 
   test('с выключенной настройкой время не считается', () async {
-    KometSettings.showTypingTime.value = false;
+    ProMaxSettings.showTypingTime.value = false;
     activity.mark(_chatId, _alice, ChatActivity.typing);
 
     expect(await typingMsOfDelivered(_incoming('7204')), isNull);

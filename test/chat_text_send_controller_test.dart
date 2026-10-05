@@ -4,19 +4,19 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/backend/modules/comments.dart';
-import 'package:komet/backend/modules/forward_sender.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/cache/message_session_cache.dart';
-import 'package:komet/core/protocol/packet.dart';
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/core/utils/haptics.dart';
-import 'package:komet/frontend/screens/chats/chat/chat_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/chat_text_send_controller.dart';
-import 'package:komet/frontend/widgets/rich_message_controller.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/backend/modules/comments.dart';
+import 'package:promax/backend/modules/forward_sender.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/cache/message_session_cache.dart';
+import 'package:promax/core/protocol/packet.dart';
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/core/utils/haptics.dart';
+import 'package:promax/frontend/screens/chats/chat/chat_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/chat_text_send_controller.dart';
+import 'package:promax/frontend/widgets/rich_message_controller.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -145,7 +145,7 @@ void main() {
           },
     ]);
     database = await databaseFactory.openDatabase(
-      '${directory.path}${Platform.pathSeparator}komet.db',
+      '${directory.path}${Platform.pathSeparator}promax.db',
     );
     addTearDown(() async {
       await AppDatabase.close();

@@ -153,7 +153,7 @@ class CallSession {
 
   // #***! проба ты тоже комет, сейчас выключена
   RTCDataChannel? _probeChannel;
-  bool _peerIsKomet = false;
+  bool _peerIsProMax = false;
 
   // #***! каналы SFU, раскладка слоты и уровни
   final List<RTCDataChannel> _sfuChannels = [];
@@ -177,9 +177,9 @@ class CallSession {
     'producerNotification',
   ];
 
-  static const bool _kometProbeEnabled = false;
-  static const String _probeQuestion = 'AreYouKomet?';
-  static const String _probeAnswer = 'YesImKomet😎';
+  static const bool _proMaxProbeEnabled = false;
+  static const String _probeQuestion = 'AreYouProMax?';
+  static const String _probeAnswer = 'YesImProMax😎';
 
   // #***! чат и игра идут по тому же каналу
   final List<CallChatMessage> _chat = [];
@@ -252,7 +252,7 @@ class CallSession {
   final _state = StreamController<CallSessionState>.broadcast();
   final _remoteStream = StreamController<MediaStream>.broadcast();
   final _info = StreamController<void>.broadcast();
-  final _kometDetected = StreamController<void>.broadcast();
+  final _proMaxDetected = StreamController<void>.broadcast();
 
   Stream<CallSessionState> get stateStream => _state.stream;
   Stream<MediaStream> get remoteStreamStream => _remoteStream.stream;
@@ -260,8 +260,8 @@ class CallSession {
 
   Stream<void> get infoUpdates => _info.stream;
 
-  Stream<void> get peerKometDetected => _kometDetected.stream;
-  bool get peerIsKomet => _peerIsKomet;
+  Stream<void> get peerProMaxDetected => _proMaxDetected.stream;
+  bool get peerIsProMax => _peerIsProMax;
 
   bool get isMuted => _muted;
   bool get audioTransmitting => !_muted || CallNoMute.enabled;
@@ -884,7 +884,7 @@ class CallSession {
       init: RTCRtpTransceiverInit(direction: TransceiverDirection.RecvOnly),
     );
 
-    await _setupKometProbe(pc);
+    await _setupProMaxProbe(pc);
 
     if (_isDesktop) await _preferVp8Codecs(pc);
 
@@ -917,7 +917,7 @@ class CallSession {
     };
     pc.onTrack = (event) => unawaited(_onRemoteTrack(event));
     pc.onDataChannel = (channel) {
-      if (!_kometProbeEnabled) return;
+      if (!_proMaxProbeEnabled) return;
       _bindProbeChannel(channel, ask: false);
     };
     pc.onIceConnectionState = (s) {
@@ -1335,11 +1335,11 @@ class CallSession {
   }
 
   // #***! свой ли клиент на той стороне, от этого чат и игры
-  Future<void> _setupKometProbe(RTCPeerConnection pc) async {
-    if (!_kometProbeEnabled || _topology == 'SERVER') return;
+  Future<void> _setupProMaxProbe(RTCPeerConnection pc) async {
+    if (!_proMaxProbeEnabled || _topology == 'SERVER') return;
     try {
       final channel = await pc.createDataChannel(
-        'komet',
+        'promax',
         RTCDataChannelInit()..ordered = true,
       );
       _probeChannel = channel;
@@ -1379,7 +1379,7 @@ class CallSession {
     if (text == _probeQuestion) {
       _sendProbe(channel, _probeAnswer);
     } else if (text == _probeAnswer) {
-      _markPeerKomet();
+      _markPeerProMax();
     }
   }
 
@@ -1427,11 +1427,11 @@ class CallSession {
     if (!_chatController.isClosed) _chatController.add(message);
   }
 
-  void _markPeerKomet() {
-    if (_peerIsKomet) return;
-    _peerIsKomet = true;
-    logger.t('[call] peer is Komet');
-    if (!_kometDetected.isClosed) _kometDetected.add(null);
+  void _markPeerProMax() {
+    if (_peerIsProMax) return;
+    _peerIsProMax = true;
+    logger.t('[call] peer is ProMax');
+    if (!_proMaxDetected.isClosed) _proMaxDetected.add(null);
     _notifyInfo();
   }
 
@@ -1952,7 +1952,7 @@ class CallSession {
     if (id == null || id == ws2Config.userId) return;
     var stream = _participantStreams[id];
     if (stream == null) {
-      stream = await createLocalMediaStream('komet_p$id');
+      stream = await createLocalMediaStream('promax_p$id');
       _participantStreams[id] = stream;
     }
     if (stream.getTracks().any((t) => t.id == track.id)) return;
@@ -1968,7 +1968,7 @@ class CallSession {
   Future<void> _pushRemoteTrack(MediaStreamTrack track) async {
     var stream = _remoteStreamRef;
     if (stream == null) {
-      stream = await createLocalMediaStream('komet_remote');
+      stream = await createLocalMediaStream('promax_remote');
       _ownRemoteStream = true;
     }
     _remoteStreamRef = stream;
@@ -2501,7 +2501,7 @@ class CallSession {
     if (!_state.isClosed) await _state.close();
     if (!_remoteStream.isClosed) await _remoteStream.close();
     if (!_info.isClosed) await _info.close();
-    if (!_kometDetected.isClosed) await _kometDetected.close();
+    if (!_proMaxDetected.isClosed) await _proMaxDetected.close();
     if (!_chatController.isClosed) await _chatController.close();
     if (!_gameController.isClosed) await _gameController.close();
   }

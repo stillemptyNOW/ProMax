@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/attachment/photo_hero.dart';
+import 'package:promax/frontend/widgets/attachment/photo_hero.dart';
 
 const Rect _origin = Rect.fromLTWH(50, 500, 100, 100);
 

@@ -4,7 +4,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:komet_crypto/komet_crypto.dart';
+import 'package:promax_crypto/promax_crypto.dart';
 
 import '../../backend/modules/messages.dart';
 import '../storage/app_database.dart';
@@ -20,9 +20,9 @@ class E2eeAwaitingPeer implements Exception {
 }
 
 const String kE2eeOfferPrefix =
-    '🔐 Komet: запрос сквозного шифрования. Откройте этот чат в Komet, чтобы принять.';
-const String kE2eeAnswerPrefix = '🔐 Komet: сквозное шифрование включено.';
-const String kE2eeOfferDonePrefix = '🔐 Komet: запрос сквозного шифрования.';
+    '🔐 ProMax: запрос сквозного шифрования. Откройте этот чат в ProMax, чтобы принять.';
+const String kE2eeAnswerPrefix = '🔐 ProMax: сквозное шифрование включено.';
+const String kE2eeOfferDonePrefix = '🔐 ProMax: запрос сквозного шифрования.';
 
 @immutable
 class E2eeSessionInfo {
@@ -92,7 +92,7 @@ class E2eeService {
   final Map<int, Uint8List> _localKeys = {};
   MessagesModule? _messages;
 
-  bool get available => KometCrypto.isAvailable;
+  bool get available => ProMaxCrypto.isAvailable;
 
   void attach(MessagesModule messages) => _messages = messages;
 
@@ -195,21 +195,21 @@ class E2eeService {
     if (cached != null) return Uint8List.fromList(cached);
     final identity = await _secureBytes(
       'e2ee_identity_$accountId',
-      () => KometCrypto.identityCreate(),
+      () => ProMaxCrypto.identityCreate(),
     );
     _identities[accountId] = identity;
     return Uint8List.fromList(identity);
   }
 
   Future<Uint8List> identityPublic(int accountId) async =>
-      KometCrypto.identityPublicKey(await identity(accountId));
+      ProMaxCrypto.identityPublicKey(await identity(accountId));
 
   Future<Uint8List> _localKey(int accountId) async {
     final cached = _localKeys[accountId];
     if (cached != null) return Uint8List.fromList(cached);
     final key = await _secureBytes(
       'e2ee_local_$accountId',
-      () => KometCrypto.randomBytes(KometCryptoSizes.localKey),
+      () => ProMaxCrypto.randomBytes(ProMaxCryptoSizes.localKey),
     );
     _localKeys[accountId] = key;
     return Uint8List.fromList(key);
@@ -222,7 +222,7 @@ class E2eeService {
     int accountId,
     int chatId,
     Uint8List plaintext,
-  ) async => KometCrypto.localSeal(
+  ) async => ProMaxCrypto.localSeal(
     key: await _localKey(accountId),
     plaintext: plaintext,
     aad: _aad('text', accountId, chatId),
@@ -237,7 +237,7 @@ class E2eeService {
     Uint8List sealed,
   ) async {
     try {
-      return KometCrypto.localOpen(
+      return ProMaxCrypto.localOpen(
         key: await _localKey(accountId),
         blob: sealed,
         aad: _aad('text', accountId, chatId),
@@ -261,7 +261,7 @@ class E2eeService {
     final sealed = row?['state'];
     if (sealed is! Uint8List) return null;
     try {
-      final state = KometCrypto.localOpen(
+      final state = ProMaxCrypto.localOpen(
         key: await _localKey(accountId),
         blob: sealed,
         aad: _aad('session', accountId, chatId),
@@ -283,7 +283,7 @@ class E2eeService {
     final key = _key(accountId, chatId);
     Uint8List? sealed;
     if (state != null) {
-      sealed = KometCrypto.localSeal(
+      sealed = ProMaxCrypto.localSeal(
         key: await _localKey(accountId),
         plaintext: state,
         aad: _aad('session', accountId, chatId),
@@ -320,7 +320,7 @@ class E2eeService {
     final key = _key(accountId, chatId);
     final current = _info[key];
     final state = _states.remove(key);
-    if (state != null) KometCrypto.wipe(state);
+    if (state != null) ProMaxCrypto.wipe(state);
     if (current?.peerPublic == null) {
       await AppDatabase.deleteE2eeSession(accountId, chatId);
       _info.remove(key);
@@ -357,7 +357,7 @@ class E2eeService {
     if (messages == null || !available) return false;
     await ensureLoaded(accountId);
     try {
-      final offer = KometCrypto.sessionOffer(
+      final offer = ProMaxCrypto.sessionOffer(
         identity: await identity(accountId),
         chatId: chatId,
         myId: accountId,
@@ -402,7 +402,7 @@ class E2eeService {
       final hadSession =
           current.phase == E2eePhase.established ||
           current.phase == E2eePhase.keyChanged;
-      final answer = KometCrypto.sessionAnswer(
+      final answer = ProMaxCrypto.sessionAnswer(
         identity: await identity(accountId),
         chatId: chatId,
         myId: accountId,
@@ -416,7 +416,7 @@ class E2eeService {
         '$kE2eeAnswerPrefix\n${answer.text}',
       );
       if (messageId.isEmpty) return false;
-      final peek = KometCrypto.handshakePeek(offerText);
+      final peek = ProMaxCrypto.handshakePeek(offerText);
       await _persist(
         accountId,
         chatId,
@@ -476,8 +476,8 @@ class E2eeService {
     final known = current?.peerPublic;
     if (offer == null || known == null) return true;
     try {
-      return !listEquals(KometCrypto.handshakePeek(offer).publicKey, known);
-    } on KometCryptoException {
+      return !listEquals(ProMaxCrypto.handshakePeek(offer).publicKey, known);
+    } on ProMaxCryptoException {
       return true;
     }
   }
@@ -487,7 +487,7 @@ class E2eeService {
     final peerPublic = current?.peerPublic;
     if (current == null || peerPublic == null) return null;
     try {
-      return KometCrypto.fingerprint(
+      return ProMaxCrypto.fingerprint(
         myId: accountId,
         myPublic: await identityPublic(accountId),
         peerId: current.peerId,
@@ -519,14 +519,14 @@ class E2eeService {
     final state = await _state(accountId, chatId);
     if (state == null) return null;
     try {
-      final result = KometCrypto.sessionEncrypt(
+      final result = ProMaxCrypto.sessionEncrypt(
         state: state,
         contentType: contentType,
         plaintext: plaintext,
       );
       await _persist(accountId, chatId, current, state: result.state);
       return result.text;
-    } on KometCryptoException catch (e) {
+    } on ProMaxCryptoException catch (e) {
       logger.w('e2ee encrypt: ${e.status.name_}');
       if (e.status == CryptoStatus.awaitingPeer) {
         throw const E2eeAwaitingPeer();
@@ -536,7 +536,7 @@ class E2eeService {
   });
 
   bool fitsTransport(int plaintextBytes) =>
-      plaintextBytes <= KometCryptoSizes.sessionPlaintextMax;
+      plaintextBytes <= ProMaxCryptoSizes.sessionPlaintextMax;
 
   // #***! входящее: хендшейки двигают фазу, шифртекст расшифровывается один раз
   Future<CachedMessage> inspect(
@@ -549,7 +549,7 @@ class E2eeService {
       return message;
     }
     await ensureLoaded(message.accountId);
-    switch (KometCrypto.classifyText(text)) {
+    switch (ProMaxCrypto.classifyText(text)) {
       case TextClass.offer:
         await _serial(
           _key(message.accountId, message.chatId),
@@ -594,8 +594,8 @@ class E2eeService {
     if (!await _isDialog(accountId, chatId)) return;
     final HandshakePeek peek;
     try {
-      peek = KometCrypto.handshakePeek(text);
-    } on KometCryptoException {
+      peek = ProMaxCrypto.handshakePeek(text);
+    } on ProMaxCryptoException {
       return;
     }
     final current = info(accountId, chatId);
@@ -660,9 +660,9 @@ class E2eeService {
     if (current.peerId != message.senderId) return;
     final pending = await _state(accountId, chatId);
     if (pending == null) return;
-    final peek = KometCrypto.handshakePeek(text);
+    final peek = ProMaxCrypto.handshakePeek(text);
     try {
-      final state = KometCrypto.sessionAccept(
+      final state = ProMaxCrypto.sessionAccept(
         identity: await identity(accountId),
         pending: pending,
         answerText: text,
@@ -689,7 +689,7 @@ class E2eeService {
               .catchError((_) => false),
         );
       }
-    } on KometCryptoException catch (e) {
+    } on ProMaxCryptoException catch (e) {
       logger.w('e2ee accept: ${e.status.name_}');
       // #***! ответил не тот, кого мы знали: спрашиваем пользователя, а не молча меняем пира
       if (e.status == CryptoStatus.badPeer) {
@@ -740,7 +740,7 @@ class E2eeService {
     final state = await _state(accountId, chatId);
     if (state == null) return message;
     try {
-      final result = KometCrypto.sessionDecrypt(state: state, text: text);
+      final result = ProMaxCrypto.sessionDecrypt(state: state, text: text);
       final decrypted = switch (result.contentType) {
         ContentType.text => message.copyWith(
           sealedText: await sealBytes(accountId, chatId, result.plaintext),
@@ -756,7 +756,7 @@ class E2eeService {
       if (commit != null) await commit(decrypted);
       await _persist(accountId, chatId, current, state: result.state);
       return decrypted;
-    } on KometCryptoException catch (e) {
+    } on ProMaxCryptoException catch (e) {
       if (preserveLegacyFailure) return message;
       switch (e.status) {
         case CryptoStatus.notEncrypted:
@@ -800,7 +800,7 @@ class E2eeService {
         final text = message.text;
         final textClass = text == null
             ? TextClass.none
-            : KometCrypto.classifyText(text);
+            : ProMaxCrypto.classifyText(text);
         if (textClass != TextClass.session && textClass != TextClass.legacy) {
           result[message.id] = message;
           continue;
@@ -839,7 +839,7 @@ class E2eeService {
       await _serial(_key(accountId, chatId), () async {
         final current = info(accountId, chatId);
         final state = _states.remove(_key(accountId, chatId));
-        if (state != null) KometCrypto.wipe(state);
+        if (state != null) ProMaxCrypto.wipe(state);
         if (current == null) return;
         await _persist(
           accountId,
@@ -854,9 +854,9 @@ class E2eeService {
       });
     }
     final previous = _identities.remove(accountId);
-    if (previous != null) KometCrypto.wipe(previous);
+    if (previous != null) ProMaxCrypto.wipe(previous);
     try {
-      final identity = KometCrypto.identityCreate();
+      final identity = ProMaxCrypto.identityCreate();
       await TokenStorage.writeSecure(
         'e2ee_identity_$accountId',
         base64Encode(identity),
@@ -864,7 +864,7 @@ class E2eeService {
       _identities[accountId] = identity;
       revision.value++;
       return true;
-    } on KometCryptoException catch (e) {
+    } on ProMaxCryptoException catch (e) {
       logger.w('e2ee rotate identity: ${e.status.name_}');
       return false;
     }
@@ -873,15 +873,15 @@ class E2eeService {
   // #***! ушли в фон или сменили аккаунт, секреты из памяти вон
   void lock() {
     for (final state in _states.values) {
-      KometCrypto.wipe(state);
+      ProMaxCrypto.wipe(state);
     }
     _states.clear();
     for (final identity in _identities.values) {
-      KometCrypto.wipe(identity);
+      ProMaxCrypto.wipe(identity);
     }
     _identities.clear();
     for (final key in _localKeys.values) {
-      KometCrypto.wipe(key);
+      ProMaxCrypto.wipe(key);
     }
     _localKeys.clear();
   }
@@ -941,18 +941,18 @@ class E2eeService {
     final Uint8List blob;
     final payload = container.toBytes();
     final secret = Uint8List.fromList(utf8.encode(password));
-    final library = KometCrypto.libraryPath;
+    final library = ProMaxCrypto.libraryPath;
     try {
       blob = await Isolate.run(() {
-        KometCrypto.libraryPath = library;
-        return KometCrypto.exportSeal(
+        ProMaxCrypto.libraryPath = library;
+        return ProMaxCrypto.exportSeal(
           password: secret,
           memoryKib: _exportMemoryKib,
           passes: _exportPasses,
           container: payload,
         );
       });
-    } on KometCryptoException catch (e) {
+    } on ProMaxCryptoException catch (e) {
       logger.w('e2ee export: ${e.status.name_}');
       return null;
     }
@@ -970,13 +970,13 @@ class E2eeService {
   ) async {
     final Uint8List container;
     final secret = Uint8List.fromList(utf8.encode(password));
-    final library = KometCrypto.libraryPath;
+    final library = ProMaxCrypto.libraryPath;
     try {
       container = await Isolate.run(() {
-        KometCrypto.libraryPath = library;
-        return KometCrypto.exportOpen(password: secret, blob: blob);
+        ProMaxCrypto.libraryPath = library;
+        return ProMaxCrypto.exportOpen(password: secret, blob: blob);
       });
-    } on KometCryptoException catch (e) {
+    } on ProMaxCryptoException catch (e) {
       logger.w('e2ee import: ${e.status.name_}');
       return null;
     }
@@ -990,7 +990,7 @@ class E2eeService {
       items.add(Uint8List.sublistView(container, offset, offset + length));
       offset += length;
     }
-    if (items.isEmpty || items.first.length != KometCryptoSizes.identity) {
+    if (items.isEmpty || items.first.length != ProMaxCryptoSizes.identity) {
       return null;
     }
     lock();

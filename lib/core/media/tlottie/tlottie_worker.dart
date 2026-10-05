@@ -3,7 +3,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:komet_tlottie/komet_tlottie.dart';
+import 'package:promax_tlottie/promax_tlottie.dart';
 
 // #***! задание воркеру
 class RenderJob {

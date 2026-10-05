@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/core/config/proxy_config.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/core/config/proxy_config.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 import '../../../main.dart';
 import '../../widgets/custom_notification.dart';

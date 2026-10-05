@@ -151,7 +151,7 @@ class VideoNoteController {
     try {
       final path = await AppLock.instance.external(() async => Platform.isIOS
           ? await const MethodChannel(
-              'ru.komet.app/video',
+              'io.github.stillemptynow.promax/video',
             ).invokeMethod<String>('pickGalleryVideo')
           : (await ImagePicker().pickVideo(source: ImageSource.gallery))?.path);
       if (path == null) return;

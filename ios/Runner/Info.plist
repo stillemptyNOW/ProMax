@@ -18,11 +18,38 @@
 	<dict>
 		<key>CFBundleAlternateIcons</key>
 		<dict>
-			<key>MinimalIcon</key>
+			<key>IconLight</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
 				<array>
-					<string>MinimalIcon</string>
+					<string>IconLight</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>IconAurora</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>IconAurora</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>IconSunset</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>IconSunset</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>IconGlass</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>IconGlass</string>
 				</array>
 				<key>UIPrerenderedIcon</key>
 				<false/>

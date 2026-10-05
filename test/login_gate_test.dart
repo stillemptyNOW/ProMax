@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/login_gate.dart';
+import 'package:promax/backend/login_gate.dart';
 
 const _timeout = Duration(seconds: 1);
 

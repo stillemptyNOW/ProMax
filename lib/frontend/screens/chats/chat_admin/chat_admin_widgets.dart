@@ -6,7 +6,7 @@ import '../../../../backend/modules/messages.dart' show ContactCache;
 import '../../../../core/config/app_fonts.dart';
 import '../../../../core/utils/format.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../widgets/komet_avatar.dart';
+import '../../../widgets/promax_avatar.dart';
 import '../../../widgets/small_spinner.dart';
 
 class AdminScaffold extends StatelessWidget {
@@ -108,7 +108,7 @@ class AdminMemberTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Row(
           children: [
-            KometAvatar(
+            ProMaxAvatar(
               name: title,
               imageUrl: avatarUrl ?? ContactCache.getAvatar(id),
               size: 42,

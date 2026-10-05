@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/widgets/composer_morph_icon.dart';
-import 'package:komet/frontend/widgets/glossy_pill.dart';
+import 'package:promax/frontend/widgets/composer_morph_icon.dart';
+import 'package:promax/frontend/widgets/glossy_pill.dart';
 import 'package:lottie/lottie.dart';
 import 'package:material_symbols_icons/symbols.dart';
 

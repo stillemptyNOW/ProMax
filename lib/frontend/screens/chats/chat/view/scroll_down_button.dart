@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:komet/core/config/app_frost.dart';
-import 'package:komet/frontend/widgets/animated_text_swap.dart';
-import 'package:komet/frontend/widgets/glossy_pill.dart';
-import 'package:komet/frontend/widgets/toast_placement.dart';
+import 'package:promax/core/config/app_frost.dart';
+import 'package:promax/frontend/widgets/animated_text_swap.dart';
+import 'package:promax/frontend/widgets/glossy_pill.dart';
+import 'package:promax/frontend/widgets/toast_placement.dart';
 import '../../../../../core/config/ios_release.dart';
 
 class ScrollDownButton extends StatelessWidget {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/screens/profile/avatar_carousel.dart';
+import 'package:promax/frontend/screens/profile/avatar_carousel.dart';
 
 void main() {
   const historyUrls = ['https://example.test/new', 'https://example.test/old'];

@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/cache/message_session_cache.dart';
-import 'package:komet/frontend/screens/chats/chat_admin/chat_admin_state.dart';
-import 'package:komet/models/chat_info.dart';
-import 'package:komet/models/chat_restriction.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/cache/message_session_cache.dart';
+import 'package:promax/frontend/screens/chats/chat_admin/chat_admin_state.dart';
+import 'package:promax/models/chat_info.dart';
+import 'package:promax/models/chat_restriction.dart';
 
 CachedMessage _message(String id, int time) => CachedMessage(
   id: id,

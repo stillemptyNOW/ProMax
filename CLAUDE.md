@@ -4,20 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Komet is a cross-platform Flutter messaging client (Android, iOS, macOS, Windows, Linux, Web) that communicates via a custom packet-based protocol with MessagePack serialization and Zstd compression.
+ProMax is a cross-platform Flutter messaging client (Android, iOS, macOS, Windows, Linux, Web) that communicates via a custom packet-based protocol with MessagePack serialization and Zstd compression.
 
 ## Commands
 
 ```bash
 flutter pub get          # install dependencies
 flutter analyze lib test tool  # lint / static analysis (what CI runs)
-flutter run              # run on connected device (default: komet flavor)
+flutter run              # run on connected device (default: promax flavor)
 flutter run --flavor oneme -t lib/main.dart  # run oneme flavor (FCM)
 
 # Android builds (release builds use obfuscation; keep symbols to de-obfuscate crashes)
-flutter build apk --release --flavor komet --obfuscate --split-debug-info=build/symbols
-flutter build apk --release --split-per-abi --flavor komet --obfuscate --split-debug-info=build/symbols
-flutter build appbundle --release --flavor komet --obfuscate --split-debug-info=build/symbols
+flutter build apk --release --flavor promax --obfuscate --split-debug-info=build/symbols
+flutter build apk --release --split-per-abi --flavor promax --obfuscate --split-debug-info=build/symbols
+flutter build appbundle --release --flavor promax --obfuscate --split-debug-info=build/symbols
 
 # Other platforms
 flutter build ios --release --no-codesign
@@ -34,20 +34,16 @@ Note that `flutter analyze` treats **info**-level lints as fatal by default, so 
 
 ## Message encryption core
 
-`komet_crypto` is a `dart:ffi` plugin over a C core. `KometTeam/crypto-core` is a **git
-submodule** at `native/crypto-core`, and the plugin is a path dependency inside it, so the
-version is pinned by the submodule commit. After cloning: `git submodule update --init --recursive`.
-Every CI workflow already checks out with `submodules: recursive`.
-
-The C core is the single implementation shared with Komet-Android (which points at a checkout via
-`komet.crypto.dir`) — protocol and byte formats live in that repo's `docs/PROTOCOL.md`, never
-reimplement them in Dart. Its own suite (`make test`, `make asan`) must pass before bumping the
-submodule here.
+`promax_crypto` is a `dart:ffi` plugin over the C core vendored in `native/promax_crypto`
+(no submodule). The plugin lives in `native/promax_crypto/flutter/promax_crypto` and compiles
+the core sources directly. Protocol and byte formats are specified in
+`native/promax_crypto/docs/PROTOCOL.md` — never reimplement them in Dart. The core's own suite
+(`make -C native/promax_crypto test`, `make asan`) must pass after every change to it; CI runs it.
 
 ## Sticker renderer
 
 Animated stickers, animoji and reactions are rendered by [tlottie](https://github.com/dkaraush/tlottie)
-(Rust) through the local FFI plugin `native/komet_tlottie`. Its wrapper crate pins tlottie by an
+(Rust) through the local FFI plugin `native/promax_tlottie`. Its wrapper crate pins tlottie by an
 exact git `rev`, and the vendored cargokit compiles it during the Flutter build with the same
 toolchain as `kolibri`; bump it by changing the `rev` and running `cargo update -p tlottie`.
 `lib/core/media/tlottie/` renders frames in a pool of worker isolates and caches them in RAM and
@@ -57,46 +53,19 @@ on disk. Web has no native path and falls back to the pure-Dart `lottie` package
 
 | Flavor  | App ID         | Notes                               |
 |---------|----------------|-------------------------------------|
-| `komet` | `ru.komet.app` | Default, no FCM                     |
+| `promax` | `io.github.stillemptynow.promax` | Default, no FCM                     |
 | `oneme` | `ru.oneme.app` | FCM push notifications via Firebase |
-| `store` | `pw.komet.app` | Google Play build, trimmed by `BuildProfile` |
+| `store` | `io.github.stillemptynow.promax.play` | Google Play build, trimmed by `BuildProfile` |
 
-Flavor-specific Android resources live in `android/app/src/komet/`, `android/app/src/oneme/`
+Flavor-specific Android resources live in `android/app/src/promax/`, `android/app/src/oneme/`
 and `android/app/src/store/`.
 
-The store build carries its own application id — `pw.komet.app`, the same identifier as the iOS
-bundle — because `ru.komet.app` has already shipped outside Play. The Kotlin sources keep the
-`ru.komet.app` namespace: component names in the manifest are absolute, and `MainActivity` derives
+The store build carries its own application id — `io.github.stillemptynow.promax.play`, the same identifier as the iOS
+bundle — because `io.github.stillemptynow.promax` has already shipped outside Play. The Kotlin sources keep the
+`io.github.stillemptynow.promax` namespace: component names in the manifest are absolute, and `MainActivity` derives
 the launcher-alias package from its own class name, so the icon switch survives the rename.
 `android/app/src/store/google-services.json` must repeat the same id or the Google Services plugin
 fails the build.
-
-## Review account
-
-Google Play reviewers cannot receive an SMS from the MAX server, so the store build ships one
-account they can open with an ordinary phone-and-code login. `ReviewAccess`
-(`lib/core/config/review_access.dart`) holds two `--dart-define`s: `KOMET_REVIEW_PHONE`, the demo
-number, and `KOMET_REVIEW_PAYLOAD`, a session token encrypted with the app's own crypto core
-(Argon2id + ChaCha20-Poly1305). The key is derived from `<digits of the phone>:<code>`, so the
-payload in the APK is worthless without the pair handed to the reviewer, and neither define is
-committed — `build-android-play.yml` reads them from the `KOMET_REVIEW_PHONE` and
-`KOMET_REVIEW_PAYLOAD` secrets. Without both defines `ReviewAccess.enabled` is false and the login
-screen behaves exactly as before.
-
-Entering the demo number skips `requestCode` and opens `CodeConfirmationScreen.review`, which
-decrypts the payload with the typed code and signs in through `accountModule.loginWithToken`. The
-payload is JSON: `{"token": "…"}`, plus an optional `"spoof"` object in `SpoofProfile.toJson()`
-shape when the token has to be replayed with the device parameters it was issued for.
-
-Regenerate the payload with the core's own cipher, so the format can never drift:
-
-```bash
-make -C native/crypto-core shared
-printf '{"token":"…"}' | dart run tool/review_blob.dart '+7 999 999 99 99' '123456'
-```
-
-The tool derives the key exactly as `ReviewAccess` does and prints one space-free Cyrillic blob —
-that string is the secret's value.
 
 ## Architecture
 
@@ -180,28 +149,11 @@ A slash spec takes the plain and slashed codepoints; the generator lays both gly
 
 ## App icons
 
-Two launcher icons ship: the default comet and the `Minimal` meteor, switched at
-runtime by `AppIconConfig` (Android activity-alias, iOS alternate icon). Every
-launcher resource is *derived* from `assets/komet.png` / `assets/meteor.png` by a
-script in `tool/`, so the source art lives in exactly one place:
-
-| Script                                                                               | Produces                                                                    |
-|--------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| `make_icon_bg.dart`                                                                  | `*_icon.png` — the same art flattened on black                              |
-| `make_minimal_android.dart` / `make_minimal_adaptive.dart` / `make_minimal_ios.dart` | the `Minimal` launcher + adaptive layers                                    |
-| `make_monochrome_android.dart`                                                       | `ic_launcher[_minimal]_monochrome.png` — alpha silhouettes for themed icons |
-| `make_appearances_ios.dart`                                                          | `Icon-App-{Dark,Tinted}-1024x1024@1x.png` + their `Contents.json` entries   |
-
-**Themed icons.** Both adaptive icons carry a `<monochrome>` layer, so Android 13+
-launchers with *Themed icons* enabled recolour the icon from the wallpaper. The
-layer is only the alpha channel of the artwork filled black — the system supplies
-both colours, and the same 16% inset as the foreground keeps it aligned with the
-normal icon. The iOS 18 counterpart is the dark/tinted appearance pair on the
-primary `AppIcon`; alternate icons cannot carry appearance variants.
-
-`flutter_launcher_icons` (configured in `pubspec.yaml`) only generates the default
-icon and rewrites `mipmap-anydpi-v26/*.xml` without the insets or the monochrome
-layer, so re-run the `tool/` scripts and restore those XMLs after invoking it.
+The primary icon and four iOS alternate icons (`Light`, `Aurora`, `Sunset`, `Glass`) are all
+generated by `python tool/make_promax_icons.py` from `design/promax-logo-source.png`. It writes
+the transparent mark `assets/promax.png`, the flattened `assets/promax_icon.png`, previews in
+`assets/icons/`, `ios/Runner/Icon<Name>@{2,3}x.png` and the primary `AppIcon.appiconset`.
+`AppIconConfig` switches them at runtime; Android only ships the primary icon.
 
 ## Localization
 
@@ -211,7 +163,7 @@ Generated code is in `lib/l10n/` (produced by `flutter gen-l10n` via `l10n.yaml`
 ## CI/CD
 
 `.github/workflows/promax-ios.yml` verifies the app and builds an unsigned iOS IPA.
-Pushing a `v*` tag also publishes the IPA and `.kinet` tools package as a public
+Pushing a `v*` tag also publishes the IPA and `.pmx` tools package as a public
 GitHub Release. The in-app updater reads the latest release metadata from the
 public ProMax repository and verifies downloaded files by their published size
 and SHA-256 digest. iOS sends the IPA to the share sheet so the user can import it

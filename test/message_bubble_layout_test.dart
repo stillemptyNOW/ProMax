@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/config/komet_settings.dart';
-import 'package:komet/frontend/widgets/attachment/bubbles/bubble_context.dart';
-import 'package:komet/frontend/widgets/attachment/bubbles/photo_bubble.dart';
-import 'package:komet/frontend/widgets/message_bubble.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/models/attachment.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/config/promax_settings.dart';
+import 'package:promax/frontend/widgets/attachment/bubbles/bubble_context.dart';
+import 'package:promax/frontend/widgets/attachment/bubbles/photo_bubble.dart';
+import 'package:promax/frontend/widgets/message_bubble.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/models/attachment.dart';
 
 const int _me = 1;
 const int _peer = 7;
@@ -328,8 +328,8 @@ void main() {
   testWidgets('часы с секундами ни на какой длине не наезжают на текст', (
     tester,
   ) async {
-    KometSettings.fullTimestamp.value = true;
-    addTearDown(() => KometSettings.fullTimestamp.value = false);
+    ProMaxSettings.fullTimestamp.value = true;
+    addTearDown(() => ProMaxSettings.fullTimestamp.value = false);
 
     for (var n = 8; n <= 44; n++) {
       await _pumpBubble(

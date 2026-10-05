@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/config/app_icon.dart';
+import 'package:promax/core/config/app_icon.dart';
 
 Set<String> _iosAlternateIcons() {
   final plist = File('ios/Runner/Info.plist').readAsStringSync();
@@ -38,13 +38,13 @@ Set<String> _androidComponents() {
     'android/app/src/main/AndroidManifest.xml',
   ).readAsStringSync();
   return RegExp(
-    r'android:name="ru\.komet\.app\.(\w+)"',
+    r'android:name="io\.github\.stillemptynow\.promax\.(\w+)"',
   ).allMatches(manifest).map((m) => m.group(1)!).toSet();
 }
 
 Set<String> _androidIconKeys() {
   final source = File(
-    'android/app/src/main/kotlin/ru/komet/app/MainActivity.kt',
+    'android/app/src/main/kotlin/io/github/stillemptynow/promax/MainActivity.kt',
   ).readAsStringSync();
   final start = source.indexOf('iconComponents = mapOf(');
   expect(start, isNonNegative, reason: 'в MainActivity нет карты иконок');
@@ -77,7 +77,7 @@ void main() {
   test('каждый android alias объявлен в манифесте и в MainActivity', () {
     final components = _androidComponents();
     final keys = _androidIconKeys();
-    for (final icon in AppIcon.values) {
+    for (final icon in AppIcon.forPlatform(ios: false)) {
       expect(
         components,
         contains(icon.androidAlias),
@@ -90,7 +90,15 @@ void main() {
   test('имена иконок не пересекаются между платформами по смыслу', () {
     final ids = AppIcon.values.map((i) => i.id).toSet();
     expect(ids.length, AppIcon.values.length);
-    final aliases = AppIcon.values.map((i) => i.androidAlias).toSet();
-    expect(aliases.length, AppIcon.values.length);
+    final aliases = AppIcon.values
+        .map((i) => i.androidAlias)
+        .whereType<String>()
+        .toList();
+    expect(aliases.toSet().length, aliases.length);
+    final iosNames = AppIcon.values
+        .map((i) => i.iosAlternateName)
+        .whereType<String>()
+        .toList();
+    expect(iosNames.toSet().length, iosNames.length);
   });
 }

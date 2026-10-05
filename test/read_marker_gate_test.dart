@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/screens/chats/chat/read_marker_gate.dart';
+import 'package:promax/frontend/screens/chats/chat/read_marker_gate.dart';
 
 void main() {
   group('ReadMarkerGate', () {

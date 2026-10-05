@@ -1,7 +1,7 @@
 import java.util.Properties
 import java.io.FileInputStream
 
-val debugAbi = providers.gradleProperty("komet.debugAbi").get()
+val debugAbi = providers.gradleProperty("promax.debugAbi").get()
 
 plugins {
     id("com.android.application")
@@ -19,7 +19,7 @@ if (hasReleaseSigning) {
 }
 
 android {
-    namespace = "ru.komet.app"
+    namespace = "io.github.stillemptynow.promax"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -34,7 +34,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "ru.komet.app"
+        applicationId = "io.github.stillemptynow.promax"
         minSdk = maxOf(flutter.minSdkVersion, 23)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -44,10 +44,10 @@ android {
     flavorDimensions += "distribution"
 
     productFlavors {
-        create("komet") {
+        create("promax") {
             dimension = "distribution"
             isDefault = true
-            applicationId = "ru.komet.app"
+            applicationId = "io.github.stillemptynow.promax"
         }
         create("oneme") {
             dimension = "distribution"
@@ -55,7 +55,7 @@ android {
         }
         create("store") {
             dimension = "distribution"
-            applicationId = "pw.komet.app"
+            applicationId = "io.github.stillemptynow.promax.play"
         }
     }
 

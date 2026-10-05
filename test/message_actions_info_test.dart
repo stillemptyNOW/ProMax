@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:komet/core/config/app_message_actions_style.dart';
-import 'package:komet/frontend/widgets/message_actions_overlay.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/core/config/app_message_actions_style.dart';
+import 'package:promax/frontend/widgets/message_actions_overlay.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 const List<({String label, String value})> _rows = [
   (label: 'id', value: '117241017304569410'),

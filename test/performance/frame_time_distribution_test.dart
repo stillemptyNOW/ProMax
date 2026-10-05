@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/debug/performance_monitor.dart';
+import 'package:promax/frontend/debug/performance_monitor.dart';
 
 void main() {
   test('reports tail latency instead of hiding it in an average', () {

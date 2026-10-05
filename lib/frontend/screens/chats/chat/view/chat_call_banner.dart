@@ -1,12 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
-import 'package:komet/backend/modules/messages.dart' show ContactCache;
-import 'package:komet/core/config/app_frost.dart';
-import 'package:komet/frontend/widgets/liquid_glass.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/main.dart' show messagesModule;
-import 'package:komet/models/chat_call.dart';
+import 'package:promax/backend/modules/messages.dart' show ContactCache;
+import 'package:promax/core/config/app_frost.dart';
+import 'package:promax/frontend/widgets/liquid_glass.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/main.dart' show messagesModule;
+import 'package:promax/models/chat_call.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class ChatCallBanner extends StatelessWidget {

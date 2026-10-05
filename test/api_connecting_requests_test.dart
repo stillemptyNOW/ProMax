@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/api.dart';
-import 'package:komet/core/protocol/opcode_map.dart';
+import 'package:promax/backend/api.dart';
+import 'package:promax/core/protocol/opcode_map.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<Object?> _failureOf(Future<Object?> request) async {

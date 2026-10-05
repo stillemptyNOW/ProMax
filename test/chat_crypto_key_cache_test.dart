@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/crypto/chat_crypto_key_cache.dart';
+import 'package:promax/core/crypto/chat_crypto_key_cache.dart';
 
 void _wipe(Uint8List key) => key.fillRange(0, key.length, 0);
 

@@ -486,7 +486,7 @@ class DebugSessionLog {
     if (totalEntries == 0 && totalLogs == 0) return null;
 
     final info = StringBuffer();
-    info.writeln('Komet — отладочный лог');
+    info.writeln('ProMax — отладочный лог');
     if (endpoint != null) info.writeln('Сервер: $endpoint');
     info.writeln('Экспортирован: ${DateTime.now().toIso8601String()}');
     info.writeln('Период: последние ${_retention.inHours} часа');

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/config/komet_settings.dart';
+import '../../../core/config/promax_settings.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart' show animojiModule;
 import '../../widgets/error_view.dart';
@@ -37,7 +37,7 @@ class _QuickReactionScreenState extends State<QuickReactionScreen> {
             );
           }
           return ValueListenableBuilder<String>(
-            valueListenable: KometSettings.quickReaction,
+            valueListenable: ProMaxSettings.quickReaction,
             builder: (context, selected, _) => GridView.builder(
               padding: const EdgeInsets.all(20),
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -54,7 +54,7 @@ class _QuickReactionScreenState extends State<QuickReactionScreen> {
                   label: emoji,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(20),
-                    onTap: () => KometSettings.setQuickReaction(emoji),
+                    onTap: () => ProMaxSettings.setQuickReaction(emoji),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
                       alignment: Alignment.center,

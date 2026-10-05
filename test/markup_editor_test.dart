@@ -6,15 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:komet/frontend/widgets/attachment/photo_editor.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/frontend/widgets/attachment/photo_editor.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 void main() {
   late Directory tmp;
   late File source;
 
   setUpAll(() async {
-    tmp = Directory.systemTemp.createTempSync('komet_markup_test');
+    tmp = Directory.systemTemp.createTempSync('promax_markup_test');
     final recorder = ui.PictureRecorder();
     Canvas(recorder).drawRect(
       const Rect.fromLTWH(0, 0, 8, 8),

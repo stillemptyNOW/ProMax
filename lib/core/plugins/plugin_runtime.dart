@@ -49,7 +49,7 @@ class PluginRuntime {
             _bridge(plugin, host, storage, sentMessageIds, value),
       );
       await engine.declareNewModule(
-        module: JsModule.code(module: 'komet:api', code: _apiModule),
+        module: JsModule.code(module: 'promax:api', code: _apiModule),
       );
       final sources = await plugin.loadModules();
       final prefix = 'plugin:${plugin.manifest.id}/';
@@ -457,7 +457,7 @@ class PluginRuntime {
   static const String _apiModule = '''
 const call = async (method, args = []) => {
   const response = await fjs.bridge_call({ method, args });
-  if (!response.ok) throw new Error(response.error || 'Komet API error');
+  if (!response.ok) throw new Error(response.error || 'ProMax API error');
   return response.value;
 };
 export const chat = Object.freeze({

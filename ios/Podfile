@@ -7,7 +7,7 @@ ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 require 'json'
 
 # Firebase is Android-only: FCM is used solely by the `oneme` flavor, and on
-# iOS there is a single `ru.komet.app` bundle that never initialises push.
+# iOS there is a single `io.github.stillemptynow.promax` bundle that never initialises push.
 # Keep the Firebase SDK out of the iOS build entirely so iOS is not forced up
 # to the iOS 15 deployment target that firebase_core's podspec requires.
 FIREBASE_IOS_PLUGINS = %w[firebase_core firebase_messaging].freeze
@@ -78,7 +78,7 @@ end
 # xcframeworks into the pod target's own build dir, so for Runner that variable
 # expands to a file nothing ever produces and Xcode fails on the missing input.
 OPUS_XCFRAMEWORK = 'ogg_opus_player/darwin/Frameworks/libopus.xcframework'.freeze
-OPUS_LIB_VAR = 'KOMET_OPUS_LIB'.freeze
+OPUS_LIB_VAR = 'PROMAX_OPUS_LIB'.freeze
 OPUS_FORCE_LOAD = %(-force_load "$(#{OPUS_LIB_VAR})").freeze
 OPUS_XCFRAMEWORK_DIR =
   File.expand_path(File.join('.symlinks', 'plugins', OPUS_XCFRAMEWORK), __dir__).freeze

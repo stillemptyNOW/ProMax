@@ -59,7 +59,7 @@ Future<List<PastedAttachment>> materializeClipboardMedia(
 Future<PastedAttachment?> storePastedImage(ClipboardImageData image) async {
   try {
     final dir = Directory(
-      '${(await getTemporaryDirectory()).path}/komet_paste',
+      '${(await getTemporaryDirectory()).path}/promax_paste',
     );
     await dir.create(recursive: true);
     await _prune(dir);

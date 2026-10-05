@@ -1,11 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/frontend/widgets/formatted_message_text.dart';
-import 'package:komet/frontend/widgets/message_bubble.dart';
-import 'package:komet/frontend/widgets/text_entity_actions.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/frontend/widgets/formatted_message_text.dart';
+import 'package:promax/frontend/widgets/message_bubble.dart';
+import 'package:promax/frontend/widgets/text_entity_actions.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 const String _sample = '+70001234567 тест 2200123456789019 @ExampleBot';
 

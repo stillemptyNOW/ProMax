@@ -14,7 +14,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../main.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/custom_notification.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
 
@@ -463,7 +463,7 @@ class _FolderEditSheetState extends State<_FolderEditSheet> {
             for (final chat in visibleChats)
               _buildRow(
                 cs,
-                leading: KometAvatar(
+                leading: ProMaxAvatar(
                   name: _chatTitle(chat),
                   size: 40,
                   imageUrl: _chatAvatar(chat),

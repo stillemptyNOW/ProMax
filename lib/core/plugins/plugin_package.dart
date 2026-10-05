@@ -34,7 +34,7 @@ class PluginPackage {
 
   static PluginPackage decode(List<int> bytes) {
     if (bytes.isEmpty || bytes.length > _maxPackageBytes) {
-      throw const FormatException('Некорректный размер .kinet');
+      throw const FormatException('Некорректный размер .pmx');
     }
     final archive = ZipDecoder().decodeBytes(bytes, verify: true);
     if (archive.isEmpty || archive.length > _maxFiles) {

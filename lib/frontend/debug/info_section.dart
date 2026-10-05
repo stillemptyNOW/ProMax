@@ -42,7 +42,7 @@ class _DebugInfoSectionState extends State<DebugInfoSection> {
       userId: profile == null ? '—' : '${profile.id}',
       deviceId: api.deviceId ?? deviceId,
       instanceId: instanceId,
-      flavor: appFlavor ?? 'komet',
+      flavor: appFlavor ?? 'promax',
     );
   }
 

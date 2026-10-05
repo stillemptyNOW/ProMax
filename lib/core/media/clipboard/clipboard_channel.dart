@@ -6,7 +6,7 @@ import 'raw_clipboard_media.dart';
 class ClipboardChannel {
   const ClipboardChannel._();
 
-  static const MethodChannel _channel = MethodChannel('ru.komet.app/clipboard');
+  static const MethodChannel _channel = MethodChannel('io.github.stillemptynow.promax/clipboard');
 
   static Future<bool> hasMedia() async {
     try {

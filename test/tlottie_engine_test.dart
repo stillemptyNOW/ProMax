@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/core/media/tlottie/tlottie_engine.dart';
+import 'package:promax/core/media/tlottie/tlottie_engine.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -11,7 +11,7 @@ void main() {
   test('tlottie engine renders a real clip into ui.Image frames', () async {
     final libPath = Platform.environment['TLOTTIE_LIB'];
     if (libPath == null || !File(libPath).existsSync()) {
-      markTestSkipped('set TLOTTIE_LIB to libkomet_tlottie.so to run');
+      markTestSkipped('set TLOTTIE_LIB to libpromax_tlottie.so to run');
       return;
     }
     TlottieEngine.debugLibraryPath = libPath;

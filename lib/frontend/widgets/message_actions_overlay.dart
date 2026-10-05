@@ -14,7 +14,7 @@ import '../../core/utils/format.dart';
 import '../../core/utils/haptics.dart';
 import '../../l10n/app_localizations.dart';
 import 'custom_notification.dart';
-import 'komet_avatar.dart';
+import 'promax_avatar.dart';
 import 'lottie_image.dart';
 import 'small_spinner.dart';
 
@@ -1424,7 +1424,7 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: Row(
             children: [
-              KometAvatar(
+              ProMaxAvatar(
                 name: reader.name,
                 imageUrl: reader.avatarUrl,
                 size: 30,

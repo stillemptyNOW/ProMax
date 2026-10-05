@@ -11,6 +11,6 @@ GeneratedPluginRegistrant.java
 # See https://flutter.dev/to/reference-keystore
 key.properties
 app/key.properties
-app/komet-release.jks
+app/promax-release.jks
 **/*.keystore
 **/*.jks

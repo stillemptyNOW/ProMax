@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import '../../models/attachment.dart';
-import '../config/komet_settings.dart';
+import '../config/promax_settings.dart';
 import '../storage/app_database.dart';
 import '../utils/logger.dart';
 import '../utils/media_cache.dart';
@@ -17,7 +17,7 @@ Future<void> keepDeletedMedia(
   int chatId,
   List<String> messageIds,
 ) async {
-  if (!KometSettings.viewDeleted.value || messageIds.isEmpty) return;
+  if (!ProMaxSettings.viewDeleted.value || messageIds.isEmpty) return;
 
   final List<Map<String, dynamic>> rows;
   try {

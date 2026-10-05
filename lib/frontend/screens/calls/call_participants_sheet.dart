@@ -7,7 +7,7 @@ import '../../../core/calls/call_admin.dart';
 import '../../../core/calls/call_session.dart';
 import '../../widgets/animated_slash_icon.dart';
 import '../../widgets/custom_notification.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../../widgets/prompt_dialog.dart';
 import '../../widgets/sheet_helpers.dart';
 import '../../../core/config/app_fonts.dart';
@@ -542,7 +542,7 @@ class _ParticipantsSheetState extends State<_ParticipantsSheet> {
     ];
 
     return ListTile(
-      leading: KometAvatar(name: view.name, imageUrl: view.avatarUrl, size: 40),
+      leading: ProMaxAvatar(name: view.name, imageUrl: view.avatarUrl, size: 40),
       title: Text(
         view.name,
         style: TextStyle(color: cs.onSurface, fontSize: 16),

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/core/push/launcher_badge.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/core/push/launcher_badge.dart';
 
 CachedChat _chat(int id, {int unread = 0, bool muted = false}) => CachedChat(
   id: id,

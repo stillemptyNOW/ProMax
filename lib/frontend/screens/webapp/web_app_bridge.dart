@@ -91,8 +91,8 @@ const Set<String> _silentMethods = {
 
 const String _shim = r'''
 (function(){
-  if (window.__kometWebAppBridge) { return; }
-  window.__kometWebAppBridge = true;
+  if (window.__proMaxWebAppBridge) { return; }
+  window.__proMaxWebAppBridge = true;
   var pending = [];
   function target(priv){
     var box = priv ? window.PrivateWebApp : window.WebApp;
@@ -110,7 +110,7 @@ const String _shim = r'''
     pending = keep;
   }
   setInterval(flush, 50);
-  window.__kometWebAppDeliver = function(name, data, priv){
+  window.__proMaxWebAppDeliver = function(name, data, priv){
     pending.push([name, data, !!priv]);
     flush();
   };
@@ -228,7 +228,7 @@ class WebAppBridge {
     if (controller == null) return;
     controller.evaluateJavascript(
       source:
-          'window.__kometWebAppDeliver('
+          'window.__proMaxWebAppDeliver('
           '${jsonEncode(method)}, ${jsonEncode(payload)}, $private);',
     );
   }

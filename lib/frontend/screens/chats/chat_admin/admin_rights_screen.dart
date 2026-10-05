@@ -7,7 +7,7 @@ import '../../../../models/admin_rights.dart';
 import '../../../../models/member_permission.dart';
 import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/custom_notification.dart';
-import '../../../widgets/komet_avatar.dart';
+import '../../../widgets/promax_avatar.dart';
 import '../../../widgets/primary_loading_button.dart';
 import '../../../widgets/settings_card.dart';
 import 'chat_admin_state.dart';
@@ -205,7 +205,7 @@ class _AdminRightsScreenState extends State<AdminRightsScreen> {
   Widget _header(ColorScheme cs) {
     return Column(
       children: [
-        KometAvatar(
+        ProMaxAvatar(
           name: _name,
           imageUrl: widget.avatarUrl ?? ContactCache.getAvatar(widget.userId),
           size: 88,

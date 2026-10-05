@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:komet/backend/modules/chats.dart' show CachedChat;
-import 'package:komet/core/media/media_playback.dart';
-import 'package:komet/frontend/widgets/media_playback_pill.dart';
+import 'package:promax/backend/modules/chats.dart' show CachedChat;
+import 'package:promax/core/media/media_playback.dart';
+import 'package:promax/frontend/widgets/media_playback_pill.dart';
 
 import 'message_row_widgets.dart';
 

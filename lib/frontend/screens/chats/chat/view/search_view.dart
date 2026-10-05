@@ -3,16 +3,16 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:komet/core/config/app_animations.dart';
-import 'package:komet/core/config/app_chat_chrome.dart';
-import 'package:komet/core/utils/format.dart';
-import 'package:komet/frontend/widgets/animated_lottie_icon.dart';
-import 'package:komet/frontend/widgets/glossy_pill.dart';
-import 'package:komet/frontend/widgets/komet_avatar.dart';
-import 'package:komet/frontend/widgets/small_spinner.dart';
-import 'package:komet/frontend/screens/chats/chat/chat_search_controller.dart';
-import 'package:komet/frontend/screens/chats/chat/message_search_result.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/core/config/app_animations.dart';
+import 'package:promax/core/config/app_chat_chrome.dart';
+import 'package:promax/core/utils/format.dart';
+import 'package:promax/frontend/widgets/animated_lottie_icon.dart';
+import 'package:promax/frontend/widgets/glossy_pill.dart';
+import 'package:promax/frontend/widgets/promax_avatar.dart';
+import 'package:promax/frontend/widgets/small_spinner.dart';
+import 'package:promax/frontend/screens/chats/chat/chat_search_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/message_search_result.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import '../../../../../core/config/app_fonts.dart';
 
 class SearchTopBar extends StatelessWidget {
@@ -216,7 +216,7 @@ class SearchOverlay extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            KometAvatar(
+            ProMaxAvatar(
               name: name,
               imageUrl: senderAvatar(r.senderId),
               size: 44,

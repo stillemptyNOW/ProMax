@@ -22,7 +22,7 @@ class PluginInstaller {
       final request = await client.getUrl(uri);
       request.headers.set(
         HttpHeaders.userAgentHeader,
-        'KometPluginInstaller/1',
+        'ProMaxPluginInstaller/1',
       );
       final response = await request.close().timeout(_timeout);
       if (response.statusCode != HttpStatus.ok) {
@@ -33,7 +33,7 @@ class PluginInstaller {
       await for (final chunk in response.timeout(_timeout)) {
         bytes.addAll(chunk);
         if (bytes.length > _maxBytes) {
-          throw const FormatException('.kinet слишком большой');
+          throw const FormatException('.pmx слишком большой');
         }
       }
       return await preview(bytes);

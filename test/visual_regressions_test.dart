@@ -1,13 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/frontend/screens/chats/chat/view/chat_list_tile.dart';
-import 'package:komet/frontend/widgets/custom_notification.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/frontend/widgets/reply_preview.dart';
-import 'package:komet/frontend/widgets/toast_placement.dart';
-import 'package:komet/frontend/widgets/undo_notification.dart';
-import 'package:komet/models/attachment.dart';
+import 'package:promax/frontend/screens/chats/chat/view/chat_list_tile.dart';
+import 'package:promax/frontend/widgets/custom_notification.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/frontend/widgets/reply_preview.dart';
+import 'package:promax/frontend/widgets/toast_placement.dart';
+import 'package:promax/frontend/widgets/undo_notification.dart';
+import 'package:promax/models/attachment.dart';
 
 int _mounts = 0;
 

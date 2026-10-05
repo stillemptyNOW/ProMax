@@ -202,7 +202,7 @@ class _E2eeScreenState extends State<E2eeScreen> {
       return;
     }
     final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/komet-e2ee-${widget.accountId}.kct');
+    final file = File('${dir.path}/promax-e2ee-${widget.accountId}.kct');
     await file.writeAsBytes(bytes, flush: true);
     await AppLock.instance.external(() => Share.shareXFiles([XFile(file.path)]));
     // #***! файл содержит ключ личности и все сессии, в кэше ему делать нечего
@@ -479,7 +479,7 @@ class _E2eeScreenState extends State<E2eeScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    '${l10n.e2eeCeiling}\n\n${l10n.e2eeNeedsKomet(widget.peerName)}',
+                    '${l10n.e2eeCeiling}\n\n${l10n.e2eeNeedsProMax(widget.peerName)}',
                     style: TextStyle(
                       color: cs.onSurfaceVariant,
                       fontSize: 13,

@@ -8,4 +8,4 @@
 
 Проверка JavaScript: `node --experimental-vm-modules test/promax_web_push_test.mjs` из корня проекта. Физическая доставка MAX и ограничения режима «Фокусирование» проверяются на iPhone.
 
-Маршруты уведомлений и VAPID-ключ сверены с проектом Komet Push. Его MIT-лицензия сохранена в `UPSTREAM-LICENSE`.
+Маршруты уведомлений и VAPID-ключ сверены с проектом ProMax Push. Его MIT-лицензия сохранена в `UPSTREAM-LICENSE`.

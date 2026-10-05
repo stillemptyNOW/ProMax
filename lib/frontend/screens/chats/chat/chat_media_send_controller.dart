@@ -12,7 +12,7 @@ import '../../../../backend/modules/upload_service.dart';
 import '../../../../core/cache/message_session_cache.dart';
 import '../../../../core/crypto/chat_crypto_service.dart';
 import '../../../../core/crypto/e2ee_service.dart';
-import 'package:komet_crypto/komet_crypto.dart' show ContentType;
+import 'package:promax_crypto/promax_crypto.dart' show ContentType;
 import '../../../../core/crypto/encrypted_photo.dart';
 import '../../../../core/media/desktop_video_probe.dart';
 import '../../../../core/media/gallery_source.dart';
@@ -62,7 +62,7 @@ class ChatMediaSendController {
   int get _chatId => chatController.chatId;
 
   AppLocalizations get _l10n =>
-      AppLocalizations.of(KometApp.navigatorKey.currentContext!)!;
+      AppLocalizations.of(ProMaxApp.navigatorKey.currentContext!)!;
 
   bool get _e2eeActive => E2eeService.instance.isActive(_myId, _chatId);
 

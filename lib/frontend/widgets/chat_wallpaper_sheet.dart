@@ -5,12 +5,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:komet/core/config/chat_wallpaper_themes.dart';
-import 'package:komet/core/config/app_colors.dart';
-import 'package:komet/core/storage/chat_wallpaper_store.dart';
-import 'package:komet/core/utils/image_utils.dart';
-import 'package:komet/frontend/screens/profile/custom_gradient_editor_screen.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/core/config/chat_wallpaper_themes.dart';
+import 'package:promax/core/config/app_colors.dart';
+import 'package:promax/core/storage/chat_wallpaper_store.dart';
+import 'package:promax/core/utils/image_utils.dart';
+import 'package:promax/frontend/screens/profile/custom_gradient_editor_screen.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'chat_wallpaper_view.dart';
 import 'mesh_gradient_background.dart';
 import 'custom_notification.dart';

@@ -1,15 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'password_2fa_screen.dart';
 import 'registration_screen.dart';
 import 'session_stale_recovery.dart';
 import '../../../backend/api.dart';
-import '../../../core/config/review_access.dart';
 import '../../../core/protocol/packet.dart';
-import '../../../core/storage/spoofing_service.dart';
 import '../../../core/utils/sms_code_listener.dart';
 import '../../../main.dart';
 import '../../widgets/auth_limits_sheet.dart';
@@ -21,21 +19,13 @@ class CodeConfirmationScreen extends StatefulWidget {
   final String phoneNumber;
   final String rawPhone;
   final String token;
-  final bool reviewAccess;
 
   const CodeConfirmationScreen({
     super.key,
     required this.phoneNumber,
     required this.rawPhone,
     required this.token,
-  }) : reviewAccess = false;
-
-  const CodeConfirmationScreen.review({
-    super.key,
-    required this.phoneNumber,
-    required this.rawPhone,
-  }) : token = '',
-       reviewAccess = true;
+  });
 
   @override
   State<CodeConfirmationScreen> createState() => _CodeConfirmationScreenState();
@@ -70,10 +60,8 @@ class _CodeConfirmationScreenState extends State<CodeConfirmationScreen>
     super.initState();
     _token = widget.token;
     startSessionRecovery();
-    if (!widget.reviewAccess) {
-      _startTimer();
-      _listenForSmsCode();
-    }
+    _startTimer();
+    _listenForSmsCode();
 
     _shakeController = AnimationController(
       vsync: this,
@@ -298,39 +286,8 @@ class _CodeConfirmationScreenState extends State<CodeConfirmationScreen>
     );
   }
 
-  Future<void> _verifyReviewCode() async {
-    setState(() => _verifying = true);
-    try {
-      final credentials = await ReviewAccess.unlock(_codeController.text);
-      if (!mounted) return;
-      if (credentials == null) {
-        _showError(AppLocalizations.of(context)!.codeErrorInvalid);
-        return;
-      }
-
-      final spoof = credentials.spoof;
-      if (spoof != null) {
-        await SpoofingService.saveProfile(SpoofingService.pendingScope, spoof);
-      }
-
-      final loginResult = await accountModule.loginWithToken(credentials.token);
-
-      await _completeLogin(loginResult.profile.baseUrl);
-    } catch (e) {
-      if (!mounted) return;
-      _showError(e.toString());
-    } finally {
-      if (mounted) setState(() => _verifying = false);
-    }
-  }
-
   Future<void> _verifyCode() async {
     if (_codeController.text.length != 6 || recovering || _verifying) return;
-
-    if (widget.reviewAccess) {
-      await _verifyReviewCode();
-      return;
-    }
 
     if (sessionStale) {
       await recoverStaleSession();
@@ -604,8 +561,7 @@ class _CodeConfirmationScreenState extends State<CodeConfirmationScreen>
                       )
                     : const SizedBox.shrink(),
               ),
-              if (!widget.reviewAccess)
-                GestureDetector(
+              GestureDetector(
                   onTap: _resendCode,
                   child: AnimatedDefaultTextStyle(
                     duration: const Duration(milliseconds: 200),

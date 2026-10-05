@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/l10n/app_localizations.dart';
-import 'package:komet/backend/models/chat_folder.dart';
-import 'package:komet/frontend/screens/chats/folder_edit_sheet.dart';
-import 'package:komet/frontend/widgets/sheet_helpers.dart';
+import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/backend/models/chat_folder.dart';
+import 'package:promax/frontend/screens/chats/folder_edit_sheet.dart';
+import 'package:promax/frontend/widgets/sheet_helpers.dart';
 
 Future<void> _openSheet(WidgetTester tester, {ChatFolder? folder}) async {
   await tester.pumpWidget(

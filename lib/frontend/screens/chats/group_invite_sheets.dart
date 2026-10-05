@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:komet/main.dart';
-import 'package:komet/backend/modules/chats.dart';
-import 'package:komet/backend/modules/contacts.dart';
-import 'package:komet/backend/modules/messages.dart' show ContactCache;
-import 'package:komet/core/storage/app_database.dart';
-import 'package:komet/core/storage/token_storage.dart';
-import 'package:komet/frontend/screens/contacts/contact_sheet_common.dart';
-import 'package:komet/frontend/widgets/custom_notification.dart';
-import 'package:komet/frontend/widgets/komet_avatar.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/main.dart';
+import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/backend/modules/contacts.dart';
+import 'package:promax/backend/modules/messages.dart' show ContactCache;
+import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/core/storage/token_storage.dart';
+import 'package:promax/frontend/screens/contacts/contact_sheet_common.dart';
+import 'package:promax/frontend/widgets/custom_notification.dart';
+import 'package:promax/frontend/widgets/promax_avatar.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 class _Candidate {
   final int id;
@@ -281,7 +281,7 @@ class _AddMembersCardState extends State<_AddMembersCard> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
-            KometAvatar(name: c.name, imageUrl: c.avatarUrl, size: 42),
+            ProMaxAvatar(name: c.name, imageUrl: c.avatarUrl, size: 42),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -422,7 +422,7 @@ class _InviteLinkCard extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
                     child: Row(
                       children: [
-                        KometAvatar(name: title, imageUrl: avatarUrl, size: 40),
+                        ProMaxAvatar(name: title, imageUrl: avatarUrl, size: 40),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(

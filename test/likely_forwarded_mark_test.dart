@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:komet/backend/modules/messages.dart';
-import 'package:komet/core/config/komet_settings.dart';
-import 'package:komet/frontend/widgets/attachment/bubbles/meta_marks.dart';
-import 'package:komet/frontend/widgets/message_bubble.dart';
-import 'package:komet/l10n/app_localizations.dart';
+import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/core/config/promax_settings.dart';
+import 'package:promax/frontend/widgets/attachment/bubbles/meta_marks.dart';
+import 'package:promax/frontend/widgets/message_bubble.dart';
+import 'package:promax/l10n/app_localizations.dart';
 
 const int _me = 1;
 const int _peer = 2;
@@ -56,8 +56,8 @@ Finder get _marks => find.descendant(
 );
 
 void main() {
-  setUp(() => KometSettings.showForward.value = true);
-  tearDown(() => KometSettings.showForward.value = false);
+  setUp(() => ProMaxSettings.showForward.value = true);
+  tearDown(() => ProMaxSettings.showForward.value = false);
 
   testWidgets('метка стоит на каждом сообщении, ушедшем одной пачкой', (
     tester,
@@ -111,15 +111,15 @@ void main() {
   });
 
   testWidgets('настройка включает и выключает метку на лету', (tester) async {
-    KometSettings.showForward.value = false;
+    ProMaxSettings.showForward.value = false;
     await _pump(tester, [_message('101'), _message('102')]);
     expect(_marks, findsNothing);
 
-    KometSettings.showForward.value = true;
+    ProMaxSettings.showForward.value = true;
     await tester.pump();
     expect(_marks, findsNWidgets(2));
 
-    KometSettings.showForward.value = false;
+    ProMaxSettings.showForward.value = false;
     await tester.pump();
     expect(_marks, findsNothing);
   });

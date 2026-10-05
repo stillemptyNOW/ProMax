@@ -25,7 +25,7 @@ void popToAppRoot(BuildContext context) {
 Future<BuildContext?> popToAppRootAndSettle(BuildContext context) async {
   popToAppRoot(context);
   await WidgetsBinding.instance.endOfFrame;
-  return KometApp.overlayContext;
+  return ProMaxApp.overlayContext;
 }
 
 Future<int> currentAccountId() async {

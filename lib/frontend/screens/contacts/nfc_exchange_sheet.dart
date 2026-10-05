@@ -15,7 +15,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../main.dart';
 import '../../../models/contact_info.dart';
 import '../../widgets/custom_notification.dart';
-import '../../widgets/komet_avatar.dart';
+import '../../widgets/promax_avatar.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/config/app_shape.dart';
 
@@ -394,7 +394,7 @@ class _NfcExchangeSheetState extends State<NfcExchangeSheet>
                   ),
                 );
               },
-              child: KometAvatar(
+              child: ProMaxAvatar(
                 name: _peerName(),
                 imageUrl: _peerInfo?.avatarUrl,
                 size: 92,

@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // #***! вся вибрация в одном месте чтоб жесты ощущались одинаково
-/// Centralized tactile feedback for Komet.
+/// Centralized tactile feedback for ProMax.
 ///
 /// Wraps Flutter's [HapticFeedback] so the whole app speaks one tactile
 /// "language": the same gesture always feels the same. Composite patterns

@@ -10,10 +10,10 @@ set(RUNNER_PREFIX_IS_DEFAULT ${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "Komet")
+set(BINARY_NAME "ProMax")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "ru.komet.app")
+set(APPLICATION_ID "io.github.stillemptynow.promax")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
