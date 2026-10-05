@@ -13,6 +13,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../main.dart';
 import '../../widgets/promax_ui.dart';
 import '../../widgets/settings_card.dart';
+import '../digital_id/digital_id_screen.dart';
 import 'atmosphere_screen.dart';
 import 'plugins_screen.dart';
 import 'promax_design_screen.dart';
@@ -263,6 +264,12 @@ class ProMaxSettingsScreen extends StatelessWidget {
             const ProMaxSectionTitle('Диагностика'),
             SettingsCard(
               children: [
+                if (BuildProfile.digitalId)
+                  SettingsNavTile(
+                    icon: Symbols.badge,
+                    label: 'Цифровой ID: нативный режим и отчёт',
+                    onTap: () => _open(context, const DigitalIdScreen()),
+                  ),
                 ValueListenableBuilder<bool>(
                   valueListenable: ProMaxSettings.recordDebugLogs,
                   builder: (context, value, _) => SettingsToggleTile(

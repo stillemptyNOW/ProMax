@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:m3e_collection/m3e_collection.dart'
     show ExpressiveRefreshIndicator;
 import 'package:material_symbols_icons/symbols.dart';
@@ -13,6 +16,7 @@ import '../../widgets/connection_status.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/error_view.dart';
+import '../../widgets/hint_bubble.dart';
 import '../../widgets/small_spinner.dart';
 
 String _documentLabel(AppLocalizations l10n, String type) {
@@ -214,7 +218,28 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
       return const Center(child: SmallSpinner(size: 36));
     }
     if (_error != null) {
-      return ErrorView(message: _error!, onRetry: _load);
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ErrorView(message: _error!, onRetry: _load),
+          Builder(
+            builder: (buttonContext) => TextButton.icon(
+              icon: const Icon(Symbols.content_copy),
+              label: const Text('Скопировать отчёт для разработчика'),
+              onPressed: () async {
+                final report = DigitalIdDiagnostics.report(
+                  userAgentKind: Platform.isIOS ? 'iPhone' : 'Android',
+                  error: _error!,
+                );
+                await Clipboard.setData(ClipboardData(text: report));
+                if (buttonContext.mounted) {
+                  showHintBubble(buttonContext, 'Отчёт скопирован');
+                }
+              },
+            ),
+          ),
+        ],
+      );
     }
     if (_docs == null) {
       return _buildOnboarding(cs);

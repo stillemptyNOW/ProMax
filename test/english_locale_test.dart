@@ -5,7 +5,6 @@ import 'package:promax/frontend/screens/chats/chat_admin/admins_screen.dart';
 import 'package:promax/frontend/screens/chats/chat_admin/channel_type_link_screen.dart';
 import 'package:promax/frontend/screens/chats/chat_admin/chat_admin_state.dart';
 import 'package:promax/frontend/screens/chats/chat_admin/chat_settings_screen.dart';
-import 'package:promax/frontend/screens/profile/promax_settings_screen.dart';
 import 'package:promax/frontend/widgets/message_bubble.dart';
 import 'package:promax/l10n/app_localizations.dart';
 import 'package:promax/main.dart' show api;
@@ -56,7 +55,6 @@ final _screens = <String, Widget Function()>{
   'channel type and link': () =>
       ChannelTypeLinkScreen(state: _state('CHANNEL'), justCreated: true),
   'admins': () => AdminsScreen(state: _state('CHANNEL')),
-  'promax settings': () => const ProMaxSettingsScreen(),
   'message bubbles': () => Scaffold(
     body: ListView(
       children: [

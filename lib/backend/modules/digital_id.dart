@@ -15,6 +15,43 @@ import '../../models/digital_id.dart';
 import 'webapp.dart';
 
 // #***! ошибка цифрового ID, отдельно нет авторизации и нет госуслуг
+class DigitalIdDiagnostics {
+  static const int _limit = 24;
+  static final List<String> _entries = [];
+
+  static void record(String method, String path, int status, String body) {
+    String detail = '';
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map) {
+        final code = decoded['code'] ?? decoded['error'] ?? decoded['status'];
+        final message = decoded['message'] ?? decoded['error_description'];
+        detail = [
+          if (code is String) code,
+          if (message is String) message,
+        ].join(' · ');
+      }
+    } catch (_) {}
+    if (detail.length > 160) detail = detail.substring(0, 160);
+    final time = DateTime.now().toIso8601String().substring(11, 19);
+    _entries.add(
+      '$time $method $path → $status${detail.isEmpty ? '' : ' $detail'}',
+    );
+    if (_entries.length > _limit) _entries.removeAt(0);
+  }
+
+  static String report({
+    required String userAgentKind,
+    required String error,
+  }) => [
+    'ProMax · отчёт Цифрового ID',
+    'Устройство сессии: $userAgentKind',
+    'Ошибка: $error',
+    'Запросы:',
+    if (_entries.isEmpty) '—' else ..._entries,
+  ].join(String.fromCharCode(10));
+}
+
 class DigitalIdException implements Exception {
   final String code;
   final String message;
@@ -178,6 +215,7 @@ class DigitalIdModule {
     if (kDebugMode) {
       logger.i('[DID-native] $method $path -> ${response.statusCode}');
     }
+    DigitalIdDiagnostics.record(method, path, response.statusCode, text);
 
     // #***! 401 значит WebAppData протух, обновляем и повторяем один раз
     if (response.statusCode == 401 && retry) {
