@@ -18,6 +18,9 @@ class KometSettings {
   static const _kArchiveOnPull = 'komet_archive_on_pull';
   static const _kRecordDebugLogs = 'komet_record_debug_logs';
   static const _kQuickReaction = 'promax_quick_reaction';
+  static const _kNoTyping = 'promax_no_typing';
+  static const _kHideStoryViews = 'promax_hide_story_views';
+  static const _kSnowEffect = 'promax_snow_effect';
 
   // #***! каждая настройка это ValueNotifier, юишка подписана напрямую
   static final ValueNotifier<bool> viewDeleted = ValueNotifier(false);
@@ -33,6 +36,9 @@ class KometSettings {
   static final ValueNotifier<bool> archiveOnPull = ValueNotifier(false);
   static final ValueNotifier<bool> recordDebugLogs = ValueNotifier(false);
   static final ValueNotifier<String> quickReaction = ValueNotifier('❤️');
+  static final ValueNotifier<bool> noTyping = ValueNotifier(false);
+  static final ValueNotifier<bool> hideStoryViews = ValueNotifier(false);
+  static final ValueNotifier<bool> snowEffect = ValueNotifier(false);
 
   // #***! читаем всё разом на старте
   static Future<void> load() async {
@@ -50,6 +56,9 @@ class KometSettings {
     ghostMode.value = prefs.getBool(_kGhostMode) ?? false;
     antiRead.value = prefs.getBool(_kAntiRead) ?? false;
     quickReaction.value = prefs.getString(_kQuickReaction) ?? '❤️';
+    noTyping.value = prefs.getBool(_kNoTyping) ?? false;
+    hideStoryViews.value = prefs.getBool(_kHideStoryViews) ?? false;
+    snowEffect.value = prefs.getBool(_kSnowEffect) ?? false;
     selfOnlineCheck.value = prefs.getBool(_kSelfOnlineCheck) ?? true;
     hideAllChatsFolder.value = prefs.getBool(_kHideAllChatsFolder) ?? false;
     showHiddenChats.value = prefs.getBool(_kShowHiddenChats) ?? false;
@@ -106,6 +115,24 @@ class KometSettings {
     quickReaction.value = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kQuickReaction, value);
+  }
+
+  static Future<void> setNoTyping(bool value) async {
+    noTyping.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kNoTyping, value);
+  }
+
+  static Future<void> setHideStoryViews(bool value) async {
+    hideStoryViews.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kHideStoryViews, value);
+  }
+
+  static Future<void> setSnowEffect(bool value) async {
+    snowEffect.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kSnowEffect, value);
   }
 
   static Future<void> setSelfOnlineCheck(bool value) async {

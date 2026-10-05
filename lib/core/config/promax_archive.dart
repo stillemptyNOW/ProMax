@@ -30,6 +30,9 @@ class ProMaxArchive {
     'app_amoled',
     'dev_video_note_rear_camera',
     'call_light_wide_default',
+    'promax_no_typing',
+    'promax_hide_story_views',
+    'promax_snow_effect',
   };
   static const stringValues = {
     'app_theme_mode': {'system', 'light', 'dark', 'schedule'},

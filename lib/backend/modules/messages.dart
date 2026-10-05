@@ -1995,6 +1995,7 @@ class MessagesModule {
 
   // #***! печатает и записывает, ответ не ждём
   void sendTyping(int chatId, String type) {
+    if (KometSettings.noTyping.value) return;
     unawaited(() async {
       try {
         await _api.sendRequest(Opcode.msgTyping, {

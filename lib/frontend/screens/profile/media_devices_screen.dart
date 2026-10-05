@@ -59,6 +59,48 @@ class _MediaDevicesScreenState extends State<MediaDevicesScreen> {
     unawaited(AppCamera.save(id));
   }
 
+  Future<void> _chooseVideoNoteResolution(int current) async {
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final value in AppVideoNoteResolution.presets)
+              ListTile(
+                title: Text('${value}p'),
+                trailing: value == current ? const Icon(Symbols.check) : null,
+                onTap: () => Navigator.pop(sheetContext, value),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null) await AppVideoNoteResolution.save(selected);
+  }
+
+  Future<void> _chooseVideoNoteFps(int current) async {
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final value in AppVideoNoteFps.presets)
+              ListTile(
+                title: Text('$value кадр/с'),
+                trailing: value == current ? const Icon(Symbols.check) : null,
+                onTap: () => Navigator.pop(sheetContext, value),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null) await AppVideoNoteFps.save(selected);
+  }
+
   static IconData _cameraIcon(CameraFacing facing) => switch (facing) {
     CameraFacing.front => Symbols.camera_front,
     CameraFacing.back => Symbols.camera_rear,
@@ -187,6 +229,24 @@ class _MediaDevicesScreenState extends State<MediaDevicesScreen> {
                           onChanged: AppVideoNoteRearCamera.save,
                         ),
                       ),
+                    ValueListenableBuilder<int>(
+                      valueListenable: AppVideoNoteResolution.current,
+                      builder: (context, size, _) => _ChoiceTile(
+                        icon: Symbols.high_quality,
+                        label: 'Разрешение кружка · ${size}p',
+                        selected: true,
+                        onTap: () => _chooseVideoNoteResolution(size),
+                      ),
+                    ),
+                    ValueListenableBuilder<int>(
+                      valueListenable: AppVideoNoteFps.current,
+                      builder: (context, fps, _) => _ChoiceTile(
+                        icon: Symbols.videocam,
+                        label: 'Частота кадров · $fps кадр/с',
+                        selected: true,
+                        onTap: () => _chooseVideoNoteFps(fps),
+                      ),
+                    ),
                   ],
                 ),
               ),

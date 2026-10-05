@@ -185,6 +185,26 @@ class KometSettingsScreen extends StatelessWidget {
                   ),
                 ),
                 ValueListenableBuilder<bool>(
+                  valueListenable: KometSettings.hideStoryViews,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.visibility_off,
+                    label: 'Не отмечать просмотры историй',
+                    subtitle: 'Отметка просмотра не отправляется собеседнику',
+                    value: value,
+                    onChanged: KometSettings.setHideStoryViews,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: KometSettings.noTyping,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.edit_off,
+                    label: 'Не отправлять статус «печатает»',
+                    subtitle: 'Не отправлять собеседникам индикатор набора',
+                    value: value,
+                    onChanged: KometSettings.setNoTyping,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
                   valueListenable: KometSettings.selfOnlineCheck,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.radar,
@@ -197,8 +217,28 @@ class KometSettingsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
+            const SectionHeader(
+              'Оформление',
+              padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+              fontSize: 14,
+            ),
+            SettingsCard(
+              children: [
+                ValueListenableBuilder<bool>(
+                  valueListenable: KometSettings.snowEffect,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.ac_unit,
+                    label: 'Снег на экране',
+                    subtitle: 'Лёгкий анимированный снег поверх интерфейса',
+                    value: value,
+                    onChanged: KometSettings.setSnowEffect,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
             SectionHeader(
-              l10n.kometSettingsDebugHeader,
+              'Диагностика',
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
               fontSize: 14,
             ),
@@ -217,7 +257,11 @@ class KometSettingsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            SectionHeader(l10n.proMaxArchiveTitle, padding: const EdgeInsets.fromLTRB(8, 0, 8, 8), fontSize: 14),
+            SectionHeader(
+              l10n.proMaxArchiveTitle,
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              fontSize: 14,
+            ),
             const ProMaxTransferCard(),
           ],
         ),

@@ -21,6 +21,7 @@ import '../chats/profile_action_sheets.dart';
 import '../../widgets/small_spinner.dart';
 import 'story_owner_info.dart';
 import '../../../core/config/app_frost.dart';
+import '../../../core/config/komet_settings.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -284,7 +285,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   }
 
   void _markViewed(Story story) {
-    if (story.id == 0 || _marked.contains(story.id)) return;
+    if (story.id == 0 ||
+        _marked.contains(story.id) ||
+        KometSettings.hideStoryViews.value) {
+      return;
+    }
     _marked.add(story.id);
     storiesModule.mark(story.owner, story.id);
   }

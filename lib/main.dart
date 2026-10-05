@@ -114,6 +114,7 @@ import 'frontend/widgets/theme_reveal.dart';
 import 'frontend/widgets/floating_call_badge.dart';
 import 'frontend/widgets/floating_video_note.dart';
 import 'frontend/widgets/keyboard_dismissal.dart';
+import 'frontend/widgets/snowfall_overlay.dart';
 
 final api = Api();
 final accountModule = AccountModule(api);
@@ -1197,6 +1198,9 @@ class KometAppState extends State<KometApp>
                                   ),
                                   const Positioned.fill(
                                     child: FloatingCallBadgeLayer(),
+                                  ),
+                                  const Positioned.fill(
+                                    child: SnowfallOverlay(),
                                   ),
                                   if (fpsOn) const FpsOverlayLayer(),
                                 ],

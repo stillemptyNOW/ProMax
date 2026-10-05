@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../core/protocol/opcode_map.dart';
+import '../../core/config/komet_settings.dart';
 import '../../core/protocol/packet.dart';
 import '../../core/utils/channel_comments.dart';
 import '../../core/utils/logger.dart';
@@ -298,6 +299,7 @@ class CommentsModule {
 
   // #***! печатает в комментах, ошибки не важны
   void sendTyping(int chatId, String postId, String type) {
+    if (KometSettings.noTyping.value) return;
     unawaited(() async {
       try {
         await _api.sendRequest(Opcode.msgTyping, {
