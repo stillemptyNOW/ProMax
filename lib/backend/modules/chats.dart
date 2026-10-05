@@ -16,6 +16,7 @@ import '../../core/storage/app_database.dart';
 import '../../core/storage/local_read_state.dart';
 import '../../core/storage/chat_activity_store.dart';
 import '../../core/storage/chat_members_store.dart';
+import '../../core/security/double_bottom.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
 import '../../core/utils/text_format.dart';
@@ -858,6 +859,7 @@ class ChatsModule {
     final list = _chatsById.entries
         .where((e) => !_awaitingRemoval.contains(e.key))
         .where((e) => includeHidden || _inListById[e.key] == 1)
+        .where((e) => !DoubleBottom.hides(e.key))
         .map((e) => e.value)
         .toList();
     list.sort((a, b) => b.lastEventTime.compareTo(a.lastEventTime));
@@ -1954,7 +1956,10 @@ class ChatsModule {
         accountId,
         includeHidden: includeHidden,
       );
-      final chats = rows.map(CachedChat.fromDbRow).toList();
+      final chats = rows
+          .map(CachedChat.fromDbRow)
+          .where((chat) => !DoubleBottom.hides(chat.id))
+          .toList();
       return chats;
     } catch (e) {
       logger.e("Ошибка при получении чатов: $e");

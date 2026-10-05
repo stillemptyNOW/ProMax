@@ -14,6 +14,7 @@ import '../../widgets/settings_card.dart';
 import '../../widgets/sheet_helpers.dart';
 import '../lock/lock_glyph.dart';
 import '../lock/passcode_setup_screen.dart';
+import '../../../core/security/double_bottom.dart';
 
 class PasscodeSettingsScreen extends StatefulWidget {
   const PasscodeSettingsScreen({super.key});
@@ -195,6 +196,7 @@ class _PasscodeSettingsScreenState extends State<PasscodeSettingsScreen> {
                     ),
                   ],
                 ),
+                const _DoubleBottomCard(),
                 const SizedBox(height: 12),
                 SettingsCard(
                   children: [
@@ -345,6 +347,86 @@ class _ValueTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DoubleBottomCard extends StatelessWidget {
+  const _DoubleBottomCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final lock = AppLock.instance;
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        lock.decoyConfigured,
+        DoubleBottom.listenable,
+      ]),
+      builder: (context, _) {
+        if (DoubleBottom.active.value) return const SizedBox.shrink();
+        final configured = lock.decoyConfigured.value;
+        final secrets = DoubleBottom.secretChats.value.length;
+        return Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SettingsCard(
+                children: [
+                  SettingsNavTile(
+                    icon: Symbols.layers,
+                    label: configured
+                        ? 'Изменить код двойного дна'
+                        : 'Включить двойное дно',
+                    value: configured ? 'секретных чатов: $secrets' : null,
+                    onTap: () async {
+                      final done = await Navigator.of(context).push<bool>(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const PasscodeSetupScreen(decoy: true),
+                        ),
+                      );
+                      if (done == true && context.mounted) {
+                        showCustomNotification(
+                          context,
+                          'Двойное дно включено. Отметь секретные чаты в их меню',
+                        );
+                      }
+                    },
+                  ),
+                  if (configured)
+                    SettingsNavTile(
+                      icon: Symbols.layers_clear,
+                      label: 'Выключить двойное дно',
+                      tintColor: cs.error,
+                      onTap: () async {
+                        await lock.clearDecoyPin();
+                        if (context.mounted) {
+                          showCustomNotification(
+                            context,
+                            'Двойное дно выключено',
+                          );
+                        }
+                      },
+                    ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                child: Text(
+                  'Второй код открывает ProMax без секретных чатов: их нет в списке, уведомлениях и поиске, а этот раздел скрыт. Основной код возвращает всё обратно.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.35,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

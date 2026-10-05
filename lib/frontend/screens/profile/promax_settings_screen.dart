@@ -114,6 +114,28 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   ),
                 ),
                 ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxSettings.streamerMode,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.cast,
+                    label: 'Режим стримера',
+                    subtitle:
+                        'Размывает номера, ID и превью сообщений, прячет текст уведомлений',
+                    value: value,
+                    onChanged: ProMaxSettings.setStreamerMode,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxSettings.switcherBlur,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.blur_on,
+                    label: 'Размытие в переключателе',
+                    subtitle:
+                        'В списке открытых приложений iOS не видно содержимое',
+                    value: value,
+                    onChanged: ProMaxSettings.setSwitcherBlur,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
                   valueListenable: ProMaxSettings.selfOnlineCheck,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.radar,
@@ -383,6 +405,15 @@ class _ProMaxHero extends StatelessWidget {
                               label: 'Не читать',
                               on: on,
                               onTap: () => ProMaxSettings.setAntiRead(!on),
+                            ),
+                          ),
+                          ValueListenableBuilder<bool>(
+                            valueListenable: ProMaxSettings.streamerMode,
+                            builder: (context, on, _) => _HeroToggle(
+                              icon: Symbols.cast,
+                              label: 'Стример',
+                              on: on,
+                              onTap: () => ProMaxSettings.setStreamerMode(!on),
                             ),
                           ),
                           ValueListenableBuilder<AtmosphereEffect>(

@@ -33,6 +33,8 @@ class ProMaxArchive {
     'promax_no_typing',
     'promax_hide_story_views',
     'promax_atmosphere_triggers',
+    'promax_streamer_mode',
+    'promax_app_switcher_blur',
   };
   static const stringValues = {
     'app_theme_mode': {'system', 'light', 'dark', 'schedule'},

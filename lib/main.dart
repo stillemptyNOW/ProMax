@@ -115,6 +115,7 @@ import 'frontend/widgets/floating_call_badge.dart';
 import 'frontend/widgets/floating_video_note.dart';
 import 'frontend/widgets/keyboard_dismissal.dart';
 import 'frontend/widgets/atmosphere_overlay.dart';
+import 'frontend/widgets/privacy_shields.dart';
 import 'core/config/promax_atmosphere.dart';
 import 'core/config/promax_glass.dart';
 import 'core/config/promax_theme_presets.dart';
@@ -1216,6 +1217,9 @@ class ProMaxAppState extends State<ProMaxApp>
                                   ),
                                   const Positioned.fill(
                                     child: GlobalAtmosphereOverlay(),
+                                  ),
+                                  const Positioned.fill(
+                                    child: AppSwitcherCurtain(),
                                   ),
                                   if (fpsOn) const FpsOverlayLayer(),
                                 ],

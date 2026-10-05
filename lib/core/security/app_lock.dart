@@ -10,6 +10,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/logger.dart';
+import 'double_bottom.dart';
 
 class AppLock {
   AppLock._();
@@ -29,6 +30,7 @@ class AppLock {
   static const String _kIdle = 'app_lock_idle_minutes';
   static const String _kFailed = 'app_lock_failed';
   static const String _kBlockedUntil = 'app_lock_blocked_until';
+  static const String _kDecoyPin = 'app_lock_decoy_pin';
 
   static const FlutterSecureStorage _secure = FlutterSecureStorage(
     aOptions: AndroidOptions(),
@@ -44,6 +46,7 @@ class AppLock {
   final ValueNotifier<int> idleMinutes = ValueNotifier(5);
   final ValueNotifier<bool> locked = ValueNotifier(false);
   final ValueNotifier<DateTime?> blockedUntil = ValueNotifier(null);
+  final ValueNotifier<bool> decoyConfigured = ValueNotifier(false);
 
   final LocalAuthentication _auth = LocalAuthentication();
   int _failed = 0;
@@ -81,7 +84,32 @@ class AppLock {
         : DateTime.fromMillisecondsSinceEpoch(until);
     _expireLockout();
     locked.value = on;
+    try {
+      decoyConfigured.value = on && await _secure.read(key: _kDecoyPin) != null;
+    } catch (e) {
+      logger.w('AppLock: не удалось прочитать второй код: $e');
+    }
+    await DoubleBottom.load();
+    if (!decoyConfigured.value) await DoubleBottom.setActive(false);
     _syncIdleTimer();
+  }
+
+  Future<bool> setDecoyPin(String pin) async {
+    if (await checkPin(pin)) return false;
+    await _secure.write(key: _kDecoyPin, value: await _hash(pin));
+    decoyConfigured.value = true;
+    return true;
+  }
+
+  Future<void> clearDecoyPin() async {
+    await _secure.delete(key: _kDecoyPin);
+    decoyConfigured.value = false;
+    await DoubleBottom.setActive(false);
+  }
+
+  Future<bool> _matchesDecoy(String pin) async {
+    final stored = await _secure.read(key: _kDecoyPin);
+    return stored != null && await _matches(pin, stored);
   }
 
   Future<void> setPin(String pin) async {
@@ -96,6 +124,9 @@ class AppLock {
 
   Future<void> disable() async {
     await _secure.delete(key: _kPin);
+    await _secure.delete(key: _kDecoyPin);
+    decoyConfigured.value = false;
+    await DoubleBottom.setActive(false);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kEnabled, false);
     await prefs.setBool(_kBiometric, false);
@@ -130,6 +161,13 @@ class AppLock {
     if (blockedUntil.value != null) return false;
     if (await checkPin(pin)) {
       await _resetAttempts();
+      await DoubleBottom.setActive(false);
+      unlock();
+      return true;
+    }
+    if (await _matchesDecoy(pin)) {
+      await _resetAttempts();
+      await DoubleBottom.setActive(true);
       unlock();
       return true;
     }

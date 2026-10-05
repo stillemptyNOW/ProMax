@@ -12,7 +12,9 @@ import 'lock_glyph.dart';
 import 'passcode_pad.dart';
 
 class PasscodeSetupScreen extends StatefulWidget {
-  const PasscodeSetupScreen({super.key});
+  const PasscodeSetupScreen({super.key, this.decoy = false});
+
+  final bool decoy;
 
   @override
   State<PasscodeSetupScreen> createState() => _PasscodeSetupScreenState();
@@ -63,7 +65,24 @@ class _PasscodeSetupScreenState extends State<PasscodeSetupScreen> {
       return;
     }
     setState(() => _saving = true);
-    await AppLock.instance.setPin(_pin);
+    if (widget.decoy) {
+      final saved = await AppLock.instance.setDecoyPin(_pin);
+      if (!mounted) return;
+      if (!saved) {
+        Haptics.error();
+        setState(() {
+          _first = '';
+          _pin = '';
+          _confirming = false;
+          _mismatch = true;
+          _saving = false;
+          _errorTick++;
+        });
+        return;
+      }
+    } else {
+      await AppLock.instance.setPin(_pin);
+    }
     if (!mounted) return;
     Haptics.success();
     Navigator.pop(context, true);
@@ -87,8 +106,16 @@ class _PasscodeSetupScreenState extends State<PasscodeSetupScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final title = _confirming ? l10n.passcodeRepeat : l10n.passcodeCreate;
-    final hint = _mismatch ? l10n.passcodeMismatch : l10n.passcodeDigitsHint;
+    final title = widget.decoy
+        ? (_confirming ? 'Повтори код двойного дна' : 'Код двойного дна')
+        : (_confirming ? l10n.passcodeRepeat : l10n.passcodeCreate);
+    final hint = _mismatch
+        ? (widget.decoy
+              ? 'Коды не совпали или совпадают с основным'
+              : l10n.passcodeMismatch)
+        : (widget.decoy
+              ? 'Этот код откроет ProMax без секретных чатов'
+              : l10n.passcodeDigitsHint);
 
     return Scaffold(
       backgroundColor: cs.surface,

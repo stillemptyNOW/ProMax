@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../widgets/privacy_shields.dart';
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
@@ -1122,14 +1123,16 @@ class _SettingsTabState extends State<SettingsTab>
                                   ),
                                   child: MouseRegion(
                                     cursor: SystemMouseCursors.click,
-                                    child: _PhoneSpoiler(
-                                      text: phone,
-                                      isVisible: _isPhoneVisible,
-                                      style: TextStyle(
-                                        color: subColor,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w400,
-                                        letterSpacing: 0.5,
+                                    child: StreamerMask(
+                                      child: _PhoneSpoiler(
+                                        text: phone,
+                                        isVisible: _isPhoneVisible,
+                                        style: TextStyle(
+                                          color: subColor,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                          letterSpacing: 0.5,
+                                        ),
                                       ),
                                     ),
                                   ),

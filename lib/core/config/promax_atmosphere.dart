@@ -129,7 +129,7 @@ class ProMaxAtmosphere {
     wind,
   ];
 
-  static Listenable get listenable => Listenable.merge([
+  static final Listenable listenable = Listenable.merge([
     effect,
     scope,
     color,

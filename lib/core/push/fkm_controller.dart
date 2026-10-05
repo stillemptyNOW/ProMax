@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../security/double_bottom.dart';
 import '../../backend/api.dart';
 import '../../backend/modules/account/account_models.dart';
 import '../../backend/modules/chat_preview.dart';
@@ -87,9 +88,8 @@ class FkmController {
   }
 
   // #***! говорим нативу есть ли связь, от этого текст постоянного уведомления
-  Future<void> _pushConnectionState() => FkmBridge.instance.setConnected(
-    _api?.state == SessionState.online,
-  );
+  Future<void> _pushConnectionState() =>
+      FkmBridge.instance.setConnected(_api?.state == SessionState.online);
 
   // #***! входящий звонок, натив рисует полноэкранное
   /// Входящий звонок, когда приложение не на переднем плане.
@@ -161,6 +161,7 @@ class FkmController {
 
     final chatId = payload['chatId'];
     if (chatId is! int) return;
+    if (DoubleBottom.hides(chatId)) return;
 
     final msg = payload['message'];
     if (msg is! Map) return;
@@ -266,7 +267,10 @@ class FkmController {
         : senderName;
 
     await E2eeService.instance.ensureLoaded(accountId);
-    final text = showPreview && !E2eeService.instance.isOn(accountId, chatId)
+    final text =
+        showPreview &&
+            !ProMaxSettings.streamerMode.value &&
+            !E2eeService.instance.isOn(accountId, chatId)
         ? _previewText(msg)
         : _hiddenPreview;
     final time = msg['time'];

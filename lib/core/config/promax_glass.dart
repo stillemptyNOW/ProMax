@@ -80,8 +80,9 @@ class ProMaxGlass {
     tint,
   ];
 
-  static Listenable get listenable =>
-      Listenable.merge([for (final parameter in all) parameter.current]);
+  static final Listenable listenable = Listenable.merge([
+    for (final parameter in all) parameter.current,
+  ]);
 
   static Future<void> load() =>
       Future.wait([for (final parameter in all) parameter.load()]);

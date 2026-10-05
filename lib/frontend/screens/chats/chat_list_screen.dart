@@ -77,6 +77,7 @@ import '../../../core/config/app_visual_style.dart';
 import '../../../core/config/app_stories.dart';
 import '../../../core/config/app_colors.dart';
 import '../../../core/config/promax_settings.dart';
+import '../../../core/security/double_bottom.dart';
 import '../../../backend/models/chat_folder.dart';
 import '../../../backend/modules/account.dart';
 import '../../../backend/modules/chats.dart';
@@ -1023,6 +1024,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     ProMaxSettings.hideAllChatsFolder.addListener(_requestReload);
     ProMaxSettings.archiveOnPull.addListener(_onArchiveModeChanged);
     ProMaxSettings.showHiddenChats.addListener(_requestReload);
+    DoubleBottom.listenable.addListener(_requestReload);
     ContactsModule.revision.addListener(_requestReload);
     FoldersModule.revision.addListener(_requestReload);
     bannersModule.activeBanner.addListener(_onActiveInformerChanged);
@@ -1787,6 +1789,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     ProMaxSettings.hideAllChatsFolder.removeListener(_requestReload);
     ProMaxSettings.archiveOnPull.removeListener(_onArchiveModeChanged);
     ProMaxSettings.showHiddenChats.removeListener(_requestReload);
+    DoubleBottom.listenable.removeListener(_requestReload);
     ContactsModule.revision.removeListener(_requestReload);
     FoldersModule.revision.removeListener(_requestReload);
     bannersModule.activeBanner.removeListener(_onActiveInformerChanged);
