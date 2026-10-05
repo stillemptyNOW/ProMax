@@ -2,6 +2,10 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+
+import '../../../core/config/promax_atmosphere.dart';
+import '../../../core/config/promax_glass.dart';
+import '../../../core/config/promax_theme_presets.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path_provider/path_provider.dart';
@@ -156,6 +160,9 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
       await AppVideoNoteResolution.load();
       await AppVideoNoteFps.load();
       await AppVideoNoteRearCamera.load();
+      await ProMaxGlass.load();
+      await ProMaxAtmosphere.load();
+      await ProMaxThemePresets.load();
       if (!mounted) return;
       final prefs = await ProMaxArchive.settings();
       if (!mounted) return;

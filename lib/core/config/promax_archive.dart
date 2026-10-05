@@ -32,11 +32,37 @@ class ProMaxArchive {
     'call_light_wide_default',
     'promax_no_typing',
     'promax_hide_story_views',
-    'promax_snow_effect',
+    'promax_atmosphere_triggers',
   };
   static const stringValues = {
     'app_theme_mode': {'system', 'light', 'dark', 'schedule'},
     'app_font': {'system', 'inter', 'unbounded'},
+    'promax_atmosphere_effect': {
+      'none',
+      'snow',
+      'rain',
+      'stars',
+      'leaves',
+      'sakura',
+      'hearts',
+      'confetti',
+      'sparkles',
+      'bubbles',
+      'fireflies',
+    },
+    'promax_atmosphere_scope': {'everywhere', 'chats'},
+    'promax_theme_preset': {
+      'graphite',
+      'aurora',
+      'sunset',
+      'ocean',
+      'forest',
+      'neon',
+      'sakura',
+      'winter',
+      'night',
+      'system',
+    },
   };
   static const numbers = {
     'app_accent_seed': (min: 0.0, max: 4294967295.0, integer: true),
@@ -46,6 +72,18 @@ class ProMaxArchive {
     'call_light_width': (min: 4.0, max: 100.0, integer: false),
     'call_light_opacity': (min: 0.1, max: 1.0, integer: false),
     'call_light_radius': (min: 0.0, max: 100.0, integer: false),
+    'promax_glass_blur': (min: 0.0, max: 2.5, integer: false),
+    'promax_glass_refraction': (min: 0.0, max: 40.0, integer: false),
+    'promax_glass_specular': (min: 0.0, max: 1.0, integer: false),
+    'promax_glass_chroma': (min: 0.0, max: 0.4, integer: false),
+    'promax_glass_rim': (min: 0.0, max: 5.0, integer: false),
+    'promax_glass_tint': (min: 0.0, max: 2.5, integer: false),
+    'promax_atmosphere_density': (min: 0.2, max: 3.0, integer: false),
+    'promax_atmosphere_speed': (min: 0.2, max: 3.0, integer: false),
+    'promax_atmosphere_size': (min: 0.4, max: 2.5, integer: false),
+    'promax_atmosphere_opacity': (min: 0.1, max: 1.0, integer: false),
+    'promax_atmosphere_wind': (min: -1.0, max: 1.0, integer: false),
+    'promax_atmosphere_color': (min: 0.0, max: 4294967295.0, integer: true),
   };
 
   static bool validSetting(String key, Object? value) {
@@ -76,7 +114,8 @@ class ProMaxArchive {
       for (final key in boolKeys)
         key:
             key == 'promax_self_online_check' ||
-            key == 'call_light_wide_default',
+            key == 'call_light_wide_default' ||
+            key == 'promax_atmosphere_triggers',
       'promax_quick_reaction': '❤️',
       'app_theme_mode': 'system',
       'app_font': 'system',

@@ -95,6 +95,9 @@ import 'chat/view/composer_input.dart' show BotStartPrompt;
 import 'chat/view/chat_body_layout.dart';
 import 'chat/view/shimmer_loading.dart';
 import '../../../core/config/app_visual_style.dart';
+import '../../../core/config/promax_atmosphere.dart';
+import '../../widgets/atmosphere_overlay.dart';
+import '../profile/atmosphere_screen.dart';
 import '../../../core/config/app_chat_chrome.dart';
 import 'package:promax/core/config/app_composer_background.dart';
 import 'package:promax/core/config/app_composer_style.dart';
@@ -3203,6 +3206,7 @@ class _ChatScreenState extends State<ChatScreen>
           _scrollNav.noteMissedMessage();
         }
         _prank.checkTrigger(message);
+        ProMaxAtmosphere.react(widget.chatId, message.text ?? '');
       case MessageEditedEvent(:final message):
         final idx = _chatController.indexOfId(message.id);
         if (idx == -1) return;
@@ -3214,6 +3218,7 @@ class _ChatScreenState extends State<ChatScreen>
         _lastSentId = message.id;
         _chatController.setMessageAt(idx, message);
         _bumpMessages();
+        ProMaxAtmosphere.react(widget.chatId, message.text ?? '');
       case MessageRemovedEvent(:final messageId):
         final idx = _chatController.indexOfId(messageId);
         if (idx == -1) return;
@@ -3358,6 +3363,11 @@ class _ChatScreenState extends State<ChatScreen>
           icon: Symbols.wallpaper,
           label: l10n.chatScreenMenuChangeWallpaper,
           onTap: _openWallpaperSheet,
+        ),
+        ChatMenuItem(
+          icon: Symbols.ac_unit,
+          label: 'Атмосфера чата',
+          onTap: () => showChatAtmosphereSheet(context, widget.chatId),
         ),
         ChatMenuItem(
           icon: Symbols.mop,
@@ -4825,6 +4835,7 @@ class _ChatScreenState extends State<ChatScreen>
             builder: (context, _, _) => _buildEmptyState(),
           ),
         ),
+        Positioned.fill(child: ChatAtmosphereOverlay(chatId: widget.chatId)),
       ],
     );
   }

@@ -35,7 +35,7 @@ class GlassSurface extends StatelessWidget {
   final bool liquid;
   final BorderRadius borderRadius;
   final Color frostTint;
-  final double frostSigma;
+  final double? frostSigma;
   final Color liquidTint;
   final BoxBorder? border;
   final BackdropKey? backdropKey;
@@ -46,7 +46,7 @@ class GlassSurface extends StatelessWidget {
     this.liquid = false,
     this.borderRadius = BorderRadius.zero,
     required this.frostTint,
-    this.frostSigma = AppFrost.sigma,
+    this.frostSigma,
     this.liquidTint = Colors.transparent,
     this.border,
     this.backdropKey,
@@ -73,7 +73,10 @@ class GlassSurface extends StatelessWidget {
     return ClipRRect(
       borderRadius: borderRadius,
       child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: frostSigma, sigmaY: frostSigma),
+        filter: ui.ImageFilter.blur(
+          sigmaX: frostSigma ?? AppFrost.sigma,
+          sigmaY: frostSigma ?? AppFrost.sigma,
+        ),
         backdropGroupKey: backdropKey,
         child: decorated,
       ),
@@ -84,28 +87,28 @@ class GlassSurface extends StatelessWidget {
 class LiquidGlassSurface extends StatelessWidget {
   final BorderRadius borderRadius;
   final Color tint;
-  final double blurSigma;
+  final double? blurSigma;
   final double spread;
-  final double refraction;
-  final double chroma;
-  final double specular;
+  final double? refraction;
+  final double? chroma;
+  final double? specular;
   final Offset light;
   final double tintFeather;
-  final double rimWidth;
+  final double? rimWidth;
   final Widget child;
 
   const LiquidGlassSurface({
     super.key,
     required this.borderRadius,
     required this.tint,
-    this.blurSigma = AppLiquidGlass.blurSigma,
+    this.blurSigma,
     this.spread = AppLiquidGlass.spread,
-    this.refraction = AppLiquidGlass.refraction,
-    this.chroma = AppLiquidGlass.chroma,
-    this.specular = AppLiquidGlass.specular,
+    this.refraction,
+    this.chroma,
+    this.specular,
     this.light = AppLiquidGlass.light,
     this.tintFeather = AppLiquidGlass.tintFeather,
-    this.rimWidth = AppLiquidGlass.rimWidth,
+    this.rimWidth,
     this.child = const SizedBox.expand(),
   });
 
@@ -115,14 +118,14 @@ class LiquidGlassSurface extends StatelessWidget {
     return _LiquidGlassBackdrop(
       borderRadius: borderRadius,
       tint: tint,
-      blurSigma: blurSigma,
+      blurSigma: blurSigma ?? AppLiquidGlass.blurSigma,
       spread: spread,
-      refraction: refraction,
-      chroma: chroma,
-      specular: specular,
+      refraction: refraction ?? AppLiquidGlass.refraction,
+      chroma: chroma ?? AppLiquidGlass.chroma,
+      specular: specular ?? AppLiquidGlass.specular,
       light: light,
       tintFeather: tintFeather,
-      rimWidth: rimWidth,
+      rimWidth: rimWidth ?? AppLiquidGlass.rimWidth,
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
       child: child,
     );

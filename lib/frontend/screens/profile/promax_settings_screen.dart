@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../widgets/connection_status.dart';
 
+import '../../../core/config/app_shape.dart';
 import '../../../core/config/build_profile.dart';
+import '../../../core/config/promax_atmosphere.dart';
 import '../../../core/config/promax_settings.dart';
+import '../../../core/config/promax_theme_presets.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart';
-import '../../widgets/section_header.dart';
+import '../../widgets/promax_ui.dart';
 import '../../widgets/settings_card.dart';
+import 'atmosphere_screen.dart';
 import 'plugins_screen.dart';
-import 'quick_reaction_screen.dart';
+import 'promax_design_screen.dart';
 import 'promax_transfer_card.dart';
+import 'quick_reaction_screen.dart';
 
 class ProMaxSettingsScreen extends StatelessWidget {
   const ProMaxSettingsScreen({super.key});
+
+  void _open(BuildContext context, Widget screen) =>
+      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
 
   @override
   Widget build(BuildContext context) {
@@ -31,37 +40,94 @@ class ProMaxSettingsScreen extends StatelessWidget {
         top: false,
         child: ListView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
-            SectionHeader(
-              l10n.authLimitsSignupMessagesTitle,
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              fontSize: 14,
-            ),
+            _ProMaxHero(onGhostChanged: _setGhostMode),
+            const ProMaxSectionTitle('Внешний вид'),
             SettingsCard(
               children: [
-                ValueListenableBuilder<String>(
-                  valueListenable: ProMaxSettings.quickReaction,
-                  builder: (context, emoji, _) => SettingsNavTile(
-                    icon: Symbols.add_reaction,
-                    label: '${l10n.proMaxQuickReaction} $emoji',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const QuickReactionScreen(),
-                      ),
-                    ),
+                ValueListenableBuilder<String?>(
+                  valueListenable: ProMaxThemePresets.selected,
+                  builder: (context, id, _) => SettingsNavTile(
+                    icon: Symbols.palette,
+                    label: 'Темы и стекло',
+                    value: ProMaxThemePresets.byId(id)?.title ?? 'Своя',
+                    onTap: () => _open(context, const ProMaxDesignScreen()),
                   ),
                 ),
-                if (BuildProfile.plugins)
-                  SettingsNavTile(
-                    icon: Symbols.extension,
-                    label: l10n.pluginsScreenTitle,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const PluginsScreen()),
+                ValueListenableBuilder<AtmosphereEffect>(
+                  valueListenable: ProMaxAtmosphere.effect,
+                  builder: (context, effect, _) => SettingsNavTile(
+                    icon: atmosphereIcon(
+                      effect == AtmosphereEffect.none
+                          ? AtmosphereEffect.snow
+                          : effect,
                     ),
+                    label: 'Атмосфера',
+                    value: effect.title,
+                    onTap: () => _open(context, const AtmosphereScreen()),
                   ),
+                ),
+              ],
+            ),
+            const ProMaxSectionTitle('Призрак и приватность'),
+            SettingsCard(
+              children: [
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxSettings.ghostMode,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.visibility_off,
+                    label: l10n.proMaxSettingLabel8,
+                    subtitle: l10n.proMaxSettingsGhostModeSubtitle,
+                    value: value,
+                    onChanged: _setGhostMode,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxSettings.antiRead,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.mark_chat_read,
+                    label: l10n.proMaxSettingLabel9,
+                    subtitle: l10n.proMaxSettingsAntiReadSubtitle,
+                    value: value,
+                    onChanged: ProMaxSettings.setAntiRead,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxSettings.noTyping,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.edit_off,
+                    label: 'Не отправлять «печатает»',
+                    subtitle: 'Собеседник не увидит, что вы набираете текст',
+                    value: value,
+                    onChanged: ProMaxSettings.setNoTyping,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxSettings.hideStoryViews,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.auto_stories,
+                    label: 'Не отмечать просмотры историй',
+                    subtitle: 'Автор истории не узнает, что вы её смотрели',
+                    value: value,
+                    onChanged: ProMaxSettings.setHideStoryViews,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxSettings.selfOnlineCheck,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.radar,
+                    label: l10n.proMaxSettingLabel10,
+                    subtitle: l10n.proMaxSettingsSelfOnlineCheckSubtitle,
+                    value: value,
+                    onChanged: ProMaxSettings.setSelfOnlineCheck,
+                  ),
+                ),
+              ],
+            ),
+            const ProMaxSectionTitle('Сообщения'),
+            SettingsCard(
+              children: [
                 if (BuildProfile.hiddenContentViewers) ...[
                   ValueListenableBuilder<bool>(
                     valueListenable: ProMaxSettings.viewDeleted,
@@ -84,6 +150,15 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     ),
                   ),
                 ],
+                ValueListenableBuilder<String>(
+                  valueListenable: ProMaxSettings.quickReaction,
+                  builder: (context, emoji, _) => SettingsNavTile(
+                    icon: Symbols.add_reaction,
+                    label: l10n.proMaxQuickReaction,
+                    value: emoji,
+                    onTap: () => _open(context, const QuickReactionScreen()),
+                  ),
+                ),
                 ValueListenableBuilder<bool>(
                   valueListenable: ProMaxSettings.fullTimestamp,
                   builder: (context, value, _) => SettingsToggleTile(
@@ -116,12 +191,7 @@ class ProMaxSettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            SectionHeader(
-              l10n.proMaxSettingsFoldersHeader,
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              fontSize: 14,
-            ),
+            const ProMaxSectionTitle('Чаты и папки'),
             SettingsCard(
               children: [
                 ValueListenableBuilder<bool>(
@@ -156,92 +226,19 @@ class ProMaxSettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            SectionHeader(
-              l10n.proMaxSettingLabel8,
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              fontSize: 14,
-            ),
-            SettingsCard(
-              children: [
-                ValueListenableBuilder<bool>(
-                  valueListenable: ProMaxSettings.ghostMode,
-                  builder: (context, value, _) => SettingsToggleTile(
-                    icon: Symbols.visibility_off,
-                    label: l10n.proMaxSettingLabel8,
-                    subtitle: l10n.proMaxSettingsGhostModeSubtitle,
-                    value: value,
-                    onChanged: _setGhostMode,
+            if (BuildProfile.plugins) ...[
+              const ProMaxSectionTitle('Инструменты'),
+              SettingsCard(
+                children: [
+                  SettingsNavTile(
+                    icon: Symbols.extension,
+                    label: l10n.pluginsScreenTitle,
+                    onTap: () => _open(context, const PluginsScreen()),
                   ),
-                ),
-                ValueListenableBuilder<bool>(
-                  valueListenable: ProMaxSettings.antiRead,
-                  builder: (context, value, _) => SettingsToggleTile(
-                    icon: Symbols.mark_chat_read,
-                    label: l10n.proMaxSettingLabel9,
-                    subtitle: l10n.proMaxSettingsAntiReadSubtitle,
-                    value: value,
-                    onChanged: ProMaxSettings.setAntiRead,
-                  ),
-                ),
-                ValueListenableBuilder<bool>(
-                  valueListenable: ProMaxSettings.hideStoryViews,
-                  builder: (context, value, _) => SettingsToggleTile(
-                    icon: Symbols.visibility_off,
-                    label: 'Не отмечать просмотры историй',
-                    subtitle: 'Отметка просмотра не отправляется собеседнику',
-                    value: value,
-                    onChanged: ProMaxSettings.setHideStoryViews,
-                  ),
-                ),
-                ValueListenableBuilder<bool>(
-                  valueListenable: ProMaxSettings.noTyping,
-                  builder: (context, value, _) => SettingsToggleTile(
-                    icon: Symbols.edit_off,
-                    label: 'Не отправлять статус «печатает»',
-                    subtitle: 'Не отправлять собеседникам индикатор набора',
-                    value: value,
-                    onChanged: ProMaxSettings.setNoTyping,
-                  ),
-                ),
-                ValueListenableBuilder<bool>(
-                  valueListenable: ProMaxSettings.selfOnlineCheck,
-                  builder: (context, value, _) => SettingsToggleTile(
-                    icon: Symbols.radar,
-                    label: l10n.proMaxSettingLabel10,
-                    subtitle: l10n.proMaxSettingsSelfOnlineCheckSubtitle,
-                    value: value,
-                    onChanged: ProMaxSettings.setSelfOnlineCheck,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            const SectionHeader(
-              'Оформление',
-              padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
-              fontSize: 14,
-            ),
-            SettingsCard(
-              children: [
-                ValueListenableBuilder<bool>(
-                  valueListenable: ProMaxSettings.snowEffect,
-                  builder: (context, value, _) => SettingsToggleTile(
-                    icon: Symbols.ac_unit,
-                    label: 'Снег на экране',
-                    subtitle: 'Лёгкий анимированный снег поверх интерфейса',
-                    value: value,
-                    onChanged: ProMaxSettings.setSnowEffect,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SectionHeader(
-              'Диагностика',
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              fontSize: 14,
-            ),
+                ],
+              ),
+            ],
+            const ProMaxSectionTitle('Диагностика'),
             SettingsCard(
               children: [
                 ValueListenableBuilder<bool>(
@@ -256,13 +253,15 @@ class ProMaxSettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            SectionHeader(
-              l10n.proMaxArchiveTitle,
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              fontSize: 14,
-            ),
+            ProMaxSectionTitle(l10n.proMaxArchiveTitle),
             const ProMaxTransferCard(),
+            const SizedBox(height: 18),
+            Center(
+              child: Text(
+                'ProMax основан на открытом клиенте Komet · GPLv3',
+                style: TextStyle(color: cs.outline, fontSize: 12),
+              ),
+            ),
           ],
         ),
       ),
@@ -272,5 +271,282 @@ class ProMaxSettingsScreen extends StatelessWidget {
   Future<void> _setGhostMode(bool value) async {
     await ProMaxSettings.setGhostMode(value);
     api.sendPing(interactive: !value);
+  }
+}
+
+class _ProMaxHero extends StatelessWidget {
+  const _ProMaxHero({required this.onGhostChanged});
+
+  final ValueChanged<bool> onGhostChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ValueListenableBuilder<String?>(
+      valueListenable: ProMaxThemePresets.selected,
+      builder: (context, id, _) {
+        final preset = ProMaxThemePresets.byId(id);
+        final colors =
+            preset?.preview ??
+            [
+              cs.primary,
+              Color.alphaBlend(cs.primary.withValues(alpha: 0.2), Colors.black),
+            ];
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(AppShape.card + 4),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: colors,
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -40,
+                  top: -50,
+                  child: Container(
+                    width: 180,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.10),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Image.asset(
+                            'assets/promax.png',
+                            width: 44,
+                            height: 44,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'ProMax',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.4,
+                                  ),
+                                ),
+                                FutureBuilder<PackageInfo>(
+                                  future: PackageInfo.fromPlatform(),
+                                  builder: (context, snapshot) => Text(
+                                    snapshot.hasData
+                                        ? 'Версия ${snapshot.data!.version}'
+                                        : 'Твой MAX — по-своему',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ValueListenableBuilder<bool>(
+                            valueListenable: ProMaxSettings.ghostMode,
+                            builder: (context, on, _) => _HeroToggle(
+                              icon: Symbols.visibility_off,
+                              label: 'Призрак',
+                              on: on,
+                              onTap: () => onGhostChanged(!on),
+                            ),
+                          ),
+                          ValueListenableBuilder<bool>(
+                            valueListenable: ProMaxSettings.antiRead,
+                            builder: (context, on, _) => _HeroToggle(
+                              icon: Symbols.mark_chat_read,
+                              label: 'Не читать',
+                              on: on,
+                              onTap: () => ProMaxSettings.setAntiRead(!on),
+                            ),
+                          ),
+                          ValueListenableBuilder<AtmosphereEffect>(
+                            valueListenable: ProMaxAtmosphere.effect,
+                            builder: (context, effect, _) => _HeroToggle(
+                              icon: Symbols.ac_unit,
+                              label: 'Атмосфера',
+                              on: effect != AtmosphereEffect.none,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AtmosphereScreen(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _HeroToggle extends StatelessWidget {
+  const _HeroToggle({
+    required this.icon,
+    required this.label,
+    required this.on,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool on;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: on ? Colors.white : Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 17,
+            color: on ? Colors.black : Colors.white,
+            fill: on ? 1 : 0,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: on ? Colors.black : Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class ProMaxBannerCard extends StatelessWidget {
+  const ProMaxBannerCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ValueListenableBuilder<String?>(
+      valueListenable: ProMaxThemePresets.selected,
+      builder: (context, id, _) {
+        final colors =
+            ProMaxThemePresets.byId(id)?.preview ??
+            [
+              cs.primary,
+              Color.alphaBlend(
+                cs.primary.withValues(alpha: 0.25),
+                Colors.black,
+              ),
+            ];
+        return Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppShape.card),
+          clipBehavior: Clip.antiAlias,
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: colors,
+              ),
+            ),
+            child: InkWell(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProMaxSettingsScreen()),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: Image.asset(
+                        'assets/promax.png',
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'ProMax',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Призрак, темы, атмосфера и все фишки',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.82),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Symbols.chevron_right, color: Colors.white),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

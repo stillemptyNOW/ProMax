@@ -114,7 +114,10 @@ import 'frontend/widgets/theme_reveal.dart';
 import 'frontend/widgets/floating_call_badge.dart';
 import 'frontend/widgets/floating_video_note.dart';
 import 'frontend/widgets/keyboard_dismissal.dart';
-import 'frontend/widgets/snowfall_overlay.dart';
+import 'frontend/widgets/atmosphere_overlay.dart';
+import 'core/config/promax_atmosphere.dart';
+import 'core/config/promax_glass.dart';
+import 'core/config/promax_theme_presets.dart';
 
 final api = Api();
 final accountModule = AccountModule(api);
@@ -222,8 +225,12 @@ void main(List<String> args) async {
   unawaited(storiesModule.loadCache());
   unawaited(DeepLinkService.instance.init());
 
+  await ProMaxThemePresets.ensureDefault();
   final packageInfoFuture = PackageInfo.fromPlatform();
   final localeFuture = _loadInitialLocale();
+  final glassFuture = ProMaxGlass.load();
+  final atmosphereFuture = ProMaxAtmosphere.load();
+  final presetFuture = ProMaxThemePresets.load();
   final hapticsFuture = Haptics.load();
   final prefsFuture = SharedPreferences.getInstance();
   final accentFuture = AppAccent.load();
@@ -269,6 +276,9 @@ void main(List<String> args) async {
   final initialLocale = await localeFuture;
 
   await hapticsFuture;
+  await glassFuture;
+  await atmosphereFuture;
+  await presetFuture;
 
   final prefs = await prefsFuture;
   await FileHistoryCache.load(prefs);
@@ -947,6 +957,7 @@ class ProMaxAppState extends State<ProMaxApp>
   String? _themeCacheFontId;
   ColorScheme? _themeCacheLight;
   ColorScheme? _themeCacheDark;
+  ProMaxGlassTheme? _themeCacheGlass;
   ThemeData? _lightTheme;
   ThemeData? _darkTheme;
 
@@ -973,14 +984,17 @@ class ProMaxAppState extends State<ProMaxApp>
   }
 
   void _rebuildThemesIfNeeded(ColorScheme light, ColorScheme dark) {
+    final glass = ProMaxGlassTheme.current();
     if (_themeCacheFontId == _fontId &&
         _themeCacheLight == light &&
-        _themeCacheDark == dark) {
+        _themeCacheDark == dark &&
+        _themeCacheGlass == glass) {
       return;
     }
     _themeCacheFontId = _fontId;
     _themeCacheLight = light;
     _themeCacheDark = dark;
+    _themeCacheGlass = glass;
     final displayFont = AppDisplayFont(AppFonts.displayFamily(_fontId));
     _lightTheme = withM3ETheme(
       ThemeData(
@@ -989,7 +1003,7 @@ class ProMaxAppState extends State<ProMaxApp>
         pageTransitionsTheme: _appPageTransitions,
         progressIndicatorTheme: _expressiveProgressTheme,
         tooltipTheme: HintBubbleStyle.tooltipTheme(light),
-        extensions: [displayFont],
+        extensions: [displayFont, glass],
         textTheme: AppFonts.textTheme(
           _fontId,
           ThemeData(brightness: Brightness.light).textTheme,
@@ -1003,7 +1017,7 @@ class ProMaxAppState extends State<ProMaxApp>
         pageTransitionsTheme: _appPageTransitions,
         progressIndicatorTheme: _expressiveProgressTheme,
         tooltipTheme: HintBubbleStyle.tooltipTheme(dark),
-        extensions: [displayFont],
+        extensions: [displayFont, glass],
         textTheme: AppFonts.textTheme(
           _fontId,
           ThemeData(brightness: Brightness.dark).textTheme,
@@ -1077,6 +1091,7 @@ class ProMaxAppState extends State<ProMaxApp>
             accentSeed,
             wallpaperSeed,
             AppWallpaperTint.current,
+            ProMaxGlass.listenable,
           ]),
           builder: (context, _) {
             final seed =
@@ -1200,7 +1215,7 @@ class ProMaxAppState extends State<ProMaxApp>
                                     child: FloatingCallBadgeLayer(),
                                   ),
                                   const Positioned.fill(
-                                    child: SnowfallOverlay(),
+                                    child: GlobalAtmosphereOverlay(),
                                   ),
                                   if (fpsOn) const FpsOverlayLayer(),
                                 ],

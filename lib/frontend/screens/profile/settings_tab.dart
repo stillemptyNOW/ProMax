@@ -590,6 +590,12 @@ class _SettingsTabState extends State<SettingsTab>
                 ),
                 SliverToBoxAdapter(child: _buildBioCard(cs, l10n)),
                 const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 10, 16, 0),
+                    child: ProMaxBannerCard(),
+                  ),
+                ),
+                const SliverToBoxAdapter(
                   child: MediaPlaybackPill(
                     margin: EdgeInsets.fromLTRB(16, 8, 16, 0),
                   ),
@@ -828,24 +834,6 @@ class _SettingsTabState extends State<SettingsTab>
                                 ? null
                                 : _checkForUpdates,
                           ),
-                        _SettingsItem(
-                          leading: Image.asset(
-                            'assets/promax.png',
-                            width: 22,
-                            height: 22,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          label: 'ProMax',
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const ProMaxSettingsScreen(),
-                              ),
-                            );
-                          },
-                        ),
                         _SettingsItem(
                           icon: Symbols.logout,
                           label: l10n.settingsTabLogout,
@@ -1458,7 +1446,6 @@ class _SettingsTabState extends State<SettingsTab>
         final item = items[index];
         return SettingsNavTile(
           icon: item.icon,
-          leading: item.leading,
           label: item.label,
           tintColor: item.tintColor,
           onTap: item.onTap,
@@ -1471,14 +1458,12 @@ class _SettingsTabState extends State<SettingsTab>
 
 class _SettingsItem {
   final IconData? icon;
-  final Widget? leading;
   final String label;
   final VoidCallback? onTap;
   final Color? tintColor;
 
   const _SettingsItem({
     this.icon,
-    this.leading,
     required this.label,
     this.onTap,
     this.tintColor,
