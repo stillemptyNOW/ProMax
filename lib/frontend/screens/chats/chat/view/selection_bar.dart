@@ -15,6 +15,7 @@ class SelectionTopBar extends StatelessWidget {
   final void Function(List<CachedMessage>) onCopy;
   final void Function(CachedMessage) onEdit;
   final VoidCallback onDelete;
+  final void Function(List<CachedMessage>)? onScreenshot;
 
   const SelectionTopBar({
     super.key,
@@ -27,6 +28,7 @@ class SelectionTopBar extends StatelessWidget {
     required this.onCopy,
     required this.onEdit,
     required this.onDelete,
+    this.onScreenshot,
   });
 
   @override
@@ -59,6 +61,11 @@ class SelectionTopBar extends StatelessWidget {
                 ),
               ),
             ),
+            if (copyMsgs.isNotEmpty && onScreenshot != null)
+              IconButton(
+                icon: Icon(Symbols.screenshot_frame, color: cs.onSurface),
+                onPressed: () => onScreenshot!(copyMsgs),
+              ),
             if (copyMsgs.isNotEmpty)
               IconButton(
                 icon: Icon(Symbols.content_copy, color: cs.onSurface),
@@ -133,6 +140,11 @@ class SelectionTopBar extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (copyMsgs.isNotEmpty && onScreenshot != null)
+                    actionBtn(
+                      Symbols.screenshot_frame,
+                      () => onScreenshot!(copyMsgs),
+                    ),
                   if (copyMsgs.isNotEmpty)
                     actionBtn(Symbols.content_copy, () => onCopy(copyMsgs)),
                   if (editMsg != null)

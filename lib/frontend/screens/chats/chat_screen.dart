@@ -101,6 +101,7 @@ import '../../../core/config/promax_atmosphere.dart';
 import '../../widgets/atmosphere_overlay.dart';
 import '../profile/atmosphere_screen.dart';
 import 'chat_stats_screen.dart';
+import 'message_shot_sheet.dart';
 import '../../../core/config/app_chat_chrome.dart';
 import 'package:promax/core/config/app_composer_background.dart';
 import 'package:promax/core/config/app_composer_style.dart';
@@ -2707,6 +2708,24 @@ class _ChatScreenState extends State<ChatScreen>
     _clearSelection();
   }
 
+  void _screenshotSelected(List<CachedMessage> messages) {
+    if (messages.isEmpty) return;
+    final ordered = [...messages]..sort((a, b) => a.time.compareTo(b.time));
+    final items = [
+      for (final message in ordered)
+        MessageShotItem(
+          text: MessageDecryptionCache.instance.readableText(message) ?? '',
+          mine: message.senderId == _myId,
+          sender: message.senderId == _myId
+              ? 'Я'
+              : (ContactCache.get(message.senderId) ?? widget.name),
+          time: DateTime.fromMillisecondsSinceEpoch(message.time),
+        ),
+    ];
+    _clearSelection();
+    showMessageShotSheet(context, title: widget.name, items: items);
+  }
+
   void _editSelected(CachedMessage message) {
     _clearSelection();
     _startEditMessage(message);
@@ -4900,6 +4919,7 @@ class _ChatScreenState extends State<ChatScreen>
                       singleEditable: _singleEditable,
                       onClearSelection: _clearSelection,
                       onCopySelected: _copySelected,
+                      onScreenshotSelected: _screenshotSelected,
                       onEditSelected: _editSelected,
                       onDeleteSelected: _deleteSelected,
                       search: _search,

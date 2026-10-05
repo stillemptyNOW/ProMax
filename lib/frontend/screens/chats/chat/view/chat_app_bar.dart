@@ -53,6 +53,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final CachedMessage? Function(Set<String> ids) singleEditable;
   final VoidCallback onClearSelection;
   final void Function(List<CachedMessage>) onCopySelected;
+  final void Function(List<CachedMessage>)? onScreenshotSelected;
   final void Function(CachedMessage) onEditSelected;
   final VoidCallback onDeleteSelected;
 
@@ -95,6 +96,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.singleEditable,
     required this.onClearSelection,
     required this.onCopySelected,
+    this.onScreenshotSelected,
     required this.onEditSelected,
     required this.onDeleteSelected,
     required this.search,
@@ -236,6 +238,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                             editMsg: singleEditable(selected),
                             onClear: onClearSelection,
                             onCopy: onCopySelected,
+                            onScreenshot: onScreenshotSelected,
                             onEdit: onEditSelected,
                             onDelete: onDeleteSelected,
                           ),
