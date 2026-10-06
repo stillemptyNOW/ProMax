@@ -12,6 +12,7 @@ import '../../../core/utils/webview_support.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart' show digitalIdModule;
 import '../../../models/digital_id.dart';
+import 'digital_id_web_screen.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../widgets/custom_notification.dart';
@@ -222,6 +223,14 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           ErrorView(message: _error!, onRetry: _load),
+          if (webViewSupported)
+            TextButton.icon(
+              icon: const Icon(Symbols.public),
+              label: const Text('Открыть веб-версию'),
+              onPressed: () => Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const DigitalIdWebScreen()),
+              ),
+            ),
           Builder(
             builder: (buttonContext) => TextButton.icon(
               icon: const Icon(Symbols.content_copy),

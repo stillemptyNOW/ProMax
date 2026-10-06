@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../core/utils/file_names.dart';
 import '../core/utils/parse.dart';
 import '../core/utils/text_format.dart';
 
@@ -287,7 +288,10 @@ class FileAttachment extends MessageAttachment {
       baseUrl: map['baseUrl'] as String?,
       fileId: map['fileId'] as int?,
       fileToken: (map['fileToken'] ?? map['token'])?.toString(),
-      name: map['name'] as String?,
+      name: switch (map['name']) {
+        final String n => repairFileName(n),
+        _ => null,
+      },
       size: map['size'] as int?,
       preview: preview,
     );
