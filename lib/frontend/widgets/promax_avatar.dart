@@ -89,7 +89,7 @@ class _ProMaxAvatarState extends State<ProMaxAvatar>
     final Widget placeholder = gradientFallback
         ? LetterAvatarFill(
             name: widget.name,
-            seed: widget.userId ?? widget.name.hashCode,
+            seed: avatarSeedFor(widget.name),
             size: widget.size,
           )
         : Center(

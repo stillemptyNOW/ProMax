@@ -3659,7 +3659,7 @@ class _ChatListScreenState extends State<ChatListScreen>
           (!isSavedMessages && imageUrl.isEmpty && local == null)
           ? LetterAvatarFill(
               name: name,
-              seed: int.tryParse(id) ?? name.hashCode,
+              seed: avatarSeedFor(name),
               size: avatarRadius * 2,
             )
           : CircleAvatar(

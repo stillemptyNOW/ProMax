@@ -17,6 +17,39 @@ import '../../widgets/swipe_route.dart';
 import '../contacts/open_contact_profile.dart';
 import 'chat_screen.dart';
 
+enum SearchScope { all, people, chats, messages }
+
+enum SearchPeriod { any, day, week, month, year }
+
+enum SearchSender { any, me, others }
+
+enum SearchChatKind { any, dialogs, groups, channels }
+
+const _scopeLabels = {
+  SearchScope.all: 'Всё',
+  SearchScope.people: 'Люди',
+  SearchScope.chats: 'Чаты',
+  SearchScope.messages: 'Сообщения',
+};
+const _periodLabels = {
+  SearchPeriod.any: 'За всё время',
+  SearchPeriod.day: 'Сегодня',
+  SearchPeriod.week: 'Неделя',
+  SearchPeriod.month: 'Месяц',
+  SearchPeriod.year: 'Год',
+};
+const _senderLabels = {
+  SearchSender.any: 'Любой отправитель',
+  SearchSender.me: 'Я',
+  SearchSender.others: 'Не я',
+};
+const _kindLabels = {
+  SearchChatKind.any: 'Все чаты',
+  SearchChatKind.dialogs: 'Личные',
+  SearchChatKind.groups: 'Группы',
+  SearchChatKind.channels: 'Каналы',
+};
+
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -38,6 +71,176 @@ class _SearchScreenState extends State<SearchScreen> {
   List<MessageSearchHit> _messages = const [];
   Map<int, Map<String, dynamic>> _msgChatMeta = const {};
   List<ChatSearchHit> _public = const [];
+  SearchScope _scope = SearchScope.all;
+  SearchPeriod _period = SearchPeriod.any;
+  SearchSender _sender = SearchSender.any;
+  SearchChatKind _kind = SearchChatKind.any;
+
+  bool get _messageFiltersActive =>
+      _period != SearchPeriod.any ||
+      _sender != SearchSender.any ||
+      _kind != SearchChatKind.any;
+
+  List<MessageSearchHit> get _filteredMessages {
+    final now = DateTime.now();
+    final from = switch (_period) {
+      SearchPeriod.any => null,
+      SearchPeriod.day => DateTime(now.year, now.month, now.day),
+      SearchPeriod.week => now.subtract(const Duration(days: 7)),
+      SearchPeriod.month => now.subtract(const Duration(days: 30)),
+      SearchPeriod.year => now.subtract(const Duration(days: 365)),
+    };
+    final me = _accountId;
+    return [
+      for (final hit in _messages)
+        if ((from == null || hit.time >= from.millisecondsSinceEpoch) &&
+            (_sender == SearchSender.any ||
+                (_sender == SearchSender.me) == (hit.senderId == me)) &&
+            _kindMatches(hit.chatId))
+          hit,
+    ];
+  }
+
+  bool _kindMatches(int chatId) {
+    if (_kind == SearchChatKind.any) return true;
+    final type = _msgChatMeta[chatId]?['type'] as String?;
+    return switch (_kind) {
+      SearchChatKind.any => true,
+      SearchChatKind.dialogs => type == null || type == 'DIALOG',
+      SearchChatKind.groups => type == 'CHAT',
+      SearchChatKind.channels => type == 'CHANNEL',
+    };
+  }
+
+  Future<void> _pickFilter<T>(
+    String title,
+    Map<T, String> labels,
+    T current,
+    ValueChanged<T> onSelected,
+  ) async {
+    final picked = await showModalBottomSheet<T>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            for (final entry in labels.entries)
+              ListTile(
+                title: Text(entry.value),
+                trailing: entry.key == current
+                    ? Icon(
+                        Symbols.check,
+                        color: Theme.of(sheetContext).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () => Navigator.pop(sheetContext, entry.key),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && mounted) setState(() => onSelected(picked));
+  }
+
+  Widget _filterBar(ColorScheme cs) {
+    Widget pill(String label, bool active, VoidCallback onTap) => Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: active
+                ? cs.primary.withValues(alpha: 0.18)
+                : cs.onSurface.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: active
+                  ? cs.primary.withValues(alpha: 0.5)
+                  : Colors.transparent,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: active ? cs.primary : cs.onSurface,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Icon(
+                Symbols.expand_more,
+                size: 18,
+                color: active ? cs.primary : cs.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    return SizedBox(
+      height: 46,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+        children: [
+          pill(
+            _scopeLabels[_scope]!,
+            _scope != SearchScope.all,
+            () => _pickFilter(
+              'Что искать',
+              _scopeLabels,
+              _scope,
+              (v) => _scope = v,
+            ),
+          ),
+          pill(
+            _periodLabels[_period]!,
+            _period != SearchPeriod.any,
+            () => _pickFilter(
+              'Период',
+              _periodLabels,
+              _period,
+              (v) => _period = v,
+            ),
+          ),
+          pill(
+            _senderLabels[_sender]!,
+            _sender != SearchSender.any,
+            () => _pickFilter(
+              'Отправитель',
+              _senderLabels,
+              _sender,
+              (v) => _sender = v,
+            ),
+          ),
+          pill(
+            _kindLabels[_kind]!,
+            _kind != SearchChatKind.any,
+            () => _pickFilter('Тип чата', _kindLabels, _kind, (v) => _kind = v),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -87,45 +290,73 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final accountId = _accountId;
     final phoneQuery = _phoneCandidate(query);
-    final results = await Future.wait([
-      accountId == null
-          ? Future.value(const <Map<String, dynamic>>[])
-          : AppDatabase.searchContacts(accountId, query),
-      accountId == null
-          ? Future.value(const <Map<String, dynamic>>[])
-          : AppDatabase.searchChatsByTitle(accountId, query),
-      chats.searchMessages(api, query),
-      chats.searchPublic(api, query),
-      phoneQuery == null
-          ? Future<PhoneLookupResult?>.value(null)
-          : ContactsModule.findByPhone(api, phoneQuery),
-    ]);
+    final serverMessagesFuture = chats.searchMessages(api, query);
+    final publicFuture = chats.searchPublic(api, query);
+    final phoneFuture = phoneQuery == null
+        ? Future<PhoneLookupResult?>.value(null)
+        : ContactsModule.findByPhone(api, phoneQuery);
 
+    final contacts = accountId == null
+        ? const <Map<String, dynamic>>[]
+        : await AppDatabase.searchContacts(accountId, query);
+    final localChats = accountId == null
+        ? const <Map<String, dynamic>>[]
+        : await AppDatabase.searchChatsByTitle(accountId, query);
+    final localRows = accountId == null
+        ? const <Map<String, dynamic>>[]
+        : await AppDatabase.searchMessagesText(accountId, query);
     if (!mounted || token != _seq) return;
+    final localHits = [
+      for (final row in localRows)
+        MessageSearchHit(
+          chatId: row['chat_id'] as int,
+          messageId: row['id']?.toString(),
+          text: row['text'] as String?,
+          time: row['time'] as int? ?? 0,
+          senderId: row['sender_id'] as int? ?? 0,
+        ),
+    ];
+    await _applyMessages(accountId, token, localHits);
+    if (!mounted || token != _seq) return;
+    setState(() {
+      _contacts = contacts;
+      _chats = localChats;
+    });
 
-    final localChats = results[1] as List<Map<String, dynamic>>;
-    final messages = results[2] as List<MessageSearchHit>;
+    final serverHits = await serverMessagesFuture;
+    final publicHits = await publicFuture;
+    final phoneResult = await phoneFuture;
+    if (!mounted || token != _seq) return;
+    await _applyMessages(accountId, token, [...serverHits, ...localHits]);
+    if (!mounted || token != _seq) return;
     final localChatIds = localChats.map((c) => c['id'] as int).toSet();
-    final public = (results[3] as List<ChatSearchHit>)
-        .where((c) => !localChatIds.contains(c.id))
-        .toList();
+    setState(() {
+      _phoneResult = phoneResult;
+      _public = publicHits.where((c) => !localChatIds.contains(c.id)).toList();
+      _loading = false;
+    });
+  }
 
+  Future<void> _applyMessages(
+    int? accountId,
+    int token,
+    List<MessageSearchHit> hits,
+  ) async {
+    final seen = <String>{};
+    final messages = [
+      for (final hit in hits)
+        if (seen.add('${hit.chatId}:${hit.messageId ?? hit.time}')) hit,
+    ]..sort((a, b) => b.time.compareTo(a.time));
     var meta = <int, Map<String, dynamic>>{};
     if (accountId != null && messages.isNotEmpty) {
       final ids = messages.map((m) => m.chatId).toSet().toList();
       final rows = await AppDatabase.loadChatsByIds(accountId, ids);
       meta = {for (final r in rows) r['id'] as int: r};
-      if (!mounted || token != _seq) return;
     }
-
+    if (!mounted || token != _seq) return;
     setState(() {
-      _phoneResult = results[4] as PhoneLookupResult?;
-      _contacts = results[0] as List<Map<String, dynamic>>;
-      _chats = localChats;
       _messages = messages;
       _msgChatMeta = meta;
-      _public = public;
-      _loading = false;
     });
   }
 
@@ -231,7 +462,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _phoneResult != null ||
         _contacts.isNotEmpty ||
         _chats.isNotEmpty ||
-        _messages.isNotEmpty ||
+        _filteredMessages.isNotEmpty ||
         _public.isNotEmpty;
 
     return Scaffold(
@@ -270,7 +501,12 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
         ],
       ),
-      body: _buildBody(cs, query, hasResults),
+      body: Column(
+        children: [
+          _filterBar(cs),
+          Expanded(child: _buildBody(cs, query, hasResults)),
+        ],
+      ),
     );
   }
 
@@ -285,7 +521,20 @@ class _SearchScreenState extends State<SearchScreen> {
       }
       return _buildHint(cs, Symbols.search_off, l10n.contactsSearchEmpty);
     }
-    final phoneResult = _phoneResult;
+    final phoneResult = _scope == SearchScope.all && !_messageFiltersActive
+        ? _phoneResult
+        : null;
+    final people =
+        (_scope == SearchScope.all || _scope == SearchScope.people) &&
+        !_messageFiltersActive;
+    final chatsVisible =
+        (_scope == SearchScope.all || _scope == SearchScope.chats) &&
+        !_messageFiltersActive;
+    final messagesVisible =
+        _scope == SearchScope.all || _scope == SearchScope.messages;
+    final messages = messagesVisible
+        ? _filteredMessages
+        : const <MessageSearchHit>[];
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [
@@ -299,7 +548,7 @@ class _SearchScreenState extends State<SearchScreen> {
             onTap: () => _openPhoneResult(phoneResult),
           ),
         ],
-        if (_contacts.isNotEmpty) ...[
+        if (people && _contacts.isNotEmpty) ...[
           _sectionHeader(cs, l10n.searchScreenContacts),
           for (final row in _contacts)
             _ResultTile(
@@ -309,15 +558,18 @@ class _SearchScreenState extends State<SearchScreen> {
               onTap: () => _openContact(row),
             ),
         ],
-        if (_chats.isNotEmpty) ...[
+        if (chatsVisible && _chats.isNotEmpty) ...[
           _sectionHeader(cs, l10n.searchScreenChats),
           for (final row in _chats) _localChatTile(row),
         ],
-        if (_messages.isNotEmpty) ...[
-          _sectionHeader(cs, l10n.authLimitsSignupMessagesTitle),
-          for (final hit in _messages) _messageTile(hit),
+        if (messages.isNotEmpty) ...[
+          _sectionHeader(
+            cs,
+            '${l10n.authLimitsSignupMessagesTitle} · ${messages.length}',
+          ),
+          for (final hit in messages) _messageTile(hit),
         ],
-        if (_public.isNotEmpty) ...[
+        if (chatsVisible && _public.isNotEmpty) ...[
           _sectionHeader(cs, l10n.searchScreenGlobalSearch),
           for (final hit in _public) _chatTile(hit),
         ],

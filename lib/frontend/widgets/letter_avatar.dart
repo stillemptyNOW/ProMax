@@ -16,6 +16,14 @@ class LetterAvatarPalette {
       gradients[(seed.abs() * 7 + (seed < 0 ? 3 : 0)) % gradients.length];
 }
 
+int avatarSeedFor(String name) {
+  var hash = 0;
+  for (final unit in name.trim().toLowerCase().codeUnits) {
+    hash = (hash * 31 + unit) & 0x7fffffff;
+  }
+  return hash;
+}
+
 String avatarInitials(String name) {
   final words = name
       .trim()
