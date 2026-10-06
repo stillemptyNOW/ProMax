@@ -163,8 +163,12 @@ Generated code is in `lib/l10n/` (produced by `flutter gen-l10n` via `l10n.yaml`
 ## CI/CD
 
 `.github/workflows/promax-ios.yml` verifies the app and builds an unsigned iOS IPA.
-Pushing a `v*` tag also publishes the IPA and `.pmx` tools package as a public
-GitHub Release. The in-app updater reads the latest release metadata from the
+`.github/workflows/promax-platforms.yml` builds split-per-ABI `promax` APKs and the
+Windows and Linux bundles. Pushing a `v*` tag publishes everything — IPA, `.pmx`
+tools package, APKs, desktop archives — into one public GitHub Release through
+`.github/scripts/publish-release.sh`. APKs are named `ProMax-<version>-promax-<abi>.apk`
+because the in-app updater picks them by the `-promax-<abi>.apk` suffix, and they are
+published only when the `ANDROID_KEYSTORE_*` secrets provide the release key. The in-app updater reads the latest release metadata from the
 public ProMax repository and verifies downloaded files by their published size
 and SHA-256 digest. iOS sends the IPA to the share sheet so the user can import it
 into eSign; iOS does not let this app silently replace itself.
