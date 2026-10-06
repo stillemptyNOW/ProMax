@@ -121,6 +121,8 @@ import 'core/config/promax_nav.dart';
 import 'core/config/promax_aura.dart';
 import 'core/storage/bookmarks_store.dart';
 import 'core/push/quiet_hours.dart';
+import 'core/reminders/message_reminders.dart';
+import 'core/reminders/reminder_scheduler.dart';
 import 'core/config/promax_theme_presets.dart';
 import 'frontend/theme/promax_theme.dart';
 
@@ -140,6 +142,30 @@ final storiesModule = StoriesModule(api);
 final bannersModule = accountModule.banners;
 final RouteObserver<PageRoute<dynamic>> appRouteObserver =
     RouteObserver<PageRoute<dynamic>>();
+
+Future<void> _startReminders() async {
+  final reminders = MessageReminders.instance;
+  reminders.scheduler = platformReminderScheduler(
+    openChat: (chatId) => DeepLinkService.instance.handle(
+      Uri(
+        scheme: 'promax',
+        host: 'open',
+        queryParameters: {'chatId': '$chatId'},
+      ),
+    ),
+  );
+  reminders.due.listen((reminder) {
+    if (!reminders.firesInApp) return;
+    final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
+    if (overlay == null) return;
+    showCustomNotificationOnOverlay(
+      overlay,
+      '${reminderTitle(reminder)}: ${reminder.preview}',
+      duration: const Duration(seconds: 6),
+    );
+  });
+  await reminders.load();
+}
 
 Future<Locale> _loadInitialLocale() async {
   return const Locale('ru');
@@ -235,6 +261,7 @@ void main(List<String> args) async {
   final iconTilesFuture = ProMaxIconTiles.load();
   final bookmarksFuture = BookmarksStore.instance.load();
   final quietFuture = QuietHours.instance.load();
+  final remindersFuture = _startReminders();
   final hapticsFuture = Haptics.load();
   final prefsFuture = SharedPreferences.getInstance();
   final accentFuture = AppAccent.load();
@@ -288,6 +315,7 @@ void main(List<String> args) async {
   await iconTilesFuture;
   await bookmarksFuture;
   await quietFuture;
+  await remindersFuture;
 
   final prefs = await prefsFuture;
   await FileHistoryCache.load(prefs);

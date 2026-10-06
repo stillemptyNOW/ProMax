@@ -17,6 +17,8 @@ import '../digital_id/digital_id_screen.dart';
 import '../../../core/storage/bookmarks_store.dart';
 import 'atmosphere_screen.dart';
 import 'bookmarks_screen.dart';
+import 'reminders_screen.dart';
+import '../../../core/reminders/message_reminders.dart';
 import 'export_reader_screen.dart';
 import 'plugins_screen.dart';
 import 'promax_design_screen.dart';
@@ -227,6 +229,15 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     label: 'Закладки',
                     value: items.isEmpty ? null : '${items.length}',
                     onTap: () => _open(context, const BookmarksScreen()),
+                  ),
+                ),
+                ValueListenableBuilder<List<MessageReminder>>(
+                  valueListenable: MessageReminders.instance.items,
+                  builder: (context, items, _) => SettingsNavTile(
+                    icon: Symbols.alarm,
+                    label: 'Напоминания',
+                    value: items.isEmpty ? null : '${items.length}',
+                    onTap: () => _open(context, const RemindersScreen()),
                   ),
                 ),
                 SettingsNavTile(
