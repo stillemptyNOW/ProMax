@@ -7,6 +7,12 @@ import '../../core/config/app_shape.dart';
 import '../../core/config/promax_glass.dart';
 import '../widgets/hint_bubble.dart';
 
+extension ProMaxSurfaces on ColorScheme {
+  Color get incomingBubble => brightness == Brightness.light
+      ? surfaceContainerLowest
+      : surfaceContainerHighest;
+}
+
 const PageTransitionsTheme _pageTransitions = PageTransitionsTheme(
   builders: <TargetPlatform, PageTransitionsBuilder>{
     TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
