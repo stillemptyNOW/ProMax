@@ -21,7 +21,7 @@ for attempt in 1 2 3 4 5; do
     gh release upload "$tag" "$@" --clobber
     exit 0
   fi
-  if gh release create "$tag" "$@" --title "$title" "${notes_args[@]}"; then
+  if gh release create "$tag" "$@" --target "$GITHUB_SHA" --title "$title" "${notes_args[@]}"; then
     exit 0
   fi
   sleep $((attempt * 5))
