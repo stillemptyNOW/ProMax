@@ -18,6 +18,8 @@ import '../../../core/storage/bookmarks_store.dart';
 import 'atmosphere_screen.dart';
 import 'bookmarks_screen.dart';
 import 'reminders_screen.dart';
+import 'quick_replies_screen.dart';
+import '../../../core/storage/quick_replies_store.dart';
 import '../../../core/reminders/message_reminders.dart';
 import 'export_reader_screen.dart';
 import 'plugins_screen.dart';
@@ -238,6 +240,15 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     label: 'Напоминания',
                     value: items.isEmpty ? null : '${items.length}',
                     onTap: () => _open(context, const RemindersScreen()),
+                  ),
+                ),
+                ValueListenableBuilder<List<String>>(
+                  valueListenable: QuickRepliesStore.instance.items,
+                  builder: (context, items, _) => SettingsNavTile(
+                    icon: Symbols.quickreply,
+                    label: 'Шаблоны ответов',
+                    value: items.isEmpty ? null : '${items.length}',
+                    onTap: () => _open(context, const QuickRepliesScreen()),
                   ),
                 ),
                 SettingsNavTile(

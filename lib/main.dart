@@ -120,6 +120,8 @@ import 'core/config/promax_glass.dart';
 import 'core/config/promax_nav.dart';
 import 'core/config/promax_aura.dart';
 import 'core/storage/bookmarks_store.dart';
+import 'core/storage/chat_notes_store.dart';
+import 'core/storage/quick_replies_store.dart';
 import 'core/push/quiet_hours.dart';
 import 'core/reminders/message_reminders.dart';
 import 'core/reminders/reminder_scheduler.dart';
@@ -262,6 +264,8 @@ void main(List<String> args) async {
   final bookmarksFuture = BookmarksStore.instance.load();
   final quietFuture = QuietHours.instance.load();
   final remindersFuture = _startReminders();
+  final notesFuture = ChatNotesStore.instance.load();
+  final quickRepliesFuture = QuickRepliesStore.instance.load();
   final hapticsFuture = Haptics.load();
   final prefsFuture = SharedPreferences.getInstance();
   final accentFuture = AppAccent.load();
@@ -316,6 +320,8 @@ void main(List<String> args) async {
   await bookmarksFuture;
   await quietFuture;
   await remindersFuture;
+  await notesFuture;
+  await quickRepliesFuture;
 
   final prefs = await prefsFuture;
   await FileHistoryCache.load(prefs);

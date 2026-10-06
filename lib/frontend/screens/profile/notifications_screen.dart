@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/config/app_badge.dart';
 import '../../../core/push/fkm_controller.dart';
 import '../../../core/push/launcher_badge.dart';
+import '../../../core/push/quiet_hours.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/config/build_profile.dart';
@@ -18,6 +19,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
+import '../chats/quiet_hours_sheet.dart';
 import 'web_push_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -213,6 +215,15 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   ),
                   SettingsCard(
                     children: [
+                      ValueListenableBuilder<QuietWindow?>(
+                        valueListenable: QuietHours.instance.global,
+                        builder: (context, window, _) => SettingsNavTile(
+                          icon: Symbols.do_not_disturb_on,
+                          label: 'Не беспокоить',
+                          value: window?.label ?? 'Выключено',
+                          onTap: () => showGlobalQuietHoursSheet(context),
+                        ),
+                      ),
                       SettingsToggleTile(
                         icon: Symbols.notifications,
                         label: l10n.notificationsAllLabel,
