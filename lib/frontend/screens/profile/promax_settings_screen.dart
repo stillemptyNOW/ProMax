@@ -17,6 +17,7 @@ import '../digital_id/digital_id_screen.dart';
 import '../../../core/storage/bookmarks_store.dart';
 import 'atmosphere_screen.dart';
 import 'bookmarks_screen.dart';
+import 'export_reader_screen.dart';
 import 'plugins_screen.dart';
 import 'promax_design_screen.dart';
 import 'promax_transfer_card.dart';
@@ -227,6 +228,11 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     value: items.isEmpty ? null : '${items.length}',
                     onTap: () => _open(context, const BookmarksScreen()),
                   ),
+                ),
+                SettingsNavTile(
+                  icon: Symbols.lock_open,
+                  label: 'Открыть экспорт .pmxchat',
+                  onTap: () => _open(context, const ExportReaderScreen()),
                 ),
                 if (BuildProfile.plugins)
                   SettingsNavTile(

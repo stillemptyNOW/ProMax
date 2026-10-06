@@ -105,6 +105,8 @@ import 'message_shot_sheet.dart';
 import '../../../core/storage/bookmarks_store.dart';
 import 'disappearing_sheet.dart';
 import 'quiet_hours_sheet.dart';
+import 'chat_export_sheet.dart';
+import 'chat_tool_tile.dart';
 import '../../../core/push/quiet_hours.dart';
 import '../../../core/disappearing/disappearing_messages.dart';
 import '../../../core/config/app_chat_chrome.dart';
@@ -3410,37 +3412,10 @@ class _ChatScreenState extends State<ChatScreen>
           onTap: _openWallpaperSheet,
         ),
         ChatMenuItem(
-          icon: Symbols.bedtime,
-          label: QuietHours.instance.windowFor(widget.chatId) == null
-              ? 'Тихие часы'
-              : 'Тихие часы: ${QuietHours.instance.windowFor(widget.chatId)!.label}',
-          onTap: () => showQuietHoursSheet(context, widget.chatId),
-        ),
-        ChatMenuItem(
-          icon: Symbols.timer,
-          label: DisappearingMessages.instance.timerFor(widget.chatId) > 0
-              ? 'Исчезающие: ${DisappearingMessages.label(DisappearingMessages.instance.timerFor(widget.chatId))}'
-              : 'Исчезающие сообщения',
-          onTap: () => showDisappearingSheet(context, widget.chatId),
-        ),
-        ChatMenuItem(
-          icon: Symbols.bar_chart,
-          label: 'Статистика чата',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatStatsScreen(
-                accountId: _myId,
-                chatId: widget.chatId,
-                title: widget.name,
-              ),
-            ),
-          ),
-        ),
-        ChatMenuItem(
-          icon: Symbols.ac_unit,
-          label: 'Атмосфера чата',
-          onTap: () => showChatAtmosphereSheet(context, widget.chatId),
+          icon: Symbols.auto_awesome,
+          label: 'ProMax',
+          dividerAfter: true,
+          onTap: _openProMaxTools,
         ),
         ChatMenuItem(
           icon: Symbols.mop,
@@ -3457,34 +3432,142 @@ class _ChatScreenState extends State<ChatScreen>
           label: l10n.chatInfoMenuDeleteChat,
           onTap: _deleteChat,
         ),
-        if (AppLock.instance.decoyConfigured.value &&
-            !DoubleBottom.active.value)
-          ChatMenuItem(
-            icon: DoubleBottom.isSecret(widget.chatId)
-                ? Symbols.layers_clear
-                : Symbols.layers,
-            label: DoubleBottom.isSecret(widget.chatId)
-                ? 'Убрать из двойного дна'
-                : 'Спрятать в двойное дно',
-            onTap: () async {
-              final secret = !DoubleBottom.isSecret(widget.chatId);
-              await DoubleBottom.setSecret(widget.chatId, secret);
-              if (!mounted) return;
-              showCustomNotification(
-                context,
-                secret
-                    ? 'Чат спрятан: его не будет видно по второму коду'
-                    : 'Чат снова виден по любому коду',
-              );
-            },
-          ),
-        if ((chat?.type ?? widget.chatType) == 'DIALOG' && widget.chatId != 0)
-          ChatMenuItem(
-            icon: Symbols.delete_forever,
-            label: 'Удалить у обоих',
-            onTap: _wipeForBoth,
-          ),
       ],
+    );
+  }
+
+  void _openProMaxTools() {
+    final isDialog =
+        (chat?.type ?? widget.chatType) == 'DIALOG' && widget.chatId != 0;
+    final canHide =
+        AppLock.instance.decoyConfigured.value && !DoubleBottom.active.value;
+    final atmosphere = ProMaxAtmosphere.chatEffect(widget.chatId);
+    final timer = DisappearingMessages.instance.timerFor(widget.chatId);
+    final quiet = QuietHours.instance.windowFor(widget.chatId);
+    final secret = DoubleBottom.isSecret(widget.chatId);
+    void then(VoidCallback action) {
+      Navigator.of(context).pop();
+      action();
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      builder: (sheetContext) {
+        final cs = Theme.of(sheetContext).colorScheme;
+        final tiles = <ChatToolTile>[
+          ChatToolTile(
+            icon: Symbols.ac_unit,
+            label: 'Атмосфера',
+            value: atmosphere?.title ?? 'Как везде',
+            onTap: () =>
+                then(() => showChatAtmosphereSheet(context, widget.chatId)),
+          ),
+          ChatToolTile(
+            icon: Symbols.bar_chart,
+            label: 'Статистика',
+            onTap: () => then(
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatStatsScreen(
+                    accountId: _myId,
+                    chatId: widget.chatId,
+                    title: widget.name,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          ChatToolTile(
+            icon: Symbols.timer,
+            label: 'Исчезающие',
+            value: timer > 0 ? DisappearingMessages.label(timer) : 'Выкл',
+            onTap: () =>
+                then(() => showDisappearingSheet(context, widget.chatId)),
+          ),
+          ChatToolTile(
+            icon: Symbols.bedtime,
+            label: 'Тихие часы',
+            value: quiet?.label ?? 'Выкл',
+            onTap: () =>
+                then(() => showQuietHoursSheet(context, widget.chatId)),
+          ),
+          ChatToolTile(
+            icon: Symbols.ios_share,
+            label: 'Экспорт',
+            onTap: () => then(
+              () => showChatExportSheet(
+                context,
+                accountId: _myId,
+                chatId: widget.chatId,
+                chatName: widget.name,
+              ),
+            ),
+          ),
+          if (canHide)
+            ChatToolTile(
+              icon: secret ? Symbols.layers_clear : Symbols.layers,
+              label: secret ? 'Из двойного дна' : 'В двойное дно',
+              onTap: () => then(() async {
+                await DoubleBottom.setSecret(widget.chatId, !secret);
+                if (!mounted) return;
+                showCustomNotification(
+                  context,
+                  !secret
+                      ? 'Чат спрятан: его не будет видно по второму коду'
+                      : 'Чат снова виден по любому коду',
+                );
+              }),
+            ),
+        ];
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'ProMax',
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                GridView.count(
+                  crossAxisCount: 3,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 0.95,
+                  children: tiles,
+                ),
+                if (isDialog) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 50,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.error.withValues(alpha: 0.14),
+                        foregroundColor: cs.error,
+                      ),
+                      onPressed: () => then(_wipeForBoth),
+                      icon: const Icon(Symbols.delete_forever),
+                      label: const Text('Удалить у обоих'),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
