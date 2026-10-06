@@ -3,13 +3,11 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:kolibri/kolibri.dart' show initKolibri;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:promax/l10n/app_localizations.dart';
-import 'package:m3e_collection/m3e_collection.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'backend/api.dart';
@@ -122,8 +120,13 @@ import 'core/config/promax_glass.dart';
 import 'core/config/promax_nav.dart';
 import 'core/config/promax_aura.dart';
 import 'core/storage/bookmarks_store.dart';
+import 'core/storage/chat_notes_store.dart';
+import 'core/storage/quick_replies_store.dart';
 import 'core/push/quiet_hours.dart';
+import 'core/reminders/message_reminders.dart';
+import 'core/reminders/reminder_scheduler.dart';
 import 'core/config/promax_theme_presets.dart';
+import 'frontend/theme/promax_theme.dart';
 
 final api = Api();
 final accountModule = AccountModule(api);
@@ -142,19 +145,29 @@ final bannersModule = accountModule.banners;
 final RouteObserver<PageRoute<dynamic>> appRouteObserver =
     RouteObserver<PageRoute<dynamic>>();
 
-const ProgressIndicatorThemeData _expressiveProgressTheme =
-    // ignore: deprecated_member_use
-    ProgressIndicatorThemeData(year2023: false);
-
-const PageTransitionsTheme _appPageTransitions = PageTransitionsTheme(
-  builders: <TargetPlatform, PageTransitionsBuilder>{
-    TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-    TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-    TargetPlatform.windows: ZoomPageTransitionsBuilder(),
-    TargetPlatform.linux: ZoomPageTransitionsBuilder(),
-  },
-);
+Future<void> _startReminders() async {
+  final reminders = MessageReminders.instance;
+  reminders.scheduler = platformReminderScheduler(
+    openChat: (chatId) => DeepLinkService.instance.handle(
+      Uri(
+        scheme: 'promax',
+        host: 'open',
+        queryParameters: {'chatId': '$chatId'},
+      ),
+    ),
+  );
+  reminders.due.listen((reminder) {
+    if (!reminders.firesInApp) return;
+    final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
+    if (overlay == null) return;
+    showCustomNotificationOnOverlay(
+      overlay,
+      '${reminderTitle(reminder)}: ${reminder.preview}',
+      duration: const Duration(seconds: 6),
+    );
+  });
+  await reminders.load();
+}
 
 Future<Locale> _loadInitialLocale() async {
   return const Locale('ru');
@@ -250,6 +263,9 @@ void main(List<String> args) async {
   final iconTilesFuture = ProMaxIconTiles.load();
   final bookmarksFuture = BookmarksStore.instance.load();
   final quietFuture = QuietHours.instance.load();
+  final remindersFuture = _startReminders();
+  final notesFuture = ChatNotesStore.instance.load();
+  final quickRepliesFuture = QuickRepliesStore.instance.load();
   final hapticsFuture = Haptics.load();
   final prefsFuture = SharedPreferences.getInstance();
   final accentFuture = AppAccent.load();
@@ -303,6 +319,9 @@ void main(List<String> args) async {
   await iconTilesFuture;
   await bookmarksFuture;
   await quietFuture;
+  await remindersFuture;
+  await notesFuture;
+  await quickRepliesFuture;
 
   final prefs = await prefsFuture;
   await FileHistoryCache.load(prefs);
@@ -1019,67 +1038,22 @@ class ProMaxAppState extends State<ProMaxApp>
     _themeCacheLight = light;
     _themeCacheDark = dark;
     _themeCacheGlass = glass;
-    final displayFont = AppDisplayFont(AppFonts.displayFamily(_fontId));
-    _lightTheme = withM3ETheme(
-      ThemeData(
-        useMaterial3: true,
-        colorScheme: light,
-        pageTransitionsTheme: _appPageTransitions,
-        progressIndicatorTheme: _expressiveProgressTheme,
-        tooltipTheme: HintBubbleStyle.tooltipTheme(light),
-        extensions: [displayFont, glass],
-        textTheme: AppFonts.textTheme(
-          _fontId,
-          ThemeData(brightness: Brightness.light).textTheme,
-        ),
-      ),
+    _lightTheme = buildProMaxTheme(
+      scheme: light,
+      fontId: _fontId,
+      glass: glass,
     );
-    _darkTheme = withM3ETheme(
-      ThemeData(
-        useMaterial3: true,
-        colorScheme: dark,
-        pageTransitionsTheme: _appPageTransitions,
-        progressIndicatorTheme: _expressiveProgressTheme,
-        tooltipTheme: HintBubbleStyle.tooltipTheme(dark),
-        extensions: [displayFont, glass],
-        textTheme: AppFonts.textTheme(
-          _fontId,
-          ThemeData(brightness: Brightness.dark).textTheme,
-        ),
-      ),
-    );
+    _darkTheme = buildProMaxTheme(scheme: dark, fontId: _fontId, glass: glass);
   }
 
   bool get _globalGradientActive =>
       AppWallpaperTint.current.value && (_globalWallpaper?.isGradient ?? false);
 
   ColorScheme _adjustDarkScheme(ColorScheme base) {
-    if (AppAmoled.current.value) {
-      return base.copyWith(
-        surface: Colors.black,
-        surfaceContainerLowest: Colors.black,
-        surfaceContainerLow: const Color(0xFF080808),
-        surfaceContainer: const Color(0xFF101010),
-        surfaceContainerHigh: const Color(0xFF161616),
-        surfaceContainerHighest: const Color(0xFF1C1C1C),
-      );
-    }
-    final darkSurface = Color.alphaBlend(
-      base.primary.withValues(alpha: 0.05),
-      const Color(0xFF0D0D14),
-    );
-    return base.copyWith(
-      surface: _globalGradientActive
-          ? darkSurface.withValues(alpha: _globalGradientSurfaceAlpha)
-          : darkSurface,
-      surfaceContainerHigh: Color.alphaBlend(
-        base.primary.withValues(alpha: 0.08),
-        const Color(0xFF1A1A26),
-      ),
-      surfaceContainerHighest: Color.alphaBlend(
-        base.primary.withValues(alpha: 0.12),
-        const Color(0xFF262636),
-      ),
+    final scheme = proMaxDarkScheme(base, amoled: AppAmoled.current.value);
+    if (AppAmoled.current.value || !_globalGradientActive) return scheme;
+    return scheme.copyWith(
+      surface: scheme.surface.withValues(alpha: _globalGradientSurfaceAlpha),
     );
   }
 
@@ -1087,22 +1061,10 @@ class ProMaxAppState extends State<ProMaxApp>
   static const double _globalGradientSurfaceAlpha = 0.6;
 
   ColorScheme _adjustLightScheme(ColorScheme base) {
-    final lightSurface = Color.alphaBlend(
-      base.primary.withValues(alpha: 0.06),
-      const Color(0xFFF5F5FA),
-    );
-    return base.copyWith(
-      surface: _globalGradientActive
-          ? lightSurface.withValues(alpha: _globalGradientSurfaceAlpha)
-          : lightSurface,
-      surfaceContainerHigh: Color.alphaBlend(
-        base.primary.withValues(alpha: 0.08),
-        const Color(0xFFEAEAF2),
-      ),
-      surfaceContainerHighest: Color.alphaBlend(
-        base.primary.withValues(alpha: 0.11),
-        const Color(0xFFDEDEE8),
-      ),
+    final scheme = proMaxLightScheme(base);
+    if (!_globalGradientActive) return scheme;
+    return scheme.copyWith(
+      surface: scheme.surface.withValues(alpha: _globalGradientSurfaceAlpha),
     );
   }
 

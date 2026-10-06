@@ -21,6 +21,7 @@ import '../../../main.dart';
 import '../../widgets/liquid_glass.dart';
 import '../../widgets/settings_card.dart';
 import '../../../core/config/app_shape.dart';
+import '../../theme/promax_theme.dart';
 
 class AppearanceScreen extends StatefulWidget {
   const AppearanceScreen({super.key});
@@ -722,7 +723,7 @@ class _PreviewBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final bg = isMe ? cs.primaryContainer : cs.surfaceContainerHighest;
+    final bg = isMe ? cs.primaryContainer : cs.incomingBubble;
     final fg = Theme.of(context).brightness == Brightness.dark
         ? Colors.white
         : Colors.black;

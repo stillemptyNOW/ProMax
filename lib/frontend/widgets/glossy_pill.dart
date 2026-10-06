@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../../core/config/app_liquid_glass.dart';
 import '../../core/config/app_pill_gradient.dart';
 import '../../core/config/app_visual_style.dart';
 import 'liquid_glass.dart';
@@ -141,18 +142,19 @@ class GlossyPill extends StatelessWidget {
     final base = color ?? cs.surfaceContainerHigh;
     final content = Padding(padding: padding, child: child);
 
-    return RepaintBoundary(
+    final glass = RepaintBoundary(
       child: DecoratedBox(
+        position: DecorationPosition.foreground,
         decoration: BoxDecoration(
           borderRadius: borderRadius,
           border: borderSide != null
               ? Border.fromBorderSide(borderSide!)
-              : GlossyDecor.rimBorder(base),
-          boxShadow: [GlossyDecor.dropShadow(base, depth)],
+              : null,
         ),
         child: LiquidGlassSurface(
           borderRadius: borderRadius,
-          tint: Colors.transparent,
+          tint: AppLiquidGlass.panelTint(cs),
+          shadow: GlossyDecor.isDark(base) ? 0.32 : 0.12,
           child: _inert
               ? content
               : Material(
@@ -166,6 +168,7 @@ class GlossyPill extends StatelessWidget {
         ),
       ),
     );
+    return _inert ? glass : _GlassPress(child: glass);
   }
 
   Widget _flat(BuildContext context) {
@@ -262,6 +265,38 @@ class GlossyPill extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GlassPress extends StatefulWidget {
+  const _GlassPress({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_GlassPress> createState() => _GlassPressState();
+}
+
+class _GlassPressState extends State<_GlassPress> {
+  bool _pressed = false;
+
+  void _set(bool value) {
+    if (_pressed != value) setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: (_) => _set(true),
+      onPointerUp: (_) => _set(false),
+      onPointerCancel: (_) => _set(false),
+      child: AnimatedScale(
+        scale: _pressed ? 1.06 : 1,
+        duration: Duration(milliseconds: _pressed ? 140 : 420),
+        curve: _pressed ? Curves.easeOut : Curves.elasticOut,
+        child: widget.child,
       ),
     );
   }

@@ -7,6 +7,7 @@ import '../../../main.dart';
 import '../../../backend/modules/chats.dart';
 import '../../../backend/modules/contacts.dart';
 import '../../../backend/modules/messages.dart' show ContactCache;
+import '../../../core/security/double_bottom.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/contacts/contact_labels.dart';
 import '../../../core/utils/debouncer.dart';
@@ -301,7 +302,13 @@ class _SearchScreenState extends State<SearchScreen> {
         : await AppDatabase.searchContacts(accountId, query);
     final localChats = accountId == null
         ? const <Map<String, dynamic>>[]
-        : await AppDatabase.searchChatsByTitle(accountId, query);
+        : [
+            for (final row in await AppDatabase.searchChatsByTitle(
+              accountId,
+              query,
+            ))
+              if (!DoubleBottom.hides(row['id'] as int)) row,
+          ];
     final localRows = accountId == null
         ? const <Map<String, dynamic>>[]
         : await AppDatabase.searchMessagesText(accountId, query);
@@ -332,7 +339,11 @@ class _SearchScreenState extends State<SearchScreen> {
     final localChatIds = localChats.map((c) => c['id'] as int).toSet();
     setState(() {
       _phoneResult = phoneResult;
-      _public = publicHits.where((c) => !localChatIds.contains(c.id)).toList();
+      _public = publicHits
+          .where(
+            (c) => !localChatIds.contains(c.id) && !DoubleBottom.hides(c.id),
+          )
+          .toList();
       _loading = false;
     });
   }
@@ -345,7 +356,9 @@ class _SearchScreenState extends State<SearchScreen> {
     final seen = <String>{};
     final messages = [
       for (final hit in hits)
-        if (seen.add('${hit.chatId}:${hit.messageId ?? hit.time}')) hit,
+        if (!DoubleBottom.hides(hit.chatId) &&
+            seen.add('${hit.chatId}:${hit.messageId ?? hit.time}'))
+          hit,
     ]..sort((a, b) => b.time.compareTo(a.time));
     var meta = <int, Map<String, dynamic>>{};
     if (accountId != null && messages.isNotEmpty) {

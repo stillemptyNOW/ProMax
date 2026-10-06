@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../backend/modules/chats.dart';
+import '../../../core/security/double_bottom.dart';
 import '../../../core/storage/bookmarks_store.dart';
 import '../../../core/utils/format.dart';
 import '../../widgets/connection_status.dart';
@@ -59,9 +60,13 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         top: false,
         child: ValueListenableBuilder<List<MessageBookmark>>(
           valueListenable: BookmarksStore.instance.items,
-          builder: (context, all, _) => ListenableBuilder(
-            listenable: _query,
+          builder: (context, stored, _) => ListenableBuilder(
+            listenable: Listenable.merge([_query, DoubleBottom.listenable]),
             builder: (context, _) {
+              final all = [
+                for (final b in stored)
+                  if (!DoubleBottom.hides(b.chatId)) b,
+              ];
               final term = _query.text.trim().toLowerCase();
               final shown = term.isEmpty
                   ? all
@@ -71,89 +76,118 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                             b.chatName.toLowerCase().contains(term))
                           b,
                     ];
-              return ListView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-                children: [
-                  TextField(
-                    controller: _query,
-                    decoration: InputDecoration(
-                      hintText: 'Поиск по закладкам',
-                      prefixIcon: const Icon(Symbols.search),
-                      filled: true,
-                      fillColor: cs.onSurface.withValues(alpha: 0.07),
-                      isDense: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
+              final header = <Widget>[
+                TextField(
+                  controller: _query,
+                  decoration: InputDecoration(
+                    hintText: 'Поиск по закладкам',
+                    prefixIcon: const Icon(Symbols.search),
+                    filled: true,
+                    fillColor: cs.onSurface.withValues(alpha: 0.07),
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  if (all.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 80),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Symbols.bookmarks,
-                            size: 56,
-                            color: cs.onSurfaceVariant,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Закладок пока нет',
-                            style: TextStyle(
-                              color: cs.onSurface,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Зажми сообщение и выбери «В закладки»',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: cs.onSurfaceVariant),
-                          ),
-                        ],
+                ),
+                const SizedBox(height: 14),
+                if (all.isEmpty)
+                  const _BookmarksPlaceholder(
+                    icon: Symbols.bookmarks,
+                    title: 'Закладок пока нет',
+                    subtitle: 'Зажми сообщение и выбери «В закладки»',
+                  )
+                else if (shown.isEmpty)
+                  const _BookmarksPlaceholder(
+                    icon: Symbols.search_off,
+                    title: 'Ничего не нашлось',
+                    subtitle: 'Попробуй другой запрос',
+                  ),
+              ];
+              return ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                itemCount: header.length + shown.length,
+                itemBuilder: (context, index) {
+                  if (index < header.length) return header[index];
+                  final bookmark = shown[index - header.length];
+                  return Padding(
+                    key: ValueKey(bookmark.key),
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Dismissible(
+                      key: ValueKey(bookmark.key),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        decoration: BoxDecoration(
+                          color: cs.error,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Icon(Symbols.delete, color: cs.onError),
+                      ),
+                      onDismissed: (_) =>
+                          BookmarksStore.instance.remove(bookmark),
+                      child: _BookmarkCard(
+                        bookmark: bookmark,
+                        onTap: () => _open(bookmark),
+                        onCopy: () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: bookmark.text),
+                          );
+                          if (context.mounted) {
+                            showCustomNotification(context, 'Скопировано');
+                          }
+                        },
                       ),
                     ),
-                  for (final bookmark in shown)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Dismissible(
-                        key: ValueKey(bookmark.key),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          decoration: BoxDecoration(
-                            color: cs.error,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Icon(Symbols.delete, color: cs.onError),
-                        ),
-                        onDismissed: (_) =>
-                            BookmarksStore.instance.remove(bookmark),
-                        child: _BookmarkCard(
-                          bookmark: bookmark,
-                          onTap: () => _open(bookmark),
-                          onCopy: () async {
-                            await Clipboard.setData(
-                              ClipboardData(text: bookmark.text),
-                            );
-                            if (context.mounted) {
-                              showCustomNotification(context, 'Скопировано');
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                ],
+                  );
+                },
               );
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BookmarksPlaceholder extends StatelessWidget {
+  const _BookmarksPlaceholder({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 80),
+      child: Column(
+        children: [
+          Icon(icon, size: 56, color: cs.onSurfaceVariant),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              color: cs.onSurface,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: cs.onSurfaceVariant),
+          ),
+        ],
       ),
     );
   }

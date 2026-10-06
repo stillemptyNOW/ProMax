@@ -16,66 +16,94 @@ import '../../widgets/custom_notification.dart';
 Future<String?> askExportPassword(
   BuildContext context, {
   required bool confirm,
-}) async {
-  final first = TextEditingController();
-  final second = TextEditingController();
-  String? error;
-  final result = await showDialog<String>(
-    context: context,
-    builder: (dialogContext) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: Text(confirm ? 'Пароль для экспорта' : 'Пароль экспорта'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: first,
-              obscureText: true,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'Пароль'),
+}) => showDialog<String>(
+  context: context,
+  builder: (_) => _ExportPasswordDialog(confirm: confirm),
+);
+
+class _ExportPasswordDialog extends StatefulWidget {
+  const _ExportPasswordDialog({required this.confirm});
+
+  final bool confirm;
+
+  @override
+  State<_ExportPasswordDialog> createState() => _ExportPasswordDialogState();
+}
+
+class _ExportPasswordDialogState extends State<_ExportPasswordDialog> {
+  final _first = TextEditingController();
+  final _second = TextEditingController();
+  bool _obscured = true;
+  String? _error;
+
+  @override
+  void dispose() {
+    _first.dispose();
+    _second.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_first.text.length < 6) {
+      setState(() => _error = 'Не короче 6 символов');
+      return;
+    }
+    if (widget.confirm && _first.text != _second.text) {
+      setState(() => _error = 'Пароли не совпадают');
+      return;
+    }
+    Navigator.pop(context, _first.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final visibility = IconButton(
+      icon: Icon(_obscured ? Symbols.visibility : Symbols.visibility_off),
+      onPressed: () => setState(() => _obscured = !_obscured),
+    );
+    return AlertDialog(
+      title: Text(widget.confirm ? 'Пароль для экспорта' : 'Пароль экспорта'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _first,
+            obscureText: _obscured,
+            autofocus: true,
+            textInputAction: widget.confirm
+                ? TextInputAction.next
+                : TextInputAction.done,
+            onSubmitted: widget.confirm ? null : (_) => _submit(),
+            decoration: InputDecoration(
+              labelText: 'Пароль',
+              suffixIcon: visibility,
             ),
-            if (confirm)
-              TextField(
-                controller: second,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Повтори пароль'),
-              ),
-            if (error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Отмена'),
           ),
-          FilledButton(
-            onPressed: () {
-              if (first.text.length < 6) {
-                setState(() => error = 'Не короче 6 символов');
-                return;
-              }
-              if (confirm && first.text != second.text) {
-                setState(() => error = 'Пароли не совпадают');
-                return;
-              }
-              Navigator.pop(dialogContext, first.text);
-            },
-            child: const Text('Готово'),
-          ),
+          if (widget.confirm)
+            TextField(
+              controller: _second,
+              obscureText: _obscured,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submit(),
+              decoration: const InputDecoration(labelText: 'Повтори пароль'),
+            ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(_error!, style: TextStyle(color: cs.error)),
+            ),
         ],
       ),
-    ),
-  );
-  first.dispose();
-  second.dispose();
-  return result;
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Отмена'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Готово')),
+      ],
+    );
+  }
 }
 
 Future<void> showChatExportSheet(

@@ -4,6 +4,7 @@ import '../../../main.dart' show accountModule;
 import '../../../core/storage/app_database.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/animated_slash_icon.dart';
+import '../../widgets/with_text_controller.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/glossy_pill.dart';
 import '../../widgets/primary_loading_button.dart';
@@ -12,11 +13,10 @@ import '../../../core/config/app_fonts.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../backend/modules/account/account_models.dart';
 
-
 String _passwordErrorText(Object error, AppLocalizations l10n) =>
     error is WrongPasswordException
-        ? l10n.passwordEntryWrongPassword
-        : l10n.devicesGenericError('$error');
+    ? l10n.passwordEntryWrongPassword
+    : l10n.devicesGenericError('$error');
 
 class PasswordEntryScreen extends StatefulWidget {
   const PasswordEntryScreen({super.key});
@@ -78,11 +78,10 @@ class _PasswordEntryScreenState extends State<PasswordEntryScreen> {
 
   Future<String?> _promptPassword() async {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController();
-    try {
-      return await showDialog<String>(
-        context: context,
-        builder: (ctx) => AlertDialog(
+    return showDialog<String>(
+      context: context,
+      builder: (_) => WithTextController(
+        builder: (ctx, controller) => AlertDialog(
           shape: AppShape.dialogBorder,
           title: Text(l10n.passwordEntryConfirmTitle),
           content: TextField(
@@ -105,10 +104,8 @@ class _PasswordEntryScreenState extends State<PasswordEntryScreen> {
             ),
           ],
         ),
-      );
-    } finally {
-      controller.dispose();
-    }
+      ),
+    );
   }
 
   Future<void> _openWithPassword(

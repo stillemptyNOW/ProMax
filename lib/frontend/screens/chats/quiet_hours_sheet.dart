@@ -6,18 +6,48 @@ import '../../../core/push/quiet_hours.dart';
 Future<void> showQuietHoursSheet(
   BuildContext context,
   int chatId,
-) => showModalBottomSheet<void>(
+) => _showWindowSheet(
+  context,
+  title: 'Тихие часы',
+  offLabel: 'Выключены',
+  subtitle:
+      'В это время уведомления из этого чата не показываются. Сообщения приходят как обычно.',
+  listenable: QuietHours.instance.windows,
+  current: () => QuietHours.instance.windowFor(chatId),
+  choose: (window) => QuietHours.instance.set(chatId, window),
+);
+
+Future<void> showGlobalQuietHoursSheet(
+  BuildContext context,
+) => _showWindowSheet(
+  context,
+  title: 'Не беспокоить',
+  offLabel: 'Выключено',
+  subtitle:
+      'По расписанию ProMax молчит во всех чатах сразу. Сообщения приходят как обычно, уведомления о них не показываются.',
+  listenable: QuietHours.instance.global,
+  current: () => QuietHours.instance.global.value,
+  choose: QuietHours.instance.setGlobal,
+);
+
+Future<void> _showWindowSheet(
+  BuildContext context, {
+  required String title,
+  required String offLabel,
+  required String subtitle,
+  required Listenable listenable,
+  required QuietWindow? Function() current,
+  required Future<void> Function(QuietWindow? window) choose,
+}) => showModalBottomSheet<void>(
   context: context,
   showDragHandle: true,
-  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
   builder: (sheetContext) {
     final cs = Theme.of(sheetContext).colorScheme;
-    final service = QuietHours.instance;
     return SafeArea(
-      child: ValueListenableBuilder<Map<int, QuietWindow>>(
-        valueListenable: service.windows,
-        builder: (context, _, _) {
-          final current = service.windowFor(chatId);
+      child: ListenableBuilder(
+        listenable: listenable,
+        builder: (context, _) {
+          final selected = current();
           return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -25,7 +55,7 @@ Future<void> showQuietHoursSheet(
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
                 child: Text(
-                  'Тихие часы',
+                  title,
                   style: TextStyle(
                     color: cs.onSurface,
                     fontSize: 20,
@@ -36,26 +66,26 @@ Future<void> showQuietHoursSheet(
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                 child: Text(
-                  'В это время уведомления из этого чата не показываются. Сообщения приходят как обычно.',
+                  subtitle,
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
                 ),
               ),
               ListTile(
                 leading: const Icon(Symbols.notifications_active),
-                title: const Text('Выключены'),
-                trailing: current == null
+                title: Text(offLabel),
+                trailing: selected == null
                     ? Icon(Symbols.check, color: cs.primary)
                     : null,
-                onTap: () => service.set(chatId, null),
+                onTap: () => choose(null),
               ),
               for (final window in QuietHours.presets)
                 ListTile(
                   leading: const Icon(Symbols.bedtime),
                   title: Text(window.label),
-                  trailing: window == current
+                  trailing: window == selected
                       ? Icon(Symbols.check, color: cs.primary)
                       : null,
-                  onTap: () => service.set(chatId, window),
+                  onTap: () => choose(window),
                 ),
             ],
           );

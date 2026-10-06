@@ -11,6 +11,7 @@ import '../../../core/config/app_fonts.dart';
 import '../../../core/crypto/e2ee_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/custom_notification.dart';
+import '../../widgets/with_text_controller.dart';
 import '../../widgets/glossy_pill.dart';
 import '../../widgets/primary_loading_button.dart';
 import '../../widgets/settings_card.dart';
@@ -159,32 +160,32 @@ class _E2eeScreenState extends State<E2eeScreen> {
   Future<String?> _askPassword() async {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
-    final controller = TextEditingController();
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: cs.surfaceContainerHigh,
-        title: Text(l10n.e2eeTransferPassword),
-        content: TextField(
-          controller: controller,
-          obscureText: true,
-          autofocus: true,
-          enableSuggestions: false,
-          autocorrect: false,
+      builder: (_) => WithTextController(
+        builder: (ctx, controller) => AlertDialog(
+          backgroundColor: cs.surfaceContainerHigh,
+          title: Text(l10n.e2eeTransferPassword),
+          content: TextField(
+            controller: controller,
+            obscureText: true,
+            autofocus: true,
+            enableSuggestions: false,
+            autocorrect: false,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.e2eeDecline),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, controller.text),
+              child: const Text('OK'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.e2eeDecline),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, controller.text),
-            child: const Text('OK'),
-          ),
-        ],
       ),
     );
-    controller.dispose();
     if (result == null || result.isEmpty) return null;
     return result;
   }
@@ -204,7 +205,9 @@ class _E2eeScreenState extends State<E2eeScreen> {
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/promax-e2ee-${widget.accountId}.kct');
     await file.writeAsBytes(bytes, flush: true);
-    await AppLock.instance.external(() => Share.shareXFiles([XFile(file.path)]));
+    await AppLock.instance.external(
+      () => Share.shareXFiles([XFile(file.path)]),
+    );
     // #***! файл содержит ключ личности и все сессии, в кэше ему делать нечего
     try {
       await file.delete();
@@ -215,7 +218,9 @@ class _E2eeScreenState extends State<E2eeScreen> {
 
   Future<void> _import() async {
     final l10n = AppLocalizations.of(context)!;
-    final picked = await AppLock.instance.external(() => FilePicker.platform.pickFiles(withData: true));
+    final picked = await AppLock.instance.external(
+      () => FilePicker.platform.pickFiles(withData: true),
+    );
     final file = picked?.files.singleOrNull;
     if (file == null || !mounted) return;
     Uint8List? bytes = file.bytes;
@@ -353,9 +358,7 @@ class _E2eeScreenState extends State<E2eeScreen> {
           ),
         ];
       case E2eePhase.established:
-        return [
-          OutlinedButton(onPressed: _reset, child: Text(l10n.e2eeReset)),
-        ];
+        return [OutlinedButton(onPressed: _reset, child: Text(l10n.e2eeReset))];
     }
   }
 

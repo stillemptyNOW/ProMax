@@ -278,6 +278,7 @@ class _CloudStorageScreenState extends State<CloudStorageScreen>
       return;
     }
     await CloudStorageModule.cacheEnvGroupId(profile.id, result.id);
+    if (!mounted) return;
     setState(() {
       _isCreatingEnv = false;
       _envState = _EnvState.ready;

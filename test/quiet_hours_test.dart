@@ -23,4 +23,18 @@ void main() {
     expect(service.isQuiet(-5, DateTime(2026, 10, 6, 3)), isTrue);
     expect(service.isQuiet(9, DateTime(2026, 10, 6, 3)), isFalse);
   });
+
+  test('a global window silences every chat', () async {
+    SharedPreferences.setMockInitialValues({});
+    final service = QuietHours.instance;
+    service.windows.value = const {};
+    await service.setGlobal(const QuietWindow(23, 7));
+    service.global.value = null;
+    await service.load();
+    expect(service.global.value, const QuietWindow(23, 7));
+    expect(service.isQuiet(123, DateTime(2026, 10, 6, 1)), isTrue);
+    expect(service.isQuiet(123, DateTime(2026, 10, 6, 12)), isFalse);
+    await service.setGlobal(null);
+    expect(service.isQuiet(123, DateTime(2026, 10, 6, 1)), isFalse);
+  });
 }

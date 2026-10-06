@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart' show appFlavor;
 
 // #***! что включено в сборке, всё считается на компиляции из flavor
@@ -36,7 +37,7 @@ abstract final class BuildProfile {
   static const bool trafficCapture = !isStore;
   static const bool pranks = !isStore;
   static const bool hiddenContentViewers = !isStore;
-  static const bool digitalId = !isStore;
+  static const bool digitalId = !isStore && !kIsWeb;
   static const bool ipGeoLookup = !isStore;
   static const bool sessionCityLookup = !isStore;
 

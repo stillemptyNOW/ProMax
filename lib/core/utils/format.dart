@@ -204,3 +204,18 @@ String formatChatListStamp(DateTime time, {DateTime? now}) {
   final yy = (time.year % 100).toString().padLeft(2, '0');
   return '${time.day.toString().padLeft(2, '0')}.${time.month.toString().padLeft(2, '0')}.$yy';
 }
+
+String formatReminderStamp(DateTime at, {DateTime? now}) {
+  final current = now ?? DateTime.now();
+  final today = DateTime(current.year, current.month, current.day);
+  final day = DateTime(at.year, at.month, at.day);
+  final days = day.difference(today).inDays;
+  final clock = formatClock(at);
+  if (days == 0) return 'сегодня в $clock';
+  if (days == 1) return 'завтра в $clock';
+  if (days > 1 && days < 7) {
+    return '${_shortWeekdays[at.weekday - 1].toLowerCase()} в $clock';
+  }
+  final year = at.year == current.year ? '' : ' ${at.year}';
+  return '${at.day} ${_shortMonths[at.month - 1]}$year в $clock';
+}

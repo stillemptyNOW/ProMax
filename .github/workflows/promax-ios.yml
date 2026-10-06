@@ -100,11 +100,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
+          .github/scripts/publish-release.sh "$GITHUB_REF_NAME" \
             dist/ProMax-ios-unsigned.ipa \
-            dist/ProMax-Tools.pmx \
-            --title "ProMax $GITHUB_REF_NAME" \
-            --generate-notes
+            dist/ProMax-Tools.pmx
       - uses: actions/upload-artifact@v4
         with:
           name: ProMax-ios-unsigned

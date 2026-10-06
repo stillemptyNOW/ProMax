@@ -83,7 +83,10 @@ class FkmController {
   }
 
   // #***! выключили FKM кнопкой в уведомлении
-  void _onDisabledFromNotification() => enabled.value = false;
+  void _onDisabledFromNotification() {
+    enabled.value = false;
+    Api.keepAliveInBackground = false;
+  }
 
   void _onSessionState(SessionState state) {
     if (!enabled.value) return;
@@ -165,7 +168,6 @@ class FkmController {
     final chatId = payload['chatId'];
     if (chatId is! int) return;
     if (DoubleBottom.hides(chatId)) return;
-    if (QuietHours.instance.isQuiet(chatId)) return;
 
     final msg = payload['message'];
     if (msg is! Map) return;
@@ -182,8 +184,20 @@ class FkmController {
         return;
     }
 
+    if (await _isOwnMessage(msg)) {
+      await PushService.clearChatNotification(chatId);
+      return;
+    }
+    if (QuietHours.instance.isQuiet(chatId)) return;
+
     final data = await _buildNotification(chatId, msg);
     if (data != null) await FkmBridge.instance.showMessage(data);
+  }
+
+  Future<bool> _isOwnMessage(Map<dynamic, dynamic> msg) async {
+    final senderId = msg['sender'];
+    if (senderId is! int) return false;
+    return senderId == await TokenStorage.getActiveAccountId();
   }
 
   // #***! сообщение удалили, гасим уведомление

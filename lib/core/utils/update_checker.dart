@@ -113,6 +113,14 @@ class UpdateCheckResult {
   const UpdateCheckResult.failed() : this._(UpdateCheckStatus.failed);
 }
 
+({String version, int? build})? parseReleaseTag(String tag) {
+  final match = RegExp(
+    r'^v?(\d+\.\d+\.\d+)(?:-[0-9A-Za-z.-]+)?(?:\+(\d+))?',
+  ).firstMatch(tag.trim());
+  if (match == null) return null;
+  return (version: match.group(1)!, build: int.tryParse(match.group(2) ?? ''));
+}
+
 // #***! проверка последнего публичного GitHub-релиза
 abstract class UpdateChecker {
   static const String _userAgent = 'ProMaxUpdateChecker';
@@ -240,8 +248,8 @@ abstract class UpdateChecker {
       if (tag is! String || tag.isEmpty) {
         throw const FormatException('GitHub release has no tag');
       }
-      final match = RegExp(r'^v?(\d+\.\d+\.\d+)(?:\+(\d+))?').firstMatch(tag);
-      if (match == null) {
+      final parsed = parseReleaseTag(tag);
+      if (parsed == null) {
         throw const FormatException('GitHub release tag has no app version');
       }
       final rawAssets = release['assets'];
@@ -263,8 +271,8 @@ abstract class UpdateChecker {
         }
       }
       return {
-        'version': match.group(1),
-        'build': int.tryParse(match.group(2) ?? ''),
+        'version': parsed.version,
+        'build': parsed.build,
         'tag': tag,
         'url': release['html_url'] is String
             ? release['html_url']

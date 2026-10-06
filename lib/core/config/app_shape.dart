@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 class AppShape {
   static const double card = 20;
   static const double button = 14;
-  static const double sheet = 24;
-  static const double dialog = 24;
+  static const double field = 16;
+  static const double tile = 18;
+  static const double menu = 18;
+  static const double sheet = 28;
+  static const double dialog = 28;
   static const double pill = 100;
 
   // #***! готовые BorderRadius чтоб не собирать на каждом билде

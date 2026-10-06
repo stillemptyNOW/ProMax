@@ -57,6 +57,7 @@ class QuietHours {
   static final QuietHours instance = QuietHours._();
 
   static const prefKey = 'promax_quiet_hours';
+  static const globalPrefKey = 'promax_quiet_hours_global';
 
   static const List<QuietWindow> presets = [
     QuietWindow(22, 8),
@@ -66,9 +67,18 @@ class QuietHours {
   ];
 
   final ValueNotifier<Map<int, QuietWindow>> windows = ValueNotifier(const {});
+  final ValueNotifier<QuietWindow?> global = ValueNotifier(null);
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
+    final rawGlobal = prefs.getString(globalPrefKey);
+    try {
+      global.value = rawGlobal == null
+          ? null
+          : QuietWindow.fromJson(jsonDecode(rawGlobal));
+    } catch (_) {
+      global.value = null;
+    }
     final raw = prefs.getString(prefKey);
     if (raw == null) return;
     try {
@@ -85,8 +95,21 @@ class QuietHours {
 
   QuietWindow? windowFor(int chatId) => windows.value[chatId];
 
-  bool isQuiet(int chatId, [DateTime? at]) =>
-      windowFor(chatId)?.covers(at ?? DateTime.now()) ?? false;
+  bool isQuiet(int chatId, [DateTime? at]) {
+    final time = at ?? DateTime.now();
+    return (global.value?.covers(time) ?? false) ||
+        (windowFor(chatId)?.covers(time) ?? false);
+  }
+
+  Future<void> setGlobal(QuietWindow? window) async {
+    global.value = window;
+    final prefs = await SharedPreferences.getInstance();
+    if (window == null) {
+      await prefs.remove(globalPrefKey);
+    } else {
+      await prefs.setString(globalPrefKey, jsonEncode(window.toJson()));
+    }
+  }
 
   Future<void> set(int chatId, QuietWindow? window) async {
     final next = Map<int, QuietWindow>.of(windows.value);

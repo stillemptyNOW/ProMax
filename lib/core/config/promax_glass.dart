@@ -42,25 +42,25 @@ class ProMaxGlass {
   );
   static final refraction = GlassParameter(
     prefKey: 'promax_glass_refraction',
-    defaultValue: 18,
+    defaultValue: 12,
     min: 0,
     max: 40,
   );
   static final specular = GlassParameter(
     prefKey: 'promax_glass_specular',
-    defaultValue: 0.56,
+    defaultValue: 0.6,
     min: 0,
     max: 1,
   );
   static final chroma = GlassParameter(
     prefKey: 'promax_glass_chroma',
-    defaultValue: 0.12,
+    defaultValue: 0.06,
     min: 0,
     max: 0.4,
   );
   static final rim = GlassParameter(
     prefKey: 'promax_glass_rim',
-    defaultValue: 2.4,
+    defaultValue: 2.0,
     min: 0,
     max: 5,
   );

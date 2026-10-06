@@ -105,6 +105,9 @@ class ProMaxNotifier(private val ctx: Context) {
             syncSummary(notifId, null)
             return
         }
+        if (QuietHours.isQuiet(ctx, chatId)) return
+        val mid = data["msgid"] ?: ""
+        if (mid.isNotEmpty() && loadHistory(chatId).any { it.mid == mid }) return
         val senderId = data["suid"] ?: ""
         val senderName = data["userName"] ?: data["title"] ?: "MAX"
         val chatTitle = data["title"] ?: senderName
@@ -120,7 +123,7 @@ class ProMaxNotifier(private val ctx: Context) {
         saveMeta(chatId, meta)
         val history = appendHistory(
             chatId,
-            Hist(text, senderId, senderName, ts, data["msgid"] ?: "", false),
+            Hist(text, senderId, senderName, ts, mid, false),
         )
 
         render(chatId, notifId, meta, history, alertOnce = false)

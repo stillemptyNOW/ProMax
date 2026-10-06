@@ -211,7 +211,8 @@ void main() {
     );
 
     await tester.tap(find.text('show'));
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     final bar = tester.getRect(find.byKey(const ValueKey('bar')));
     expect(

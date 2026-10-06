@@ -48,6 +48,7 @@ import 'attachment/bubbles/file_bubble.dart';
 import 'attachment/bubbles/forwarded_bubble.dart';
 import 'lottie_image.dart';
 import 'text_with_meta.dart';
+import '../theme/promax_theme.dart';
 
 final Expando<MessageType> _contentTypeCache = Expando<MessageType>();
 final Expando<List<MessageAttachment>> _contentAttachmentsCache =
@@ -1173,7 +1174,7 @@ class MessageBubble extends StatelessWidget {
         isVideoNote || _isSticker || jumboAnimoji != null;
     final bubbleColor = noBubbleBackground
         ? Colors.transparent
-        : (isMe ? cs.primaryContainer : cs.surfaceContainerHighest);
+        : (isMe ? cs.primaryContainer : cs.incomingBubble);
 
     BubbleContext makeCtx({bool metaInFooter = false}) => BubbleContext(
       context: context,

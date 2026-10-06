@@ -105,6 +105,12 @@ import 'message_shot_sheet.dart';
 import '../../../core/storage/bookmarks_store.dart';
 import 'disappearing_sheet.dart';
 import 'quiet_hours_sheet.dart';
+import 'reminder_sheet.dart';
+import 'chat_note_sheet.dart';
+import 'quick_replies_sheet.dart';
+import '../../../core/storage/chat_notes_store.dart';
+import '../../../core/storage/quick_replies_store.dart';
+import '../../../core/reminders/message_reminders.dart';
 import 'chat_export_sheet.dart';
 import 'chat_tool_tile.dart';
 import '../../../core/push/quiet_hours.dart';
@@ -3436,6 +3442,22 @@ class _ChatScreenState extends State<ChatScreen>
     );
   }
 
+  Future<void> _insertQuickReply() async {
+    final reply = await pickQuickReply(context);
+    if (reply == null || !mounted) return;
+    final value = _messageController.value;
+    final selection = value.selection.isValid
+        ? value.selection
+        : TextSelection.collapsed(offset: value.text.length);
+    _messageController.value = TextEditingValue(
+      text: value.text.replaceRange(selection.start, selection.end, reply),
+      selection: TextSelection.collapsed(
+        offset: selection.start + reply.length,
+      ),
+    );
+    _messageFocusNode.requestFocus();
+  }
+
   void _openProMaxTools() {
     final isDialog =
         (chat?.type ?? widget.chatType) == 'DIALOG' && widget.chatId != 0;
@@ -3444,6 +3466,8 @@ class _ChatScreenState extends State<ChatScreen>
     final atmosphere = ProMaxAtmosphere.chatEffect(widget.chatId);
     final timer = DisappearingMessages.instance.timerFor(widget.chatId);
     final quiet = QuietHours.instance.windowFor(widget.chatId);
+    final note = ChatNotesStore.instance.noteFor(widget.chatId);
+    final templates = QuickRepliesStore.instance.items.value.length;
     final secret = DoubleBottom.isSecret(widget.chatId);
     void then(VoidCallback action) {
       Navigator.of(context).pop();
@@ -3496,6 +3520,24 @@ class _ChatScreenState extends State<ChatScreen>
                 then(() => showQuietHoursSheet(context, widget.chatId)),
           ),
           ChatToolTile(
+            icon: Symbols.sticky_note_2,
+            label: 'Заметка',
+            value: note == null ? 'Нет' : note.split('\n').first,
+            onTap: () => then(
+              () => showChatNoteSheet(
+                context,
+                chatId: widget.chatId,
+                chatName: widget.name,
+              ),
+            ),
+          ),
+          ChatToolTile(
+            icon: Symbols.quickreply,
+            label: 'Шаблоны',
+            value: templates == 0 ? 'Нет' : '$templates',
+            onTap: () => then(_insertQuickReply),
+          ),
+          ChatToolTile(
             icon: Symbols.ios_share,
             label: 'Экспорт',
             onTap: () => then(
@@ -3539,13 +3581,15 @@ class _ChatScreenState extends State<ChatScreen>
                   ),
                 ),
                 const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 3,
+                GridView(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 0.95,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    mainAxisExtent: ChatToolTile.extentFor(sheetContext),
+                  ),
                   children: tiles,
                 ),
                 if (isDialog) ...[
@@ -5357,6 +5401,25 @@ class _ChatScreenState extends State<ChatScreen>
                             widget.chatId,
                             message.id,
                           ),
+                          onRemind: message.isControl
+                              ? null
+                              : () => showMessageReminderSheet(
+                                  context,
+                                  chatId: widget.chatId,
+                                  messageId: message.id,
+                                  chatName: widget.name,
+                                  text:
+                                      MessageDecryptionCache.instance
+                                          .readableText(message) ??
+                                      '',
+                                  messageTime: message.time,
+                                ),
+                          hasReminder: () =>
+                              MessageReminders.instance.find(
+                                widget.chatId,
+                                message.id,
+                              ) !=
+                              null,
                           onCopyLink: _canLinkMessage(message)
                               ? () => _copyMessageLink(message)
                               : null,

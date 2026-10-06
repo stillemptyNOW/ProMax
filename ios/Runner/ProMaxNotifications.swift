@@ -55,8 +55,46 @@ final class ProMaxNotifications: NSObject {
     case "clearActiveChat":
       activeChatId = 0
       result(nil)
+    case "requestReminderPermission":
+      UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+        DispatchQueue.main.async { result(granted) }
+      }
+    case "scheduleReminder":
+      scheduleReminder(call.arguments as? [String: Any] ?? [:], result: result)
+    case "cancelReminder":
+      if let id = (call.arguments as? [String: Any])?["id"] as? String {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["reminder-\(id)"])
+      }
+      result(nil)
     default:
       result(FlutterMethodNotImplemented)
+    }
+  }
+
+  private func scheduleReminder(_ args: [String: Any], result: @escaping FlutterResult) {
+    guard let id = args["id"] as? String, let at = (args["at"] as? NSNumber)?.doubleValue else {
+      result(FlutterError(code: "BAD_ARGS", message: "Напоминание без времени", details: nil))
+      return
+    }
+    let content = UNMutableNotificationContent()
+    content.title = args["title"] as? String ?? "ProMax"
+    content.body = args["body"] as? String ?? ""
+    content.sound = .default
+    if let chat = args["chatId"] as? NSNumber {
+      content.userInfo = ["chatId": chat]
+      content.threadIdentifier = "chat-\(chat)"
+    }
+    let interval = max(1, at / 1000 - Date().timeIntervalSince1970)
+    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
+    let request = UNNotificationRequest(identifier: "reminder-\(id)", content: content, trigger: trigger)
+    UNUserNotificationCenter.current().add(request) { error in
+      DispatchQueue.main.async {
+        if let error = error {
+          result(FlutterError(code: "SCHEDULE_FAILED", message: error.localizedDescription, details: nil))
+        } else {
+          result(nil)
+        }
+      }
     }
   }
 

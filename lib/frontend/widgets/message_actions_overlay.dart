@@ -123,6 +123,8 @@ void showMessageActions({
   VoidCallback? onPin,
   VoidCallback? onBookmark,
   bool isBookmarked = false,
+  VoidCallback? onRemind,
+  bool hasReminder = false,
   VoidCallback? onCopyLink,
   bool isPinned = false,
   void Function(String emoji)? onReact,
@@ -173,6 +175,8 @@ void showMessageActions({
       onPin: onPin,
       onBookmark: onBookmark,
       isBookmarked: isBookmarked,
+      onRemind: onRemind,
+      hasReminder: hasReminder,
       onCopyLink: onCopyLink,
       isPinned: isPinned,
       onReact: onReact,
@@ -236,6 +240,8 @@ class _MessageActionsLayer extends StatefulWidget {
   final VoidCallback? onPin;
   final VoidCallback? onBookmark;
   final bool isBookmarked;
+  final VoidCallback? onRemind;
+  final bool hasReminder;
   final VoidCallback? onCopyLink;
   final bool isPinned;
   final void Function(String emoji)? onReact;
@@ -272,6 +278,8 @@ class _MessageActionsLayer extends StatefulWidget {
     this.onPin,
     this.onBookmark,
     this.isBookmarked = false,
+    this.onRemind,
+    this.hasReminder = false,
     this.onCopyLink,
     this.isPinned = false,
     this.onReact,
@@ -581,6 +589,12 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
           widget.isBookmarked ? 'Убрать из закладок' : 'В закладки',
           _bookmark,
         ),
+      if (widget.onRemind != null)
+        _Action(
+          widget.hasReminder ? Symbols.alarm_on : Symbols.alarm_add,
+          widget.hasReminder ? 'Изменить напоминание' : 'Напомнить',
+          _remind,
+        ),
       if (widget.onMarkUnread != null)
         _Action(
           Symbols.mark_chat_unread,
@@ -764,6 +778,12 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     final onBookmark = widget.onBookmark;
     await _close();
     onBookmark?.call();
+  }
+
+  Future<void> _remind() async {
+    final onRemind = widget.onRemind;
+    await _close();
+    onRemind?.call();
   }
 
   Future<void> _pin() async {

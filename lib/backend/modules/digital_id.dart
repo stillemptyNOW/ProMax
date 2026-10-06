@@ -69,6 +69,13 @@ class DigitalIdException implements Exception {
   bool get isUnauthorized => code == 'UNAUTHORIZED';
   bool get isNoGosuslugiLink => code == 'NO_GOSUSLUGI_LINK';
 
+  bool get rejectsToken {
+    if (isUnauthorized || isNoGosuslugiLink) return false;
+    final status = statusCode;
+    if (status == null) return false;
+    return status == 400 || status == 403 || status == 404 || status == 410;
+  }
+
   @override
   String toString() => message;
 }
@@ -350,16 +357,28 @@ class DigitalIdModule {
       '/v2/digital-id/get-user-docs',
       body: {'state': state},
     );
-    if (decoded is Map && decoded['status'] == 'done') {
+    if (decoded is! Map) return null;
+    final status = decoded['status'];
+    if (status == 'done') {
       final data = decoded['data'];
       if (data is Map) return DigitalIdUserDocs.fromMap(data);
+    }
+    if (status == 'error' || status == 'failed') {
+      final code = decoded['code'] ?? decoded['error'];
+      final message = decoded['message'] ?? decoded['error_description'];
+      throw DigitalIdException(
+        code is String && code.isNotEmpty ? code : 'DOCS_FAILED',
+        message is String && message.isNotEmpty
+            ? message
+            : 'Госуслуги не отдали документы. Попробуйте позже.',
+      );
     }
     return null;
   }
 
   Future<DigitalIdEsiaLink> createEsiaLink() async {
     final decoded = await _send('GET', '/v2/digital-id/create-esia-link');
-    return DigitalIdEsiaLink.fromMap(decoded is Map ? decoded : const {});
+    return DigitalIdEsiaLink.fromMap(_unwrapData(decoded));
   }
 
   Future<DigitalIdVerification> verifyPhoto({
@@ -371,8 +390,8 @@ class DigitalIdModule {
       '/digital-id-verify-photo',
       body: {'device_id': deviceId, 'photo_hash': ?photoHash},
     );
-    final status = decoded is Map ? decoded['status'] as String? : null;
-    return DigitalIdVerification.fromValue(status);
+    final status = _unwrapData(decoded)['status'];
+    return DigitalIdVerification.fromValue(status is String ? status : null);
   }
 
   // #***! shadow-mode, 404 значит фича выключена а не ошибка
@@ -456,11 +475,7 @@ class DigitalIdModule {
   // #***! удалили профиль, стираем и токен биометрии
   Future<void> deleteProfile() async {
     await _send('DELETE', '/v3/digital-id/delete-profile');
-    final accountId = await TokenStorage.getActiveAccountId();
-    if (accountId != null) {
-      await TokenStorage.deleteSecure('${_tokenKey}_$accountId');
-      await AppDatabase.setSyncValue(accountId, _tokenKey, '');
-    }
+    await _forgetToken();
   }
 
   // #***! токен биометрии в защищённом хранилище, старый переносим
@@ -478,6 +493,20 @@ class DigitalIdModule {
       return legacy;
     }
     return null;
+  }
+
+  Future<String?> _issueToken() async {
+    final token = await createBiometryToken(deviceId: await deviceId());
+    if (token.isEmpty) return null;
+    await _saveToken(token);
+    return token;
+  }
+
+  Future<void> _forgetToken() async {
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) return;
+    await TokenStorage.deleteSecure('${_tokenKey}_$accountId');
+    await AppDatabase.setSyncValue(accountId, _tokenKey, '');
   }
 
   Future<void> _saveToken(String token) async {
@@ -505,12 +534,20 @@ class DigitalIdModule {
     var token = await _storedToken();
     if (token == null) {
       if (!createIfMissing) return null;
-      final id = await deviceId();
-      token = await createBiometryToken(deviceId: id);
-      if (token.isEmpty) return null;
-      await _saveToken(token);
+      token = await _issueToken();
+      if (token == null) return null;
     }
-    final state = await refreshUserDocs(token);
+    String state;
+    try {
+      state = await refreshUserDocs(token);
+    } on DigitalIdException catch (e) {
+      if (!e.rejectsToken) rethrow;
+      await _forgetToken();
+      if (!createIfMissing) return null;
+      final fresh = await _issueToken();
+      if (fresh == null) return null;
+      state = await refreshUserDocs(fresh);
+    }
     if (state.isEmpty) return null;
     for (var attempt = 0; attempt < attempts; attempt++) {
       final docs = await getUserDocs(state);

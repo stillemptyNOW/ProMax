@@ -27,8 +27,22 @@ const _prefsTokenKey = 'fcm_push_token';
 
 // #***! фоновые обработчики, отдельный изолят без доступа к состоянию приложения
 // #***! нажали кнопку в уведомлении, ответить или отклонить
+final List<bool Function(String payload)> _tapHandlers = [];
+
+void addLocalNotificationTapHandler(bool Function(String payload) handler) =>
+    _tapHandlers.add(handler);
+
 @pragma('vm:entry-point')
 void _onNotificationResponse(NotificationResponse response) {
+  if (response.notificationResponseType ==
+      NotificationResponseType.selectedNotification) {
+    final payload = response.payload;
+    if (payload == null) return;
+    for (final handler in _tapHandlers) {
+      if (handler(payload)) return;
+    }
+    return;
+  }
   if (response.actionId == 'call_decline') {
     final payload = response.payload;
     if (payload != null) unawaited(_handleCallDecline(payload));

@@ -56,6 +56,7 @@ import '../contacts/contacts_tab.dart';
 import '../profile/settings_tab.dart';
 import '../auth/login_screen.dart';
 import '../digital_id/digital_id_web_screen.dart';
+import '../../widgets/background_notifications_prompt.dart';
 import '../../widgets/account_switcher_overlay.dart';
 import '../../widgets/local_avatar_builder.dart';
 import '../../widgets/lost_account_dialog.dart';
@@ -964,6 +965,9 @@ class _ChatListScreenState extends State<ChatListScreen>
     super.initState();
     if (!widget.forwardMode && !widget.archiveMode && !_shareMode) {
       ChatListScreen._root = this;
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) unawaited(offerBackgroundNotifications(context));
+      });
     }
     _initShare();
     _fabController = AnimationController(
