@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 
 import 'toast_placement.dart';
@@ -58,20 +60,38 @@ class CustomNotification extends StatefulWidget {
 
 class _CustomNotificationState extends State<CustomNotification>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _opacity;
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 420),
+    reverseDuration: const Duration(milliseconds: 220),
+  );
+  late final Animation<double> _opacity = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0, 0.5, curve: Curves.easeOut),
+    reverseCurve: Curves.easeIn,
+  );
+  late final Animation<double> _scale = Tween<double>(begin: 0.9, end: 1)
+      .animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Curves.easeOutBack,
+          reverseCurve: Curves.easeIn,
+        ),
+      );
+  late final Animation<Offset> _slide =
+      Tween<Offset>(begin: const Offset(0, 0.6), end: Offset.zero).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        ),
+      );
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-      reverseDuration: const Duration(milliseconds: 300),
-    );
-    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
     _controller.forward();
-    final fadeOutDelay = widget.duration - const Duration(milliseconds: 300);
+    final fadeOutDelay = widget.duration - _controller.reverseDuration!;
     Future.delayed(
       fadeOutDelay > Duration.zero ? fadeOutDelay : Duration.zero,
       () {
@@ -89,6 +109,7 @@ class _CustomNotificationState extends State<CustomNotification>
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final fill = cs.inverseSurface.withValues(alpha: 0.9);
     return ToastBottomPositioned(
       left: 12,
       right: 12,
@@ -101,22 +122,50 @@ class _CustomNotificationState extends State<CustomNotification>
           child: Center(
             child: FadeTransition(
               opacity: _opacity,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: Text(
-                  widget.message,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+              child: SlideTransition(
+                position: _slide,
+                child: ScaleTransition(
+                  scale: _scale,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.22),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(50),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 22,
+                            vertical: 13,
+                          ),
+                          decoration: BoxDecoration(
+                            color: fill,
+                            borderRadius: BorderRadius.circular(50),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.08),
+                            ),
+                          ),
+                          child: Text(
+                            widget.message,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: cs.onInverseSurface,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w600,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
