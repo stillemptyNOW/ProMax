@@ -15,6 +15,7 @@ import 'create_group_flow.dart';
 import 'folder_action_sheet.dart';
 import 'folder_edit_sheet.dart';
 import '../contacts/add_contact_sheet.dart';
+import '../../widgets/letter_avatar.dart';
 import '../../widgets/adaptive_shell.dart';
 import '../../widgets/chat_call_badge.dart';
 import '../../../core/crypto/message_decryption_cache.dart';
@@ -69,11 +70,8 @@ import '../../../core/utils/haptics.dart';
 import '../../../core/config/build_profile.dart';
 import '../../../core/config/ios_release.dart';
 import '../../../core/config/app_animations.dart';
-import '../../../core/config/app_frost.dart';
 import '../../../core/config/app_spectrum_background.dart';
-import '../../../core/config/app_nav_pill_style.dart';
 import '../../../core/cache/info_cache.dart';
-import '../../../core/config/app_visual_style.dart';
 import '../../../core/config/app_stories.dart';
 import '../../../core/config/app_colors.dart';
 import '../../../core/config/promax_settings.dart';
@@ -2077,16 +2075,18 @@ class _ChatListScreenState extends State<ChatListScreen>
                                                       )!,
                                                       _sessionState,
                                                     ) ??
-                                                    (_profile?.firstName ??
-                                                        AppLocalizations.of(
-                                                          context,
-                                                        )!.hubChatTileTitle),
+                                                    (widget.archiveMode
+                                                        ? AppLocalizations.of(
+                                                            context,
+                                                          )!.hubChatTileTitle
+                                                        : 'Чаты'),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             color: cs.onSurface,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w600,
+                                            fontSize: 30,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: -0.6,
                                             fontFamily: displayFontOf(context),
                                           ),
                                         ),
@@ -2162,30 +2162,31 @@ class _ChatListScreenState extends State<ChatListScreen>
                               ),
                             ),
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 3, 20, 8),
+                            padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
                             child: GestureDetector(
                               behavior: HitTestBehavior.opaque,
                               onTap: (widget.forwardMode || _shareMode)
                                   ? null
                                   : _openSearch,
-                              child: GlossyPill(
-                                color: cs.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(50),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: cs.onSurface.withValues(alpha: 0.075),
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
-                                depth: 6,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 child: SizedBox(
-                                  height: 44,
+                                  height: 40,
                                   child: Row(
                                     children: [
                                       Icon(
                                         Symbols.search,
-                                        color: cs.outline,
+                                        color: cs.onSurfaceVariant,
                                         size: 20,
-                                        weight: 400,
+                                        weight: 500,
                                       ),
-                                      const SizedBox(width: 10),
+                                      const SizedBox(width: 8),
                                       Text(
                                         widget.forwardMode
                                             ? AppLocalizations.of(
@@ -2195,8 +2196,8 @@ class _ChatListScreenState extends State<ChatListScreen>
                                                 context,
                                               )!.chatInfoMembersSearchHint,
                                         style: TextStyle(
-                                          color: cs.outline,
-                                          fontSize: 15,
+                                          color: cs.onSurfaceVariant,
+                                          fontSize: 16,
                                         ),
                                       ),
                                     ],
@@ -2867,47 +2868,45 @@ class _ChatListScreenState extends State<ChatListScreen>
                             right: 20,
                             bottom: bottomInset + 90,
                             child: ToastObstruction(
-                              child: ValueListenableBuilder<VisualStyle>(
-                                valueListenable: AppVisualStyle.current,
-                                builder: (context, style, child) =>
-                                    ValueListenableBuilder<NavPillStyle>(
-                                      valueListenable: AppNavPillStyle.current,
-                                      builder: (context, navStyle, child) {
-                                        final liquid =
-                                            style.glossyChrome &&
-                                            NavPillMaterial.isLiquid(navStyle);
-                                        final frost =
-                                            style.glossyChrome &&
-                                            NavPillMaterial.isFrost(navStyle);
-                                        return GlossyPill(
-                                          onTap: _toggleFab,
-                                          color: frost || liquid
-                                              ? AppFrost.glassTint(cs)
-                                              : cs.primaryContainer,
-                                          blurSigma: frost
-                                              ? AppFrost.sigma
-                                              : null,
-                                          liquid: liquid,
-                                          backdropKey: _frostBackdrop,
-                                          borderRadius: BorderRadius.circular(28),
-                                          elevated: true,
-                                          depth: 12,
-                                          child: child!,
-                                        );
-                                      },
-                                      child: child,
+                              child: GestureDetector(
+                                onTap: _toggleFab,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Color.lerp(
+                                          cs.primary,
+                                          Colors.white,
+                                          0.14,
+                                        )!,
+                                        cs.primary,
+                                      ],
                                     ),
-                                child: SizedBox(
-                                  width: 56,
-                                  height: 56,
-                                  child: Center(
-                                    child: Transform.rotate(
-                                      angle: val * (pi / 4),
-                                      child: Icon(
-                                        Symbols.add,
-                                        color: cs.onPrimaryContainer,
-                                        size: 28,
-                                        weight: 400,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: cs.primary.withValues(
+                                          alpha: 0.35,
+                                        ),
+                                        blurRadius: 18,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: SizedBox(
+                                    width: 56,
+                                    height: 56,
+                                    child: Center(
+                                      child: Transform.rotate(
+                                        angle: val * (pi / 4),
+                                        child: Icon(
+                                          Symbols.add,
+                                          color: cs.onPrimary,
+                                          size: 28,
+                                          weight: 600,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -2980,7 +2979,9 @@ class _ChatListScreenState extends State<ChatListScreen>
     if (widget.archiveMode || widget.forwardMode) return false;
     if (_isInitialLoading) return false;
     if (_archivedCount <= 0) return false;
-    if (!ignorePull && ProMaxSettings.archiveOnPull.value && !_archiveRevealed) {
+    if (!ignorePull &&
+        ProMaxSettings.archiveOnPull.value &&
+        !_archiveRevealed) {
       return false;
     }
     if (_folders.isEmpty) return pageIndex == 0;
@@ -3438,20 +3439,22 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   Widget _countBadge(ColorScheme cs, String label, {required bool muted}) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: muted ? cs.surfaceContainerHighest : cs.primary,
-        borderRadius: BorderRadius.circular(10),
+        color: muted ? cs.onSurface.withValues(alpha: 0.22) : cs.primary,
+        borderRadius: BorderRadius.circular(11),
       ),
       child: Text(
         label,
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: muted ? cs.outline : cs.onPrimary,
-          fontSize: 11,
+          color: muted ? cs.surface : cs.onPrimary,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
-          height: 1.1,
+          height: 1.0,
+          fontFeatures: const [FontFeature.tabularFigures()],
         ),
       ),
     );
@@ -3646,49 +3649,56 @@ class _ChatListScreenState extends State<ChatListScreen>
     final story = (_isSelectionMode || widget.forwardMode)
         ? null
         : _storyPreviewFor(storyOwnerId);
-    final avatarRadius = story == null ? 24.0 : 20.0;
+    final avatarRadius = story == null ? 28.0 : 24.0;
 
     // #***! id "0" это Избранное — метка-закладка вместо буквы "И"
     final isSavedMessages = id == '0';
     final Widget rawAvatar = LocalAvatarBuilder(
       userId: chatType == 'DIALOG' ? presenceUserId : 0,
-      builder: (context, local) => CircleAvatar(
-        radius: avatarRadius,
-        backgroundColor: isSavedMessages
-            ? cs.primary
-            : cs.surfaceContainerHighest,
-        backgroundImage: isSavedMessages
-            ? null
-            : local != null
-            ? ResizeImage(
-                local,
-                width: kAvatarThumbSize,
-                height: kAvatarThumbSize,
-              )
-            : imageUrl.isNotEmpty
-            ? CachedNetworkImageProvider(
-                imageUrl,
-                maxWidth: kAvatarThumbSize,
-                maxHeight: kAvatarThumbSize,
-              )
-            : null,
-        child: isSavedMessages
-            ? Icon(
-                Symbols.bookmark,
-                fill: 1,
-                color: cs.onPrimary,
-                size: story == null ? 26 : 22,
-              )
-            : (imageUrl.isEmpty && local == null
-                  ? Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : '?',
-                      style: TextStyle(
-                        color: cs.onSurfaceVariant,
-                        fontSize: story == null ? 20 : 17,
-                      ),
+      builder: (context, local) =>
+          (!isSavedMessages && imageUrl.isEmpty && local == null)
+          ? LetterAvatarFill(
+              name: name,
+              seed: int.tryParse(id) ?? name.hashCode,
+              size: avatarRadius * 2,
+            )
+          : CircleAvatar(
+              radius: avatarRadius,
+              backgroundColor: isSavedMessages
+                  ? cs.primary
+                  : cs.surfaceContainerHighest,
+              backgroundImage: isSavedMessages
+                  ? null
+                  : local != null
+                  ? ResizeImage(
+                      local,
+                      width: kAvatarThumbSize,
+                      height: kAvatarThumbSize,
                     )
-                  : null),
-      ),
+                  : imageUrl.isNotEmpty
+                  ? CachedNetworkImageProvider(
+                      imageUrl,
+                      maxWidth: kAvatarThumbSize,
+                      maxHeight: kAvatarThumbSize,
+                    )
+                  : null,
+              child: isSavedMessages
+                  ? Icon(
+                      Symbols.bookmark,
+                      fill: 1,
+                      color: cs.onPrimary,
+                      size: story == null ? 26 : 22,
+                    )
+                  : (imageUrl.isEmpty && local == null
+                        ? Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: story == null ? 20 : 17,
+                            ),
+                          )
+                        : null),
+            ),
     );
 
     final Widget avatarCircle = story == null
@@ -3747,7 +3757,7 @@ class _ChatListScreenState extends State<ChatListScreen>
               ? cs.primary.withValues(alpha: 0.08)
               : Colors.transparent,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+            padding: const EdgeInsets.only(left: 16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -3807,8 +3817,17 @@ class _ChatListScreenState extends State<ChatListScreen>
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: SizedBox(
-                    height: 48,
+                  child: Container(
+                    height: 76,
+                    padding: const EdgeInsets.fromLTRB(0, 10, 16, 10),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: cs.onSurface.withValues(alpha: 0.08),
+                          width: 0.5,
+                        ),
+                      ),
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -3836,8 +3855,9 @@ class _ChatListScreenState extends State<ChatListScreen>
                                         name,
                                         style: TextStyle(
                                           color: cs.onSurface,
-                                          fontSize: 16,
+                                          fontSize: 16.5,
                                           fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.2,
                                           height: 1.1,
                                         ),
                                         maxLines: 1,
@@ -3879,8 +3899,15 @@ class _ChatListScreenState extends State<ChatListScreen>
                               Text(
                                 time,
                                 style: TextStyle(
-                                  color: cs.outline,
-                                  fontSize: 12,
+                                  color: unreadCount > 0 && !isMuted
+                                      ? cs.primary
+                                      : cs.onSurfaceVariant.withValues(
+                                          alpha: 0.75,
+                                        ),
+                                  fontSize: 13,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
                                 ),
                               ),
                             ],

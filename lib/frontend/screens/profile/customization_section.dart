@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/config/promax_atmosphere.dart';
+import '../../../core/config/promax_theme_presets.dart';
+import '../../widgets/promax_ui.dart';
+import 'atmosphere_screen.dart';
+import 'promax_design_screen.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/config/ios_release.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../widgets/glossy_pill.dart';
 import '../../widgets/settings_card.dart';
 import 'app_icon_screen.dart';
 import 'appearance_screen.dart';
@@ -37,8 +42,6 @@ class CustomizationSection extends StatefulWidget {
 }
 
 class _CustomizationSectionState extends State<CustomizationSection> {
-  bool _expanded = false;
-
   static final List<_CustomizationCategory> _categories = [
     _CustomizationCategory(
       icon: Symbols.dark_mode,
@@ -76,110 +79,52 @@ class _CustomizationSectionState extends State<CustomizationSection> {
   static bool _messageActionsStyleChoice() =>
       IosRelease.messageActionsStyleChoice;
 
-  void _toggle() {
+  void _open(Widget Function(BuildContext) builder) {
     Haptics.tap();
-    setState(() => _expanded = !_expanded);
-  }
-
-  void _open(_CustomizationCategory category) {
-    Haptics.tap();
-    Navigator.push(context, MaterialPageRoute(builder: category.builder));
+    Navigator.push(context, MaterialPageRoute(builder: builder));
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return GlossyPill(
-      color: cs.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(20),
-      depth: 6,
-      child: Column(
-        children: [
-          _buildHeader(cs),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: _expanded
-                ? Column(children: _buildCategoryTiles(cs))
-                : const SizedBox(width: double.infinity),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(ColorScheme cs) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _toggle,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 17),
-          child: Row(
-            children: [
-              Icon(
-                Symbols.palette,
-                color: cs.onSurfaceVariant,
-                size: 22,
-                weight: 400,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  AppLocalizations.of(context)!.customizationTitle,
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              AnimatedRotation(
-                duration: const Duration(milliseconds: 200),
-                turns: _expanded ? 0.5 : 0,
-                child: Icon(
-                  Symbols.expand_more,
-                  color: cs.outline,
-                  size: 22,
-                  weight: 400,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildCategoryTiles(ColorScheme cs) {
     final l10n = AppLocalizations.of(context)!;
-    final tiles = <Widget>[];
     final categories = [
       for (final category in _categories)
         if (category.isAvailable()) category,
     ];
-    for (var i = 0; i < categories.length; i++) {
-      final category = categories[i];
-      tiles.add(
-        Padding(
-          padding: const EdgeInsets.only(left: 58),
-          child: Divider(
-            height: 1,
-            thickness: 1,
-            color: cs.outlineVariant.withValues(alpha: 0.35),
-          ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const ProMaxSectionTitle('Оформление'),
+        SettingsCard(
+          children: [
+            ValueListenableBuilder<String?>(
+              valueListenable: ProMaxThemePresets.selected,
+              builder: (context, id, _) => SettingsNavTile(
+                icon: Symbols.palette,
+                label: 'Темы и стекло',
+                value: ProMaxThemePresets.byId(id)?.title ?? 'Своя',
+                onTap: () => _open((_) => const ProMaxDesignScreen()),
+              ),
+            ),
+            ValueListenableBuilder<AtmosphereEffect>(
+              valueListenable: ProMaxAtmosphere.effect,
+              builder: (context, effect, _) => SettingsNavTile(
+                icon: Symbols.ac_unit,
+                label: 'Атмосфера',
+                value: effect.title,
+                onTap: () => _open((_) => const AtmosphereScreen()),
+              ),
+            ),
+            for (var i = 0; i < categories.length; i++)
+              SettingsNavTile(
+                icon: categories[i].icon,
+                label: categories[i].title(l10n),
+                onTap: () => _open(categories[i].builder),
+                isLast: i == categories.length - 1,
+              ),
+          ],
         ),
-      );
-      tiles.add(
-        SettingsNavTile(
-          icon: category.icon,
-          label: category.title(l10n),
-          onTap: () => _open(category),
-          isLast: i == categories.length - 1,
-        ),
-      );
-    }
-    return tiles;
+      ],
+    );
   }
 }

@@ -318,132 +318,129 @@ class _ProMaxHero extends StatelessWidget {
         final colors =
             preset?.preview ??
             [
-              cs.primary,
-              Color.alphaBlend(cs.primary.withValues(alpha: 0.2), Colors.black),
+              Color.lerp(cs.primary, Colors.black, 0.35)!,
+              Color.lerp(cs.primary, Colors.black, 0.75)!,
             ];
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(AppShape.card + 4),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: colors,
-              ),
+        return Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppShape.card + 6),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: colors,
             ),
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -40,
-                  top: -50,
-                  child: Container(
-                    width: 180,
-                    height: 180,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.10),
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Image.asset(
+                      'assets/promax.png',
+                      color: Colors.white,
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Image.asset(
-                            'assets/promax.png',
-                            width: 44,
-                            height: 44,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'ProMax',
+                          style: TextStyle(
                             color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.4,
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'ProMax',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.4,
-                                  ),
-                                ),
-                                FutureBuilder<PackageInfo>(
-                                  future: PackageInfo.fromPlatform(),
-                                  builder: (context, snapshot) => Text(
-                                    snapshot.hasData
-                                        ? 'Версия ${snapshot.data!.version}'
-                                        : 'Твой MAX — по-своему',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.8,
-                                      ),
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                        ),
+                        FutureBuilder<PackageInfo>(
+                          future: PackageInfo.fromPlatform(),
+                          builder: (context, snapshot) => Text(
+                            snapshot.hasData
+                                ? 'Версия ${snapshot.data!.version} · ${preset?.title ?? 'своя тема'}'
+                                : 'Твой MAX — по-своему',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.72),
+                              fontSize: 13,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          ValueListenableBuilder<bool>(
-                            valueListenable: ProMaxSettings.ghostMode,
-                            builder: (context, on, _) => _HeroToggle(
-                              icon: Symbols.visibility_off,
-                              label: 'Призрак',
-                              on: on,
-                              onTap: () => onGhostChanged(!on),
-                            ),
-                          ),
-                          ValueListenableBuilder<bool>(
-                            valueListenable: ProMaxSettings.antiRead,
-                            builder: (context, on, _) => _HeroToggle(
-                              icon: Symbols.mark_chat_read,
-                              label: 'Не читать',
-                              on: on,
-                              onTap: () => ProMaxSettings.setAntiRead(!on),
-                            ),
-                          ),
-                          ValueListenableBuilder<bool>(
-                            valueListenable: ProMaxSettings.streamerMode,
-                            builder: (context, on, _) => _HeroToggle(
-                              icon: Symbols.cast,
-                              label: 'Стример',
-                              on: on,
-                              onTap: () => ProMaxSettings.setStreamerMode(!on),
-                            ),
-                          ),
-                          ValueListenableBuilder<AtmosphereEffect>(
-                            valueListenable: ProMaxAtmosphere.effect,
-                            builder: (context, effect, _) => _HeroToggle(
-                              icon: Symbols.ac_unit,
-                              label: 'Атмосфера',
-                              on: effect != AtmosphereEffect.none,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const AtmosphereScreen(),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 2.35,
+                children: [
+                  ValueListenableBuilder<bool>(
+                    valueListenable: ProMaxSettings.ghostMode,
+                    builder: (context, on, _) => _ControlTile(
+                      icon: Symbols.visibility_off,
+                      label: 'Призрак',
+                      on: on,
+                      onTap: () => onGhostChanged(!on),
+                    ),
+                  ),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: ProMaxSettings.antiRead,
+                    builder: (context, on, _) => _ControlTile(
+                      icon: Symbols.mark_chat_read,
+                      label: 'Не читать',
+                      on: on,
+                      onTap: () => ProMaxSettings.setAntiRead(!on),
+                    ),
+                  ),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: ProMaxSettings.streamerMode,
+                    builder: (context, on, _) => _ControlTile(
+                      icon: Symbols.cast,
+                      label: 'Стример',
+                      on: on,
+                      onTap: () => ProMaxSettings.setStreamerMode(!on),
+                    ),
+                  ),
+                  ValueListenableBuilder<AtmosphereEffect>(
+                    valueListenable: ProMaxAtmosphere.effect,
+                    builder: (context, effect, _) => _ControlTile(
+                      icon: atmosphereIcon(
+                        effect == AtmosphereEffect.none
+                            ? AtmosphereEffect.snow
+                            : effect,
+                      ),
+                      label: 'Атмосфера',
+                      status: effect == AtmosphereEffect.none
+                          ? 'Выкл'
+                          : effect.title,
+                      on: effect != AtmosphereEffect.none,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AtmosphereScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         );
       },
@@ -451,52 +448,90 @@ class _ProMaxHero extends StatelessWidget {
   }
 }
 
-class _HeroToggle extends StatelessWidget {
-  const _HeroToggle({
+class _ControlTile extends StatelessWidget {
+  const _ControlTile({
     required this.icon,
     required this.label,
     required this.on,
     required this.onTap,
+    this.status,
   });
 
   final IconData icon;
   final String label;
   final bool on;
   final VoidCallback onTap;
+  final String? status;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: on ? Colors.white : Colors.white.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 17,
-            color: on ? Colors.black : Colors.white,
-            fill: on ? 1 : 0,
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final ink = on ? const Color(0xFF111217) : Colors.white;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: on
+              ? Colors.white.withValues(alpha: 0.94)
+              : Colors.black.withValues(alpha: 0.22),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: on ? 0 : 0.12),
           ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: on ? Colors.black : Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: on ? cs.primary : Colors.white.withValues(alpha: 0.14),
+              ),
+              child: Icon(
+                icon,
+                size: 18,
+                fill: on ? 1 : 0,
+                color: on ? cs.onPrimary : Colors.white,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: ink,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    status ?? (on ? 'Вкл' : 'Выкл'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: ink.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class ProMaxBannerCard extends StatelessWidget {
@@ -511,11 +546,8 @@ class ProMaxBannerCard extends StatelessWidget {
         final colors =
             ProMaxThemePresets.byId(id)?.preview ??
             [
-              cs.primary,
-              Color.alphaBlend(
-                cs.primary.withValues(alpha: 0.25),
-                Colors.black,
-              ),
+              Color.lerp(cs.primary, Colors.black, 0.35)!,
+              Color.lerp(cs.primary, Colors.black, 0.75)!,
             ];
         return Material(
           color: Colors.transparent,

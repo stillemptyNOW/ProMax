@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'promax_bubble_border.dart';
 import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -937,6 +938,38 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
+  Decoration _bubbleDecoration(
+    ColorScheme cs,
+    Color color, {
+    required bool noBubbleBackground,
+    required BubbleShape shape,
+    required bool hasPhotoCap,
+    required bool hasMultiPhotos,
+    required bool media,
+  }) {
+    if (noBubbleBackground) return const BoxDecoration();
+    final style = AppBubbleShape.current.value;
+    final radius = _borderRadiusFor(
+      style,
+      AppBubbleBehavior.current.value,
+      shape,
+      hasPhotoCap,
+      hasMultiPhotos,
+    );
+    if (style != BubbleStyle.promax) {
+      return BoxDecoration(color: color, borderRadius: radius);
+    }
+    final last =
+        shape == BubbleShape.singleBottom || shape == BubbleShape.singleMiddle;
+    return promaxBubbleDecoration(
+      cs: cs,
+      color: color,
+      isMe: isMe,
+      radius: radius,
+      tail: last && !media && !hasMultiPhotos,
+    );
+  }
+
   BorderRadius _borderRadiusFor(
     BubbleStyle bubbleStyle,
     BubbleBehavior bubbleBehavior,
@@ -1280,17 +1313,14 @@ class MessageBubble extends StatelessWidget {
               ? _groupAvatarSize
               : 0,
         ),
-        decoration: BoxDecoration(
-          color: bubbleColor,
-          borderRadius: noBubbleBackground
-              ? null
-              : _borderRadiusFor(
-                  AppBubbleShape.current.value,
-                  AppBubbleBehavior.current.value,
-                  shape,
-                  hasPhotoCap,
-                  hasMultiPhotos,
-                ),
+        decoration: _bubbleDecoration(
+          cs,
+          bubbleColor,
+          noBubbleBackground: noBubbleBackground,
+          shape: shape,
+          hasPhotoCap: hasPhotoCap,
+          hasMultiPhotos: hasMultiPhotos,
+          media: padding == EdgeInsets.zero,
         ),
         padding: containerPadding,
         child: child,
@@ -1304,10 +1334,13 @@ class MessageBubble extends StatelessWidget {
           : innerContent,
     );
 
+    final edgeInset = AppBubbleShape.current.value == BubbleStyle.promax
+        ? 12.0
+        : 8.0;
     return Padding(
       padding: EdgeInsets.only(
-        left: 8,
-        right: 8,
+        left: edgeInset,
+        right: edgeInset,
         top: topMargin,
         bottom: bottomMargin,
       ),

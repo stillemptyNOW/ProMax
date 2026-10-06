@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/config/app_shape.dart';
+import '../../../core/config/promax_aura.dart';
 import '../../../core/config/promax_glass.dart';
+import '../../../core/config/promax_nav.dart';
 import '../../../core/config/promax_theme_presets.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../main.dart';
@@ -113,6 +115,41 @@ class ProMaxDesignScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const ProMaxSectionTitle('Интерфейс'),
+            SettingsCard(
+              children: [
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxAura.enabled,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.blur_circular,
+                    label: 'Аура в чатах',
+                    subtitle: 'Мягкое свечение цвета темы на фоне переписки',
+                    value: value,
+                    onChanged: ProMaxAura.save,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxIconTiles.enabled,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.apps,
+                    label: 'Цветные иконки',
+                    subtitle: 'Иконки настроек на цветных плитках, как в iOS',
+                    value: value,
+                    onChanged: ProMaxIconTiles.save,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxNavLayout.tabs,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.toolbar,
+                    label: 'Таб-бар как в iOS',
+                    subtitle: 'Подписи под иконками и мягкая подсветка вкладки',
+                    value: value,
+                    onChanged: ProMaxNavLayout.save,
+                  ),
+                ),
+              ],
+            ),
             const ProMaxSectionTitle('Ещё'),
             SettingsCard(
               children: [
@@ -196,15 +233,16 @@ class _PresetCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                right: -18,
-                top: -18,
-                child: Container(
-                  width: 70,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.12),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.14),
+                      Colors.white.withValues(alpha: 0),
+                    ],
+                    stops: const [0, 0.45],
                   ),
                 ),
               ),

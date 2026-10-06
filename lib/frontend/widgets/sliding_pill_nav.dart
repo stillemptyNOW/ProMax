@@ -7,6 +7,7 @@ import '../../core/config/app_liquid_glass.dart';
 import '../../core/config/app_nav_pill_style.dart';
 import '../../core/config/app_pill_gradient.dart';
 import '../../core/config/app_visual_style.dart';
+import '../../core/config/promax_nav.dart';
 import 'animated_lottie_icon.dart';
 import 'glossy_pill.dart';
 import 'liquid_glass.dart';
@@ -101,19 +102,23 @@ class SlidingPillNav extends StatelessWidget {
             liquid: false,
           );
         }
-        return ValueListenableBuilder<bool>(
-          valueListenable: AppPillGradient.current,
-          builder: (context, gradient, _) =>
-              ValueListenableBuilder<NavPillStyle>(
-                valueListenable: AppNavPillStyle.current,
-                builder: (context, navStyle, _) => _buildNav(
-                  context,
-                  glossy: true,
-                  gradient: gradient,
-                  frost: NavPillMaterial.isFrost(navStyle),
-                  liquid: NavPillMaterial.isLiquid(navStyle),
-                ),
-              ),
+        return ListenableBuilder(
+          listenable: Listenable.merge([
+            AppPillGradient.current,
+            AppNavPillStyle.current,
+            ProMaxNavLayout.tabs,
+          ]),
+          builder: (context, _) {
+            final navStyle = AppNavPillStyle.current.value;
+            return _buildNav(
+              context,
+              glossy: true,
+              gradient: AppPillGradient.current.value,
+              frost: NavPillMaterial.isFrost(navStyle),
+              liquid: NavPillMaterial.isLiquid(navStyle),
+              tabs: ProMaxNavLayout.tabs.value && !iconsOnly,
+            );
+          },
         );
       },
     );
@@ -125,6 +130,7 @@ class SlidingPillNav extends StatelessWidget {
     required bool gradient,
     required bool frost,
     required bool liquid,
+    bool tabs = false,
   }) {
     final cs = Theme.of(context).colorScheme;
     final visualSel = position.round().clamp(0, items.length - 1);
@@ -199,49 +205,141 @@ class SlidingPillNav extends StatelessWidget {
                 ),
               ),
             ),
-          AnimatedPositioned(
-            duration: animationDuration,
-            curve: Curves.easeOutCubic,
-            left: position * geometry.inactiveWidth + 4,
-            top: 8,
-            bottom: 8,
-            width: geometry.activeWidth - 8,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: cs.primary,
-                borderRadius: BorderRadius.circular(26),
+          if (!tabs)
+            AnimatedPositioned(
+              duration: animationDuration,
+              curve: Curves.easeOutCubic,
+              left: position * geometry.inactiveWidth + 4,
+              top: 8,
+              bottom: 8,
+              width: geometry.activeWidth - 8,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  borderRadius: BorderRadius.circular(26),
+                ),
               ),
             ),
-          ),
-          SizedBox(
-            width: geometry.navInnerW,
-            child: Row(
-              children: List.generate(items.length, (i) {
-                return AnimatedContainer(
-                  duration: animationDuration,
-                  curve: Curves.easeOutCubic,
-                  width: _interpWidth(i),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(26),
-                    child: _PillNavCell(
-                      item: items[i],
-                      selected: i == visualSel,
-                      cs: cs,
-                      animationDuration: animationDuration,
-                      iconSize: iconSize,
-                      labelGap: labelGap,
-                      iconsOnly: iconsOnly,
-                      onTap: () => onTap(i),
-                      onLongPress:
-                          (onItemLongPress == null || !items[i].longPressable)
-                          ? null
-                          : (pos) => onItemLongPress!(i, pos),
+          if (tabs)
+            Positioned.fill(
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final cellW = box.maxWidth / items.length;
+                  return Stack(
+                    children: [
+                      AnimatedPositioned(
+                        duration: animationDuration,
+                        curve: Curves.easeOutCubic,
+                        left: position * cellW + 5,
+                        top: 6,
+                        bottom: 6,
+                        width: cellW - 10,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                cs.primary.withValues(alpha: 0.22),
+                                cs.primary.withValues(alpha: 0.12),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(26),
+                            border: Border.all(
+                              color: cs.primary.withValues(alpha: 0.25),
+                              width: 0.6,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: List.generate(items.length, (i) {
+                          final selected = i == visualSel;
+                          final color = selected
+                              ? cs.primary
+                              : cs.onSurfaceVariant;
+                          final asset = items[i].animationAsset;
+                          return Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => onTap(i),
+                              onLongPressStart:
+                                  (onItemLongPress == null ||
+                                      !items[i].longPressable)
+                                  ? null
+                                  : (d) =>
+                                        onItemLongPress!(i, d.globalPosition),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  asset != null
+                                      ? AnimatedLottieIcon(
+                                          asset: asset,
+                                          color: color,
+                                          size: 24,
+                                          active: selected,
+                                        )
+                                      : Icon(
+                                          items[i].icon,
+                                          color: color,
+                                          size: 24,
+                                          fill: selected ? 1 : 0,
+                                        ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    items[i].label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.fade,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                      color: color,
+                                      fontSize: 10.5,
+                                      fontWeight: selected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            )
+          else
+            SizedBox(
+              width: geometry.navInnerW,
+              child: Row(
+                children: List.generate(items.length, (i) {
+                  return AnimatedContainer(
+                    duration: animationDuration,
+                    curve: Curves.easeOutCubic,
+                    width: _interpWidth(i),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(26),
+                      child: _PillNavCell(
+                        item: items[i],
+                        selected: i == visualSel,
+                        cs: cs,
+                        animationDuration: animationDuration,
+                        iconSize: iconSize,
+                        labelGap: labelGap,
+                        iconsOnly: iconsOnly,
+                        onTap: () => onTap(i),
+                        onLongPress:
+                            (onItemLongPress == null || !items[i].longPressable)
+                            ? null
+                            : (pos) => onItemLongPress!(i, pos),
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
-          ),
         ],
       ),
     );

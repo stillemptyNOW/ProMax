@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../../widgets/privacy_shields.dart';
+import '../../widgets/promax_ui.dart';
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
@@ -603,12 +604,13 @@ class _SettingsTabState extends State<SettingsTab>
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                     child: ValueListenableBuilder<bool>(
                       valueListenable: AppShowExtraInfo.current,
                       builder: (context, showExtraInfo, _) {
                         return _buildSection(
                           context,
+                          title: 'Сервисы',
                           items: [
                             if (BuildProfile.digitalId)
                               _SettingsItem(
@@ -664,15 +666,16 @@ class _SettingsTabState extends State<SettingsTab>
                 ),
                 const SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
                     child: CustomizationSection(),
                   ),
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                     child: _buildSection(
                       context,
+                      title: 'Приложение',
                       items: [
                         _SettingsItem(
                           icon: Symbols.notifications_active,
@@ -819,9 +822,21 @@ class _SettingsTabState extends State<SettingsTab>
                           ),
                   ),
                 ),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ProMaxSectionTitle('Перенос'),
+                        ProMaxTransferCard(),
+                      ],
+                    ),
+                  ),
+                ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                     child: _buildSection(
                       context,
                       items: [
@@ -874,12 +889,6 @@ class _SettingsTabState extends State<SettingsTab>
                       ),
                     ),
                   ),
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: ProMaxTransferCard(),
-                  ),
-                ),
                 const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),
@@ -1443,8 +1452,9 @@ class _SettingsTabState extends State<SettingsTab>
   Widget _buildSection(
     BuildContext context, {
     required List<_SettingsItem> items,
+    String? title,
   }) {
-    return SettingsCard(
+    final card = SettingsCard(
       children: List.generate(items.length, (index) {
         final item = items[index];
         return SettingsNavTile(
@@ -1455,6 +1465,11 @@ class _SettingsTabState extends State<SettingsTab>
           isLast: index == items.length - 1,
         );
       }),
+    );
+    if (title == null) return card;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [ProMaxSectionTitle(title), card],
     );
   }
 }

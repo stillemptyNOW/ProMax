@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/config/app_shape.dart';
 import 'glossy_pill.dart';
+import 'settings_icon_tile.dart';
 
 class SettingsPanel extends StatelessWidget {
   final Widget child;
@@ -47,7 +48,7 @@ class SettingsCard extends StatelessWidget {
             children[i],
             if (i != children.length - 1)
               Padding(
-                padding: const EdgeInsets.only(left: 58),
+                padding: const EdgeInsets.only(left: 60),
                 child: Divider(
                   height: 1,
                   thickness: 1,
@@ -92,11 +93,11 @@ class SettingsToggleTile extends StatelessWidget {
           child: InkWell(
             onTap: () => onChanged(!value),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
               child: Row(
                 children: [
-                  Icon(icon, color: cs.onSurfaceVariant, size: 22, weight: 400),
-                  const SizedBox(width: 16),
+                  SettingsIconTile(icon: icon),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,17 +169,14 @@ class SettingsNavTile extends StatelessWidget {
               )
             : null,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 17),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
           child: Row(
             children: [
               leading ??
-                  Icon(
-                    icon,
-                    color: tintColor ?? cs.onSurfaceVariant,
-                    size: 22,
-                    weight: 400,
-                  ),
-              const SizedBox(width: 16),
+                  (icon == null
+                      ? const SizedBox(width: 30)
+                      : SettingsIconTile(icon: icon!, plainColor: tintColor)),
+              const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   label,

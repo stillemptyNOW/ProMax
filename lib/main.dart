@@ -119,6 +119,8 @@ import 'frontend/widgets/privacy_shields.dart';
 import 'core/config/promax_atmosphere.dart';
 import 'core/disappearing/disappearing_messages.dart';
 import 'core/config/promax_glass.dart';
+import 'core/config/promax_nav.dart';
+import 'core/config/promax_aura.dart';
 import 'core/config/promax_theme_presets.dart';
 
 final api = Api();
@@ -241,6 +243,9 @@ void main(List<String> args) async {
   final glassFuture = ProMaxGlass.load();
   final atmosphereFuture = ProMaxAtmosphere.load();
   final presetFuture = ProMaxThemePresets.load();
+  final navLayoutFuture = ProMaxNavLayout.load();
+  final auraFuture = ProMaxAura.load();
+  final iconTilesFuture = ProMaxIconTiles.load();
   final hapticsFuture = Haptics.load();
   final prefsFuture = SharedPreferences.getInstance();
   final accentFuture = AppAccent.load();
@@ -289,6 +294,9 @@ void main(List<String> args) async {
   await glassFuture;
   await atmosphereFuture;
   await presetFuture;
+  await navLayoutFuture;
+  await auraFuture;
+  await iconTilesFuture;
 
   final prefs = await prefsFuture;
   await FileHistoryCache.load(prefs);

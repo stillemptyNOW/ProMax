@@ -16,7 +16,6 @@ Future<void> _openCustomization(WidgetTester tester) async {
       ),
     ),
   );
-  await tester.tap(find.text('Кастомизация'));
   await tester.pumpAndSettle();
 }
 

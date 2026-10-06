@@ -9,6 +9,7 @@ const double kBubbleSmallRadius = 4;
 
 const Radius _big = Radius.circular(kBubbleBigRadius);
 const Radius _small = Radius.circular(kBubbleSmallRadius);
+const Radius _tail = Radius.circular(3);
 
 // #***! скругления зависят от места в группе и настроек
 BorderRadius computeBubbleRadius({
@@ -45,6 +46,15 @@ BorderRadius computeBubbleRadius({
   final base = style == BubbleStyle.desktop ? _small : _big;
   Radius tl = base, tr = base, bl = base, br = base;
 
+  if (style == BubbleStyle.promax && isSingle) {
+    return BorderRadius.only(
+      topLeft: tl,
+      topRight: tr,
+      bottomLeft: isMe ? bl : _tail,
+      bottomRight: isMe ? _tail : br,
+    );
+  }
+
   // #***! неизменяемая форма или одиночное, углы одинаковые
   if (behavior == BubbleBehavior.immutable || isSingle) {
     return BorderRadius.only(
@@ -75,6 +85,14 @@ BorderRadius computeBubbleRadius({
     } else {
       tl = _small;
       bl = _small;
+    }
+  }
+
+  if (style == BubbleStyle.promax && isBottom) {
+    if (isMe) {
+      br = _tail;
+    } else {
+      bl = _tail;
     }
   }
 

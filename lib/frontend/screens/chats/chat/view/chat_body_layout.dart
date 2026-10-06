@@ -9,6 +9,7 @@ import 'package:promax/frontend/screens/chats/chat/mention_panel_controller.dart
 import 'package:promax/frontend/screens/chats/chat/video_note_controller.dart';
 import 'package:promax/frontend/screens/chats/chat/message_search_result.dart';
 import 'package:promax/frontend/widgets/chat_wallpaper_view.dart';
+import 'package:promax/frontend/widgets/promax_aura_background.dart';
 import 'package:promax/frontend/widgets/toast_placement.dart';
 
 import 'chat_call_banner.dart';
@@ -142,7 +143,9 @@ class ChatBodyLayout extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 if (wallpaper != null)
-                  Positioned.fill(child: ChatWallpaperView(wallpaper: wallpaper!)),
+                  Positioned.fill(child: ChatWallpaperView(wallpaper: wallpaper!))
+                else
+                  const Positioned.fill(child: ProMaxAuraBackground()),
                 Positioned.fill(child: messagesArea),
                 ValueListenableBuilder<double>(
                   valueListenable: composerHeight,
@@ -178,7 +181,9 @@ class ChatBodyLayout extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         if (wallpaper != null)
-          Positioned.fill(child: ChatWallpaperView(wallpaper: wallpaper!)),
+          Positioned.fill(child: ChatWallpaperView(wallpaper: wallpaper!))
+        else
+          const Positioned.fill(child: ProMaxAuraBackground()),
         Positioned.fill(child: messagesArea),
         SearchOverlay(
           cs: cs,

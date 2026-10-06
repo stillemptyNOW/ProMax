@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/config/app_spectrum_background.dart';
+import 'letter_avatar.dart';
 import 'local_avatar_builder.dart';
 import 'spectrum_tint.dart';
 
@@ -84,17 +85,23 @@ class _ProMaxAvatarState extends State<ProMaxAvatar>
     final bg = widget.backgroundColor ?? cs.primaryContainer;
     final fg = widget.foregroundColor ?? cs.onPrimaryContainer;
     _background = bg;
-    final letter = widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?';
-    final placeholder = Center(
-      child: Text(
-        letter,
-        style: TextStyle(
-          color: fg,
-          fontSize: widget.fontSize ?? widget.size * 0.4,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
+    final gradientFallback = widget.backgroundColor == null;
+    final Widget placeholder = gradientFallback
+        ? LetterAvatarFill(
+            name: widget.name,
+            seed: widget.userId ?? widget.name.hashCode,
+            size: widget.size,
+          )
+        : Center(
+            child: Text(
+              avatarInitials(widget.name),
+              style: TextStyle(
+                color: fg,
+                fontSize: widget.fontSize ?? widget.size * 0.38,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          );
     final url = widget.imageUrl;
     final cache = (widget.size * 3).round();
     final remote = (url != null && url.isNotEmpty)
@@ -116,7 +123,10 @@ class _ProMaxAvatarState extends State<ProMaxAvatar>
       width: widget.size,
       height: widget.size,
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: bg),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: gradientFallback ? null : bg,
+      ),
       child: LocalAvatarBuilder(
         userId: widget.userId ?? 0,
         builder: (context, local) => local == null

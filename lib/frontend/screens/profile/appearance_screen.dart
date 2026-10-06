@@ -925,6 +925,11 @@ class _BubbleShapeCard extends StatelessWidget {
             builder: (context, current, _) {
               return SegmentedButton<BubbleStyle>(
                 segments: [
+                  const ButtonSegment(
+                    value: BubbleStyle.promax,
+                    label: Text('ProMax'),
+                    icon: Icon(Symbols.chat_bubble),
+                  ),
                   ButtonSegment(
                     value: BubbleStyle.mobile,
                     label: Text(l10n.appearanceBubbleShapeMobile),

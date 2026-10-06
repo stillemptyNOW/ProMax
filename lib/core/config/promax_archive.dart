@@ -34,6 +34,9 @@ class ProMaxArchive {
     'promax_hide_story_views',
     'promax_atmosphere_triggers',
     'promax_streamer_mode',
+    'promax_chat_aura',
+    'promax_nav_tabs',
+    'promax_icon_tiles',
     'promax_app_switcher_blur',
   };
   static const stringValues = {
@@ -117,7 +120,10 @@ class ProMaxArchive {
         key:
             key == 'promax_self_online_check' ||
             key == 'call_light_wide_default' ||
-            key == 'promax_atmosphere_triggers',
+            key == 'promax_atmosphere_triggers' ||
+            key == 'promax_chat_aura' ||
+            key == 'promax_nav_tabs' ||
+            key == 'promax_icon_tiles',
       'promax_quick_reaction': '❤️',
       'app_theme_mode': 'system',
       'app_font': 'system',
