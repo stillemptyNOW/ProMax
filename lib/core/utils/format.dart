@@ -173,3 +173,34 @@ String? formatGender(AppLocalizations l10n, dynamic raw) {
   if (raw == 2) return l10n.genderFemale;
   return null;
 }
+
+const List<String> _shortWeekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const List<String> _shortMonths = [
+  'янв',
+  'фев',
+  'мар',
+  'апр',
+  'мая',
+  'июн',
+  'июл',
+  'авг',
+  'сен',
+  'окт',
+  'ноя',
+  'дек',
+];
+
+String formatChatListStamp(DateTime time, {DateTime? now}) {
+  final current = now ?? DateTime.now();
+  final today = DateTime(current.year, current.month, current.day);
+  final day = DateTime(time.year, time.month, time.day);
+  final days = today.difference(day).inDays;
+  if (days <= 0) return formatClock(time);
+  if (days == 1) return 'Вчера';
+  if (days < 7) return _shortWeekdays[time.weekday - 1];
+  if (time.year == current.year) {
+    return '${time.day} ${_shortMonths[time.month - 1]}';
+  }
+  final yy = (time.year % 100).toString().padLeft(2, '0');
+  return '${time.day.toString().padLeft(2, '0')}.${time.month.toString().padLeft(2, '0')}.$yy';
+}
