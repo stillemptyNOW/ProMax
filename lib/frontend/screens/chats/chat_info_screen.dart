@@ -1092,14 +1092,41 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     final registered = _contactData?.raw['registrationTime'];
     final date = registered is int && registered > 0
         ? formatDateTimeNumeric(DateTime.fromMillisecondsSinceEpoch(registered))
-        : l10n.proMaxProfileDateUnavailable;
+        : null;
+    Widget row(String label, String value, {bool accent = false}) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          SizedBox(
+            width: 108,
+            child: Text(
+              label,
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: accent ? cs.primary : cs.onSurface,
+                fontSize: accent ? 16 : 14,
+                fontWeight: accent ? FontWeight.w700 : FontWeight.w500,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
     return Builder(
       builder: (rowContext) => InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: () => _copyInfoValue(rowContext, '$_otherId'),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          padding: const EdgeInsets.fromLTRB(18, 12, 14, 12),
           decoration: BoxDecoration(
             color: cs.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(18),
@@ -1110,30 +1137,8 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'ID $_otherId',
-                      style: TextStyle(
-                        color: cs.primary,
-                        fontSize: 14,
-                        letterSpacing: 0.7,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      date,
-                      style: TextStyle(
-                        color: cs.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      l10n.proMaxProfileDcUnavailable,
-                      style: TextStyle(
-                        color: cs.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
+                    row('ID', '$_otherId', accent: true),
+                    if (date != null) row('Регистрация', date),
                   ],
                 ),
               ),
