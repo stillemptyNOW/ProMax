@@ -95,6 +95,7 @@ class LiquidGlassSurface extends StatelessWidget {
   final Offset light;
   final double tintFeather;
   final double? rimWidth;
+  final double shadow;
   final Widget child;
 
   const LiquidGlassSurface({
@@ -109,13 +110,14 @@ class LiquidGlassSurface extends StatelessWidget {
     this.light = AppLiquidGlass.light,
     this.tintFeather = AppLiquidGlass.tintFeather,
     this.rimWidth,
+    this.shadow = 0,
     this.child = const SizedBox.expand(),
   });
 
   @override
   Widget build(BuildContext context) {
     if (!LiquidGlass.isSupported) return child;
-    return _LiquidGlassBackdrop(
+    final glass = _LiquidGlassBackdrop(
       borderRadius: borderRadius,
       tint: tint,
       blurSigma: blurSigma ?? AppLiquidGlass.blurSigma,
@@ -129,7 +131,53 @@ class LiquidGlassSurface extends StatelessWidget {
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
       child: child,
     );
+    if (shadow <= 0) return glass;
+    return CustomPaint(
+      painter: _OuterShadowPainter(borderRadius: borderRadius, opacity: shadow),
+      child: glass,
+    );
   }
+}
+
+class _OuterShadowPainter extends CustomPainter {
+  const _OuterShadowPainter({
+    required this.borderRadius,
+    required this.opacity,
+  });
+
+  final BorderRadius borderRadius;
+  final double opacity;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bounds = Offset.zero & size;
+    final shape = borderRadius.toRRect(bounds);
+    final outside = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(bounds.inflate(48))
+      ..addRRect(shape);
+    canvas
+      ..save()
+      ..clipPath(outside)
+      ..drawRRect(
+        shape.shift(const Offset(0, 8)),
+        Paint()
+          ..color = Colors.black.withValues(alpha: opacity)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
+      )
+      ..drawRRect(
+        shape.shift(const Offset(0, 1)),
+        Paint()
+          ..color = Colors.black.withValues(alpha: opacity * 0.5)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+      )
+      ..restore();
+  }
+
+  @override
+  bool shouldRepaint(_OuterShadowPainter oldDelegate) =>
+      oldDelegate.borderRadius != borderRadius ||
+      oldDelegate.opacity != opacity;
 }
 
 class _LiquidGlassBackdrop extends SingleChildRenderObjectWidget {
