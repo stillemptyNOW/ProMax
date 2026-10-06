@@ -16,6 +16,7 @@ import '../../core/storage/token_storage.dart';
 import '../config/promax_settings.dart';
 import '../utils/logger.dart';
 import 'fkm_bridge.dart';
+import 'quiet_hours.dart';
 import 'push_service.dart';
 
 const _fallbackSender = 'MAX';
@@ -164,6 +165,7 @@ class FkmController {
     final chatId = payload['chatId'];
     if (chatId is! int) return;
     if (DoubleBottom.hides(chatId)) return;
+    if (QuietHours.instance.isQuiet(chatId)) return;
 
     final msg = payload['message'];
     if (msg is! Map) return;

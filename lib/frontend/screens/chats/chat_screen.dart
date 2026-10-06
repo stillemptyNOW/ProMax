@@ -104,6 +104,8 @@ import 'chat_stats_screen.dart';
 import 'message_shot_sheet.dart';
 import '../../../core/storage/bookmarks_store.dart';
 import 'disappearing_sheet.dart';
+import 'quiet_hours_sheet.dart';
+import '../../../core/push/quiet_hours.dart';
 import '../../../core/disappearing/disappearing_messages.dart';
 import '../../../core/config/app_chat_chrome.dart';
 import 'package:promax/core/config/app_composer_background.dart';
@@ -3406,6 +3408,13 @@ class _ChatScreenState extends State<ChatScreen>
           icon: Symbols.wallpaper,
           label: l10n.chatScreenMenuChangeWallpaper,
           onTap: _openWallpaperSheet,
+        ),
+        ChatMenuItem(
+          icon: Symbols.bedtime,
+          label: QuietHours.instance.windowFor(widget.chatId) == null
+              ? 'Тихие часы'
+              : 'Тихие часы: ${QuietHours.instance.windowFor(widget.chatId)!.label}',
+          onTap: () => showQuietHoursSheet(context, widget.chatId),
         ),
         ChatMenuItem(
           icon: Symbols.timer,
