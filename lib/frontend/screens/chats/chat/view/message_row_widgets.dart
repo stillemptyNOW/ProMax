@@ -356,6 +356,8 @@ class SelectableMessageRow extends StatefulWidget {
   final bool allowCopy;
   final VoidCallback? onMarkUnread;
   final VoidCallback? onPin;
+  final VoidCallback? onBookmark;
+  final bool Function()? isBookmarked;
   final VoidCallback? onCopyLink;
   final bool Function() isPinned;
   final Future<List<MessageReader>> Function()? loadReadBy;
@@ -387,6 +389,8 @@ class SelectableMessageRow extends StatefulWidget {
     this.allowCopy = true,
     this.onMarkUnread,
     this.onPin,
+    this.onBookmark,
+    this.isBookmarked,
     this.onCopyLink,
     required this.isPinned,
     this.loadReadBy,
@@ -466,6 +470,8 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       allowCopy: widget.allowCopy,
       onMarkUnread: widget.onMarkUnread,
       onPin: widget.onPin,
+      onBookmark: widget.onBookmark,
+      isBookmarked: widget.isBookmarked?.call() ?? false,
       onCopyLink: widget.onCopyLink,
       isPinned: _isPinnedNow(),
       onReact: _reactionsOpen || _selectedReaction != null
@@ -581,6 +587,8 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       allowCopy: widget.allowCopy,
       onMarkUnread: widget.onMarkUnread,
       onPin: widget.onPin,
+      onBookmark: widget.onBookmark,
+      isBookmarked: widget.isBookmarked?.call() ?? false,
       onCopyLink: widget.onCopyLink,
       isPinned: _isPinnedNow(),
       onDispose: controller.dispose,

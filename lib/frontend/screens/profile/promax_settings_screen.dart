@@ -14,7 +14,9 @@ import '../../../main.dart';
 import '../../widgets/promax_ui.dart';
 import '../../widgets/settings_card.dart';
 import '../digital_id/digital_id_screen.dart';
+import '../../../core/storage/bookmarks_store.dart';
 import 'atmosphere_screen.dart';
+import 'bookmarks_screen.dart';
 import 'plugins_screen.dart';
 import 'promax_design_screen.dart';
 import 'promax_transfer_card.dart';
@@ -214,6 +216,26 @@ class ProMaxSettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const ProMaxSectionTitle('Инструменты'),
+            SettingsCard(
+              children: [
+                ValueListenableBuilder<List<MessageBookmark>>(
+                  valueListenable: BookmarksStore.instance.items,
+                  builder: (context, items, _) => SettingsNavTile(
+                    icon: Symbols.bookmarks,
+                    label: 'Закладки',
+                    value: items.isEmpty ? null : '${items.length}',
+                    onTap: () => _open(context, const BookmarksScreen()),
+                  ),
+                ),
+                if (BuildProfile.plugins)
+                  SettingsNavTile(
+                    icon: Symbols.extension,
+                    label: AppLocalizations.of(context)!.pluginsScreenTitle,
+                    onTap: () => _open(context, const PluginsScreen()),
+                  ),
+              ],
+            ),
             const ProMaxSectionTitle('Чаты и папки'),
             SettingsCard(
               children: [
@@ -249,18 +271,6 @@ class ProMaxSettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            if (BuildProfile.plugins) ...[
-              const ProMaxSectionTitle('Инструменты'),
-              SettingsCard(
-                children: [
-                  SettingsNavTile(
-                    icon: Symbols.extension,
-                    label: l10n.pluginsScreenTitle,
-                    onTap: () => _open(context, const PluginsScreen()),
-                  ),
-                ],
-              ),
-            ],
             const ProMaxSectionTitle('Диагностика'),
             SettingsCard(
               children: [

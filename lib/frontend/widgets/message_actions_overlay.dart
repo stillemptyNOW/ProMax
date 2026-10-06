@@ -121,6 +121,8 @@ void showMessageActions({
   VoidCallback? onForward,
   VoidCallback? onMarkUnread,
   VoidCallback? onPin,
+  VoidCallback? onBookmark,
+  bool isBookmarked = false,
   VoidCallback? onCopyLink,
   bool isPinned = false,
   void Function(String emoji)? onReact,
@@ -169,6 +171,8 @@ void showMessageActions({
       onForward: onForward,
       onMarkUnread: onMarkUnread,
       onPin: onPin,
+      onBookmark: onBookmark,
+      isBookmarked: isBookmarked,
       onCopyLink: onCopyLink,
       isPinned: isPinned,
       onReact: onReact,
@@ -230,6 +234,8 @@ class _MessageActionsLayer extends StatefulWidget {
   final VoidCallback? onForward;
   final VoidCallback? onMarkUnread;
   final VoidCallback? onPin;
+  final VoidCallback? onBookmark;
+  final bool isBookmarked;
   final VoidCallback? onCopyLink;
   final bool isPinned;
   final void Function(String emoji)? onReact;
@@ -264,6 +270,8 @@ class _MessageActionsLayer extends StatefulWidget {
     this.onForward,
     this.onMarkUnread,
     this.onPin,
+    this.onBookmark,
+    this.isBookmarked = false,
     this.onCopyLink,
     this.isPinned = false,
     this.onReact,
@@ -567,6 +575,12 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
           widget.isPinned ? l10n.msgActionsUnpin : l10n.msgActionsPin,
           _pin,
         ),
+      if (widget.onBookmark != null)
+        _Action(
+          widget.isBookmarked ? Symbols.bookmark_remove : Symbols.bookmark_add,
+          widget.isBookmarked ? 'Убрать из закладок' : 'В закладки',
+          _bookmark,
+        ),
       if (widget.onMarkUnread != null)
         _Action(
           Symbols.mark_chat_unread,
@@ -744,6 +758,12 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     final onMarkUnread = widget.onMarkUnread;
     await _close();
     onMarkUnread?.call();
+  }
+
+  Future<void> _bookmark() async {
+    final onBookmark = widget.onBookmark;
+    await _close();
+    onBookmark?.call();
   }
 
   Future<void> _pin() async {

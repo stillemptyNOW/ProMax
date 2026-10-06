@@ -102,6 +102,7 @@ import '../../widgets/atmosphere_overlay.dart';
 import '../profile/atmosphere_screen.dart';
 import 'chat_stats_screen.dart';
 import 'message_shot_sheet.dart';
+import '../../../core/storage/bookmarks_store.dart';
 import 'disappearing_sheet.dart';
 import '../../../core/disappearing/disappearing_messages.dart';
 import '../../../core/config/app_chat_chrome.dart';
@@ -2710,6 +2711,21 @@ class _ChatScreenState extends State<ChatScreen>
     _clearSelection();
   }
 
+  Future<void> _toggleBookmark(CachedMessage message) async {
+    final added = await BookmarksStore.instance.toggle(
+      chatId: widget.chatId,
+      messageId: message.id,
+      chatName: widget.name,
+      text: MessageDecryptionCache.instance.readableText(message) ?? '',
+      time: message.time,
+    );
+    if (!mounted) return;
+    showCustomNotification(
+      context,
+      added ? 'Сохранено в закладки' : 'Убрано из закладок',
+    );
+  }
+
   void _screenshotSelected(List<CachedMessage> messages) {
     if (messages.isEmpty) return;
     final ordered = [...messages]..sort((a, b) => a.time.compareTo(b.time));
@@ -5242,6 +5258,13 @@ class _ChatScreenState extends State<ChatScreen>
                           onPin: _canPinMessage(message)
                               ? () => _togglePinMessage(message)
                               : null,
+                          onBookmark: message.isControl
+                              ? null
+                              : () => _toggleBookmark(message),
+                          isBookmarked: () => BookmarksStore.instance.contains(
+                            widget.chatId,
+                            message.id,
+                          ),
                           onCopyLink: _canLinkMessage(message)
                               ? () => _copyMessageLink(message)
                               : null,

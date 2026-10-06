@@ -121,6 +121,7 @@ import 'core/disappearing/disappearing_messages.dart';
 import 'core/config/promax_glass.dart';
 import 'core/config/promax_nav.dart';
 import 'core/config/promax_aura.dart';
+import 'core/storage/bookmarks_store.dart';
 import 'core/config/promax_theme_presets.dart';
 
 final api = Api();
@@ -246,6 +247,7 @@ void main(List<String> args) async {
   final navLayoutFuture = ProMaxNavLayout.load();
   final auraFuture = ProMaxAura.load();
   final iconTilesFuture = ProMaxIconTiles.load();
+  final bookmarksFuture = BookmarksStore.instance.load();
   final hapticsFuture = Haptics.load();
   final prefsFuture = SharedPreferences.getInstance();
   final accentFuture = AppAccent.load();
@@ -297,6 +299,7 @@ void main(List<String> args) async {
   await navLayoutFuture;
   await auraFuture;
   await iconTilesFuture;
+  await bookmarksFuture;
 
   final prefs = await prefsFuture;
   await FileHistoryCache.load(prefs);
