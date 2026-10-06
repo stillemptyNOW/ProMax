@@ -9,6 +9,8 @@ import '../../../core/config/promax_theme_presets.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../main.dart';
 import '../../widgets/atmosphere_overlay.dart';
+import '../../widgets/promax_aura_background.dart';
+import '../../widgets/promax_bubble_border.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/liquid_glass.dart';
 import '../../widgets/promax_ui.dart';
@@ -315,31 +317,8 @@ class GlassPreview extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    cs.primary.withValues(alpha: 0.9),
-                    cs.tertiary.withValues(alpha: 0.7),
-                    cs.surface,
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              left: -30,
-              bottom: -40,
-              child: Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: cs.secondary.withValues(alpha: 0.55),
-                ),
-              ),
-            ),
+            ColoredBox(color: cs.surface),
+            const ProMaxAuraBackground(),
             ListenableBuilder(
               listenable: ProMaxAtmosphere.listenable,
               builder: (context, _) {
@@ -360,15 +339,15 @@ class GlassPreview extends StatelessWidget {
                   _PreviewBubble(
                     text: 'Как тебе новое стекло?',
                     incoming: true,
-                    color: cs.surfaceContainerHigh,
+                    color: cs.surfaceContainerHighest,
                     textColor: cs.onSurface,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   _PreviewBubble(
                     text: 'Выглядит как iOS 26 🔥',
                     incoming: false,
-                    color: cs.primary,
-                    textColor: cs.onPrimary,
+                    color: cs.primaryContainer,
+                    textColor: cs.onPrimaryContainer,
                   ),
                   const Spacer(),
                   SizedBox(
@@ -427,14 +406,17 @@ class _PreviewBubble extends StatelessWidget {
     alignment: incoming ? Alignment.centerLeft : Alignment.centerRight,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-      decoration: BoxDecoration(
+      decoration: promaxBubbleDecoration(
+        cs: Theme.of(context).colorScheme,
         color: color,
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(18),
-          topRight: const Radius.circular(18),
-          bottomLeft: Radius.circular(incoming ? 6 : 18),
-          bottomRight: Radius.circular(incoming ? 18 : 6),
+        isMe: !incoming,
+        radius: BorderRadius.only(
+          topLeft: const Radius.circular(20),
+          topRight: const Radius.circular(20),
+          bottomLeft: Radius.circular(incoming ? 3 : 20),
+          bottomRight: Radius.circular(incoming ? 20 : 3),
         ),
+        tail: true,
       ),
       child: Text(text, style: TextStyle(color: textColor, fontSize: 15)),
     ),

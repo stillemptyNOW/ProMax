@@ -51,10 +51,53 @@ class WallpaperPick {
        theme = null;
 }
 
-// #***! путь, а не байты: withData грузит файл в java-кучу и валит процесс на OOM
+enum _WallpaperSource { photo, gif }
+
+bool isGifBytes(Uint8List bytes) =>
+    bytes.length > 6 &&
+    bytes[0] == 0x47 &&
+    bytes[1] == 0x49 &&
+    bytes[2] == 0x46 &&
+    bytes[3] == 0x38 &&
+    (bytes[4] == 0x37 || bytes[4] == 0x39) &&
+    bytes[5] == 0x61;
+
+Future<_WallpaperSource?> _askWallpaperSource(BuildContext context) =>
+    showModalBottomSheet<_WallpaperSource>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Symbols.photo_library),
+              title: const Text('Фото из галереи'),
+              onTap: () => Navigator.pop(sheetContext, _WallpaperSource.photo),
+            ),
+            ListTile(
+              leading: const Icon(Symbols.gif_box),
+              title: const Text('GIF из Файлов'),
+              subtitle: const Text('Анимированный фон чата'),
+              onTap: () => Navigator.pop(sheetContext, _WallpaperSource.gif),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+
 Future<Uint8List?> pickWallpaperBytes(BuildContext context) async {
+  final source = await _askWallpaperSource(context);
+  if (source == null || !context.mounted) return null;
   final result = await AppLock.instance.external(
-    () => FilePicker.platform.pickFiles(type: FileType.image),
+    () => source == _WallpaperSource.gif
+        ? FilePicker.platform.pickFiles(
+            type: FileType.custom,
+            allowedExtensions: const ['gif'],
+          )
+        : FilePicker.platform.pickFiles(type: FileType.image),
   );
   final path = result?.files.firstOrNull?.path;
   if (path == null) return null;
@@ -64,6 +107,14 @@ Future<Uint8List?> pickWallpaperBytes(BuildContext context) async {
         context,
         AppLocalizations.of(context)!.chatWallpaperSheetImageTooLarge,
       );
+    }
+    return null;
+  }
+  final raw = await File(path).readAsBytes();
+  if (isGifBytes(raw)) return raw;
+  if (source == _WallpaperSource.gif) {
+    if (context.mounted) {
+      showCustomNotification(context, 'Это не GIF-файл');
     }
     return null;
   }
