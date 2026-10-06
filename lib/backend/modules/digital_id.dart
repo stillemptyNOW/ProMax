@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -37,6 +38,12 @@ class DigitalIdDiagnostics {
     _entries.add(
       '$time $method $path → $status${detail.isEmpty ? '' : ' $detail'}',
     );
+    if (_entries.length > _limit) _entries.removeAt(0);
+  }
+
+  static void note(String line) {
+    final time = DateTime.now().toIso8601String().substring(11, 19);
+    _entries.add('$time $line');
     if (_entries.length > _limit) _entries.removeAt(0);
   }
 
@@ -81,8 +88,13 @@ class DigitalIdModule {
   static const String _tokenKey = 'digital_id_biometry_token';
 
   final WebAppModule _webApp;
-  final HttpClient _http = HttpClient()
-    ..connectionTimeout = const Duration(seconds: 20);
+  static const Duration _stepTimeout = Duration(seconds: 20);
+  HttpClient _http = _newClient();
+  bool _dnsNoted = false;
+
+  static HttpClient _newClient() => HttpClient()
+    ..connectionTimeout = _stepTimeout
+    ..idleTimeout = const Duration(seconds: 8);
 
   // #***! авторизация это WebAppData из адреса мини аппы
   String? _webAppData;
@@ -198,27 +210,62 @@ class DigitalIdModule {
     String path, {
     Object? body,
     bool retry = true,
+    bool fresh = false,
   }) async {
     final webAppData = await _ensureWebAppData();
     final uri = Uri.parse('$_baseUrl$path');
-    final request = await _http
-        .openUrl(method, uri)
-        .timeout(const Duration(seconds: 20));
-    request.headers.set('Authorization', '#WebAppData=$webAppData');
-    request.headers.set('Origin', 'https://digital-id.max.ru');
-    request.headers.set('Referer', 'https://digital-id.max.ru/');
-    request.headers.set('x-requested-with', 'ru.oneme.app');
-    request.headers.set('Accept', 'application/json');
-    request.headers.set('User-Agent', await _resolveUserAgent());
-    if (body != null) {
-      request.headers.contentType = ContentType.json;
-      request.add(utf8.encode(jsonEncode(body)));
+    final payload = body == null ? null : utf8.encode(jsonEncode(body));
+    final watch = Stopwatch()..start();
+    var stage = 'соединение';
+    late final HttpClientResponse response;
+    late final String text;
+    try {
+      final request = await _http.openUrl(method, uri).timeout(_stepTimeout);
+      request.headers.set('Authorization', '#WebAppData=$webAppData');
+      request.headers.set('Origin', 'https://digital-id.max.ru');
+      request.headers.set('Referer', 'https://digital-id.max.ru/');
+      request.headers.set('x-requested-with', 'ru.oneme.app');
+      request.headers.set('Accept', 'application/json');
+      request.headers.set('User-Agent', await _resolveUserAgent());
+      if (payload != null) {
+        request.headers.contentType = ContentType.json;
+        request.contentLength = payload.length;
+        request.add(payload);
+      } else {
+        request.contentLength = 0;
+      }
+      stage = 'ответ';
+      response = await request.close().timeout(_stepTimeout);
+      stage = 'тело';
+      text = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(_stepTimeout);
+    } on Object catch (e) {
+      if (e is! TimeoutException &&
+          e is! SocketException &&
+          e is! HttpException &&
+          e is! HandshakeException) {
+        rethrow;
+      }
+      final kind = e is TimeoutException ? 'таймаут' : e.runtimeType.toString();
+      DigitalIdDiagnostics.note(
+        '$method $path → $kind на этапе «$stage» за '
+        '${(watch.elapsedMilliseconds / 1000).toStringAsFixed(1)} с'
+        '${fresh ? ' (повтор)' : ''}',
+      );
+      await _noteDns();
+      _http.close(force: true);
+      _http = _newClient();
+      if (!fresh) {
+        return _send(method, path, body: body, retry: retry, fresh: true);
+      }
+      throw DigitalIdException(
+        'NETWORK',
+        'Сервер Цифрового ID не отвечает. Проверь интернет или VPN и попробуй '
+            'ещё раз, либо открой веб-версию.',
+      );
     }
-    final response = await request.close().timeout(const Duration(seconds: 20));
-    final text = await response
-        .transform(utf8.decoder)
-        .join()
-        .timeout(const Duration(seconds: 20));
     if (kDebugMode) {
       logger.i('[DID-native] $method $path -> ${response.statusCode}');
     }
@@ -234,6 +281,20 @@ class DigitalIdModule {
     }
     if (text.isEmpty) return null;
     return jsonDecode(text);
+  }
+
+  Future<void> _noteDns() async {
+    if (_dnsNoted) return;
+    _dnsNoted = true;
+    try {
+      final found = await InternetAddress.lookup(
+        Uri.parse(_baseUrl).host,
+      ).timeout(const Duration(seconds: 5));
+      final kinds = found.map((a) => a.type.name).toSet().join('+');
+      DigitalIdDiagnostics.note('DNS: ${found.length} адр. ($kinds)');
+    } catch (e) {
+      DigitalIdDiagnostics.note('DNS: ошибка ${e.runtimeType}');
+    }
   }
 
   // #***! код и текст ошибки из тела если оно похоже на джейсон

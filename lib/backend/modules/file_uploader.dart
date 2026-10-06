@@ -7,6 +7,7 @@ import 'package:kolibri/kolibri.dart' as kb;
 
 import '../api.dart';
 import '../../core/protocol/opcode_map.dart';
+import '../../core/utils/file_names.dart';
 import '../../core/utils/logger.dart';
 import 'messages.dart';
 
@@ -108,39 +109,35 @@ class FileUploader {
         String? error;
         final done = Completer<void>();
         // #***! подписка на события ядра
-        sub =
-            session
-                .uploadFilePath(
-                  url: info.url,
-                  path: file.path,
-                  filename: filename,
-                  connection: 'close',
-                )
-                .listen(
-                  (e) {
-                    switch (e) {
-                      case kb.UploadEvent_Progress(:final sent, :final total):
-                        ctrl.add(
-                          UploadProgress(
-                            sent: sent.toInt(),
-                            total: total.toInt(),
-                          ),
-                        );
-                      case kb.UploadEvent_Done(status: final s):
-                        status = s;
-                      case kb.UploadEvent_Error(:final message):
-                        error = message;
-                    }
-                  },
-                  onError: (Object err) {
-                    error = err.toString();
-                    if (!done.isCompleted) done.complete();
-                  },
-                  onDone: () {
-                    if (!done.isCompleted) done.complete();
-                  },
-                  cancelOnError: true,
-                );
+        sub = session
+            .uploadFilePath(
+              url: info.url,
+              path: file.path,
+              filename: encodeUploadFilename(filename),
+              connection: 'close',
+            )
+            .listen(
+              (e) {
+                switch (e) {
+                  case kb.UploadEvent_Progress(:final sent, :final total):
+                    ctrl.add(
+                      UploadProgress(sent: sent.toInt(), total: total.toInt()),
+                    );
+                  case kb.UploadEvent_Done(status: final s):
+                    status = s;
+                  case kb.UploadEvent_Error(:final message):
+                    error = message;
+                }
+              },
+              onError: (Object err) {
+                error = err.toString();
+                if (!done.isCompleted) done.complete();
+              },
+              onDone: () {
+                if (!done.isCompleted) done.complete();
+              },
+              cancelOnError: true,
+            );
         await done.future;
         if (cancelled) return;
         if (error != null) {
