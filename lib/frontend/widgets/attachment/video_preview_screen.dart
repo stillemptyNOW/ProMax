@@ -145,8 +145,12 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
       _edit.sourceDuration = duration;
       _edit.end = duration;
     }
-    controller.addListener(_onTick);
     await controller.setVolume(_edit.muted ? 0 : 1);
+    if (!mounted) {
+      controller.dispose();
+      return;
+    }
+    controller.addListener(_onTick);
     setState(() => _controller = controller);
     _wantsPlay = true;
     unawaited(controller.play());

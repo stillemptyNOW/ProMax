@@ -16,6 +16,11 @@ class ChatToolTile extends StatelessWidget {
   final String? value;
   final VoidCallback onTap;
 
+  static double extentFor(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    return 70 + (scaler.scale(13.5) + scaler.scale(11.5)) * 1.35;
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

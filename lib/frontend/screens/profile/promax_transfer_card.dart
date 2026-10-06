@@ -22,6 +22,7 @@ import '../../../core/utils/save_file_as.dart';
 import '../../../main.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/confirm_dialog.dart';
+import '../../widgets/with_text_controller.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/settings_card.dart';
 
@@ -48,8 +49,10 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
       await file.writeAsBytes(bytes, flush: true);
       final result = Platform.isIOS
           ? await AppLock.instance.external(() async {
-              final path = await const MethodChannel('io.github.stillemptynow.promax/video')
-                  .invokeMethod<String>('exportPromaxArchive', {
+              final path =
+                  await const MethodChannel(
+                    'io.github.stillemptynow.promax/video',
+                  ).invokeMethod<String>('exportPromaxArchive', {
                     'path': file!.path,
                   });
               return SaveFileAsResult(
@@ -82,11 +85,10 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
   }
 
   Future<String?> _askKey() async {
-    final controller = TextEditingController();
-    try {
-      return await showDialog<String>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
+    return showDialog<String>(
+      context: context,
+      builder: (_) => WithTextController(
+        builder: (dialogContext, controller) => AlertDialog(
           title: const Text('Ключ восстановления истории'),
           content: TextField(
             controller: controller,
@@ -107,10 +109,8 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
             ),
           ],
         ),
-      );
-    } finally {
-      controller.dispose();
-    }
+      ),
+    );
   }
 
   Future<void> _import() async {

@@ -3539,13 +3539,15 @@ class _ChatScreenState extends State<ChatScreen>
                   ),
                 ),
                 const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 3,
+                GridView(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 0.95,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    mainAxisExtent: ChatToolTile.extentFor(sheetContext),
+                  ),
                   children: tiles,
                 ),
                 if (isDialog) ...[

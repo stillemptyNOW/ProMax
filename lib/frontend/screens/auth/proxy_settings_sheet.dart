@@ -91,10 +91,12 @@ class _ProxySettingsSheetState extends State<ProxySettingsSheet> {
     setState(() => _busy = true);
     try {
       await ProxyConfig.clear();
-      setState(() {
-        _selectedType = ProxyType.none;
-        _applied = const ProxySettings();
-      });
+      if (mounted) {
+        setState(() {
+          _selectedType = ProxyType.none;
+          _applied = const ProxySettings();
+        });
+      }
       await api.disconnect();
       await api.connect();
       if (!mounted) return;

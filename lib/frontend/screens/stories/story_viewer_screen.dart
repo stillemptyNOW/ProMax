@@ -264,7 +264,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       }
       controller.addListener(_onVideoTick);
       await controller.play();
-      setState(() {});
+      if (mounted) setState(() {});
     } catch (_) {
       if (_video == controller) {
         _disposeVideo();
