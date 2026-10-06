@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../../widgets/segmented_pill_toggle.dart';
+import '../../widgets/settings_icon_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../main.dart' show api, accountModule;
@@ -384,43 +386,6 @@ class _CallsTabState extends State<CallsTab>
     }
   }
 
-  Widget _buildLinkAction(
-    ColorScheme cs, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool alignEnd = false,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Row(
-          mainAxisAlignment: alignEnd
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.start,
-          children: [
-            Icon(icon, color: cs.primary, size: 24),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: cs.primary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _createGroupCall() async {
     final controller = CallController.instance;
     final l10n = AppLocalizations.of(context)!;
@@ -483,36 +448,6 @@ class _CallsTabState extends State<CallsTab>
     }
   }
 
-  Widget _buildTabItem(String label, int index, ColorScheme cs) {
-    final isSelected = _selectedTabIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTabIndex = index;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isSelected ? cs.primary : Colors.transparent,
-              width: 2,
-            ),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? cs.primary : cs.onSurfaceVariant,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -538,8 +473,9 @@ class _CallsTabState extends State<CallsTab>
                     l10n.chatListNavCalls,
                     style: TextStyle(
                       color: cs.onSurface,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.6,
                       fontFamily: displayFontOf(context),
                     ),
                   ),
@@ -548,37 +484,38 @@ class _CallsTabState extends State<CallsTab>
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: Row(
                 children: [
                   Expanded(
-                    child: _buildLinkAction(
-                      cs,
-                      icon: Symbols.link,
+                    child: _CallActionCard(
+                      icon: Symbols.add_call,
                       label: l10n.callsTabCreateCall,
                       onTap: _createGroupCall,
                     ),
                   ),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: _buildLinkAction(
-                      cs,
+                    child: _CallActionCard(
                       icon: Symbols.group_add,
                       label: l10n.chatCallJoin,
                       onTap: _joinGroupCall,
-                      alignEnd: true,
                     ),
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-              child: Row(
-                children: [
-                  _buildTabItem(l10n.reactionsSummaryAll, 0, cs),
-                  const SizedBox(width: 8),
-                  _buildTabItem(l10n.callsTabMissed, 1, cs),
-                ],
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SegmentedPillToggle(
+                  labels: [l10n.reactionsSummaryAll, l10n.callsTabMissed],
+                  selected: _selectedTabIndex,
+                  segmentWidth: 140,
+                  onChanged: (index) =>
+                      setState(() => _selectedTabIndex = index),
+                ),
               ),
             ),
             Expanded(
@@ -610,6 +547,55 @@ class _CallsTabState extends State<CallsTab>
                     ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CallActionCard extends StatelessWidget {
+  const _CallActionCard({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          child: Row(
+            children: [
+              SettingsIconTile(icon: icon),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

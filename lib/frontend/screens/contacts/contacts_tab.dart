@@ -479,8 +479,9 @@ class _ContactsTabState extends State<ContactsTab> with SpectrumSurface {
                 l10n.contactsTabTitle,
                 style: TextStyle(
                   color: cs.onSurface,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
                   fontFamily: displayFontOf(context),
                 ),
               ),
