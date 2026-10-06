@@ -1,3 +1,9 @@
+String? _text(Object? value) => switch (value) {
+  final String text when text.trim().isNotEmpty => text.trim(),
+  final num number => number.toString(),
+  _ => null,
+};
+
 // #***! итог проверки удостоверения, unknown это что то новое
 enum DigitalIdVerification {
   valid,
@@ -63,17 +69,18 @@ class DigitalIdAddress {
 
   factory DigitalIdAddress.fromMap(Map map) {
     return DigitalIdAddress(
-      address: map['address'] as String?,
-      flat: map['flat'] as String?,
-      frame: map['frame'] as String?,
-      house: map['house'] as String?,
-      zipCode: map['zip_code'] as String?,
+      address: _text(map['address']),
+      flat: _text(map['flat']),
+      frame: _text(map['frame']),
+      house: _text(map['house']),
+      zipCode: _text(map['zip_code']),
     );
   }
 
   // #***! склейка адреса в строку
   String get formatted {
     final parts = <String>[
+      if (zipCode != null && !(address ?? '').contains(zipCode!)) zipCode!,
       if (address != null && address!.isNotEmpty) address!,
       if (house != null && house!.isNotEmpty) 'д. $house',
       if (frame != null && frame!.isNotEmpty) 'к. $frame',
@@ -98,7 +105,7 @@ class DigitalIdBiometryStatus {
   factory DigitalIdBiometryStatus.fromMap(Map map) {
     return DigitalIdBiometryStatus(
       hasBiometryToken: map['has_biometry_token'] == true,
-      deviceId: map['device_id'] as String?,
+      deviceId: _text(map['device_id']),
       hasPhotoHash: map['has_photo_hash'] == true,
     );
   }
@@ -117,17 +124,17 @@ class DigitalIdDocument {
       fields[entry.key.toString()] = entry.value;
     }
     return DigitalIdDocument(
-      type: (map['type'] as String?) ?? 'unknown',
+      type: _text(map['type']) ?? 'unknown',
       fields: fields,
     );
   }
 
   // #***! ходовые поля геттерами, остальное из fields
-  String? get firstName => fields['first_name'] as String?;
-  String? get lastName => fields['last_name'] as String?;
-  String? get middleName => fields['middle_name'] as String?;
-  String? get number => fields['number'] as String?;
-  String? get series => fields['series'] as String?;
+  String? get firstName => _text(fields['first_name']);
+  String? get lastName => _text(fields['last_name']);
+  String? get middleName => _text(fields['middle_name']);
+  String? get number => _text(fields['number']);
+  String? get series => _text(fields['series']);
 }
 
 // #***! профиль владельца плюс документы
@@ -167,16 +174,17 @@ class DigitalIdProfile {
     }
     final address = map['registration_address'];
     return DigitalIdProfile(
-      firstName: map['first_name'] as String?,
-      lastName: map['last_name'] as String?,
-      middleName: map['middle_name'] as String?,
-      birthDate: map['birth_date'] as String?,
-      birthPlace: map['birth_place'] as String?,
-      gender: map['gender'] as String?,
-      snils: map['snils'] as String?,
-      inn: map['inn'] as String?,
-      registrationAddress:
-          address is Map ? DigitalIdAddress.fromMap(address) : null,
+      firstName: _text(map['first_name']),
+      lastName: _text(map['last_name']),
+      middleName: _text(map['middle_name']),
+      birthDate: _text(map['birth_date']),
+      birthPlace: _text(map['birth_place']),
+      gender: _text(map['gender']),
+      snils: _text(map['snils']),
+      inn: _text(map['inn']),
+      registrationAddress: address is Map
+          ? DigitalIdAddress.fromMap(address)
+          : null,
       documents: documents,
     );
   }
@@ -219,8 +227,8 @@ class DigitalIdEsiaLink {
 
   factory DigitalIdEsiaLink.fromMap(Map map) {
     return DigitalIdEsiaLink(
-      state: map['state'] as String?,
-      url: map['url'] as String? ?? '',
+      state: _text(map['state']),
+      url: _text(map['url']) ?? '',
     );
   }
 }
@@ -234,8 +242,8 @@ class DigitalIdQr {
 
   factory DigitalIdQr.fromMap(Map map) {
     return DigitalIdQr(
-      qr: map['qr'] as String? ?? '',
-      qrGost: map['qr_gost'] as String?,
+      qr: _text(map['qr']) ?? '',
+      qrGost: _text(map['qr_gost']),
     );
   }
 }
@@ -254,9 +262,9 @@ class DigitalIdUniversalQr {
 
   factory DigitalIdUniversalQr.fromMap(Map map) {
     return DigitalIdUniversalQr(
-      uidHash: map['uid_hash'] as String? ?? '',
-      phone: map['phone'] as String?,
-      sessionId: map['session_id'] as String?,
+      uidHash: _text(map['uid_hash']) ?? '',
+      phone: _text(map['phone']),
+      sessionId: _text(map['session_id']),
     );
   }
 }
@@ -277,10 +285,10 @@ class DigitalIdAcmsCard {
 
   factory DigitalIdAcmsCard.fromMap(Map map) {
     return DigitalIdAcmsCard(
-      id: map['id'] as String? ?? '',
-      inn: map['inn'] as String? ?? '',
-      companyName: map['company_name'] as String? ?? '',
-      logoImg: map['logo_img'] as String? ?? '',
+      id: _text(map['id']) ?? '',
+      inn: _text(map['inn']) ?? '',
+      companyName: _text(map['company_name']) ?? '',
+      logoImg: _text(map['logo_img']) ?? '',
     );
   }
 }

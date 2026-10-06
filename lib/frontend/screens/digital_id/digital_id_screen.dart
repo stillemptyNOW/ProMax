@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:m3e_collection/m3e_collection.dart'
@@ -36,6 +35,20 @@ String _documentLabel(AppLocalizations l10n, String type) {
     'child_oms' => l10n.digitalIdDocChildOms,
     _ => type,
   };
+}
+
+String _genderLabel(AppLocalizations l10n, String raw) {
+  return switch (raw.toUpperCase()) {
+    'M' || 'MALE' || 'М' => l10n.genderMale,
+    'F' || 'FEMALE' || 'Ж' => l10n.genderFemale,
+    _ => raw,
+  };
+}
+
+String _dateLabel(String raw) {
+  final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(raw);
+  if (iso == null) return raw;
+  return '${iso.group(3)}.${iso.group(2)}.${iso.group(1)}';
 }
 
 class DigitalIdScreen extends StatefulWidget {
@@ -218,24 +231,28 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
       return const Center(child: SmallSpinner(size: 36));
     }
     if (_error != null) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      return ListView(
+        padding: const EdgeInsets.symmetric(vertical: 48),
         children: [
           ErrorView(message: _error!, onRetry: _load),
-          Builder(
-            builder: (buttonContext) => TextButton.icon(
-              icon: const Icon(Symbols.content_copy),
-              label: const Text('Скопировать отчёт для разработчика'),
-              onPressed: () async {
-                final report = DigitalIdDiagnostics.report(
-                  userAgentKind: Platform.isIOS ? 'iPhone' : 'Android',
-                  error: _error!,
-                );
-                await Clipboard.setData(ClipboardData(text: report));
-                if (buttonContext.mounted) {
-                  showHintBubble(buttonContext, 'Отчёт скопирован');
-                }
-              },
+          Center(
+            child: Builder(
+              builder: (buttonContext) => TextButton.icon(
+                icon: const Icon(Symbols.content_copy),
+                label: const Text('Скопировать отчёт для разработчика'),
+                onPressed: () async {
+                  final report = DigitalIdDiagnostics.report(
+                    userAgentKind: defaultTargetPlatform == TargetPlatform.iOS
+                        ? 'iPhone'
+                        : 'Android',
+                    error: _error!,
+                  );
+                  await Clipboard.setData(ClipboardData(text: report));
+                  if (buttonContext.mounted) {
+                    showHintBubble(buttonContext, 'Отчёт скопирован');
+                  }
+                },
+              ),
             ),
           ),
         ],
@@ -364,7 +381,7 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
                   ),
                   if (profile.birthDate != null)
                     Text(
-                      l10n.digitalIdBirthDate(profile.birthDate!),
+                      l10n.digitalIdBirthDate(_dateLabel(profile.birthDate!)),
                       style: TextStyle(
                         fontSize: 13,
                         color: cs.onPrimaryContainer.withValues(alpha: 0.8),
@@ -381,7 +398,7 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
         if (profile.snils != null) (l10n.digitalIdSnilsLabel, profile.snils!),
         if (profile.inn != null) (l10n.digitalIdInnLabel, profile.inn!),
         if (profile.gender != null)
-          (l10n.contactProfileInfoGender, profile.gender!),
+          (l10n.contactProfileInfoGender, _genderLabel(l10n, profile.gender!)),
         if (profile.birthPlace != null)
           (l10n.digitalIdBirthPlaceLabel, profile.birthPlace!),
         if (profile.registrationAddress != null)

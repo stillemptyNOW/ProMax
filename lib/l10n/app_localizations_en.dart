@@ -738,6 +738,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Notifications will arrive over the app’s own background connection, and a permanent service notification will stay in the shade. You can turn FKM off right from it.';
 
   @override
+  String get backgroundNotificationsOfferTitle => 'Turn on notifications?';
+
+  @override
+  String get backgroundNotificationsOfferMessage =>
+      'This build has no Google push, so without a background connection you won\'t be notified about new messages while ProMax is closed. Turn it on now? You can switch it off in notification settings or right from the shade.';
+
+  @override
+  String get backgroundNotificationsOfferLater => 'Not now';
+
+  @override
   String get notificationsMainSectionTitle => 'Notifications';
 
   @override

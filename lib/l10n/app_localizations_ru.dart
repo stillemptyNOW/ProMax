@@ -740,6 +740,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Уведомления начнут приходить через собственное фоновое соединение, а в шторке будет постоянно висеть уведомление сервиса. Выключить FKM можно прямо в нём.';
 
   @override
+  String get backgroundNotificationsOfferTitle => 'Включить уведомления?';
+
+  @override
+  String get backgroundNotificationsOfferMessage =>
+      'В этой сборке нет Google-пушей, поэтому без фонового соединения уведомления о новых сообщениях не приходят, пока ProMax закрыт. Включить его сейчас? Выключить можно в настройках уведомлений или прямо из шторки.';
+
+  @override
+  String get backgroundNotificationsOfferLater => 'Не сейчас';
+
+  @override
   String get notificationsMainSectionTitle => 'Уведомления';
 
   @override
