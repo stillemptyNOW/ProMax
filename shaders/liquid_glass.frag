@@ -16,6 +16,7 @@ uniform vec4 uTint;
 uniform vec2 uLight;
 uniform float uTintFeather;
 uniform float uRimWidth;
+uniform float uFlipY;
 
 uniform sampler2D uBackdrop;
 
@@ -45,7 +46,9 @@ float lensProfile(float depth, float band) {
 vec3 sampleBackdrop(vec2 coord) {
   vec2 uv = coord / uSize;
 #ifdef IMPELLER_TARGET_OPENGLES
-  uv.y = 1.0 - uv.y;
+  if (uFlipY > 0.5) {
+    uv.y = 1.0 - uv.y;
+  }
 #endif
   return texture(uBackdrop, clamp(uv, vec2(0.0), vec2(1.0))).rgb;
 }
