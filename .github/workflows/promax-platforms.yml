@@ -119,21 +119,47 @@ jobs:
         run: flutter pub get
       - name: Build
         run: flutter build windows --release
+      - name: Bundle the Visual C++ runtime
+        shell: pwsh
+        run: |
+          $bundle = 'build/windows/x64/runner/Release'
+          foreach ($dll in 'msvcp140.dll', 'msvcp140_1.dll', 'msvcp140_2.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
+            $source = Join-Path $env:WINDIR "System32\$dll"
+            if (Test-Path $source) { Copy-Item $source $bundle -Force }
+          }
+          foreach ($required in 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
+            if (-not (Test-Path (Join-Path $bundle $required))) { throw "$required is missing from the bundle" }
+          }
       - name: Package
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath dist/ProMax-windows-x64.zip
+      - name: Installer
+        shell: pwsh
+        run: |
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          if (-not (Test-Path $iscc)) { throw 'Inno Setup was not installed' }
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value
+          $name, $build = $version.Split('+')
+          & $iscc "/DAppVersion=$name" "/DAppBuild=$build" windows/installer/promax.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with $LASTEXITCODE" }
+          Get-ChildItem dist
       - name: Publish release
         if: env.RELEASE_TAG != ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: .github/scripts/publish-release.sh "$RELEASE_TAG" dist/ProMax-windows-x64.zip
+        run: .github/scripts/publish-release.sh "$RELEASE_TAG" dist/ProMax-windows-x64.zip dist/ProMax-Setup-*.exe
       - uses: actions/upload-artifact@v4
         with:
           name: ProMax-windows-x64
-          path: dist/ProMax-windows-x64.zip
+          path: |
+            dist/ProMax-windows-x64.zip
+            dist/ProMax-Setup-*.exe
           retention-days: 14
 
   linux:

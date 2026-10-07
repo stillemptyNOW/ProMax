@@ -10,7 +10,7 @@
 
 - **iPhone:** `ProMax-ios-unsigned.ipa`, установка через eSign или другой подписывающий установщик. Нужен iOS 15 или новее. Новый IPA передаётся в eSign через меню «Поделиться».
 - **Android:** `ProMax-…-promax-arm64-v8a.apk` для большинства телефонов, `armeabi-v7a` для старых и `x86_64` для эмуляторов. Обновления ставятся прямо из ProMax.
-- **Windows:** распакуй `ProMax-windows-x64.zip` и запусти `ProMax.exe`.
+- **Windows:** запусти `ProMax-Setup-….exe`: установщик не просит прав администратора, создаёт ярлыки и обновляет ProMax поверх старой версии. Без установки можно распаковать `ProMax-windows-x64.zip` и запустить `ProMax.exe`.
 - **Linux:** распакуй `ProMax-linux-x64.tar.gz` и запусти `ProMax`.
 
 ## Что умеет
@@ -43,7 +43,7 @@
 
 ## Сборка
 
-[GitHub Actions](https://github.com/stillemptyNOW/ProMax/actions/workflows/promax-ios.yml) проверяет криптографическое ядро, анализатор и тесты, затем собирает IPA на macOS. [Второй воркфлоу](https://github.com/stillemptyNOW/ProMax/actions/workflows/promax-platforms.yml) собирает APK для Android и версии для Windows и Linux. Тег `v*` публикует всё в один релиз.
+[GitHub Actions](https://github.com/stillemptyNOW/ProMax/actions/workflows/promax-ios.yml) проверяет криптографическое ядро, анализатор и тесты, затем собирает IPA на macOS. [Второй воркфлоу](https://github.com/stillemptyNOW/ProMax/actions/workflows/promax-platforms.yml) собирает APK для Android, установщик и архив для Windows и версию для Linux. Тег `v*` публикует всё в один релиз.
 
 APK попадают в релиз, только если в секретах репозитория лежит ключ подписи: `ANDROID_KEYSTORE_BASE64` (keystore в base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` и `ANDROID_KEY_PASSWORD`. Без него APK подписываются отладочным ключом и остаются только в артефактах сборки: поверх установленного релизного ProMax такой APK не встанет.
 

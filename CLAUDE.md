@@ -163,8 +163,10 @@ Generated code is in `lib/l10n/` (produced by `flutter gen-l10n` via `l10n.yaml`
 ## CI/CD
 
 `.github/workflows/promax-ios.yml` verifies the app and builds an unsigned iOS IPA.
-`.github/workflows/promax-platforms.yml` builds split-per-ABI `promax` APKs and the
-Windows and Linux bundles. Pushing a `v*` tag publishes everything — IPA, `.pmx`
+`.github/workflows/promax-platforms.yml` builds split-per-ABI and universal `promax` APKs,
+the Windows bundle with the Visual C++ runtime copied next to `ProMax.exe`, the per-user
+Inno Setup installer from `windows/installer/promax.iss` (`ProMax-Setup-<version>-<build>.exe`)
+and the Linux bundle. Pushing a `v*` tag publishes everything — IPA, `.pmx`
 tools package, APKs, desktop archives — into one public GitHub Release through
 `.github/scripts/publish-release.sh`. APKs are named `ProMax-<version>-promax-<abi>.apk`
 because the in-app updater picks them by the `-promax-<abi>.apk` suffix, and they are
