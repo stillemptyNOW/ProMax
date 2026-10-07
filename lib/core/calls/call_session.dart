@@ -2439,6 +2439,7 @@ class CallSession {
 
   // #***! завершение звонка
   Future<void> hangup({String? reason}) async {
+    if (!_ended) _hungUpLocally = true;
     final r = reason ?? _autoHangupReason();
     try {
       await _signaling?.hangup(reason: r);
@@ -2456,11 +2457,18 @@ class CallSession {
   }
 
   bool _ended = false;
+  bool _hungUpLocally = false;
+  final Completer<void> _closed = Completer<void>();
+
+  bool get endedLocally => _hungUpLocally;
+
+  Future<void> get closed => _closed.future;
+
   void _end() {
     if (_ended) return;
     _ended = true;
     _setState(CallSessionState.ended);
-    _dispose();
+    _dispose().whenComplete(_closed.complete);
   }
 
   // #***! освобождаем всё, соединение дорожки подписки стримы

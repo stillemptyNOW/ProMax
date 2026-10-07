@@ -275,6 +275,9 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     _syncVideo();
     _isSpeaker = session.isSpeaker;
     _publishActiveCall();
+    if (session.currentState == CallSessionState.ended) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _close());
+    }
   }
 
   void _publishActiveCall() {

@@ -10,6 +10,7 @@ import '../../backend/modules/chats.dart';
 import '../../backend/modules/messages.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
+import '../calls/call_kit.dart';
 import '../crypto/e2ee_service.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/token_storage.dart';
@@ -106,7 +107,9 @@ class FkmController {
     if (!enabled.value) return;
     try {
       final data = await _buildCallNotification(payload);
-      if (data != null) await FkmBridge.instance.showCall(data);
+      if (data == null) return;
+      if (await CallKitBridge.instance.reportIncoming(data)) return;
+      await FkmBridge.instance.showCall(data);
     } catch (e) {
       logger.w('FKM: не удалось показать звонок: $e');
     }

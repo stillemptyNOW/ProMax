@@ -11,6 +11,7 @@ final class ProMaxLiveConnection: NSObject {
   private var player: AVAudioPlayerNode?
   private var observers: [NSObjectProtocol] = []
   private var started = false
+  private var callActive = false
 
   var isEnabled: Bool { UserDefaults.standard.bool(forKey: enabledKey) }
 
@@ -77,22 +78,39 @@ final class ProMaxLiveConnection: NSObject {
     }
   }
 
+  func setCallActive(_ active: Bool) {
+    guard callActive != active else { return }
+    callActive = active
+    guard active else {
+      syncKeepAlive()
+      return
+    }
+    let wasRunning = engine != nil
+    stopKeepAlive()
+    guard wasRunning else { return }
+    do {
+      try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    } catch {
+      NSLog("ProMaxLiveConnection: keep-alive session release failed: \(error)")
+    }
+  }
+
   private func syncKeepAlive() {
-    if isEnabled && UIApplication.shared.applicationState == .background {
+    if isEnabled && !callActive && UIApplication.shared.applicationState == .background {
       startKeepAlive()
-    } else if !isEnabled {
+    } else if !isEnabled || callActive {
       stopKeepAlive()
     }
   }
 
   private func restartIfNeeded() {
-    guard isEnabled, UIApplication.shared.applicationState == .background else { return }
+    guard isEnabled, !callActive, UIApplication.shared.applicationState == .background else { return }
     stopKeepAlive()
     startKeepAlive()
   }
 
   private func startKeepAlive() {
-    guard engine == nil else { return }
+    guard engine == nil, !callActive else { return }
     do {
       let session = AVAudioSession.sharedInstance()
       try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
