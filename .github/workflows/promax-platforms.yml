@@ -48,10 +48,10 @@ jobs:
       - name: Release signing
         id: signing
         env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
             echo "No release keystore in secrets: the APKs are signed with the debug key and are not published."
@@ -70,6 +70,8 @@ jobs:
         run: |
           flutter build apk --release --split-per-abi --flavor promax \
             --obfuscate --split-debug-info=build/symbols
+          flutter build apk --release --flavor promax \
+            --obfuscate --split-debug-info=build/symbols
       - name: Collect APKs
         run: |
           version=$(awk '/^version:/ {split($2, v, "+"); print v[1]; exit}' pubspec.yaml)
@@ -78,6 +80,8 @@ jobs:
             cp "build/app/outputs/flutter-apk/app-$abi-promax-release.apk" \
               "dist/ProMax-$version-promax-$abi.apk"
           done
+          cp build/app/outputs/flutter-apk/app-promax-release.apk \
+            "dist/ProMax-$version-promax-universal.apk"
           ls -la dist
       - name: Publish release
         if: env.RELEASE_TAG != '' && steps.signing.outputs.signed == 'true'
