@@ -28,6 +28,8 @@ enum CallRole { caller, callee, joiner }
 // #***! состояние звонка от подключения до конца
 enum CallSessionState { connecting, ringing, active, ended }
 
+enum CallEndCause { local, remote, failed }
+
 // #***! участник звонка, медиа роли и поднятая рука
 class CallParticipant {
   final int id;
@@ -412,7 +414,7 @@ class CallSession {
     _reconnecting = false;
     if (!_ended) {
       logger.w('[call] reconnect gave up');
-      _end();
+      _end(CallEndCause.failed);
     }
   }
 
@@ -421,7 +423,7 @@ class CallSession {
     if (_ended || _iceRestarting || _topology == 'SERVER') return;
     if (_iceRestarts >= _maxIceRestarts) {
       logger.w('[call] ice restart budget exhausted, ending call');
-      _end();
+      _end(CallEndCause.failed);
       return;
     }
     _iceRestarting = true;
@@ -2438,8 +2440,13 @@ class CallSession {
   }
 
   // #***! завершение звонка
-  Future<void> hangup({String? reason}) async {
-    if (!_ended) _hungUpLocally = true;
+  Future<void> hangup({String? reason}) =>
+      _hangup(CallEndCause.local, reason: reason);
+
+  Future<void> abort() => _hangup(CallEndCause.failed);
+
+  Future<void> _hangup(CallEndCause cause, {String? reason}) async {
+    _endCause ??= cause;
     final r = reason ?? _autoHangupReason();
     try {
       await _signaling?.hangup(reason: r);
@@ -2457,16 +2464,17 @@ class CallSession {
   }
 
   bool _ended = false;
-  bool _hungUpLocally = false;
+  CallEndCause? _endCause;
   final Completer<void> _closed = Completer<void>();
 
-  bool get endedLocally => _hungUpLocally;
+  CallEndCause? get endCause => _endCause;
 
   Future<void> get closed => _closed.future;
 
-  void _end() {
+  void _end([CallEndCause cause = CallEndCause.remote]) {
     if (_ended) return;
     _ended = true;
+    _endCause ??= cause;
     _setState(CallSessionState.ended);
     _dispose().whenComplete(_closed.complete);
   }

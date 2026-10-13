@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
+import '../../backend/modules/messages.dart';
+import '../cache/info_cache.dart';
 import '../utils/ids.dart';
 import '../utils/logger.dart';
 import 'call_controller.dart';
@@ -52,7 +55,7 @@ class CallKitIncoming {
     return CallKitIncoming(
       conversationId: conversationId,
       handle: handle,
-      callerName: _filled(data['userName'] ?? data['title']) ?? handle,
+      callerName: _filled(data['userName']) ?? _filled(data['title']) ?? '',
       isVideo: type == 'VIDEO' || iv == 'true' || iv == '1',
       data: Map.unmodifiable(data),
     );
@@ -191,8 +194,24 @@ class _SystemCall {
 }
 
 class CallKitBridge {
-  CallKitBridge._();
-  static final CallKitBridge instance = CallKitBridge._();
+  CallKitBridge._({
+    required this.isSupported,
+    required CallController calls,
+    required Future<String?> Function(int userId) callerName,
+  }) : _calls = calls,
+       _callerName = callerName;
+
+  @visibleForTesting
+  CallKitBridge.withCalls(
+    CallController calls, {
+    required Future<String?> Function(int userId) callerName,
+  }) : this._(isSupported: true, calls: calls, callerName: callerName);
+
+  static final CallKitBridge instance = CallKitBridge._(
+    isSupported: _runsOnIOS(),
+    calls: CallController.instance,
+    callerName: _lookupCallerName,
+  );
 
   static const _method = MethodChannel(
     'io.github.stillemptynow.promax/callkit',
@@ -201,12 +220,15 @@ class CallKitBridge {
     'io.github.stillemptynow.promax/callkit_events',
   );
 
+  final bool isSupported;
+  final CallController _calls;
+  final Future<String?> Function(int userId) _callerName;
   final CallKitRegistry _registry = CallKitRegistry();
   StreamSubscription<dynamic>? _eventsSub;
   _SystemCall? _active;
   bool? _appCallActive;
 
-  bool get isSupported {
+  static bool _runsOnIOS() {
     try {
       return Platform.isIOS;
     } catch (_) {
@@ -220,18 +242,19 @@ class CallKitBridge {
       _onEvent,
       onError: (e) => logger.w('CallKitBridge.init: events stream error: $e'),
     );
-    unawaited(setAppCallActive(CallController.instance.activeSession != null));
+    unawaited(setAppCallActive(_calls.activeSession != null));
   }
 
   bool owns(String conversationId) =>
       isSupported && _registry.isKnown(conversationId);
 
   Future<bool> reportIncoming(Map<String, String> data) async {
-    if (!isSupported || CallController.instance.isBusy) return false;
+    if (!isSupported) return false;
     final incoming = CallKitIncoming.fromData(data);
     if (incoming == null) return false;
     final id = incoming.conversationId;
     if (_registry.isKnown(id)) return true;
+    if (_calls.isBusy) return false;
     _registry.ring(id);
     try {
       final shown =
@@ -240,12 +263,31 @@ class CallKitBridge {
             incoming.toArguments(),
           ) ??
           false;
-      if (!shown) _registry.forget(id);
-      return shown;
+      if (!shown) {
+        _registry.forget(id);
+        return false;
+      }
     } catch (e) {
       _registry.forget(id);
       logger.w('CallKitBridge.reportIncoming: conv=$id $e');
       return false;
+    }
+    if (incoming.callerName.isEmpty) unawaited(_revealCallerName(incoming));
+    return true;
+  }
+
+  Future<void> _revealCallerName(CallKitIncoming incoming) async {
+    final userId = int.tryParse(incoming.handle);
+    if (userId == null) return;
+    try {
+      final name = _filled(await _callerName(userId));
+      if (name == null) return;
+      await _invoke('updateCall', {
+        'conversationId': incoming.conversationId,
+        'name': name,
+      });
+    } catch (e) {
+      logger.w('CallKitBridge.callerName: user=$userId $e');
     }
   }
 
@@ -284,10 +326,7 @@ class CallKitBridge {
   void _answer(CallKitEvent event) {
     final id = event.conversationId;
     _registry.settle(id);
-    final call = IncomingCall.fromNative(event.data);
-    final session = call == null
-        ? null
-        : CallController.instance.answerFromSystem(call);
+    final session = _startAnswered(event);
     if (session == null) {
       unawaited(_end(id, CallKitEndReason.failed));
       return;
@@ -306,11 +345,22 @@ class CallKitBridge {
     system.infoSub = session.infoUpdates.listen((_) => _syncMuted(system));
   }
 
+  CallSession? _startAnswered(CallKitEvent event) {
+    try {
+      return _calls.answerFromSystem(event.data);
+    } catch (e) {
+      logger.w('CallKitBridge.answer: conv=${event.conversationId} $e');
+      return null;
+    }
+  }
+
   Future<void> _decline(CallKitEvent event) async {
     _registry.settle(event.conversationId);
-    final call = IncomingCall.fromNative(event.data);
-    if (call == null) return;
-    await CallController.instance.rejectIncoming(call);
+    try {
+      await _calls.rejectFromSystem(event.data);
+    } catch (e) {
+      logger.w('CallKitBridge.decline: conv=${event.conversationId} $e');
+    }
   }
 
   void _hangup(String conversationId) {
@@ -371,9 +421,11 @@ class CallKitBridge {
     unawaited(system.stateSub?.cancel());
     unawaited(system.infoSub?.cancel());
     if (identical(_active, system)) _active = null;
-    final reason = system.session.endedLocally
-        ? CallKitEndReason.local
-        : CallKitEndReason.remoteEnded;
+    final reason = switch (system.session.endCause) {
+      CallEndCause.local => CallKitEndReason.local,
+      CallEndCause.failed => CallKitEndReason.failed,
+      CallEndCause.remote || null => CallKitEndReason.remoteEnded,
+    };
     unawaited(_end(system.conversationId, reason));
   }
 
@@ -395,6 +447,14 @@ class CallKitBridge {
       logger.w('CallKitBridge.$method: $e');
     }
   }
+}
+
+Future<String?> _lookupCallerName(int userId) async {
+  final cached = ContactCache.get(userId);
+  if (cached != null) return cached;
+  final name = _filled((await ContactInfoFetch.get(userId))?.displayName);
+  if (name != null) ContactCache.put(userId, name);
+  return name;
 }
 
 String? _filled(String? value) {

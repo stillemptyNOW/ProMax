@@ -12,7 +12,7 @@ final class ProMaxCallKit: NSObject {
   private struct Call {
     let conversationId: String
     let video: Bool
-    let data: [String: String]
+    var data: [String: String]
     var answered = false
     var held = false
     var endedByApp = false
@@ -45,6 +45,11 @@ final class ProMaxCallKit: NSObject {
     switch call.method {
     case "reportIncoming":
       reportIncoming(args, result: result)
+    case "updateCall":
+      if let conversationId = args["conversationId"] as? String, let name = args["name"] as? String {
+        updateCall(conversationId: conversationId, name: name)
+      }
+      result(nil)
     case "endCall":
       if let conversationId = args["conversationId"] as? String {
         endCall(conversationId: conversationId, reason: args["reason"] as? String ?? "")
@@ -119,6 +124,15 @@ final class ProMaxCallKit: NSObject {
     provider.setDelegate(self, queue: nil)
     self.provider = provider
     return provider
+  }
+
+  private func updateCall(conversationId: String, name: String) {
+    guard !name.isEmpty, let uuid = uuid(for: conversationId), let provider = provider else { return }
+    calls[uuid]?.data["userName"] = name
+    calls[uuid]?.data["title"] = name
+    let update = CXCallUpdate()
+    update.localizedCallerName = name
+    provider.reportCall(with: uuid, updated: update)
   }
 
   private func endCall(conversationId: String, reason: String) {

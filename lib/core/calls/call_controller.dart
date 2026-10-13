@@ -181,8 +181,10 @@ class CallController {
     if (call != null) _emitIncoming(call);
   }
 
-  CallSession? answerFromSystem(IncomingCall call) {
+  CallSession? answerFromSystem(Map<dynamic, dynamic> data) {
     if (isBusy) return null;
+    final call = IncomingCall.fromNative(data);
+    if (call == null) return null;
     if (_pending != null && _pending!.conversationId != call.conversationId) {
       dismissIncoming();
     }
@@ -291,6 +293,11 @@ class CallController {
         await session.accept();
       }, caller: call.callerName);
 
+  Future<void> rejectFromSystem(Map<dynamic, dynamic> data) async {
+    final call = IncomingCall.fromNative(data);
+    if (call != null) await rejectIncoming(call);
+  }
+
   // #***! отклонение
   Future<void> rejectIncoming(IncomingCall call) async {
     _pending = null;
@@ -333,7 +340,7 @@ class CallController {
     } catch (_) {
       await _release(session);
       try {
-        await session.hangup();
+        await session.abort();
       } catch (_) {}
       rethrow;
     }

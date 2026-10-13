@@ -109,7 +109,7 @@ class FkmController {
       final data = await _buildCallNotification(payload);
       if (data == null) return;
       if (await CallKitBridge.instance.reportIncoming(data)) return;
-      await FkmBridge.instance.showCall(data);
+      await FkmBridge.instance.showCall(_withFallbackSender(data));
     } catch (e) {
       logger.w('FKM: не удалось показать звонок: $e');
     }
@@ -134,7 +134,7 @@ class FkmController {
       return null;
     }
 
-    final name = ContactCache.get(callerId) ?? _fallbackSender;
+    final name = ContactCache.get(callerId);
 
     return {
       'type': 'InboundCall',
@@ -142,12 +142,18 @@ class FkmController {
       'conversationId': conversationId,
       'callerId': '$callerId',
       'suid': '$callerId',
-      'userName': name,
-      'title': name,
+      'userName': ?name,
+      'title': ?name,
       'c': '$accountId',
       'iv': payload['type'] == 'VIDEO' ? 'true' : 'false',
     };
   }
+
+  Map<String, String> _withFallbackSender(Map<String, String> data) => {
+    'userName': _fallbackSender,
+    'title': _fallbackSender,
+    ...data,
+  };
 
   // #***! роутер пушей, новое правка удаление
   Future<void> _onPush(Packet packet) async {
