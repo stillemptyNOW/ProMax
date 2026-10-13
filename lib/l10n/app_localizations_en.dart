@@ -2603,6 +2603,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'After downloading, choose eSign from the Share menu to sign and install the IPA.';
 
   @override
+  String get updateWindowsInstallHint =>
+      'ProMax will close, install the update and start again.';
+
+  @override
   String get updateLater => 'Later';
 
   @override

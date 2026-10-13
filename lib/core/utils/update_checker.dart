@@ -56,9 +56,13 @@ class AppUpdateInfo {
   });
 
   // #***! APK выбираем по суффиксу имени
-  UpdateAsset? assetWithSuffix(String suffix) {
+  UpdateAsset? assetWithSuffix(String suffix) => assetMatching(suffix: suffix);
+
+  UpdateAsset? assetMatching({String prefix = '', required String suffix}) {
     for (final asset in assets) {
-      if (asset.name.endsWith(suffix)) return asset;
+      if (asset.name.startsWith(prefix) && asset.name.endsWith(suffix)) {
+        return asset;
+      }
     }
     return null;
   }
@@ -119,6 +123,25 @@ class UpdateCheckResult {
   ).firstMatch(tag.trim());
   if (match == null) return null;
   return (version: match.group(1)!, build: int.tryParse(match.group(2) ?? ''));
+}
+
+Map<Object?, Object?>? newestRelease(Object? releases) {
+  final candidates = releases is List ? releases : [releases];
+  Map<Object?, Object?>? newest;
+  ({String version, int? build})? newestVersion;
+  for (final release in candidates.whereType<Map<Object?, Object?>>()) {
+    if (release['draft'] == true) continue;
+    final tag = release['tag_name'];
+    if (tag is! String) continue;
+    final version = parseReleaseTag(tag);
+    if (version == null) continue;
+    if (newestVersion == null ||
+        UpdateChecker._compareRelease(version, newestVersion) > 0) {
+      newest = release;
+      newestVersion = version;
+    }
+  }
+  return newest;
 }
 
 // #***! проверка последнего публичного GitHub-релиза
@@ -237,21 +260,12 @@ abstract class UpdateChecker {
           .transform(const Utf8Decoder())
           .join()
           .timeout(_timeout);
-      final decoded = jsonDecode(body);
-      final release = decoded is List && decoded.isNotEmpty
-          ? decoded.first
-          : decoded;
-      if (release is! Map) {
-        throw const FormatException('Invalid update manifest');
+      final release = newestRelease(jsonDecode(body));
+      if (release == null) {
+        throw const FormatException('No GitHub release has an app version');
       }
-      final tag = release['tag_name'];
-      if (tag is! String || tag.isEmpty) {
-        throw const FormatException('GitHub release has no tag');
-      }
-      final parsed = parseReleaseTag(tag);
-      if (parsed == null) {
-        throw const FormatException('GitHub release tag has no app version');
-      }
+      final tag = release['tag_name'] as String;
+      final parsed = parseReleaseTag(tag)!;
       final rawAssets = release['assets'];
       final assets = <Map<String, Object?>>[];
       if (rawAssets is List) {
@@ -310,6 +324,15 @@ abstract class UpdateChecker {
       return remoteBuild > currentBuild;
     }
     return false;
+  }
+
+  static int _compareRelease(
+    ({String version, int? build}) a,
+    ({String version, int? build}) b,
+  ) {
+    final cmp = _compareSemver(a.version, b.version);
+    if (cmp != 0) return cmp;
+    return (a.build ?? -1).compareTo(b.build ?? -1);
   }
 
   // #***! сравнение версий по числам без библиотеки

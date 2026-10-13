@@ -1090,6 +1090,7 @@
   "updateWhatsNew": "WHAT'S NEW",
   "updateAction": "Update",
   "updateIosInstallHint": "After downloading, choose eSign from the Share menu to sign and install the IPA.",
+  "updateWindowsInstallHint": "ProMax will close, install the update and start again.",
   "updateLater": "Later",
   "updateSkip": "Skip",
   "updateDownloading": "Downloading update…",

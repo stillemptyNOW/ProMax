@@ -1,3 +1,7 @@
+#if VER < EncodeVer(6, 3, 0)
+  #error Inno Setup 6.3 or newer is required to compile this script
+#endif
+
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
@@ -41,7 +45,11 @@ UninstallDisplayName=ProMax
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
-WizardSizePercent=110
+#if VER >= EncodeVer(6, 5, 2)
+WizardImageFile=wizard_image_100.png,wizard_image_150.png,wizard_image_200.png
+WizardSmallImageFile=wizard_small_100.png,wizard_small_150.png,wizard_small_200.png
+#endif
+SetupMutex=ProMaxSetup
 CloseApplications=force
 RestartApplications=no
 UsePreviousTasks=yes
@@ -65,3 +73,10 @@ Name: "{autodesktop}\ProMax"; Filename: "{app}\ProMax.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\ProMax.exe"; Description: "{cm:LaunchProgram,ProMax}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\ProMax.exe"; Flags: nowait skipifnotsilent runasoriginaluser; Check: RelaunchRequested
+
+[Code]
+function RelaunchRequested: Boolean;
+begin
+  Result := ExpandConstant('{param:relaunch|0}') = '1';
+end;

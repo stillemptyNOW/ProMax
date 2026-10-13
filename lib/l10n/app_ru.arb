@@ -834,6 +834,7 @@
   "updateWhatsNew": "ЧТО НОВОГО",
   "updateAction": "Обновить",
   "updateIosInstallHint": "После загрузки выберите eSign в меню «Поделиться», чтобы подписать и установить IPA.",
+  "updateWindowsInstallHint": "ProMax закроется, установит обновление и запустится снова.",
   "updateLater": "Позже",
   "updateSkip": "Пропустить",
   "updateDownloading": "Загрузка обновления…",

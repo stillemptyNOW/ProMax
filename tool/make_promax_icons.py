@@ -11,6 +11,9 @@ FLAT = os.path.join(ROOT, 'assets', 'promax_icon.png')
 PREVIEW_DIR = os.path.join(ROOT, 'assets', 'icons')
 IOS_RUNNER = os.path.join(ROOT, 'ios', 'Runner')
 IOS_APPICON = os.path.join(IOS_RUNNER, 'Assets.xcassets', 'AppIcon.appiconset')
+INSTALLER_DIR = os.path.join(ROOT, 'windows', 'installer')
+INSTALLER_PANELS = {100: (202, 386), 150: (336, 643), 200: (430, 824)}
+INSTALLER_BADGES = {100: 58, 150: 97, 200: 124}
 
 VARIANTS = {
     'Light': {'background': [(246, 247, 251), (226, 229, 238)], 'mark': (12, 13, 18)},
@@ -27,27 +30,33 @@ def mark_alpha(size):
 
 
 def gradient(size, top, bottom):
-    image = Image.new('RGB', (size, size))
+    return vertical_gradient(size, size, top, bottom)
+
+
+def vertical_gradient(width, height, top, bottom):
+    image = Image.new('RGB', (width, height))
     draw = ImageDraw.Draw(image)
-    for y in range(size):
-        t = y / max(1, size - 1)
+    for y in range(height):
+        t = y / max(1, height - 1)
         color = tuple(round(top[i] + (bottom[i] - top[i]) * t) for i in range(3))
-        draw.line([(0, y), (size, y)], fill=color)
+        draw.line([(0, y), (width, y)], fill=color)
     return image
+
+
+def glass(image, alpha, mark_size):
+    glow = Image.new('RGB', image.size, (120, 140, 255))
+    halo = alpha.filter(ImageFilter.GaussianBlur(mark_size / 18)).point(lambda v: int(v * 0.55))
+    image = Image.composite(glow, image, halo)
+    shine = vertical_gradient(*image.size, (255, 255, 255), (196, 206, 230))
+    return Image.composite(shine, image, alpha)
 
 
 def compose(size, spec):
     image = gradient(size, *spec['background'])
     alpha = mark_alpha(size)
     if spec.get('glass'):
-        glow = Image.new('RGB', (size, size), (120, 140, 255))
-        halo = alpha.filter(ImageFilter.GaussianBlur(size / 18)).point(lambda v: int(v * 0.55))
-        image = Image.composite(glow, image, halo)
-        shine = gradient(size, (255, 255, 255), (196, 206, 230))
-        image = Image.composite(shine, image, alpha)
-    else:
-        image = Image.composite(Image.new('RGB', (size, size), spec['mark']), image, alpha)
-    return image
+        return glass(image, alpha, size)
+    return Image.composite(Image.new('RGB', (size, size), spec['mark']), image, alpha)
 
 
 def save_mark():
@@ -81,8 +90,35 @@ def save_primary():
         image.save(os.path.join(IOS_APPICON, filename), optimize=True)
 
 
+def installer_panel(width, height):
+    image = vertical_gradient(width, height, *VARIANTS['Glass']['background'])
+    size = round(width * 0.56)
+    alpha = Image.new('L', (width, height), 0)
+    alpha.paste(mark_alpha(size), ((width - size) // 2, round(height * 0.4 - size / 2)))
+    return glass(image, alpha, size)
+
+
+def installer_badge(size):
+    big = size * 4
+    mask = Image.new('L', (big, big), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, big - 1, big - 1], radius=round(big * 0.225), fill=255)
+    badge = compose(size, VARIANTS['Glass']).convert('RGBA')
+    badge.putalpha(mask.resize((size, size), Image.LANCZOS))
+    return badge
+
+
+def save_installer_images():
+    for scale, (width, height) in INSTALLER_PANELS.items():
+        path = os.path.join(INSTALLER_DIR, f'wizard_image_{scale}.png')
+        installer_panel(width, height).save(path, optimize=True)
+    for scale, size in INSTALLER_BADGES.items():
+        installer_badge(size).save(os.path.join(INSTALLER_DIR, f'wizard_small_{scale}.png'), optimize=True)
+
+
 if __name__ == '__main__':
-    save_mark()
-    save_variants()
-    if '--skip-primary' not in sys.argv:
-        save_primary()
+    if '--installer-only' not in sys.argv:
+        save_mark()
+        save_variants()
+        if '--skip-primary' not in sys.argv:
+            save_primary()
+    save_installer_images()

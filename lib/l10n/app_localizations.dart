@@ -4976,6 +4976,12 @@ abstract class AppLocalizations {
   /// **'After downloading, choose eSign from the Share menu to sign and install the IPA.'**
   String get updateIosInstallHint;
 
+  /// No description provided for @updateWindowsInstallHint.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax will close, install the update and start again.'**
+  String get updateWindowsInstallHint;
+
   /// No description provided for @updateLater.
   ///
   /// In en, this message translates to:
