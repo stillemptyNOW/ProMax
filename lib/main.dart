@@ -80,6 +80,8 @@ import 'backend/modules/webapp.dart';
 import 'backend/modules/digital_id.dart';
 import 'core/calls/call_bridge.dart';
 import 'core/calls/call_controller.dart';
+import 'core/calls/call_kit.dart';
+import 'core/calls/call_session.dart';
 import 'core/media/audio_playback_controller.dart';
 import 'core/media/media_kit_video_platform.dart';
 import 'core/links/deep_link_service.dart';
@@ -454,6 +456,7 @@ class ProMaxAppState extends State<ProMaxApp>
   bool _shellReady = false;
   bool _incomingRouteActive = false;
   IncomingCall? _pendingIncoming;
+  CallSession? _pendingAnsweredSession;
   late final ValueNotifier<Color?> accentSeed = ValueNotifier(
     widget.initialAccentSeed,
   );
@@ -463,6 +466,7 @@ class ProMaxAppState extends State<ProMaxApp>
   StreamSubscription<LoginStatus>? _loginStatusSub;
   StreamSubscription<VpnBypassResult>? _vpnBypassSub;
   StreamSubscription<IncomingCall>? _callIncomingSub;
+  StreamSubscription<AnsweredCall>? _callAnsweredSub;
   StreamSubscription<String>? _serverErrorSub;
   StreamSubscription<AccountNotice>? _accountNoticeSub;
   Timer? _scheduleTimer;
@@ -539,8 +543,12 @@ class ProMaxAppState extends State<ProMaxApp>
     _callIncomingSub = CallController.instance.incomingCalls.listen(
       _onIncomingCall,
     );
+    _callAnsweredSub = CallController.instance.answeredCalls.listen(
+      _onAnsweredCall,
+    );
     CallController.instance.appResumed = true;
     CallBridge.instance.init();
+    CallKitBridge.instance.init();
     NotificationBridge.instance.init();
     unawaited(LauncherBadge.instance.init());
     ShareIntentBridge.instance.init();
@@ -639,6 +647,13 @@ class ProMaxAppState extends State<ProMaxApp>
 
   void _onIncomingCall(IncomingCall call) {
     _pendingIncoming = call;
+    _pendingAnsweredSession = null;
+    _presentIncomingCall();
+  }
+
+  void _onAnsweredCall(AnsweredCall answered) {
+    _pendingIncoming = answered.call;
+    _pendingAnsweredSession = answered.session;
     _presentIncomingCall();
   }
 
@@ -651,6 +666,16 @@ class ProMaxAppState extends State<ProMaxApp>
   void _presentIncomingCall() {
     final call = _pendingIncoming;
     if (call == null || _incomingRouteActive || !_shellReady) return;
+    final session = _pendingAnsweredSession;
+    final stale = session == null
+        ? !identical(CallController.instance.pendingIncoming, call)
+        : session.currentState == CallSessionState.ended;
+    if (stale) {
+      _pendingIncoming = null;
+      _pendingAnsweredSession = null;
+      return;
+    }
+    if (session != null && !CallController.instance.appResumed) return;
     final navState = ProMaxApp.navigatorKey.currentState;
     if (navState == null) {
       WidgetsBinding.instance.addPostFrameCallback(
@@ -665,6 +690,7 @@ class ProMaxAppState extends State<ProMaxApp>
             builder: (_) => CallScreen(
               name: ContactCache.get(call.callerId) ?? call.callerName ?? '',
               avatarUrl: ContactCache.getAvatar(call.callerId),
+              session: session,
               incoming: call,
               autoAccept: call.autoAccept,
             ),
@@ -672,7 +698,12 @@ class ProMaxAppState extends State<ProMaxApp>
         )
         .whenComplete(() {
           _incomingRouteActive = false;
-          if (identical(_pendingIncoming, call)) _pendingIncoming = null;
+          if (identical(_pendingIncoming, call)) {
+            _pendingIncoming = null;
+            _pendingAnsweredSession = null;
+            return;
+          }
+          _presentIncomingCall();
         });
   }
 
@@ -683,6 +714,7 @@ class ProMaxAppState extends State<ProMaxApp>
     _loginStatusSub?.cancel();
     _vpnBypassSub?.cancel();
     _callIncomingSub?.cancel();
+    _callAnsweredSub?.cancel();
     _serverErrorSub?.cancel();
     _accountNoticeSub?.cancel();
     _scheduleTimer?.cancel();
@@ -747,6 +779,7 @@ class ProMaxAppState extends State<ProMaxApp>
     }
     if (state != AppLifecycleState.resumed) return;
     api.wakeUp();
+    _presentIncomingCall();
     SelfCheckService.instance.resume();
     if (!CallController.instance.isBusy) {
       unawaited(CallBridge.instance.dropOngoing());

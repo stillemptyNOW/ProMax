@@ -45,6 +45,7 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
       registerNotifications(messenger)
       registerScreen(messenger)
       registerClipboard(messenger)
+      registerCallKit(messenger)
       method("io.github.stillemptynow.promax/fkm", messenger) { call, result in
         ProMaxLiveConnection.shared.handle(call, result: result)
       }
@@ -185,6 +186,15 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
   private func registerClipboard(_ messenger: FlutterBinaryMessenger) {
     method("io.github.stillemptynow.promax/clipboard", messenger) { call, result in
       ProMaxClipboard.handle(call, result: result)
+    }
+  }
+
+  private func registerCallKit(_ messenger: FlutterBinaryMessenger) {
+    method("io.github.stillemptynow.promax/callkit", messenger) { call, result in
+      ProMaxCallKit.shared.handle(call, result: result)
+    }
+    events("io.github.stillemptynow.promax/callkit_events", messenger) { sink in
+      ProMaxCallKit.shared.attach(sink)
     }
   }
 
