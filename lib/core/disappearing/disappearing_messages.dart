@@ -5,29 +5,42 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../backend/modules/chats.dart';
+import '../../backend/modules/server_outcome.dart';
 
 typedef DisappearingDelete =
-    Future<bool> Function(int chatId, List<String> messageIds);
+    Future<ServerOutcome> Function(int chatId, List<String> messageIds);
 
 @immutable
 class DisappearingEntry {
   const DisappearingEntry(
     this.chatId,
     this.messageId,
-    this.dueAt, [
+    this.dueAt, {
     this.tries = 0,
-  ]);
+    this.accountId,
+  });
 
   final int chatId;
   final String messageId;
   final int dueAt;
   final int tries;
+  final int? accountId;
+
+  DisappearingEntry retryAt(int dueAt, {required int tries}) =>
+      DisappearingEntry(
+        chatId,
+        messageId,
+        dueAt,
+        tries: tries,
+        accountId: accountId,
+      );
 
   Map<String, Object> toJson() => {
     'c': chatId,
     'm': messageId,
     'd': dueAt,
     't': tries,
+    'a': ?accountId,
   };
 
   static DisappearingEntry? fromJson(Object? raw) {
@@ -36,8 +49,15 @@ class DisappearingEntry {
     final message = raw['m'];
     final due = raw['d'];
     final tries = raw['t'];
+    final account = raw['a'];
     if (chat is! int || message is! String || due is! int) return null;
-    return DisappearingEntry(chat, message, due, tries is int ? tries : 0);
+    return DisappearingEntry(
+      chat,
+      message,
+      due,
+      tries: tries is int ? tries : 0,
+      accountId: account is int ? account : null,
+    );
   }
 }
 
@@ -50,6 +70,7 @@ class DisappearingMessages {
   static const queueKey = 'promax_disappearing_queue';
   static const List<int> options = [0, 30, 300, 3600, 28800, 86400];
   static const int maxTries = 4;
+  static const int offlineRetry = 30000;
 
   final ValueNotifier<Map<int, int>> timers = ValueNotifier(const {});
   final List<DisappearingEntry> _queue = [];
@@ -120,7 +141,14 @@ class DisappearingMessages {
   void _onEvent(MessageEvent event) {
     switch (event) {
       case MessageSentEvent(:final message):
-        unawaited(schedule(event.chatId, message.id, message.time));
+        unawaited(
+          schedule(
+            event.chatId,
+            message.id,
+            message.time,
+            accountId: message.accountId,
+          ),
+        );
       case MessageAddedEvent(:final message):
         if (timerFor(event.chatId) <= 0) return;
         unawaited(
@@ -144,14 +172,26 @@ class DisappearingMessages {
   ) async {
     final me = await _myId?.call();
     if (me == null || me != senderId) return;
-    await schedule(chatId, messageId, sentAt);
+    await schedule(chatId, messageId, sentAt, accountId: me);
   }
 
-  Future<void> schedule(int chatId, String messageId, int sentAt) async {
+  Future<void> schedule(
+    int chatId,
+    String messageId,
+    int sentAt, {
+    int? accountId,
+  }) async {
     final seconds = timerFor(chatId);
     if (seconds <= 0 || messageId.startsWith('temp_')) return;
     if (!_known.add('$chatId:$messageId')) return;
-    _queue.add(DisappearingEntry(chatId, messageId, sentAt + seconds * 1000));
+    _queue.add(
+      DisappearingEntry(
+        chatId,
+        messageId,
+        sentAt + seconds * 1000,
+        accountId: accountId != null && accountId > 0 ? accountId : null,
+      ),
+    );
     await _save();
     _arm();
   }
@@ -163,32 +203,40 @@ class DisappearingMessages {
     _running = true;
     try {
       final at = now().millisecondsSinceEpoch;
-      final due = _queue.where((e) => e.dueAt <= at).toList();
+      final me = await _myId?.call();
+      final due = _queue
+          .where((e) => e.dueAt <= at)
+          .where((e) => e.accountId == null || e.accountId == me)
+          .toList();
       final byChat = <int, List<DisappearingEntry>>{};
       for (final entry in due) {
         byChat.putIfAbsent(entry.chatId, () => []).add(entry);
       }
       for (final chat in byChat.entries) {
         final ids = [for (final e in chat.value) e.messageId];
-        bool ok;
+        ServerOutcome outcome;
         try {
-          ok = await delete(chat.key, ids);
-        } catch (_) {
-          ok = false;
+          outcome = await delete(chat.key, ids);
+        } catch (e) {
+          outcome = outcomeOfError(e);
         }
         for (final entry in chat.value) {
           _queue.remove(entry);
-          if (ok) {
-            _known.remove('${entry.chatId}:${entry.messageId}');
-          } else if (entry.tries + 1 < maxTries) {
-            _queue.add(
-              DisappearingEntry(
-                entry.chatId,
-                entry.messageId,
-                at + 60000 * (entry.tries + 1),
-                entry.tries + 1,
-              ),
-            );
+          switch (outcome) {
+            case ServerDone():
+            case ServerRejected(notFound: true):
+              _known.remove('${entry.chatId}:${entry.messageId}');
+            case ServerUnreachable():
+              _queue.add(entry.retryAt(at + offlineRetry, tries: entry.tries));
+            case ServerRejected() when entry.tries + 1 < maxTries:
+              _queue.add(
+                entry.retryAt(
+                  at + 60000 * (entry.tries + 1),
+                  tries: entry.tries + 1,
+                ),
+              );
+            case ServerRejected():
+              _known.remove('${entry.chatId}:${entry.messageId}');
           }
         }
       }

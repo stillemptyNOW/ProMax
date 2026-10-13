@@ -762,26 +762,21 @@ class _ChatListScreenState extends State<ChatListScreen>
     final choice = await _showDeleteConfirmDialog(selectedAfter, kind);
     if (!mounted || choice == null) return;
 
-    final forAllById = {
-      for (final c in selectedAfter)
-        c.id: kind == _DeleteKind.ownerGroup || (choice.forAll && c.id != 0),
-    };
-    final lastEventById = {
-      for (final c in selectedAfter) c.id: c.lastEventTime,
-    };
     _clearSelection();
     removeChatsWithUndo(
       context,
       message: AppLocalizations.of(
         context,
       )!.undoChatsDeleted(selectedAfter.length),
-      chatIds: forAllById.keys.toList(),
-      remove: (chatId) => chats.deleteChat(
-        api,
-        chatId: chatId,
-        lastEventTime: lastEventById[chatId]!,
-        forAll: forAllById[chatId]!,
-      ),
+      accountId: myId,
+      chats: [
+        for (final c in selectedAfter)
+          (
+            chatId: c.id,
+            forAll:
+                kind == _DeleteKind.ownerGroup || (choice.forAll && c.id != 0),
+          ),
+      ],
     );
   }
 

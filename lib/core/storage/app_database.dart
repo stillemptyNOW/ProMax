@@ -1790,6 +1790,26 @@ class AppDatabase {
     );
   }
 
+  static Future<List<String>> loadServerMessageIdsBetween(
+    int accountId,
+    int chatId, {
+    required int fromTime,
+    required int toTime,
+  }) async {
+    final db = await _instance;
+    final rows = await db.query(
+      'messages',
+      columns: ['id'],
+      where:
+          'account_id = ? AND chat_id = ? AND deleted = 0 '
+          'AND time >= ? AND time <= ? '
+          "AND substr(id, 1, 5) != 'temp_' "
+          "AND (status IS NULL OR status NOT IN ('pending', 'sending', 'error'))",
+      whereArgs: [accountId, chatId, fromTime, toTime],
+    );
+    return [for (final row in rows) row['id'].toString()];
+  }
+
   static Future<void> deleteMessages(
     int accountId,
     int chatId,

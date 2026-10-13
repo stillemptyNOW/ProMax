@@ -12,6 +12,7 @@ import '../../formatted_message_text.dart';
 import '../../sending_clock_icon.dart';
 import '../../photo_viewer.dart';
 import 'meta_marks.dart';
+import '../../deleted_message_mark.dart';
 
 enum MessageType { text, attachment, voice, control }
 
@@ -249,7 +250,7 @@ class BubbleContext {
           ),
           if (message.deleted) ...[
             const SizedBox(width: 3),
-            const Icon(Symbols.delete, size: 11, color: Colors.white),
+            const DeletedMessageMark(color: Colors.white, size: 11),
           ],
           if (isMe) ...[
             const SizedBox(width: 3),
@@ -260,7 +261,7 @@ class BubbleContext {
     );
   }
 
-  Widget deletedIcon() => Icon(Symbols.delete, size: 13, color: dim);
+  Widget deletedIcon() => DeletedMessageMark(color: dim);
 
   Widget statusIcon({Color? color, double size = 14}) {
     final base = overrideStatus ?? message.status;

@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../../../backend/modules/chats.dart';
 import '../../../../backend/modules/contacts.dart';
 import '../../../../backend/modules/messages.dart';
+import '../../../../backend/modules/pending_deletions.dart';
 import '../../../../backend/modules/upload_service.dart';
 import '../../../../core/cache/message_session_cache.dart';
 import '../../../../core/crypto/chat_crypto_service.dart';
@@ -124,6 +125,15 @@ class ChatMediaSendController {
     FileAttachment? attachment,
     String? realId,
   }) {
+    if (realId != null &&
+        PendingDeletions.instance.claimSent(
+          accountId: _myId,
+          chatId: _chatId,
+          tempId: tempId,
+          realId: realId,
+        )) {
+      return;
+    }
     if (!isMounted()) return;
     final idx = chatController.indexOfId(tempId);
     if (idx == -1) return;
@@ -186,6 +196,15 @@ class ChatMediaSendController {
 
     try {
       final serverMsg = await send();
+      if (serverMsg != null &&
+          PendingDeletions.instance.claimSent(
+            accountId: _myId,
+            chatId: _chatId,
+            tempId: tempId,
+            realId: serverMsg['id']?.toString() ?? '',
+          )) {
+        return;
+      }
       final mounted = isMounted();
       final idx = chatController.indexOfId(tempId);
       if (mounted && idx == -1) return;
@@ -194,10 +213,7 @@ class ChatMediaSendController {
           updateFileMessageStatus(tempId, 'error');
           notify(_l10n.cloudStorageSendError);
         } else {
-          _previewInChatList(
-            tempMessage.copyWith(status: 'error'),
-            'error',
-          );
+          _previewInChatList(tempMessage.copyWith(status: 'error'), 'error');
         }
         return;
       }

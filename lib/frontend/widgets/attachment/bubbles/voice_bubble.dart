@@ -14,6 +14,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../custom_notification.dart';
 import '../../small_spinner.dart';
 import 'meta_marks.dart';
+import '../../deleted_message_mark.dart';
 
 class VoiceMessageBubble extends StatefulWidget {
   final int duration;
@@ -444,9 +445,7 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
                 ],
                 if (widget.deleted) ...[
                   const SizedBox(width: 2),
-                  Icon(
-                    Symbols.delete,
-                    size: 13,
+                  DeletedMessageMark(
                     color: widget.textColor.withValues(alpha: 0.6),
                   ),
                 ],
@@ -477,9 +476,7 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
                 ],
                 if (widget.deleted) ...[
                   const SizedBox(width: 2),
-                  Icon(
-                    Symbols.delete,
-                    size: 13,
+                  DeletedMessageMark(
                     color: widget.textColor.withValues(alpha: 0.6),
                   ),
                 ],

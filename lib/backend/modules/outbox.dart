@@ -7,6 +7,7 @@ import '../../core/utils/logger.dart';
 import '../api.dart';
 import 'chats.dart';
 import 'messages.dart';
+import 'pending_deletions.dart';
 
 // #***! очередь неотправленных, досылает когда связь вернулась
 class OutboxService {
@@ -90,6 +91,14 @@ class OutboxService {
             replySourceChatId: replySourceChatId,
             elements: elements,
           );
+          if (PendingDeletions.instance.claimSent(
+            accountId: accountId,
+            chatId: pending.chatId,
+            tempId: pending.id,
+            realId: actualId,
+          )) {
+            continue;
+          }
           // #***! отправилось, сервер дал настоящий id а временный удаляем
           // #***! sealedText не терять, ключ потрачен и текста больше нигде нет
           final sent = CachedMessage(
@@ -123,7 +132,7 @@ class OutboxService {
             status: 'sent',
             elements: elements.isEmpty ? null : elements,
           );
-        // #***! временную ошибку оставляем в очереди, окончательную помечаем и не трогаем
+          // #***! временную ошибку оставляем в очереди, окончательную помечаем и не трогаем
         } catch (e) {
           if (!await _ownsSession(api, epoch, accountId)) return;
           if (!isPermanentSendFailure(e)) {

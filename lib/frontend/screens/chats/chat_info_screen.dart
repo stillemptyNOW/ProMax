@@ -41,6 +41,8 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/hint_bubble.dart';
 import '../../widgets/sheet_helpers.dart';
 import 'chat_removal_undo.dart';
+import 'deletion_feedback.dart';
+import '../../../backend/modules/pending_deletions.dart';
 import '../../widgets/formatted_message_text.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../widgets/glossy_pill.dart';
@@ -1280,9 +1282,9 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   Future<void> _addChatToFolder() async {
     final accountId = await TokenStorage.getActiveAccountId();
     if (accountId == null || !mounted) return;
-    final folders = (await FoldersModule.loadFolders(accountId))
-        .where((folder) => !FoldersModule.isAllChatsFolder(folder))
-        .toList();
+    final folders = (await FoldersModule.loadFolders(
+      accountId,
+    )).where((folder) => !FoldersModule.isAllChatsFolder(folder)).toList();
     if (!mounted) return;
     if (folders.isEmpty) {
       showCustomNotification(context, l10n.chatInfoNoFolders);
@@ -1756,13 +1758,12 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     );
     if (!mounted || !choice.confirmed) return;
 
-    final failure = l10n.chatInfoLeaveFailed;
     removeChatsWithUndo(
       context,
       message: isChannel ? l10n.undoLeftChannel : l10n.undoLeftGroup,
-      chatIds: [_mediaChatId],
-      remove: (chatId) async =>
-          await chats.leaveChat(api, chatId: chatId) ? null : failure,
+      accountId: _myId,
+      chats: [(chatId: _mediaChatId, forAll: false)],
+      kind: PendingDeletionKind.leaveChat,
     );
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
@@ -1818,14 +1819,17 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     );
     if (!mounted || !choice.confirmed) return;
 
-    final error = await chats.clearHistory(
+    final outcome = await chats.clearHistory(
       api,
       chatId: _mediaChatId,
-      lastEventTime: _lastEventTime,
+      seenEventTime: _lastEventTime,
       forAll: canClearForAll && choice.checked,
     );
     if (!mounted) return;
-    showCustomNotification(context, error ?? l10n.chatInfoClearHistoryDone);
+    showCustomNotification(
+      context,
+      outcomeFailureText(outcome, l10n) ?? l10n.chatInfoClearHistoryDone,
+    );
   }
 
   Future<void> _deleteChat() async {
@@ -1841,34 +1845,23 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     );
     if (!mounted || !choice.confirmed) return;
 
-    final lastEventTime = _lastEventTime;
-    final forAll = canDeleteForAll && choice.checked;
     removeChatsWithUndo(
       context,
       message: l10n.undoChatsDeleted(1),
-      chatIds: [_mediaChatId],
-      remove: (chatId) => chats.deleteChat(
-        api,
-        chatId: chatId,
-        lastEventTime: lastEventTime,
-        forAll: forAll,
-      ),
+      accountId: _myId,
+      chats: [
+        (chatId: _mediaChatId, forAll: canDeleteForAll && choice.checked),
+      ],
     );
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   void _deleteChannelForAll() {
-    final lastEventTime = _lastEventTime;
     removeChatsWithUndo(
       context,
       message: l10n.undoChatsDeleted(1),
-      chatIds: [_mediaChatId],
-      remove: (chatId) => chats.deleteChat(
-        api,
-        chatId: chatId,
-        lastEventTime: lastEventTime,
-        forAll: true,
-      ),
+      accountId: _myId,
+      chats: [(chatId: _mediaChatId, forAll: true)],
     );
     Navigator.of(context).popUntil((route) => route.isFirst);
   }

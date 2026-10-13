@@ -12,6 +12,7 @@ import '../../../backend/modules/cloud_storage.dart';
 import '../../../backend/modules/upload_service.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/utils/format.dart';
+import '../../../core/utils/logger.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart';
 import '../../widgets/connection_status.dart';
@@ -205,15 +206,17 @@ class _CloudStorageScreenState extends State<CloudStorageScreen>
 
   void _deleteOrLeave(int accountId, CachedChat chat) async {
     final isAdmin = chat.owner == accountId || chat.admins.contains(accountId);
-    if (isAdmin) {
-      await chats.deleteChat(
-        api,
-        chatId: chat.id,
-        lastEventTime: chat.lastEventTime,
-        forAll: true,
-      );
-    } else {
-      await chats.leaveChat(api, chatId: chat.id);
+    final outcome = isAdmin
+        ? await chats.deleteChat(
+            api,
+            chatId: chat.id,
+            forAll: true,
+            seenEventTime: chat.lastEventTime,
+            accountId: accountId,
+          )
+        : await chats.leaveChat(api, chatId: chat.id, accountId: accountId);
+    if (!outcome.ok) {
+      logger.w('Облако: лишняя группа ${chat.id} не убрана');
     }
   }
 

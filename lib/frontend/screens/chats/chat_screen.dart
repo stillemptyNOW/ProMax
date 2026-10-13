@@ -27,7 +27,7 @@ import 'package:promax/frontend/screens/chats/poll_create_screen.dart';
 import 'package:promax/frontend/widgets/custom_notification.dart';
 import 'package:promax/frontend/widgets/hint_bubble.dart';
 import 'package:promax/frontend/widgets/undo_notification.dart';
-import 'package:promax/backend/modules/pending_message_deletions.dart';
+import 'package:promax/backend/modules/pending_deletions.dart';
 import 'package:promax/frontend/screens/chats/chat_removal_undo.dart';
 import 'package:promax/frontend/widgets/chat_menu_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -95,7 +95,9 @@ import 'chat/view/composer_input.dart' show BotStartPrompt;
 import 'chat/view/chat_body_layout.dart';
 import 'chat/view/shimmer_loading.dart';
 import '../../../core/config/app_visual_style.dart';
-import '../../../backend/modules/chat_wipe.dart';
+import 'chat/chat_wipe_flow.dart';
+import 'chat/message_deletion.dart';
+import 'deletion_feedback.dart';
 import '../../../core/security/double_bottom.dart';
 import '../../../core/config/promax_atmosphere.dart';
 import '../../widgets/atmosphere_overlay.dart';
@@ -146,7 +148,6 @@ import 'e2ee_screen.dart';
 import 'chat_wallpaper_preview_screen.dart';
 import 'profile_action_sheets.dart';
 import '../../../core/media/media_playback.dart';
-import '../../../core/config/app_shape.dart';
 import '../../../core/security/app_lock.dart';
 
 class _DateSeparatorItem {
@@ -277,6 +278,7 @@ class _ChatScreenState extends State<ChatScreen>
   StreamSubscription<Object>? _reactionUpdatesSub;
   StreamSubscription<List<CachedMessage>>? _forwardedSub;
   StreamSubscription<MessageEvent>? _messageEventSub;
+  StreamSubscription<RestoredMessages>? _restoredSub;
   StreamSubscription<Map<String, CommentsInfo>>? _commentsInfoSub;
   StreamSubscription<CommentAddedEvent>? _commentSub;
   final Map<String, int> _commentCounts = {};
@@ -794,6 +796,9 @@ class _ChatScreenState extends State<ChatScreen>
     _messageEventSub = chats.messageEvents
         .where((e) => e.chatId == widget.chatId)
         .listen(_onMessageEvent);
+    _restoredSub = PendingDeletions.instance.restored.listen(
+      _onDeletionRestored,
+    );
     if (_commentsMode) {
       _commentSub = commentsModule.commentStream
           .where(
@@ -1300,8 +1305,7 @@ class _ChatScreenState extends State<ChatScreen>
   late final PhotoViewerActions _photoActions = PhotoViewerActions(
     goToMessage: _requestGoToMessage,
     forward: _forwardMessageById,
-    delete: (messageId, senderId) =>
-        _confirmDeleteMessage(messageId, senderId == _myId),
+    delete: (messageId, _) => _confirmDeleteMessage(messageId),
     viewAllMedia: () => _openChatInfo(initialTab: ChatInfoTab.media),
   );
 
@@ -2369,6 +2373,7 @@ class _ChatScreenState extends State<ChatScreen>
     _reactionUpdatesSub?.cancel();
     _forwardedSub?.cancel();
     _messageEventSub?.cancel();
+    _restoredSub?.cancel();
     _commentsInfoSub?.cancel();
     _commentSub?.cancel();
     _connSub?.cancel();
@@ -2763,24 +2768,48 @@ class _ChatScreenState extends State<ChatScreen>
     final msgs = _selectedMessages(_selectedIds.value);
     if (msgs.isEmpty) return;
 
-    final serverMsgs = msgs.where((m) => !m.id.startsWith('temp_')).toList();
-    if (serverMsgs.isEmpty) {
-      for (final m in msgs) {
-        _startDeleteAnimation(m.id);
-      }
+    final sending = msgs.where((m) => m.id.startsWith('temp_')).toList();
+    final plan = _deletionPlan(
+      msgs.where((m) => !m.id.startsWith('temp_')).toList(),
+    );
+    if (plan.isEmpty) {
+      _cancelSending(sending);
       _clearSelection();
       return;
     }
 
-    final canForEveryone = serverMsgs.every((m) => m.senderId == _myId);
-    final forEveryone = await _showDeleteMessageDialog(canForEveryone);
+    final forEveryone = await showDeleteMessagesDialog(
+      context,
+      plan: plan,
+      peerName: widget.name,
+    );
     if (forEveryone == null || !mounted) return;
 
-    for (final m in msgs) {
-      if (m.id.startsWith('temp_')) _startDeleteAnimation(m.id);
-    }
-    _deleteWithUndo(serverMsgs, forEveryone: forEveryone);
+    _cancelSending(sending);
+    _deleteWithUndo(plan, forEveryone: forEveryone);
     _clearSelection();
+  }
+
+  MessageDeletionPlan _deletionPlan(List<CachedMessage> messages) {
+    final isDialog = (chat?.type ?? widget.chatType) == 'DIALOG';
+    return MessageDeletionPlan(
+      myId: _myId,
+      messages: messages,
+      isDialog: isDialog && widget.chatId != 0,
+      canDeleteOthersForEveryone: !isDialog && _canDeleteOthers,
+    );
+  }
+
+  void _cancelSending(List<CachedMessage> messages) {
+    if (messages.isEmpty) return;
+    PendingDeletions.instance.cancelSending(
+      _myId,
+      widget.chatId,
+      messages.map((m) => m.id),
+    );
+    for (final m in messages) {
+      _startDeleteAnimation(m.id);
+    }
   }
 
   void _replySelected() {
@@ -3061,70 +3090,51 @@ class _ChatScreenState extends State<ChatScreen>
     Haptics.send();
   }
 
-  Future<void> _confirmDeleteMessage(String messageId, bool isMe) async {
-    final isLocalOnly = messageId.startsWith('temp_');
-    final canForEveryone = (isMe || _canDeleteOthers) && !isLocalOnly;
-
-    if (isLocalOnly) {
-      _startDeleteAnimation(messageId);
+  Future<void> _confirmDeleteMessage(String messageId) async {
+    final message = _chatController.byId(messageId);
+    if (message == null) return;
+    if (messageId.startsWith('temp_')) {
+      _cancelSending([message]);
       return;
     }
 
-    final message = _chatController.byId(messageId);
-    if (message == null) return;
-    final forEveryone = await _showDeleteMessageDialog(canForEveryone);
+    final plan = _deletionPlan([message]);
+    final forEveryone = await showDeleteMessagesDialog(
+      context,
+      plan: plan,
+      peerName: widget.name,
+    );
     if (forEveryone == null || !mounted) return;
-    _deleteWithUndo([message], forEveryone: forEveryone);
+    _deleteWithUndo(plan, forEveryone: forEveryone);
   }
 
-  void _deleteWithUndo(
-    List<CachedMessage> messages, {
-    required bool forEveryone,
-  }) {
-    final chatId = widget.chatId;
-    final accountId = _myId;
-    final ids = messages.map((m) => m.id).toList();
-    final overlay = Overlay.of(context, rootOverlay: true);
-    final deleteFailedText = AppLocalizations.of(
-      context,
-    )!.chatScreenDeleteMessagesFailed;
-    final pending = PendingMessageDeletions.instance..hold(chatId, messages);
+  void _deleteWithUndo(MessageDeletionPlan plan, {required bool forEveryone}) {
+    final pending = PendingDeletions.instance;
+    final keys = pending.holdMessages(
+      accountId: _myId,
+      chatId: widget.chatId,
+      parts: plan.parts(forEveryone: forEveryone),
+    );
+    if (keys.isEmpty) return;
+    final ids = [...plan.own, ...plan.peer].map((m) => m.id).toList();
     ids.forEach(_startDeleteAnimation);
-    void restore() {
-      if (mounted) {
-        _deletingIds.removeAll(ids);
-        _bumpMessages();
-      }
-      pending.restore(chatId, ids);
-    }
-
     showUndoNotification(
       context,
       AppLocalizations.of(context)!.undoMessagesDeleted(ids.length),
-      onUndo: restore,
-      onCommit: () async {
-        final ok = await messagesModule.deleteMessages(
-          chatId,
-          ids,
-          forEveryone: forEveryone,
-        );
-        if (!ok) {
-          restore();
-          Haptics.error();
-          if (overlay.mounted) {
-            showCustomNotificationOnOverlay(overlay, deleteFailedText);
-          }
-          return;
-        }
-        pending.drop(chatId, ids);
-        try {
-          for (final id in ids) {
-            await AppDatabase.deleteMessage(accountId, chatId, id);
-          }
-          await chats.reconcileLastMessage(accountId, chatId);
-        } catch (_) {}
-      },
+      onUndo: () => pending.cancel(keys),
+      onCommit: () => pending.commit(keys),
     );
+  }
+
+  void _onDeletionRestored(RestoredMessages restored) {
+    if (!mounted ||
+        restored.accountId != _myId ||
+        restored.chatId != widget.chatId) {
+      return;
+    }
+    final before = _deletingIds.length;
+    _deletingIds.removeAll(restored.messages.map((m) => m.id));
+    if (_deletingIds.length != before) _bumpMessages();
   }
 
   void _startDeleteAnimation(String messageId) {
@@ -3141,87 +3151,18 @@ class _ChatScreenState extends State<ChatScreen>
       _reactionNotifiers.remove(messageId)?.dispose();
     }
     _bumpMessages();
-    if (PendingMessageDeletions.instance.isPending(widget.chatId, messageId)) {
+    if (PendingDeletions.instance.isMessageHeld(
+      _myId,
+      widget.chatId,
+      messageId,
+    )) {
       return;
     }
     try {
       await AppDatabase.deleteMessage(_myId, widget.chatId, messageId);
+      MessageSessionCache.removeMessages(_myId, widget.chatId, [messageId]);
       await chats.reconcileLastMessage(_myId, widget.chatId);
     } catch (_) {}
-  }
-
-  Future<bool?> _showDeleteMessageDialog(bool canForEveryone) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    var alsoForEveryone = canForEveryone;
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setLocalState) {
-            return AlertDialog(
-              backgroundColor: cs.surfaceContainerHigh,
-              shape: AppShape.dialogBorder,
-              title: Text(l10n.chatScreenDeleteMessageTitle),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.chatScreenDeleteMessageConfirm,
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
-                  ),
-                  if (canForEveryone) ...[
-                    const SizedBox(height: 16),
-                    InkWell(
-                      onTap: () => setLocalState(
-                        () => alsoForEveryone = !alsoForEveryone,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Row(
-                        children: [
-                          Checkbox(
-                            value: alsoForEveryone,
-                            onChanged: (v) => setLocalState(
-                              () => alsoForEveryone = v ?? false,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              l10n.chatScreenDeleteAlsoFor(widget.name),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: cs.onSurface,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text(l10n.chatInfoActionCancel),
-                ),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pop(ctx, canForEveryone && alsoForEveryone),
-                  child: Text(
-                    l10n.msgActionsDelete,
-                    style: TextStyle(color: cs.error),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
   }
 
   void _onMessageEvent(MessageEvent event) {
@@ -3603,7 +3544,9 @@ class _ChatScreenState extends State<ChatScreen>
                       ),
                       onPressed: () => then(_wipeForBoth),
                       icon: const Icon(Symbols.delete_forever),
-                      label: const Text('Удалить у обоих'),
+                      label: Text(
+                        AppLocalizations.of(sheetContext)!.wipeForBothAction,
+                      ),
                     ),
                   ),
                 ],
@@ -3616,83 +3559,12 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Future<void> _wipeForBoth() async {
-    final choice = await showBlurredConfirm(
+    final removed = await wipeDialogForBoth(
       context,
-      title: 'Удалить у обоих?',
-      message:
-          'ProMax удалит все сообщения этого диалога для вас и собеседника, затем удалит сам чат. Отменить это нельзя.',
-      confirmLabel: 'Удалить у обоих',
-      cancelLabel: AppLocalizations.of(context)!.chatInfoActionCancel,
-      destructive: true,
-    );
-    if (!mounted || !choice.confirmed) return;
-    final progress = ValueNotifier<String>('Собираю историю…');
-    final navigator = Navigator.of(context, rootNavigator: true);
-    unawaited(
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => PopScope(
-          canPop: false,
-          child: AlertDialog(
-            content: Row(
-              children: [
-                const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(strokeWidth: 3),
-                ),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: ValueListenableBuilder<String>(
-                    valueListenable: progress,
-                    builder: (context, text, _) => Text(text),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    final lastEventTime = chat?.lastEventTime ?? 0;
-    final result = await ChatWipe.run(
       myId: _myId,
-      fetchPage: (from, count) => messagesModule.fetchHistory(
-        _myId,
-        widget.chatId,
-        fromTime: from,
-        count: count,
-      ),
-      deleteBatch: (ids, {required forEveryone}) => messagesModule
-          .deleteMessages(widget.chatId, ids, forEveryone: forEveryone),
-      clearForAll: () => chats.clearHistory(
-        api,
-        chatId: widget.chatId,
-        lastEventTime: lastEventTime,
-        forAll: true,
-      ),
-      deleteChatForAll: () => chats.deleteChat(
-        api,
-        chatId: widget.chatId,
-        lastEventTime: lastEventTime,
-        forAll: true,
-      ),
-      onProgress: (scanned, deleted) => progress.value = deleted == 0
-          ? 'Найдено сообщений: $scanned'
-          : 'Удалено $deleted из $scanned',
+      chatId: widget.chatId,
     );
-    navigator.pop();
-    progress.dispose();
-    if (!mounted) return;
-    final summary = result.keptOnPeerSide == 0
-        ? 'Удалено у обоих: ${result.deletedForBoth}'
-        : 'Удалено у обоих: ${result.deletedForBoth}. Сервер не дал удалить у собеседника: ${result.keptOnPeerSide}';
-    showCustomNotification(
-      context,
-      result.chatError == null ? summary : '$summary. ${result.chatError}',
-    );
-    if (result.chatError == null) _leaveChat();
+    if (removed && mounted) _leaveChat();
   }
 
   Future<void> _subscribeChannel() async {
@@ -3905,6 +3777,16 @@ class _ChatScreenState extends State<ChatScreen>
     return (type == 'CHAT' || type == 'CHANNEL') && _canDeleteOthers;
   }
 
+  int _newestKnownTime(CachedChat? current) {
+    var newest = current?.lastEventTime ?? 0;
+    for (final message in _chatController.messages.reversed) {
+      if (message.id.startsWith('temp_')) continue;
+      if (message.time > newest) newest = message.time;
+      break;
+    }
+    return newest;
+  }
+
   Future<void> _clearHistory() async {
     final current = chat;
     final canClearForAll = _canActForAll;
@@ -3919,15 +3801,16 @@ class _ChatScreenState extends State<ChatScreen>
       checkboxLabel: canClearForAll ? l10n.chatInfoClearHistoryForAll : null,
     );
     if (!mounted || !choice.confirmed) return;
-    final err = await chats.clearHistory(
+    final outcome = await chats.clearHistory(
       api,
       chatId: widget.chatId,
-      lastEventTime: current?.lastEventTime ?? 0,
       forAll: canClearForAll && choice.checked,
+      seenEventTime: _newestKnownTime(current),
     );
     if (!mounted) return;
-    if (err != null) {
-      showCustomNotification(context, err);
+    final failure = outcomeFailureText(outcome, l10n);
+    if (failure != null) {
+      showCustomNotification(context, failure);
       return;
     }
     setState(() {
@@ -3952,18 +3835,13 @@ class _ChatScreenState extends State<ChatScreen>
       checkboxLabel: canDeleteForAll ? l10n.chatInfoClearHistoryForAll : null,
     );
     if (!mounted || !choice.confirmed) return;
-    final lastEventTime = chat?.lastEventTime ?? 0;
-    final forAll = canDeleteForAll && choice.checked;
     removeChatsWithUndo(
       context,
-      message: AppLocalizations.of(context)!.undoChatsDeleted(1),
-      chatIds: [widget.chatId],
-      remove: (chatId) => chats.deleteChat(
-        api,
-        chatId: chatId,
-        lastEventTime: lastEventTime,
-        forAll: forAll,
-      ),
+      message: l10n.undoChatsDeleted(1),
+      accountId: _myId,
+      chats: [
+        (chatId: widget.chatId, forAll: canDeleteForAll && choice.checked),
+      ],
     );
     _leaveChat();
   }
@@ -4030,13 +3908,11 @@ class _ChatScreenState extends State<ChatScreen>
         _myId,
         widget.chatId,
       );
-      if (ProMaxSettings.viewDeleted.value) {
-        await chats.reconcileDeletedFromFetch(
-          _myId,
-          widget.chatId,
-          serverMessages,
-        );
-      }
+      await chats.reconcileDeletedFromFetch(
+        _myId,
+        widget.chatId,
+        serverMessages,
+      );
       final rows = await AppDatabase.loadMessages(
         _myId,
         widget.chatId,
@@ -5371,8 +5247,7 @@ class _ChatScreenState extends State<ChatScreen>
                               _startTextSelection(message, pos),
                           onDragTextSelection: (pos) =>
                               _textSelectionDrag.value = pos,
-                          onDelete: () =>
-                              _confirmDeleteMessage(message.id, isMe),
+                          onDelete: () => _confirmDeleteMessage(message.id),
                           allowDelete:
                               !message.isControl &&
                               (isMe || !_isChannel || _canDeleteOthers),

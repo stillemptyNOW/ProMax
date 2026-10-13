@@ -23,6 +23,7 @@ import 'complaints.dart';
 import 'contacts.dart';
 import 'folders.dart';
 import 'messages.dart';
+import 'pending_deletions.dart';
 import 'webapp.dart';
 
 import 'account/account_models.dart';
@@ -359,6 +360,7 @@ class AccountModule {
     await SpoofingService.prepareNewAccountSpoof(
       existing.map((p) => p.id).toList(growable: false),
     );
+    await PendingDeletions.instance.settleBeforeAccountChange();
 
     try {
       await _api.disconnect();
@@ -587,8 +589,7 @@ class AccountModule {
   }
 
   static String _generateStrongPassword() {
-    const chars =
-        'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
     final rng = Random.secure();
     return List.generate(16, (_) => chars[rng.nextInt(chars.length)]).join();
   }
@@ -602,10 +603,7 @@ class AccountModule {
     final text = msg['text'];
     final looksLikeLogin =
         text is String &&
-        RegExp(
-          r'код|code|войти|профил',
-          caseSensitive: false,
-        ).hasMatch(text);
+        RegExp(r'код|code|войти|профил', caseSensitive: false).hasMatch(text);
     if (!looksLikeLogin) return null;
 
     final attaches = msg['attaches'];
@@ -644,6 +642,7 @@ class AccountModule {
       throw AccountSessionLostException(accountId);
     }
     MediaPlayback.instance.closeAudioFile();
+    await PendingDeletions.instance.settleBeforeAccountChange();
 
     try {
       await _api.disconnect();
@@ -681,6 +680,7 @@ class AccountModule {
 
   // #***! удаляем локально, база токен спуф и заявка
   Future<void> removeAccount(int accountId) async {
+    PendingDeletions.instance.forgetAccount(accountId);
     await E2eeService.instance.eraseAccount(accountId);
     await AppDatabase.deleteAccount(accountId);
     await TokenStorage.deleteAccount(accountId);
@@ -725,6 +725,7 @@ class AccountModule {
   // #***! выход, сначала сервер потом чистка
   Future<void> logout() async {
     MediaPlayback.instance.closeAudioFile();
+    await PendingDeletions.instance.settleBeforeAccountChange();
     final accountId = await TokenStorage.getActiveAccountId();
     try {
       await _logoutOnServer(accountId);
