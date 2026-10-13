@@ -28,8 +28,13 @@ const _hiddenPreview = 'Новое сообщение';
 /// Пуш из сокета превращается в тот же набор полей, что присылает FCM, и
 /// отрисовывается нативным `ProMaxNotifier` — общий код с пушевой версией.
 class FkmController {
-  FkmController._();
-  static final FkmController instance = FkmController._();
+  FkmController._(this._bridge);
+  static final FkmController instance = FkmController._(FkmBridge.instance);
+
+  @visibleForTesting
+  FkmController.withBridge(this._bridge);
+
+  final FkmBridge _bridge;
 
   // #***! enabled, на него подписан переключатель в настройках
   final ValueNotifier<bool> enabled = ValueNotifier(false);
@@ -39,7 +44,7 @@ class FkmController {
   StreamSubscription<SessionState>? _stateSub;
   bool _started = false;
 
-  bool get isSupported => FkmBridge.instance.isSupported;
+  bool get isSupported => _bridge.isSupported;
 
   // #***! подписка на пуши сокета и сессию
   Future<void> init(Api api) async {
@@ -47,10 +52,10 @@ class FkmController {
     _started = true;
     _api = api;
 
-    FkmBridge.instance.setDisabledCallback(_onDisabledFromNotification);
-    enabled.value = await FkmBridge.instance.isEnabled();
-    Api.keepAliveInBackground = enabled.value;
-
+    _bridge.listen(
+      onDisabled: _onDisabledFromNotification,
+      onAttached: () => unawaited(_syncWithNative()),
+    );
     _pushSub = api.pushStream
         .where(
           (packet) =>
@@ -60,22 +65,28 @@ class FkmController {
         .listen(_onPush);
     _stateSub = api.stateStream.listen(_onSessionState);
 
-    if (enabled.value) {
-      await initLocalNotificationActions();
-      await FkmBridge.instance.setEnabled(true);
-      await _pushConnectionState();
-    }
+    await _syncWithNative();
+  }
+
+  Future<void> _syncWithNative() async {
+    final value = await _bridge.isEnabled();
+    enabled.value = value;
+    Api.keepAliveInBackground = value;
+    if (!value) return;
+    await initLocalNotificationActions();
+    await _bridge.setEnabled(true);
+    await _pushConnectionState();
   }
 
   // #***! включение и выключение сервиса
   /// Возвращает false, если пользователь не выдал разрешение на уведомления.
   Future<bool> setEnabled(bool value) async {
     if (!isSupported) return false;
-    if (value && !await FkmBridge.instance.requestNotificationPermission()) {
+    if (value && !await _bridge.requestNotificationPermission()) {
       return false;
     }
     if (value) await initLocalNotificationActions();
-    await FkmBridge.instance.setEnabled(value);
+    await _bridge.setEnabled(value);
     enabled.value = value;
     Api.keepAliveInBackground = value;
     if (value) await _pushConnectionState();
@@ -90,12 +101,12 @@ class FkmController {
 
   void _onSessionState(SessionState state) {
     if (!enabled.value) return;
-    unawaited(FkmBridge.instance.setConnected(state == SessionState.online));
+    unawaited(_bridge.setConnected(state == SessionState.online));
   }
 
   // #***! говорим нативу есть ли связь, от этого текст постоянного уведомления
   Future<void> _pushConnectionState() =>
-      FkmBridge.instance.setConnected(_api?.state == SessionState.online);
+      _bridge.setConnected(_api?.state == SessionState.online);
 
   // #***! входящий звонок, натив рисует полноэкранное
   /// Входящий звонок, когда приложение не на переднем плане.
@@ -106,7 +117,7 @@ class FkmController {
     if (!enabled.value) return;
     try {
       final data = await _buildCallNotification(payload);
-      if (data != null) await FkmBridge.instance.showCall(data);
+      if (data != null) await _bridge.showCall(data);
     } catch (e) {
       logger.w('FKM: не удалось показать звонок: $e');
     }
@@ -191,7 +202,7 @@ class FkmController {
     if (QuietHours.instance.isQuiet(chatId)) return;
 
     final data = await _buildNotification(chatId, msg);
-    if (data != null) await FkmBridge.instance.showMessage(data);
+    if (data != null) await _bridge.showMessage(data);
   }
 
   Future<bool> _isOwnMessage(Map<dynamic, dynamic> msg) async {
@@ -223,7 +234,7 @@ class FkmController {
   /// Удалённое сообщение уезжает из шторки, а при включённом «показывать
   /// удалённые сообщения» остаётся в ней зачёркнутым.
   Future<void> _removeNotification(int chatId, String msgId) =>
-      FkmBridge.instance.removeMessage({
+      _bridge.removeMessage({
         'mc': '$chatId',
         'msgid': msgId,
         'keep': ProMaxSettings.viewDeleted.value ? 'true' : 'false',
@@ -248,7 +259,7 @@ class FkmController {
     final text = _previewText(msg);
     if (text == _hiddenPreview) return;
 
-    await FkmBridge.instance.editMessage({
+    await _bridge.editMessage({
       'mc': '$chatId',
       'msgid': msgId,
       'msg': text,

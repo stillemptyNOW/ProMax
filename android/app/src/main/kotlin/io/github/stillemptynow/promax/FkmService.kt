@@ -6,11 +6,14 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.service.media.MediaBrowserService
 import android.util.Log
 import androidx.core.app.NotificationCompat
 
@@ -139,6 +142,11 @@ object FkmNotification {
 class FkmService : Service() {
 
     companion object {
+        private const val AUDIO_SERVICE = "com.ryanheise.audioservice.AudioService"
+
+        @Volatile
+        private var running: FkmService? = null
+
         fun start(ctx: Context) {
             val intent = Intent(ctx, FkmService::class.java)
             try {
@@ -154,7 +162,7 @@ class FkmService : Service() {
 
         // Перерисовка уже висящего уведомления, без перезапуска сервиса.
         fun refresh(ctx: Context) {
-            if (!FkmState.enabled) return
+            if (!FkmState.enabled || running?.inForeground != true) return
             try {
                 FkmNotification.manager(ctx)
                     .notify(FkmNotification.NOTIFICATION_ID, FkmNotification.build(ctx))
@@ -170,14 +178,27 @@ class FkmService : Service() {
                 Log.w("Fkm", "service stop failed: ${e.message}")
             }
         }
+
+        fun restoreEngine() {
+            running?.ensureEngine()
+        }
     }
 
+    @Volatile
     private var inForeground = false
+    private var holdingAudioService = false
+
+    private val audioServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) = Unit
+
+        override fun onServiceDisconnected(name: ComponentName?) = Unit
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
+        running = this
         FkmState.restore(applicationContext)
         FkmNotification.ensureChannel(this)
     }
@@ -190,15 +211,53 @@ class FkmService : Service() {
             return START_NOT_STICKY
         }
         goForeground()
+        ensureEngine()
         return START_STICKY
     }
 
     override fun onDestroy() {
+        if (running === this) running = null
+        releaseAudioService()
         if (inForeground) {
             stopForeground(STOP_FOREGROUND_REMOVE)
             inForeground = false
         }
         super.onDestroy()
+    }
+
+    private fun ensureEngine() {
+        if (!inForeground || !FkmState.enabled) return
+        try {
+            EngineHost.ensure(this, headless = true)
+        } catch (e: Exception) {
+            Log.w("Fkm", "engine start failed: ${e.message}")
+            return
+        }
+        holdAudioService()
+    }
+
+    private fun holdAudioService() {
+        if (holdingAudioService) return
+        holdingAudioService = true
+        val intent = Intent(MediaBrowserService.SERVICE_INTERFACE)
+            .setComponent(ComponentName(this, AUDIO_SERVICE))
+        try {
+            if (!bindService(intent, audioServiceConnection, Context.BIND_AUTO_CREATE)) {
+                Log.w("Fkm", "audio service bind refused")
+            }
+        } catch (e: Exception) {
+            Log.w("Fkm", "audio service bind failed: ${e.message}")
+        }
+    }
+
+    private fun releaseAudioService() {
+        if (!holdingAudioService) return
+        holdingAudioService = false
+        try {
+            unbindService(audioServiceConnection)
+        } catch (e: Exception) {
+            Log.w("Fkm", "audio service unbind failed: ${e.message}")
+        }
     }
 
     private fun goForeground() {
@@ -242,12 +301,14 @@ class FkmDisableReceiver : BroadcastReceiver() {
 
 class FkmBootReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
-        if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
+        if (intent.action != Intent.ACTION_BOOT_COMPLETED &&
+            intent.action != Intent.ACTION_MY_PACKAGE_REPLACED
+        ) {
+            return
+        }
         val app = ctx.applicationContext
         FkmState.restore(app)
         if (!FkmState.enabled) return
-        // Движка после ребута нет — уведомление честно скажет «не активно»,
-        // пока приложение не откроют.
         FkmState.connected = false
         FkmService.start(app)
     }

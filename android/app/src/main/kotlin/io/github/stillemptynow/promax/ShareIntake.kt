@@ -7,13 +7,17 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 
 object ShareIntake {
 
     private const val TAG = "ShareIntake"
+    private const val METHODS = "io.github.stillemptynow.promax/share"
+    private const val EVENTS = "io.github.stillemptynow.promax/share_events"
     private const val CACHE_DIR = "shared_in"
     private const val MAX_FILES = 30
 
@@ -21,6 +25,32 @@ object ShareIntake {
 
     @Volatile
     var sink: EventChannel.EventSink? = null
+
+    fun attach(messenger: BinaryMessenger, ctx: Context) {
+        val app = ctx.applicationContext
+        MethodChannel(messenger, METHODS).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "consumeInitialShare" -> {
+                    val host = EngineHost.launch
+                    if (host != null) host.consumeInitialShare(result) else result.success(null)
+                }
+                "clearCache" -> {
+                    clearCache(app)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+        EventChannel(messenger, EVENTS).setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                sink = events
+            }
+
+            override fun onCancel(arguments: Any?) {
+                sink = null
+            }
+        })
+    }
 
     fun isShare(intent: Intent?): Boolean {
         val action = intent?.action ?: return false
