@@ -171,8 +171,10 @@ Inno Setup installer from `windows/installer/promax.iss` (`ProMax-Setup-<version
 and the Linux bundle. Pushing a `v*` tag publishes everything — IPA, `.pmx`
 tools package, APKs, desktop archives — into one public GitHub Release through
 `.github/scripts/publish-release.sh`. APKs are named `ProMax-<version>-promax-<abi>.apk`
-because the in-app updater picks them by the `-promax-<abi>.apk` suffix, and they are
-published only when the `ANDROID_KEYSTORE_*` secrets provide the release key. The in-app updater reads
+because the in-app updater picks them by the `-promax-<abi>.apk` suffix. Without the
+`ANDROID_KEYSTORE_*` secrets each build is signed with a throwaway debug key, so those APKs are
+published as `ProMax-<version>-preview-<abi>.apk`: the updater never installs them over an existing
+copy, and moving between preview builds needs a reinstall. The in-app updater reads
 the 20 most recent releases of the public ProMax repository and takes the newest by the version and
 build in the tag (`newestRelease`), because GitHub's list order does not follow them. It verifies
 downloaded files by their published size and SHA-256 digest. iOS sends the IPA to the share sheet so

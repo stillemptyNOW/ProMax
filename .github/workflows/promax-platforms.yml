@@ -73,18 +73,22 @@ jobs:
           flutter build apk --release --flavor promax \
             --obfuscate --split-debug-info=build/symbols
       - name: Collect APKs
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
         run: |
           version=$(awk '/^version:/ {split($2, v, "+"); print v[1]; exit}' pubspec.yaml)
+          channel=promax
+          if [ "$SIGNED" != "true" ]; then channel=preview; fi
           mkdir -p dist
           for abi in arm64-v8a armeabi-v7a x86_64; do
             cp "build/app/outputs/flutter-apk/app-$abi-promax-release.apk" \
-              "dist/ProMax-$version-promax-$abi.apk"
+              "dist/ProMax-$version-$channel-$abi.apk"
           done
           cp build/app/outputs/flutter-apk/app-promax-release.apk \
-            "dist/ProMax-$version-promax-universal.apk"
+            "dist/ProMax-$version-$channel-universal.apk"
           ls -la dist
       - name: Publish release
-        if: env.RELEASE_TAG != '' && steps.signing.outputs.signed == 'true'
+        if: env.RELEASE_TAG != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/publish-release.sh "$RELEASE_TAG" dist/*.apk
