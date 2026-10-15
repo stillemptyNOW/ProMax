@@ -16,6 +16,7 @@ import '../../core/utils/text_format.dart';
 import '../../models/attachment.dart';
 import 'chats.dart' show chats;
 import 'message_copy.dart';
+import 'server_outcome.dart';
 
 // #***! быстрый кэш id -> имя аватарка телефон, из него подписи в пузырях
 class ContactCache {
@@ -1412,7 +1413,7 @@ class MessagesModule {
   }
 
   // #***! удаление, deleteForAll значит у всех
-  Future<bool> deleteMessages(
+  Future<ServerOutcome> deleteMessages(
     int chatId,
     List<String> messageIds, {
     bool forEveryone = false,
@@ -1422,7 +1423,7 @@ class MessagesModule {
         .map((id) => int.tryParse(id))
         .whereType<int>()
         .toList();
-    if (ids.isEmpty) return false;
+    if (ids.isEmpty) return const ServerDone();
 
     final payload = {
       'messageIds': ids,
@@ -1431,7 +1432,7 @@ class MessagesModule {
       'itemType': itemType,
     };
 
-    return _api.sendRequestOk(Opcode.msgDelete, payload);
+    return runServerAction(() => _api.sendRequest(Opcode.msgDelete, payload));
   }
 
   // #***! поставить реакцию

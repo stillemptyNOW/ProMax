@@ -4164,6 +4164,101 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get deleteMessagesPeerFallbackNote =>
+      'The other person\'s messages will be deleted for both of you if the server allows it, otherwise only for you.';
+
+  @override
+  String deleteMessagesOthersOnlyForMe(int count) {
+    return 'Other people\'s messages ($count) will be deleted only for you.';
+  }
+
+  @override
+  String deleteMessagesKeptForPeer(int count) {
+    return 'The server didn\'t let you delete $count of the other person\'s messages for both — they were deleted only for you';
+  }
+
+  @override
+  String deleteMessagesFailedWithReason(String reason) {
+    return 'Couldn\'t delete messages: $reason';
+  }
+
+  @override
+  String deleteChatFailedWithReason(String reason) {
+    return 'Couldn\'t delete the chat: $reason';
+  }
+
+  @override
+  String leaveChatFailedWithReason(String reason) {
+    return 'Couldn\'t leave the chat: $reason';
+  }
+
+  @override
+  String get serverUnreachable => 'No connection to the server';
+
+  @override
+  String get wipeForBothAction => 'Delete for both';
+
+  @override
+  String get wipeForBothTitle => 'Delete for both?';
+
+  @override
+  String get wipeForBothMessage =>
+      'ProMax will delete every message in this chat for you and the other person, then delete the chat itself. This can\'t be undone.';
+
+  @override
+  String get wipeCollecting => 'Collecting the history…';
+
+  @override
+  String wipeFound(int count) {
+    return 'Messages found: $count';
+  }
+
+  @override
+  String wipeDeleting(int done, int total) {
+    return 'Deleted $done of $total';
+  }
+
+  @override
+  String wipeSummaryForBoth(int count) {
+    return 'Deleted for both: $count';
+  }
+
+  @override
+  String wipeSummaryOnlyForMe(int count) {
+    return 'Deleted only for you (the server refused to delete them for the other person): $count';
+  }
+
+  @override
+  String wipeSummaryNotDeleted(int count) {
+    return 'Not deleted: $count';
+  }
+
+  @override
+  String get wipeSummaryHistoryIncomplete =>
+      'The server didn\'t return the whole history';
+
+  @override
+  String get wipeSummaryInterrupted =>
+      'The connection dropped and deleting stopped — try again';
+
+  @override
+  String wipeSummaryChatKept(String reason) {
+    return 'The chat wasn\'t deleted: $reason';
+  }
+
+  @override
+  String wipeSummaryClearFailed(String reason) {
+    return 'The history wasn\'t cleared for both: $reason';
+  }
+
+  @override
+  String get messageDeletedMark => 'deleted';
+
+  @override
+  String get messageDeletedMarkHint =>
+      'This message was deleted. You see it because “Show deleted messages” is on';
+
+  @override
   String get chatScreenMenuMute => 'Disable notifications';
 
   @override
@@ -5442,7 +5537,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pluginsScreenDownload => 'Download';
 
   @override
-  String get proMaxSettingsViewDeletedSubtitle => 'Show deleted messages';
+  String get proMaxSettingsViewDeletedSubtitle =>
+      'Messages deleted by others stay in the chat marked “deleted”';
 
   @override
   String get proMaxSettingsViewRedactedSubtitle =>

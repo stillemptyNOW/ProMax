@@ -49,6 +49,7 @@ import 'attachment/bubbles/forwarded_bubble.dart';
 import 'lottie_image.dart';
 import 'text_with_meta.dart';
 import '../theme/promax_theme.dart';
+import 'deleted_message_mark.dart';
 
 final Expando<MessageType> _contentTypeCache = Expando<MessageType>();
 final Expando<List<MessageAttachment>> _contentAttachmentsCache =
@@ -1378,8 +1379,7 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildCommentsFooter(BuildContext context, ColorScheme cs) {
-    final label =
-        commentsLabel ?? AppLocalizations.of(context)!.commentsTitle;
+    final label = commentsLabel ?? AppLocalizations.of(context)!.commentsTitle;
     final accent = isMe ? cs.onPrimaryContainer : cs.primary;
     return Material(
       color: Colors.transparent,
@@ -1803,7 +1803,7 @@ class MessageBubble extends StatelessWidget {
           ],
           if (ctx.message.deleted) ...[
             const SizedBox(width: 3),
-            const Icon(Symbols.delete, size: 12, color: Colors.white),
+            const DeletedMessageMark(color: Colors.white, size: 12),
           ],
         ],
       ),

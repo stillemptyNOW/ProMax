@@ -66,10 +66,12 @@ import 'backend/modules/chat_admin.dart';
 import 'backend/modules/chats.dart';
 import 'backend/modules/comments.dart';
 import 'backend/modules/contacts.dart';
+import 'backend/modules/deletion_gateway.dart';
 import 'backend/modules/file_uploader.dart';
 import 'backend/modules/folders.dart';
 import 'backend/modules/messages.dart';
 import 'backend/modules/outbox.dart';
+import 'backend/modules/pending_deletions.dart';
 import 'backend/modules/polls.dart';
 import 'backend/modules/stickers.dart';
 import 'backend/modules/animoji.dart';
@@ -105,7 +107,9 @@ import 'frontend/debug/fps_overlay_layer.dart';
 import 'frontend/debug/performance_monitor.dart';
 import 'frontend/screens/auth/login_screen.dart';
 import 'frontend/widgets/adaptive_shell.dart';
+import 'frontend/screens/chats/deletion_feedback.dart';
 import 'frontend/widgets/custom_notification.dart';
+import 'frontend/widgets/undo_notification.dart';
 import 'frontend/widgets/hint_bubble.dart';
 import 'frontend/widgets/liquid_glass.dart';
 import 'frontend/widgets/mesh_gradient_background.dart';
@@ -246,6 +250,9 @@ void main(List<String> args) async {
     ),
   );
   chats.attachGlobalPushHandlers(api);
+  unawaited(
+    PendingDeletions.instance.start(ApiDeletionGateway(api, messagesModule)),
+  );
   unawaited(FkmController.instance.init(api));
   FoldersModule.attachGlobalPushHandlers(api);
   TranscriptionPushHandler.attach(api);
@@ -469,6 +476,9 @@ class ProMaxAppState extends State<ProMaxApp>
   StreamSubscription<AnsweredCall>? _callAnsweredSub;
   StreamSubscription<String>? _serverErrorSub;
   StreamSubscription<AccountNotice>? _accountNoticeSub;
+  StreamSubscription<PendingDeletionReport>? _deletionReportsSub;
+  StreamSubscription<void>? _undoWindowsClosedSub;
+  late final AppLifecycleListener _exitListener;
   Timer? _scheduleTimer;
   String? _lastVpnNotice;
   DateTime _lastVpnNoticeAt = DateTime.fromMillisecondsSinceEpoch(0);
@@ -496,6 +506,15 @@ class ProMaxAppState extends State<ProMaxApp>
     _fontId = widget.initialFontId;
 
     WidgetsBinding.instance.addObserver(this);
+    _exitListener = AppLifecycleListener(
+      onExitRequested: _settleDeletionsBeforeExit,
+    );
+    _deletionReportsSub = PendingDeletions.instance.reports.listen(
+      _onDeletionReport,
+    );
+    _undoWindowsClosedSub = PendingDeletions.instance.undoWindowsClosed.listen(
+      (_) => PendingUndo.commitPending(),
+    );
     HardwareKeyboard.instance.addHandler(_noteKeyInteraction);
     AudioPlaybackController.error.addListener(_onAudioPlaybackError);
     AppThemeModeConfig.current.addListener(_onThemeModeChanged);
@@ -643,6 +662,26 @@ class ProMaxAppState extends State<ProMaxApp>
     });
   }
 
+  Future<ui.AppExitResponse> _settleDeletionsBeforeExit() async {
+    PendingUndo.commitPending();
+    await PendingDeletions.instance.flush(
+      timeout: const Duration(seconds: 3),
+      closeUndoWindows: true,
+    );
+    return ui.AppExitResponse.exit;
+  }
+
+  void _onDeletionReport(PendingDeletionReport report) {
+    final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
+    final l10n = overlay == null ? null : AppLocalizations.of(overlay.context);
+    if (overlay == null || l10n == null) return;
+    if (report is PendingDeletionFailed) Haptics.error();
+    showCustomNotificationOnOverlay(
+      overlay,
+      pendingDeletionReportText(report, l10n),
+    );
+  }
+
   Future<void> _ensureFullScreenIntentPermission() async {
     if (!AppForeground.value) return;
     final prefs = await SharedPreferences.getInstance();
@@ -724,6 +763,9 @@ class ProMaxAppState extends State<ProMaxApp>
     _callAnsweredSub?.cancel();
     _serverErrorSub?.cancel();
     _accountNoticeSub?.cancel();
+    _deletionReportsSub?.cancel();
+    _undoWindowsClosedSub?.cancel();
+    _exitListener.dispose();
     _scheduleTimer?.cancel();
     _resizeMarkTimer?.cancel();
     AppThemeModeConfig.current.removeListener(_onThemeModeChanged);
@@ -777,6 +819,8 @@ class ProMaxAppState extends State<ProMaxApp>
       unawaited(CallBridge.instance.ensureOngoing());
     }
     if (background) {
+      PendingUndo.commitPending();
+      unawaited(PendingDeletions.instance.flush(closeUndoWindows: true));
       DebugSessionLog.instance.flushNow();
       SelfCheckService.instance.pause();
       E2eeService.instance.lock();

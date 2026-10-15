@@ -13,6 +13,7 @@ import '../../models/attachment.dart';
 import 'chats.dart' show chats;
 import 'file_uploader.dart';
 import 'messages.dart';
+import 'pending_deletions.dart';
 import 'upload_notification_service.dart';
 
 export 'upload_notification_service.dart' show UploadKind;
@@ -607,6 +608,14 @@ class UploadService {
 
     // #***! настоящее в базу, временное удаляем
     final message = real!;
+    if (PendingDeletions.instance.claimSent(
+      accountId: job.accountId,
+      chatId: job.chatId,
+      tempId: job.id,
+      realId: message.id,
+    )) {
+      return;
+    }
     try {
       await AppDatabase.saveMessages([message.toDbRow()]);
       if (message.id != job.id) {

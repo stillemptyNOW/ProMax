@@ -4197,6 +4197,101 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get deleteMessagesPeerFallbackNote =>
+      'Сообщения собеседника удалятся у обоих, если сервер это разрешит, иначе — только у вас.';
+
+  @override
+  String deleteMessagesOthersOnlyForMe(int count) {
+    return 'Чужие сообщения ($count) удалятся только у вас.';
+  }
+
+  @override
+  String deleteMessagesKeptForPeer(int count) {
+    return 'Сервер не дал удалить у собеседника сообщений: $count. У вас они удалены';
+  }
+
+  @override
+  String deleteMessagesFailedWithReason(String reason) {
+    return 'Не удалось удалить сообщения: $reason';
+  }
+
+  @override
+  String deleteChatFailedWithReason(String reason) {
+    return 'Не удалось удалить чат: $reason';
+  }
+
+  @override
+  String leaveChatFailedWithReason(String reason) {
+    return 'Не удалось выйти из чата: $reason';
+  }
+
+  @override
+  String get serverUnreachable => 'Нет связи с сервером';
+
+  @override
+  String get wipeForBothAction => 'Удалить у обоих';
+
+  @override
+  String get wipeForBothTitle => 'Удалить у обоих?';
+
+  @override
+  String get wipeForBothMessage =>
+      'ProMax удалит все сообщения этого диалога для вас и собеседника, затем удалит сам чат. Отменить это нельзя.';
+
+  @override
+  String get wipeCollecting => 'Собираю историю…';
+
+  @override
+  String wipeFound(int count) {
+    return 'Найдено сообщений: $count';
+  }
+
+  @override
+  String wipeDeleting(int done, int total) {
+    return 'Удалено $done из $total';
+  }
+
+  @override
+  String wipeSummaryForBoth(int count) {
+    return 'Удалено у обоих: $count';
+  }
+
+  @override
+  String wipeSummaryOnlyForMe(int count) {
+    return 'Удалено только у вас (сервер не дал удалить у собеседника): $count';
+  }
+
+  @override
+  String wipeSummaryNotDeleted(int count) {
+    return 'Не удалось удалить: $count';
+  }
+
+  @override
+  String get wipeSummaryHistoryIncomplete =>
+      'Сервер отдал историю не полностью';
+
+  @override
+  String get wipeSummaryInterrupted =>
+      'Связь пропала, удаление прервано — попробуйте ещё раз';
+
+  @override
+  String wipeSummaryChatKept(String reason) {
+    return 'Чат не удалён: $reason';
+  }
+
+  @override
+  String wipeSummaryClearFailed(String reason) {
+    return 'История не очищена у обоих: $reason';
+  }
+
+  @override
+  String get messageDeletedMark => 'удалено';
+
+  @override
+  String get messageDeletedMarkHint =>
+      'Сообщение удалено. Оно видно, потому что включено «Показывать удалённые сообщения»';
+
+  @override
   String get chatScreenMenuMute => 'Отключить уведомления';
 
   @override
@@ -5486,7 +5581,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proMaxSettingsViewDeletedSubtitle =>
-      'Показывать удалённые сообщения';
+      'Удалённые собеседником сообщения остаются в чате с пометкой «удалено»';
 
   @override
   String get proMaxSettingsViewRedactedSubtitle =>

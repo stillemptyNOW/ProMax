@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../backend/modules/chats.dart';
 import '../../../../backend/modules/messages.dart';
-import '../../../../backend/modules/pending_message_deletions.dart';
+import '../../../../backend/modules/pending_deletions.dart';
 import '../../../../core/cache/message_session_cache.dart';
 import '../../../../core/config/promax_settings.dart';
 import '../../../../core/storage/app_database.dart';
@@ -24,9 +24,7 @@ class ChatController extends ChangeNotifier {
   static const int _endOfTime = 1 << 62;
 
   ChatController() {
-    _restoredSub = PendingMessageDeletions.instance.restored.listen(
-      _onRestored,
-    );
+    _restoredSub = PendingDeletions.instance.restored.listen(_onRestored);
   }
 
   int chatId = 0;
@@ -43,7 +41,7 @@ class ChatController extends ChangeNotifier {
   }
 
   bool _isPendingDeletion(CachedMessage m) =>
-      PendingMessageDeletions.instance.isPending(chatId, m.id);
+      PendingDeletions.instance.isMessageHeld(myId, chatId, m.id);
 
   List<CachedMessage> _withoutPendingDeletions(List<CachedMessage> list) {
     if (!list.any(_isPendingDeletion)) return list;
@@ -51,7 +49,7 @@ class ChatController extends ChangeNotifier {
   }
 
   void _onRestored(RestoredMessages restored) {
-    if (restored.chatId != chatId) return;
+    if (restored.accountId != myId || restored.chatId != chatId) return;
     mergeMessages(restored.messages, contiguous: true);
   }
 
@@ -224,9 +222,7 @@ class ChatController extends ChangeNotifier {
         backward: backward,
         count: count,
       );
-      if (fetched.isNotEmpty && ProMaxSettings.viewDeleted.value) {
-        await chats.reconcileDeletedFromFetch(myId, chatId, fetched);
-      }
+      await chats.reconcileDeletedFromFetch(myId, chatId, fetched);
     } catch (e) {
       logger.w('Error fetching history page: $e');
     }
@@ -552,9 +548,7 @@ class ChatController extends ChangeNotifier {
     try {
       final serverMessages = await messagesModule.fetchHistory(myId, chatId);
       chats.markHistoryFetched(chatId);
-      if (ProMaxSettings.viewDeleted.value) {
-        await chats.reconcileDeletedFromFetch(myId, chatId, serverMessages);
-      }
+      await chats.reconcileDeletedFromFetch(myId, chatId, serverMessages);
       final updatedDecoded = await loadInitialFromDb(onlyVisible: onlyVisible);
       final ranges = await AppDatabase.loadMessageRanges(myId, chatId);
       if (isMounted()) {

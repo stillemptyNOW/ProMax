@@ -7,6 +7,7 @@ import '../../../../backend/modules/chats.dart';
 import '../../../../backend/modules/comments.dart';
 import '../../../../backend/modules/message_copy.dart';
 import '../../../../backend/modules/messages.dart';
+import '../../../../backend/modules/pending_deletions.dart';
 import '../../../../core/config/app_commands.dart';
 import '../../../../core/crypto/message_decryption_cache.dart';
 import '../../../../core/plugins/plugin_outgoing_text.dart';
@@ -268,6 +269,14 @@ class ChatTextSendController {
     await _syncForwardOutgoing(optimistic);
     try {
       final sent = await send();
+      if (PendingDeletions.instance.claimSent(
+        accountId: optimistic.accountId,
+        chatId: optimistic.chatId,
+        tempId: optimistic.id,
+        realId: sent.id,
+      )) {
+        return true;
+      }
       if (canUpdateChat()) {
         final index = chatController.indexOfId(optimistic.id);
         if (index != -1) {
@@ -478,6 +487,16 @@ class ChatTextSendController {
               beforeSend: checkSession,
             );
 
+      if (!commentsMode &&
+          PendingDeletions.instance.claimSent(
+            accountId: accountId,
+            chatId: chatId,
+            tempId: tempId,
+            realId: actualId,
+          )) {
+        return;
+      }
+
       final mounted = canUpdateChat();
       final index = chatController.indexOfId(tempId);
       if (!mounted || index != -1) {
@@ -645,6 +664,14 @@ class ChatTextSendController {
         _chatId,
         outgoing.wireText,
       );
+      if (PendingDeletions.instance.claimSent(
+        accountId: _myId,
+        chatId: _chatId,
+        tempId: tempId,
+        realId: actualId,
+      )) {
+        return '';
+      }
       final realId = actualId.isNotEmpty ? actualId : tempId;
       final i = chatController.indexOfId(tempId);
       if (i != -1) {
