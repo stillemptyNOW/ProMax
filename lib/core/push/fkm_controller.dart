@@ -259,11 +259,7 @@ class FkmController {
     final text = _previewText(msg);
     if (text == _hiddenPreview) return;
 
-    await _bridge.editMessage({
-      'mc': '$chatId',
-      'msgid': msgId,
-      'msg': text,
-    });
+    await _bridge.editMessage({'mc': '$chatId', 'msgid': msgId, 'msg': text});
   }
 
   // #***! сборка уведомления, заголовок текст аватарка

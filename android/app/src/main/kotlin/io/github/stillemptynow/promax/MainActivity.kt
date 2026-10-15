@@ -836,9 +836,24 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
     override fun shouldDestroyEngineWithHost(): Boolean = false
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+        activityChannels().forEach { messenger.setMessageHandler(it, null) }
+        nfcEvents = null
         EngineHost.unbindActivity(this)
         super.cleanUpFlutterEngine(flutterEngine)
     }
+
+    private fun activityChannels() = listOf(
+        "io.github.stillemptynow.promax/nfc",
+        "io.github.stillemptynow.promax/nfc_events",
+        channelName,
+        "io.github.stillemptynow.promax/app_icon",
+        "io.github.stillemptynow.promax/upload_service",
+        "io.github.stillemptynow.promax/video_note",
+        "io.github.stillemptynow.promax/video",
+        "io.github.stillemptynow.promax/screen",
+        MediaExport.CHANNEL,
+    )
 
     override fun onDestroy() {
         shareExecutor.shutdown()

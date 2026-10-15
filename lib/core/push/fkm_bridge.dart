@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -21,6 +22,9 @@ class FkmBridge {
   VoidCallback? _onDisabled;
   VoidCallback? _onAttached;
   bool _handlerSet = false;
+  final StreamController<void> _attached = StreamController<void>.broadcast();
+
+  Stream<void> get attached => _attached.stream;
 
   static bool _platformSupported() {
     try {
@@ -45,6 +49,7 @@ class FkmBridge {
           _onDisabled?.call();
         case 'attached':
           _onAttached?.call();
+          _attached.add(null);
       }
       return null;
     });

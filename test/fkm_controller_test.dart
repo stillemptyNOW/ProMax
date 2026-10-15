@@ -69,17 +69,20 @@ void main() {
     _messenger.setMockMethodCallHandler(_channel, null);
   });
 
-  test('включённый в нативе FKM держит сервис и сообщает, что связи ещё нет', () async {
-    nativeReady();
+  test(
+    'включённый в нативе FKM держит сервис и сообщает, что связи ещё нет',
+    () async {
+      nativeReady();
 
-    await controller.init(api);
+      await controller.init(api);
 
-    expect(controller.enabled.value, isTrue);
-    expect(Api.keepAliveInBackground, isTrue);
-    expect(methods(), ['isEnabled', 'setEnabled', 'setConnected']);
-    expect(calls[1].arguments, {'enabled': true});
-    expect(calls[2].arguments, {'connected': false});
-  });
+      expect(controller.enabled.value, isTrue);
+      expect(Api.keepAliveInBackground, isTrue);
+      expect(methods(), ['isEnabled', 'setEnabled', 'setConnected']);
+      expect(calls[1].arguments, {'enabled': true});
+      expect(calls[2].arguments, {'connected': false});
+    },
+  );
 
   test('выключенный в нативе FKM не поднимает сервис', () async {
     nativeEnabled = false;
@@ -92,18 +95,21 @@ void main() {
     expect(methods(), ['isEnabled']);
   });
 
-  test('канал, подключённый к уже запущенному движку, заново включает FKM', () async {
-    await controller.init(api);
-    expect(controller.enabled.value, isFalse);
-    expect(Api.keepAliveInBackground, isFalse);
+  test(
+    'канал, подключённый к уже запущенному движку, заново включает FKM',
+    () async {
+      await controller.init(api);
+      expect(controller.enabled.value, isFalse);
+      expect(Api.keepAliveInBackground, isFalse);
 
-    nativeReady();
-    await _fromNative('attached');
+      nativeReady();
+      await _fromNative('attached');
 
-    expect(controller.enabled.value, isTrue);
-    expect(Api.keepAliveInBackground, isTrue);
-    expect(methods(), ['isEnabled', 'setEnabled', 'setConnected']);
-  });
+      expect(controller.enabled.value, isTrue);
+      expect(Api.keepAliveInBackground, isTrue);
+      expect(methods(), ['isEnabled', 'setEnabled', 'setConnected']);
+    },
+  );
 
   test('кнопка «Выключить» в уведомлении гасит FKM', () async {
     nativeReady();

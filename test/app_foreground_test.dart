@@ -25,10 +25,13 @@ void main() {
   });
 
   group('AppForeground.interactiveIn', () {
-    test('входящий звонок показывается в интерфейсе только у активного окна', () {
-      expect(AppForeground.interactiveIn(AppLifecycleState.resumed), isTrue);
-      expect(AppForeground.interactiveIn(null), isTrue);
-    });
+    test(
+      'входящий звонок показывается в интерфейсе только у активного окна',
+      () {
+        expect(AppForeground.interactiveIn(AppLifecycleState.resumed), isTrue);
+        expect(AppForeground.interactiveIn(null), isTrue);
+      },
+    );
 
     test('без активного окна звонок уходит в уведомление', () {
       for (final state in [

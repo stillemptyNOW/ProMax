@@ -222,6 +222,7 @@ class FkmService : Service() {
             stopForeground(STOP_FOREGROUND_REMOVE)
             inForeground = false
         }
+        if (!FkmState.enabled) EngineHost.releaseHeadless()
         super.onDestroy()
     }
 

@@ -9,14 +9,19 @@ import '../../main.dart';
 import '../storage/app_database.dart';
 import '../storage/token_storage.dart';
 import '../utils/logger.dart';
+import 'native_event_stream.dart';
 
 // #***! открытие чата по тапу на уведомление
 class NotificationBridge {
   NotificationBridge._();
   static final NotificationBridge instance = NotificationBridge._();
 
-  static const _method = MethodChannel('io.github.stillemptynow.promax/notifications');
-  static const _events = EventChannel('io.github.stillemptynow.promax/notification_events');
+  static const _method = MethodChannel(
+    'io.github.stillemptynow.promax/notifications',
+  );
+  static const _events = EventChannel(
+    'io.github.stillemptynow.promax/notification_events',
+  );
   static const _retryDelay = Duration(milliseconds: 300);
   static const _maxRetries = 100;
 
@@ -53,10 +58,7 @@ class NotificationBridge {
   void init() {
     if (_started || !_native) return;
     _started = true;
-    _events.receiveBroadcastStream().listen(
-      _onEvent,
-      onError: (e) => logger.w('NotificationBridge: events stream error: $e'),
-    );
+    NativeEventStream(_events, 'NotificationBridge').listen(_onEvent);
     api.stateStream.listen((state) {
       if (state == SessionState.online) _flushPending();
     });

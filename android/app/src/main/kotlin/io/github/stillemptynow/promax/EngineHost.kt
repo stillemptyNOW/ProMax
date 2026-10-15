@@ -52,6 +52,13 @@ object EngineHost {
         }
     }
 
+    fun releaseHeadless() {
+        if (activity != null || engine == null) return
+        main.post {
+            if (activity == null) AudioServicePlugin.disposeFlutterEngine()
+        }
+    }
+
     fun bindActivity(host: Activity, target: FlutterEngine) {
         attach(target, host.applicationContext)
         activity = host
