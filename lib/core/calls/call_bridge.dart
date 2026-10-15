@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../utils/logger.dart';
 import 'call_controller.dart';
+import '../push/native_event_stream.dart';
 
 // #***! мост к нативному экрану входящего, андроид
 class CallBridge {
@@ -13,7 +14,9 @@ class CallBridge {
   static final CallBridge instance = CallBridge._();
 
   static const _method = MethodChannel('io.github.stillemptynow.promax/calls');
-  static const _events = EventChannel('io.github.stillemptynow.promax/calls_events');
+  static const _events = EventChannel(
+    'io.github.stillemptynow.promax/calls_events',
+  );
 
   bool _started = false;
 
@@ -29,10 +32,7 @@ class CallBridge {
   void init() {
     if (_started || !_android) return;
     _started = true;
-    _events.receiveBroadcastStream().listen(
-      _handle,
-      onError: (e) => logger.w('CallBridge.init: events stream error: $e'),
-    );
+    NativeEventStream(_events, 'CallBridge.init').listen(_handle);
   }
 
   // #***! звонок мог прийти пока приложение не запущено

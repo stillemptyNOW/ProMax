@@ -531,7 +531,11 @@ class ProMaxAppState extends State<ProMaxApp>
         CallController.instance.init(api);
         OutboxService.instance.init(api, messagesModule);
         SelfCheckService.instance.init(api);
-        SelfCheckService.instance.checkNow();
+        if (AppForeground.value) {
+          SelfCheckService.instance.checkNow();
+        } else {
+          SelfCheckService.instance.pause();
+        }
         if (BuildProfile.firebasePush) {
           await PushService.instance.init(api: api, account: accountModule);
           await PushService.instance.onLoginSuccess();
@@ -546,7 +550,9 @@ class ProMaxAppState extends State<ProMaxApp>
     _callAnsweredSub = CallController.instance.answeredCalls.listen(
       _onAnsweredCall,
     );
-    CallController.instance.appResumed = true;
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    AppForeground.update(foreground: AppForeground.visibleIn(lifecycle));
+    CallController.instance.appResumed = AppForeground.interactiveIn(lifecycle);
     CallBridge.instance.init();
     CallKitBridge.instance.init();
     NotificationBridge.instance.init();
@@ -638,6 +644,7 @@ class ProMaxAppState extends State<ProMaxApp>
   }
 
   Future<void> _ensureFullScreenIntentPermission() async {
+    if (!AppForeground.value) return;
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool('fsi_prompted') ?? false) return;
     if (await CallBridge.instance.canUseFullScreenIntent()) return;
@@ -763,12 +770,9 @@ class ProMaxAppState extends State<ProMaxApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     AppLock.instance.onLifecycle(state);
-    final background =
-        state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.detached;
+    final background = !AppForeground.visibleIn(state);
     AppForeground.update(foreground: !background);
-    CallController.instance.appResumed = state == AppLifecycleState.resumed;
+    CallController.instance.appResumed = AppForeground.interactiveIn(state);
     if (state == AppLifecycleState.inactive && CallController.instance.isBusy) {
       unawaited(CallBridge.instance.ensureOngoing());
     }

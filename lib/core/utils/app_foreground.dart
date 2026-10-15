@@ -1,3 +1,5 @@
+import 'dart:ui' show AppLifecycleState;
+
 import 'package:flutter/foundation.dart';
 
 // #***! на переднем плане или нет, в фоне экономим
@@ -9,4 +11,14 @@ abstract class AppForeground {
   static bool get value => notifier.value;
 
   static void update({required bool foreground}) => notifier.value = foreground;
+
+  static bool visibleIn(AppLifecycleState? state) => switch (state) {
+    AppLifecycleState.hidden ||
+    AppLifecycleState.paused ||
+    AppLifecycleState.detached => false,
+    null || AppLifecycleState.resumed || AppLifecycleState.inactive => true,
+  };
+
+  static bool interactiveIn(AppLifecycleState? state) =>
+      state == null || state == AppLifecycleState.resumed;
 }

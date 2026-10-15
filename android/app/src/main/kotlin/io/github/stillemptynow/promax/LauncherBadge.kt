@@ -6,7 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.Executors
 
@@ -35,9 +35,9 @@ object LauncherBadge {
     @Volatile
     private var resolved = false
 
-    fun attach(engine: FlutterEngine, ctx: Context) {
+    fun attach(messenger: BinaryMessenger, ctx: Context) {
         val app = ctx.applicationContext
-        val ch = MethodChannel(engine.dartExecutor.binaryMessenger, NAME)
+        val ch = MethodChannel(messenger, NAME)
         channel = ch
         live = true
         ch.setMethodCallHandler { call, result ->
