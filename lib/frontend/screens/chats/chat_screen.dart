@@ -65,6 +65,7 @@ import '../../../core/utils/emoji_keyword_index.dart';
 import '../../../models/admin_rights.dart';
 import '../../../models/chat_reaction_settings.dart';
 import '../../../core/utils/logger.dart';
+import '../../../core/utils/user_facing_error.dart';
 import '../../../core/utils/route_settle.dart';
 import '../../../core/config/app_cache_extent.dart';
 import '../../../core/config/app_swipe_back_desktop.dart';
@@ -2211,19 +2212,34 @@ class _ChatScreenState extends State<ChatScreen>
 
   Future<void> _loadCommentsHistory() async {
     final post = widget.postMessage;
-    final loaded = await commentsModule.fetchHistory(
-      _myId,
-      widget.chatId,
-      widget.commentPostId!,
-      fromTime: post?.time ?? DateTime.now().millisecondsSinceEpoch,
-      forward: 30,
-      backward: 0,
-    );
+    List<CachedMessage> loaded;
+    Object? failure;
+    try {
+      loaded = await commentsModule.fetchHistory(
+        _myId,
+        widget.chatId,
+        widget.commentPostId!,
+        fromTime: post?.time ?? DateTime.now().millisecondsSinceEpoch,
+        forward: 30,
+        backward: 0,
+      );
+    } catch (e) {
+      logger.w('Комментарии ${widget.commentPostId} не загрузились: $e');
+      loaded = const [];
+      failure = e;
+    }
     if (!mounted) return;
+    if (failure != null) {
+      final l10n = AppLocalizations.of(context)!;
+      showCustomNotification(
+        context,
+        l10n.chatCommentsLoadFailed(userFacingError(failure, l10n)),
+      );
+    }
     final comments = [...loaded]..sort((a, b) => a.time.compareTo(b.time));
     _messages = post != null ? [post, ...comments] : comments;
     _deferredIds.clear();
-    _commentsHasMore = comments.isNotEmpty;
+    _commentsHasMore = failure != null || comments.isNotEmpty;
     _syncReactionNotifiersFromMessages();
     unawaited(_resolveCommentNames(comments));
     _bumpMessages();
@@ -2258,6 +2274,8 @@ class _ChatScreenState extends State<ChatScreen>
         unawaited(_resolveCommentNames(fresh));
         _bumpMessages();
       }
+    } catch (e) {
+      logger.w('Следующие комментарии не загрузились: $e');
     } finally {
       _commentsLoadingMore = false;
     }

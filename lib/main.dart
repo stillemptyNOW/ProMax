@@ -63,6 +63,7 @@ import 'core/config/app_theme_schedule.dart';
 import 'core/config/app_digital_id_mode.dart';
 import 'backend/modules/account.dart';
 import 'backend/modules/chat_admin.dart';
+import 'backend/modules/bot_callback_answers.dart';
 import 'backend/modules/chats.dart';
 import 'backend/modules/comments.dart';
 import 'backend/modules/contacts.dart';
@@ -257,6 +258,7 @@ void main(List<String> args) async {
   unawaited(FkmController.instance.init(api));
   FoldersModule.attachGlobalPushHandlers(api);
   TranscriptionPushHandler.attach(api);
+  BotCallbackAnswers.instance.attach(api);
   commentsModule.attachPushHandlers(api);
   storiesModule.attach();
   unawaited(storiesModule.loadCache());
@@ -479,6 +481,7 @@ class ProMaxAppState extends State<ProMaxApp>
   StreamSubscription<AccountNotice>? _accountNoticeSub;
   StreamSubscription<PendingDeletionReport>? _deletionReportsSub;
   StreamSubscription<void>? _undoWindowsClosedSub;
+  StreamSubscription<String>? _botAnswersSub;
   late final AppLifecycleListener _exitListener;
   Timer? _scheduleTimer;
   String? _lastVpnNotice;
@@ -516,6 +519,10 @@ class ProMaxAppState extends State<ProMaxApp>
     _undoWindowsClosedSub = PendingDeletions.instance.undoWindowsClosed.listen(
       (_) => PendingUndo.commitPending(),
     );
+    _botAnswersSub = BotCallbackAnswers.instance.unclaimed.listen((text) {
+      final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
+      if (overlay != null) showCustomNotificationOnOverlay(overlay, text);
+    });
     HardwareKeyboard.instance.addHandler(_noteKeyInteraction);
     AudioPlaybackController.error.addListener(_onAudioPlaybackError);
     AppThemeModeConfig.current.addListener(_onThemeModeChanged);
@@ -766,6 +773,7 @@ class ProMaxAppState extends State<ProMaxApp>
     _accountNoticeSub?.cancel();
     _deletionReportsSub?.cancel();
     _undoWindowsClosedSub?.cancel();
+    _botAnswersSub?.cancel();
     _exitListener.dispose();
     _scheduleTimer?.cancel();
     _resizeMarkTimer?.cancel();
