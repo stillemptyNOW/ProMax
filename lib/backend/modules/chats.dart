@@ -26,8 +26,10 @@ import '../../models/chat_call.dart';
 import '../../models/chat_preview_media.dart';
 import '../../models/contact_info.dart';
 import '../api.dart';
+import 'account/privacy_module.dart';
 import 'chat_parsing.dart';
 import 'chat_preview.dart';
+import 'contacts.dart' show ContactsModule;
 import 'folders.dart';
 import 'messages.dart' show ContactCache, CachedMessage, MessagesModule;
 import 'pending_deletions.dart';
@@ -1138,7 +1140,105 @@ class ChatsModule {
         _handlePresence(packet);
       case Opcode.notifChat:
         await _handleNotifChat(packet);
+      case Opcode.notifContact:
+        await _handleNotifContact(packet);
+      case Opcode.notifConfig:
+        await _handleNotifConfig(packet);
+      case Opcode.notifMsgYouReacted:
+        await _handleNotifMsgYouReacted(packet);
     }
+  }
+
+  Future<void> _handleNotifContact(Packet packet) async {
+    final payload = packet.payload;
+    if (payload is! Map) return;
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) return;
+    await ContactsModule.applyContactPush(payload, accountId);
+    _bump();
+  }
+
+  Future<void> _handleNotifConfig(Packet packet) async {
+    final payload = packet.payload;
+    if (payload is! Map) return;
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) return;
+    await PrivacyModule.applyConfigPush(accountId, payload);
+  }
+
+  Future<void> _handleNotifMsgYouReacted(Packet packet) async {
+    final payload = packet.payload;
+    if (payload is! Map) return;
+    final chatId = payload['chatId'];
+    final messageId = payload['messageId']?.toString();
+    if (chatId is! int || messageId == null || messageId.isEmpty) return;
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) return;
+    final existing = await AppDatabase.loadMessage(
+      accountId,
+      chatId,
+      messageId,
+    );
+    if (existing == null) return;
+    final payloadMap =
+        _decodePayload(existing['payload']) ?? <String, dynamic>{};
+    final previous = payloadMap['reactionInfo'];
+    final reactionInfo = previous is Map
+        ? Map<String, dynamic>.from(previous)
+        : <String, dynamic>{};
+    final pushedInfo = payload['reactionInfo'];
+    if (pushedInfo is Map) {
+      reactionInfo.addAll(Map<String, dynamic>.from(pushedInfo));
+    }
+    final counters = payload['counters'];
+    final totalCount = payload['totalCount'];
+    if (counters is List) reactionInfo['counters'] = counters;
+    if (totalCount is int) reactionInfo['totalCount'] = totalCount;
+    final reaction = ownReactionOf(payload);
+    if (reaction != null) {
+      reactionInfo['yourReaction'] = reaction;
+    } else if (_declaresOwnReaction(payload)) {
+      reactionInfo.remove('yourReaction');
+    }
+    final hasCounters =
+        reactionInfo['counters'] is List &&
+        (reactionInfo['counters'] as List).isNotEmpty;
+    if (hasCounters || reactionInfo['yourReaction'] != null) {
+      payloadMap['reactionInfo'] = reactionInfo;
+    } else {
+      payloadMap.remove('reactionInfo');
+    }
+    final newRow = Map<String, dynamic>.from(existing);
+    newRow['payload'] = jsonEncode(payloadMap);
+    await AppDatabase.saveMessages([newRow]);
+    _messageEventsController.add(
+      MessageReactionsChangedEvent(
+        chatId,
+        messageId,
+        payloadMap['reactionInfo'] as Map<String, dynamic>?,
+      ),
+    );
+  }
+
+  static bool _declaresOwnReaction(Map<dynamic, dynamic> payload) {
+    final info = payload['reactionInfo'];
+    return payload.containsKey('yourReaction') ||
+        payload.containsKey('reaction') ||
+        (info is Map && info.containsKey('yourReaction'));
+  }
+
+  @visibleForTesting
+  static String? ownReactionOf(Map<dynamic, dynamic> payload) {
+    final info = payload['reactionInfo'];
+    for (final raw in [
+      payload['yourReaction'],
+      payload['reaction'],
+      if (info is Map) info['yourReaction'],
+    ]) {
+      final value = raw is Map ? raw['reaction'] ?? raw['id'] : raw;
+      if (value is String && value.isNotEmpty) return value;
+    }
+    return null;
   }
 
   Future<void> _handleNotifChat(Packet packet) async {
