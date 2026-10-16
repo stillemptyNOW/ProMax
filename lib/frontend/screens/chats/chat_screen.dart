@@ -28,6 +28,7 @@ import 'package:promax/frontend/widgets/custom_notification.dart';
 import 'package:promax/frontend/widgets/hint_bubble.dart';
 import 'package:promax/frontend/widgets/undo_notification.dart';
 import 'package:promax/backend/modules/pending_deletions.dart';
+import 'package:promax/backend/modules/read_receipts.dart';
 import 'package:promax/frontend/screens/chats/chat_removal_undo.dart';
 import 'package:promax/frontend/widgets/chat_menu_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -87,6 +88,7 @@ import '../../../backend/modules/forward_sender.dart';
 import 'chat/view/greeting_sticker_card.dart';
 import 'chat/view/message_list_decorations.dart';
 import 'chat/view/message_row_widgets.dart';
+import 'chat/view/read_stamp_label.dart';
 import 'chat/view/scroll_down_button.dart';
 import 'chat/view/throttled_message_scrollbar.dart';
 import 'chat/view/chat_app_bar.dart';
@@ -537,6 +539,16 @@ class _ChatScreenState extends State<ChatScreen>
   );
   final ValueNotifier<String> _headerStatusNotifier = ValueNotifier('');
   final ValueNotifier<int> _otherReadTime = ValueNotifier(0);
+  final ValueNotifier<int> _readMarksRevision = ValueNotifier(0);
+  late final Listenable _readRevision = Listenable.merge([
+    ReadReceipts.instance,
+    _readMarksRevision,
+  ]);
+  late final Listenable _readStampRevision = Listenable.merge([
+    _readRevision,
+    ProMaxSettings.showReadStamp,
+  ]);
+  ({int mark, int count, String? lastId, String? id})? _readStampTarget;
   late final AnimationController _attachAnim;
   late final CommandPanelController _commandPanel;
   late final MentionPanelController _mentionPanel;
@@ -924,6 +936,9 @@ class _ChatScreenState extends State<ChatScreen>
     final p = await AppDatabase.loadActiveProfile();
     if (!mounted) return;
     _myId = p?.id ?? 0;
+    if (_myId != 0) {
+      unawaited(ReadReceipts.instance.preload(_myId, widget.chatId));
+    }
     if (p != null && p.id != 0) {
       final myName = [
         p.firstName,
@@ -1475,6 +1490,139 @@ class _ChatScreenState extends State<ChatScreen>
     return type == 'CHAT' || type == 'GROUP';
   }
 
+  bool _canShowReadSummary(CachedMessage message) {
+    if (_commentsMode || widget.preview) return false;
+    if (_myId == 0 || message.senderId != _myId) return false;
+    if (message.isControl || message.deleted) return false;
+    if (int.tryParse(message.id) == null) return false;
+    if (_effectiveStatus(message) != 'sent') return false;
+    final type = chat?.type ?? widget.chatType;
+    if (type == 'DIALOG') return _resolveOtherId() != null;
+    return type == 'CHAT' || type == 'GROUP';
+  }
+
+  Map<int, int> _firstMessageTimesAfter(int time) {
+    final firsts = <int, int>{};
+    for (final m in _messages) {
+      if (m.time <= time || m.isControl) continue;
+      final known = firsts[m.senderId];
+      if (known == null || m.time < known) firsts[m.senderId] = m.time;
+    }
+    return firsts;
+  }
+
+  MessageReadState _readStateOf(
+    CachedMessage message,
+    int userId,
+    int? mark,
+    Map<int, int> replies,
+  ) => ReadReceipts.instance.stateFor(
+    accountId: _myId,
+    chatId: widget.chatId,
+    userId: userId,
+    mark: mark,
+    messageTime: message.time,
+    replyTime: replies[userId],
+  );
+
+  MessageReadSummary? _readSummaryFor(CachedMessage message) {
+    if (!mounted || !_canShowReadSummary(message)) return null;
+    final c = chat;
+    if (c == null) return null;
+    unawaited(ReadReceipts.instance.preload(_myId, widget.chatId));
+    if (c.type != 'DIALOG') {
+      final readers = c.participants.entries.where(
+        (e) => e.key != _myId && e.value >= message.time,
+      );
+      return MessageReadSummary.readers(readers.length);
+    }
+    final peerId = _resolveOtherId();
+    if (peerId == null) return null;
+    final l10n = AppLocalizations.of(context)!;
+    final state = _readStateOf(
+      message,
+      peerId,
+      c.participants[peerId],
+      _firstMessageTimesAfter(message.time),
+    );
+    String stamp() =>
+        formatReadStamp(l10n, DateTime.fromMillisecondsSinceEpoch(state.at!));
+    return switch (state.kind) {
+      MessageReadKind.hidden => null,
+      MessageReadKind.unread => MessageReadSummary.status(
+        l10n.readReceiptNotRead,
+        read: false,
+      ),
+      MessageReadKind.unknown => MessageReadSummary.status(
+        l10n.readReceiptReadUnknown,
+        read: true,
+      ),
+      MessageReadKind.exact => MessageReadSummary.status(
+        l10n.readReceiptReadAt(stamp()),
+        read: true,
+      ),
+      MessageReadKind.atMost => MessageReadSummary.status(
+        l10n.readReceiptReadAtMost(stamp()),
+        read: true,
+      ),
+    };
+  }
+
+  bool _canShowReadStamp(CachedMessage message) {
+    if (_commentsMode || widget.preview) return false;
+    if (_myId == 0 || message.senderId != _myId || message.isControl) {
+      return false;
+    }
+    return (chat?.type ?? widget.chatType) == 'DIALOG' &&
+        _resolveOtherId() != null;
+  }
+
+  String? _readStampTargetId(int mark) {
+    final lastId = _messages.isEmpty ? null : _messages.last.id;
+    final cached = _readStampTarget;
+    if (cached != null &&
+        cached.mark == mark &&
+        cached.count == _messages.length &&
+        cached.lastId == lastId) {
+      return cached.id;
+    }
+    String? target;
+    for (var i = _messages.length - 1; i >= 0; i--) {
+      final m = _messages[i];
+      if (m.time > mark || m.senderId != _myId) continue;
+      if (m.isControl || m.deleted || int.tryParse(m.id) == null) continue;
+      target = m.id;
+      break;
+    }
+    _readStampTarget = (
+      mark: mark,
+      count: _messages.length,
+      lastId: lastId,
+      id: target,
+    );
+    return target;
+  }
+
+  String? _readStampFor(CachedMessage message) {
+    if (!mounted || !ProMaxSettings.showReadStamp.value) return null;
+    final c = chat;
+    final peerId = _resolveOtherId();
+    if (c == null || peerId == null) return null;
+    final mark = c.participants[peerId];
+    if (mark == null || _readStampTargetId(mark) != message.id) return null;
+    final state = _readStateOf(
+      message,
+      peerId,
+      mark,
+      _firstMessageTimesAfter(message.time),
+    );
+    if (state.kind != MessageReadKind.exact) return null;
+    final l10n = AppLocalizations.of(context)!;
+    return l10n.readReceiptReadAt(
+      formatReadStamp(l10n, DateTime.fromMillisecondsSinceEpoch(state.at!)),
+    );
+  }
+
   Future<List<MessageReader>> _loadReadBy(CachedMessage message) async {
     final marks = await chats.getReadMarks(api, _myId, widget.chatId);
     final reactions = await messagesModule.getDetailedReactions(
@@ -1490,7 +1638,9 @@ class _ChatScreenState extends State<ChatScreen>
 
     await messagesModule.ensureContactNames(readerIds);
     await animojiModule.ensureLoaded();
+    await ReadReceipts.instance.preload(_myId, widget.chatId);
     if (!mounted) return const [];
+    final replies = _firstMessageTimesAfter(message.time);
 
     final animojiByEmoji = {
       for (final animoji in animojiModule.animojis)
@@ -1506,10 +1656,16 @@ class _ChatScreenState extends State<ChatScreen>
           ? null
           : animojiByEmoji[EmojiKeywordIndex.normalize(emoji)];
       final name = ContactCache.get(id);
+      final state = _readStateOf(message, id, marks[id], replies);
+      final timed =
+          state.kind == MessageReadKind.exact ||
+          state.kind == MessageReadKind.atMost;
       return MessageReader(
         id: id,
         name: name == null || name.isEmpty ? unknownName : name,
         avatarUrl: ContactCache.getAvatar(id),
+        readAt: timed ? state.at : null,
+        readAtMost: state.kind == MessageReadKind.atMost,
         reaction: emoji == null
             ? null
             : ReactionEmoji(
@@ -1521,9 +1677,8 @@ class _ChatScreenState extends State<ChatScreen>
     }).toList();
 
     readers.sort((a, b) {
-      final aReacted = a.reaction != null;
-      final bReacted = b.reaction != null;
-      if (aReacted != bReacted) return aReacted ? -1 : 1;
+      final byTime = (b.readAt ?? -1).compareTo(a.readAt ?? -1);
+      if (byTime != 0) return byTime;
       return (marks[b.id] ?? 0).compareTo(marks[a.id] ?? 0);
     });
     return readers;
@@ -2404,6 +2559,7 @@ class _ChatScreenState extends State<ChatScreen>
     }
     _headerStatusNotifier.dispose();
     _otherReadTime.dispose();
+    _readMarksRevision.dispose();
     _chatController.dispose();
     _prank.dispose();
     _uploadStatus.dispose();
@@ -2591,6 +2747,7 @@ class _ChatScreenState extends State<ChatScreen>
   void _syncOtherReadTime() {
     final t = _computeOtherReadTime();
     if (_otherReadTime.value != t) _otherReadTime.value = t;
+    _readMarksRevision.value++;
   }
 
   String? _effectiveStatus(CachedMessage msg) {
@@ -5304,6 +5461,8 @@ class _ChatScreenState extends State<ChatScreen>
                               ? () => _loadReadBy(message)
                               : null,
                           onReaderTap: _openSenderProfile,
+                          readSummary: () => _readSummaryFor(message),
+                          readRevision: _readRevision,
                           loadReportReasons: canReport
                               ? () => _loadReportReasons(reportTypeId)
                               : null,
@@ -5369,11 +5528,25 @@ class _ChatScreenState extends State<ChatScreen>
                           child: child,
                         );
 
+                        final stamped = _canShowReadStamp(message)
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  highlightable,
+                                  ReadStampLabel(
+                                    listenable: _readStampRevision,
+                                    text: () => _readStampFor(message),
+                                  ),
+                                ],
+                              )
+                            : highlightable;
+
                         final builtItem = RepaintBoundary(
                           key: ValueKey('msg_${message.id}'),
                           child: KeyedSubtree(
                             key: _keyForMessage(message.id),
-                            child: highlightable,
+                            child: stamped,
                           ),
                         );
                         if (widget.preview) {

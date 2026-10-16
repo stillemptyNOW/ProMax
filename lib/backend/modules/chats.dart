@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
@@ -14,6 +15,7 @@ import '../../core/crypto/e2ee_service.dart';
 import '../../core/media/deleted_media_keeper.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/local_read_state.dart';
+import '../../core/storage/read_receipt.dart';
 import '../../core/storage/chat_activity_store.dart';
 import '../../core/storage/chat_members_store.dart';
 import '../../core/security/double_bottom.dart';
@@ -30,6 +32,7 @@ import 'chat_preview.dart';
 import 'folders.dart';
 import 'messages.dart' show ContactCache, CachedMessage;
 import 'pending_deletions.dart';
+import 'read_receipts.dart';
 import 'server_outcome.dart';
 
 // #***! участники картой id -> время прочтения, в базе строкой
@@ -1699,6 +1702,9 @@ class ChatsModule {
     if (rows.isEmpty) return;
     final cached = CachedChat.fromDbRow(rows.first);
     final ownRead = userId == accountId;
+    if (!ownRead) {
+      await _recordPeerRead(accountId, chatId, userId, cached, mark);
+    }
     final serverUnread = payload['unread'];
     final lastTime = cached.lastMsgTime;
     final unread = !ownRead
@@ -1723,6 +1729,32 @@ class ChatsModule {
     if (ownRead && row['unread_count'] == 0) {
       unawaited(PushService.clearChatNotification(chatId));
     }
+  }
+
+  Future<void> _recordPeerRead(
+    int accountId,
+    int chatId,
+    int userId,
+    CachedChat cached,
+    int mark,
+  ) async {
+    final knownMarks = [
+      ?cached.participants[userId],
+      ?ReadReceipts.instance.latestMark(accountId, chatId, userId),
+    ];
+    if (knownMarks.isEmpty) return;
+    final prevMark = knownMarks.reduce(math.max);
+    if (mark <= prevMark) return;
+    await ReadReceipts.instance.record(
+      accountId,
+      chatId,
+      ReadReceipt(
+        userId: userId,
+        prevMark: prevMark,
+        mark: mark,
+        readAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
   }
 
   // #***! обновления контактов копим 250 мс, их прилетают сотни

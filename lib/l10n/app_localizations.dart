@@ -1358,6 +1358,78 @@ abstract class AppLocalizations {
   /// **'User'**
   String get msgActionsReadByUnknownUser;
 
+  /// No description provided for @readStampToday.
+  ///
+  /// In en, this message translates to:
+  /// **'today at {time}'**
+  String readStampToday(String time);
+
+  /// No description provided for @readStampYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'yesterday at {time}'**
+  String readStampYesterday(String time);
+
+  /// No description provided for @readStampDate.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} at {time}'**
+  String readStampDate(String date, String time);
+
+  /// No description provided for @readReceiptReadAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Read {stamp}'**
+  String readReceiptReadAt(String stamp);
+
+  /// No description provided for @readReceiptReadAtMost.
+  ///
+  /// In en, this message translates to:
+  /// **'Read no later than {stamp}'**
+  String readReceiptReadAtMost(String stamp);
+
+  /// No description provided for @readReceiptReadUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Read, time unknown'**
+  String get readReceiptReadUnknown;
+
+  /// No description provided for @readReceiptNotRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Not read yet'**
+  String get readReceiptNotRead;
+
+  /// No description provided for @readReceiptReadCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Read by {count} member} other{Read by {count} members}}'**
+  String readReceiptReadCount(int count);
+
+  /// No description provided for @readReceiptTimeAtMost.
+  ///
+  /// In en, this message translates to:
+  /// **'by {stamp}'**
+  String readReceiptTimeAtMost(String stamp);
+
+  /// No description provided for @readReceiptTimeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'time unknown'**
+  String get readReceiptTimeUnknown;
+
+  /// No description provided for @proMaxSettingsReadStamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Read time under messages'**
+  String get proMaxSettingsReadStamp;
+
+  /// No description provided for @proMaxSettingsReadStampSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'In a dialog, your latest read message shows when it was read'**
+  String get proMaxSettingsReadStampSubtitle;
+
   /// No description provided for @msgActionsReport.
   ///
   /// In en, this message translates to:
