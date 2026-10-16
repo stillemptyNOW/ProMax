@@ -9,11 +9,13 @@ import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
 import '../../core/crypto/e2ee_service.dart';
 import '../../core/storage/app_database.dart';
+import '../../core/storage/chat_activity_store.dart';
 import '../../core/storage/message_ranges.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
 import '../../core/utils/text_format.dart';
 import '../../models/attachment.dart';
+import 'chat_activity_sender.dart';
 import 'chats.dart' show chats;
 import 'message_copy.dart';
 import 'server_outcome.dart';
@@ -1995,14 +1997,14 @@ class MessagesModule {
   }
 
   // #***! печатает и записывает, ответ не ждём
-  void sendTyping(int chatId, String type) {
-    if (ProMaxSettings.noTyping.value) return;
+  void sendTyping(int chatId, ChatActivity activity) {
+    if (!chatActivityBroadcastAllowed || chatId == 0) return;
     unawaited(() async {
       try {
         await _api.sendRequest(Opcode.msgTyping, {
           'chatId': chatId,
-          'type': type,
-        });
+          'type': activity.wireType,
+        }, silent: true);
       } catch (_) {}
     }());
   }

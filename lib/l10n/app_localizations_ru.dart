@@ -6812,4 +6812,56 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get errorUnknown => 'Неизвестная ошибка';
+
+  @override
+  String get chatActivityRecordingVoice => 'Записывает голосовое...';
+
+  @override
+  String chatActivityRecordingVoiceOne(String name) {
+    return '$name записывает голосовое...';
+  }
+
+  @override
+  String chatActivityRecordingVoiceMany(String name, int count) {
+    return '$name и ещё $count записывают голосовые...';
+  }
+
+  @override
+  String get chatActivityRecordingVideoNote => 'Записывает кружок...';
+
+  @override
+  String chatActivityRecordingVideoNoteOne(String name) {
+    return '$name записывает кружок...';
+  }
+
+  @override
+  String chatActivityRecordingVideoNoteMany(String name, int count) {
+    return '$name и ещё $count записывают кружки...';
+  }
+
+  @override
+  String get chatActivitySendingPhoto => 'Отправляет фото...';
+
+  @override
+  String chatActivitySendingPhotoOne(String name) {
+    return '$name отправляет фото...';
+  }
+
+  @override
+  String chatActivitySendingPhotoMany(String name, int count) {
+    return '$name и ещё $count отправляют фото...';
+  }
+
+  @override
+  String get chatActivitySendingFile => 'Отправляет файл...';
+
+  @override
+  String chatActivitySendingFileOne(String name) {
+    return '$name отправляет файл...';
+  }
+
+  @override
+  String chatActivitySendingFileMany(String name, int count) {
+    return '$name и ещё $count отправляют файлы...';
+  }
 }

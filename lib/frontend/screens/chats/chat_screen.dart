@@ -46,6 +46,7 @@ import '../../../core/protocol/packet.dart';
 import '../../../core/push/notification_bridge.dart';
 import '../../../core/push/push_service.dart';
 import '../../../core/storage/app_database.dart';
+import '../../../backend/modules/chat_activity_sender.dart';
 import '../../../core/storage/chat_activity_store.dart';
 import '../../../core/storage/chat_members_store.dart';
 import '../../../core/crypto/chat_crypto_service.dart';
@@ -310,6 +311,11 @@ class _ChatScreenState extends State<ChatScreen>
   );
 
   StreamSubscription<UploadJobEvent>? _uploadEventSub;
+
+  late final ChatActivitySender _activitySender = ChatActivitySender(
+    _broadcastActivity,
+  );
+  String _typedText = '';
 
   ValueListenable<List<double>>? _photoProgressFor(CachedMessage m) =>
       UploadService.instance.progressFor(m.id);
@@ -724,8 +730,10 @@ class _ChatScreenState extends State<ChatScreen>
     );
     _stickers = StickerPanelController(
       vsync: this,
-      onSendTyping: () => messagesModule.sendTyping(widget.chatId, 'STICKER'),
+      onSendTyping: () => _broadcastActivity(ChatActivity.sticker),
     );
+    _voiceRec.isRecording.addListener(_onVoiceRecordingChanged);
+    _note.isRecording.addListener(_onVideoNoteRecordingChanged);
     _showAttachmentPanel.addListener(_onAttachPanelToggle);
     _commandPanel = CommandPanelController(
       vsync: this,
@@ -2377,6 +2385,9 @@ class _ChatScreenState extends State<ChatScreen>
     _commentsInfoSub?.cancel();
     _commentSub?.cancel();
     _connSub?.cancel();
+    _voiceRec.isRecording.removeListener(_onVoiceRecordingChanged);
+    _note.isRecording.removeListener(_onVideoNoteRecordingChanged);
+    _activitySender.dispose();
     _voiceRec.dispose();
     _note.dispose();
     debugForceOffline.removeListener(_recomputeHeaderStatus);
@@ -2434,12 +2445,45 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   void _onTextChanged() {
-    final newHasText = _messageController.text.trim().isNotEmpty;
+    final text = _messageController.text;
+    final newHasText = text.trim().isNotEmpty;
     if (newHasText != _hasText.value) {
       _hasText.value = newHasText;
     }
+    if (text != _typedText) {
+      _typedText = text;
+      if (newHasText) {
+        _activitySender.pulse(ChatActivity.typing);
+      } else {
+        _activitySender.reset();
+      }
+    }
     _commandPanel.update();
     _mentionPanel.update();
+  }
+
+  void _broadcastActivity(ChatActivity activity) {
+    if (widget.preview) return;
+    final postId = widget.commentPostId;
+    if (postId != null) {
+      commentsModule.sendTyping(widget.chatId, postId, activity);
+    } else {
+      messagesModule.sendTyping(widget.chatId, activity);
+    }
+  }
+
+  void _onVoiceRecordingChanged() =>
+      _trackRecording(_voiceRec.isRecording.value, ChatActivity.recordingVoice);
+
+  void _onVideoNoteRecordingChanged() =>
+      _trackRecording(_note.isRecording.value, ChatActivity.recordingVideoNote);
+
+  void _trackRecording(bool recording, ChatActivity activity) {
+    if (recording) {
+      _activitySender.hold(activity);
+    } else {
+      _activitySender.release(activity);
+    }
   }
 
   bool _mentionsAvailable() =>

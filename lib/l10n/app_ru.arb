@@ -2169,5 +2169,17 @@
   "errorServerNoResponse": "Сервер не ответил",
   "errorNoConnection": "Нет соединения",
   "errorFileAccess": "Нет доступа к файлу",
-  "errorUnknown": "Неизвестная ошибка"
+  "errorUnknown": "Неизвестная ошибка",
+  "chatActivityRecordingVoice": "Записывает голосовое...",
+  "chatActivityRecordingVoiceOne": "{name} записывает голосовое...",
+  "chatActivityRecordingVoiceMany": "{name} и ещё {count} записывают голосовые...",
+  "chatActivityRecordingVideoNote": "Записывает кружок...",
+  "chatActivityRecordingVideoNoteOne": "{name} записывает кружок...",
+  "chatActivityRecordingVideoNoteMany": "{name} и ещё {count} записывают кружки...",
+  "chatActivitySendingPhoto": "Отправляет фото...",
+  "chatActivitySendingPhotoOne": "{name} отправляет фото...",
+  "chatActivitySendingPhotoMany": "{name} и ещё {count} отправляют фото...",
+  "chatActivitySendingFile": "Отправляет файл...",
+  "chatActivitySendingFileOne": "{name} отправляет файл...",
+  "chatActivitySendingFileMany": "{name} и ещё {count} отправляют файлы..."
 }

@@ -3,12 +3,29 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
-// #***! что делает собеседник, печатает или выбирает стикер
-enum ChatActivity { typing, sticker }
+enum ChatActivity {
+  typing('TEXT'),
+  recordingVoice('AUDIO'),
+  recordingVideoNote('VIDEO'),
+  sendingPhoto('PHOTO'),
+  sendingFile('FILE'),
+  sticker('STICKER');
 
-// #***! тип строкой, всё кроме STICKER считаем печатью
-ChatActivity chatActivityFromType(dynamic type) =>
-    type == 'STICKER' ? ChatActivity.sticker : ChatActivity.typing;
+  const ChatActivity(this.wireType);
+
+  final String wireType;
+
+  static const List<ChatActivity> byPriority = values;
+}
+
+ChatActivity chatActivityFromType(dynamic type) => switch (type) {
+  'STICKER' => ChatActivity.sticker,
+  'AUDIO' || 'VOICE' => ChatActivity.recordingVoice,
+  'VIDEO' || 'VIDEO_MESSAGE' => ChatActivity.recordingVideoNote,
+  'PHOTO' || 'IMAGE' => ChatActivity.sendingPhoto,
+  'FILE' => ChatActivity.sendingFile,
+  _ => ChatActivity.typing,
+};
 
 // #***! что происходит и кто этим занят
 class ChatActivitySnapshot {
@@ -115,13 +132,11 @@ class ChatActivityStore {
     _sync(chatId);
   }
 
-  // #***! кто то печатает, показываем печать она важнее стикера
   ChatActivitySnapshot? _current(int chatId) {
     final users = _users[chatId];
     if (users == null || users.isEmpty) return null;
-    final leading = users.values.contains(ChatActivity.typing)
-        ? ChatActivity.typing
-        : ChatActivity.sticker;
+    final present = users.values.toSet();
+    final leading = ChatActivity.byPriority.firstWhere(present.contains);
     final ids = <int>[];
     users.forEach((userId, activity) {
       if (activity == leading) ids.add(userId);

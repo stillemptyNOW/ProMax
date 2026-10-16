@@ -12013,6 +12013,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unknown error'**
   String get errorUnknown;
+
+  /// No description provided for @chatActivityRecordingVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording a voice message...'**
+  String get chatActivityRecordingVoice;
+
+  /// No description provided for @chatActivityRecordingVoiceOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is recording a voice message...'**
+  String chatActivityRecordingVoiceOne(String name);
+
+  /// No description provided for @chatActivityRecordingVoiceMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} more are recording voice messages...'**
+  String chatActivityRecordingVoiceMany(String name, int count);
+
+  /// No description provided for @chatActivityRecordingVideoNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording a video message...'**
+  String get chatActivityRecordingVideoNote;
+
+  /// No description provided for @chatActivityRecordingVideoNoteOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is recording a video message...'**
+  String chatActivityRecordingVideoNoteOne(String name);
+
+  /// No description provided for @chatActivityRecordingVideoNoteMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} more are recording video messages...'**
+  String chatActivityRecordingVideoNoteMany(String name, int count);
+
+  /// No description provided for @chatActivitySendingPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending a photo...'**
+  String get chatActivitySendingPhoto;
+
+  /// No description provided for @chatActivitySendingPhotoOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is sending a photo...'**
+  String chatActivitySendingPhotoOne(String name);
+
+  /// No description provided for @chatActivitySendingPhotoMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} more are sending photos...'**
+  String chatActivitySendingPhotoMany(String name, int count);
+
+  /// No description provided for @chatActivitySendingFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending a file...'**
+  String get chatActivitySendingFile;
+
+  /// No description provided for @chatActivitySendingFileOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is sending a file...'**
+  String chatActivitySendingFileOne(String name);
+
+  /// No description provided for @chatActivitySendingFileMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} more are sending files...'**
+  String chatActivitySendingFileMany(String name, int count);
 }
 
 class _AppLocalizationsDelegate

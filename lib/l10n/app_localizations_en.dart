@@ -6770,4 +6770,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorUnknown => 'Unknown error';
+
+  @override
+  String get chatActivityRecordingVoice => 'Recording a voice message...';
+
+  @override
+  String chatActivityRecordingVoiceOne(String name) {
+    return '$name is recording a voice message...';
+  }
+
+  @override
+  String chatActivityRecordingVoiceMany(String name, int count) {
+    return '$name and $count more are recording voice messages...';
+  }
+
+  @override
+  String get chatActivityRecordingVideoNote => 'Recording a video message...';
+
+  @override
+  String chatActivityRecordingVideoNoteOne(String name) {
+    return '$name is recording a video message...';
+  }
+
+  @override
+  String chatActivityRecordingVideoNoteMany(String name, int count) {
+    return '$name and $count more are recording video messages...';
+  }
+
+  @override
+  String get chatActivitySendingPhoto => 'Sending a photo...';
+
+  @override
+  String chatActivitySendingPhotoOne(String name) {
+    return '$name is sending a photo...';
+  }
+
+  @override
+  String chatActivitySendingPhotoMany(String name, int count) {
+    return '$name and $count more are sending photos...';
+  }
+
+  @override
+  String get chatActivitySendingFile => 'Sending a file...';
+
+  @override
+  String chatActivitySendingFileOne(String name) {
+    return '$name is sending a file...';
+  }
+
+  @override
+  String chatActivitySendingFileMany(String name, int count) {
+    return '$name and $count more are sending files...';
+  }
 }
