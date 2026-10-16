@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import '../utils/external_tool.dart';
 import '../utils/logger.dart';
 import 'video_transcoder.dart' show VideoInfo;
 
@@ -22,11 +23,19 @@ class DesktopVideoProbe {
 
   static Future<bool> toolsAvailable() => _toolsAvailable();
 
+  static String get _ffprobe => ExternalTool.resolve('ffprobe')!;
+
+  static String get _ffmpeg => ExternalTool.resolve('ffmpeg')!;
+
   static Future<bool> _toolsAvailable() async {
     if (_hasTools != null) return _hasTools!;
     if (!supported) return _hasTools = false;
+    final ffprobe = ExternalTool.resolve('ffprobe');
+    if (ffprobe == null || ExternalTool.resolve('ffmpeg') == null) {
+      return _hasTools = false;
+    }
     try {
-      final probe = await Process.run('ffprobe', const [
+      final probe = await Process.run(ffprobe, const [
         '-version',
       ]).timeout(_timeout);
       _hasTools = probe.exitCode == 0;
@@ -42,7 +51,7 @@ class DesktopVideoProbe {
     if (!await _toolsAvailable()) return null;
     Duration? result;
     try {
-      final out = await Process.run('ffprobe', [
+      final out = await Process.run(_ffprobe, [
         '-v',
         'error',
         '-show_entries',
@@ -68,7 +77,7 @@ class DesktopVideoProbe {
     if (!await _toolsAvailable()) return null;
     (int, int)? result;
     try {
-      final out = await Process.run('ffprobe', [
+      final out = await Process.run(_ffprobe, [
         '-v',
         'error',
         '-select_streams',
@@ -94,7 +103,7 @@ class DesktopVideoProbe {
   static Future<VideoInfo?> info(String path) async {
     if (!await _toolsAvailable()) return null;
     try {
-      final out = await Process.run('ffprobe', [
+      final out = await Process.run(_ffprobe, [
         '-v',
         'error',
         '-show_entries',
@@ -162,7 +171,7 @@ class DesktopVideoProbe {
     String seek,
   ) async {
     try {
-      final out = await Process.run('ffmpeg', [
+      final out = await Process.run(_ffmpeg, [
         '-v',
         'error',
         '-ss',

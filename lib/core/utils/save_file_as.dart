@@ -7,6 +7,8 @@ import 'package:path/path.dart' as p;
 
 import 'logger.dart';
 import '../security/app_lock.dart';
+import '../security/file_name_policy.dart';
+import '../security/mark_of_the_web.dart';
 
 const _documentExport = MethodChannel('io.github.stillemptynow.promax/media_export');
 
@@ -31,8 +33,10 @@ Future<SaveFileAsResult> saveFileAs({
   required String fileName,
   required String dialogTitle,
 }) async {
-  final safeName = p.basename(fileName).trim();
-  final name = safeName.isEmpty ? p.basename(source.path) : safeName;
+  final name = sanitizeFileName(
+    fileName,
+    fallback: sanitizeFileName(p.basename(source.path)),
+  );
   try {
     if (!kIsWeb && Platform.isAndroid) {
       return await _exportDocument(source, name);
@@ -43,11 +47,12 @@ Future<SaveFileAsResult> saveFileAs({
     if (directory == null) {
       return const SaveFileAsResult(saved: false, cancelled: true);
     }
-    final target = await _availableTarget(directory, name);
+    final target = await availableFileIn(directory, name);
     if (p.equals(p.absolute(source.path), p.absolute(target.path))) {
       return SaveFileAsResult(saved: true, path: target.path);
     }
     await source.copy(target.path);
+    await MarkOfTheWeb.apply(target.path);
     return SaveFileAsResult(saved: true, path: target.path);
   } catch (error) {
     logger.w('[saveAs] $name: $error');
@@ -62,18 +67,4 @@ Future<SaveFileAsResult> _exportDocument(File source, String name) async {
   });
   if (uri == null) return const SaveFileAsResult(saved: false, cancelled: true);
   return SaveFileAsResult(saved: true, path: uri);
-}
-
-// #***! такой файл уже есть, дописываем (2) как проводник
-Future<File> _availableTarget(String directory, String fileName) async {
-  var target = File(p.join(directory, fileName));
-  if (!await target.exists()) return target;
-  final extension = p.extension(fileName);
-  final stem = p.basenameWithoutExtension(fileName);
-  var suffix = 2;
-  while (await target.exists()) {
-    target = File(p.join(directory, '$stem ($suffix)$extension'));
-    suffix++;
-  }
-  return target;
 }

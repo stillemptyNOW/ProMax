@@ -75,6 +75,7 @@ object ShareIntake {
     fun materialize(context: Context, snapshot: Snapshot): Map<String, Any?>? {
         val files = ArrayList<Map<String, Any?>>()
         for (uri in snapshot.uris) {
+            if (!IncomingUris.isAcceptable(context, uri)) continue
             val copied = copyToCache(context, uri, snapshot.intentType)
             if (copied != null) files.add(copied)
         }

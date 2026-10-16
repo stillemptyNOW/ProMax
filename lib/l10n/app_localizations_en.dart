@@ -5021,6 +5021,104 @@ class AppLocalizationsEn extends AppLocalizations {
   String get webAppPhoneRequestShare => 'Share';
 
   @override
+  String get sandboxRiskyFileTitle => 'Potentially dangerous file';
+
+  @override
+  String sandboxRiskyFileMessage(String name, String extension) {
+    return '“$name” is a program or script ($extension). Once opened, it can do anything you can: read your files, install software, change settings. Open it only if you fully trust the sender.';
+  }
+
+  @override
+  String get sandboxRiskyFileOpen => 'Open anyway';
+
+  @override
+  String get sandboxOpenFileTitle => 'Open the file?';
+
+  @override
+  String sandboxOpenFileMessage(String name) {
+    return '“$name” will open in another app.';
+  }
+
+  @override
+  String get sandboxOpenFileConfirm => 'Open';
+
+  @override
+  String get sandboxDownloadTitle => 'Download the file?';
+
+  @override
+  String sandboxDownloadMessage(String app, String name, String host) {
+    return 'The mini app “$app” wants to save “$name” from $host. The file stays in ProMax\'s private folder; you\'ll find it in Downloads.';
+  }
+
+  @override
+  String sandboxDownloadRiskyNote(String extension) {
+    return 'This is a program or script ($extension). Don\'t open it unless you trust the mini app.';
+  }
+
+  @override
+  String get sandboxDownloadKeep => 'Save';
+
+  @override
+  String get sandboxDownloadSaveAs => 'Save as…';
+
+  @override
+  String get sandboxDownloadSaved => 'Saved to ProMax downloads';
+
+  @override
+  String get sandboxDownloadFailed => 'Couldn\'t download the file';
+
+  @override
+  String get sandboxLeaveTitle => 'Another website';
+
+  @override
+  String sandboxLeaveMessage(String host) {
+    return 'The mini app is opening $host. That site won\'t get access to ProMax features.';
+  }
+
+  @override
+  String sandboxLeaveExternalMessage(String host) {
+    return 'The mini app wants to open $host in your browser.';
+  }
+
+  @override
+  String get sandboxLeaveBrowser => 'In browser';
+
+  @override
+  String get sandboxLeaveHere => 'Open here';
+
+  @override
+  String get sandboxLinkBlocked =>
+      'Link blocked: addresses like this can open files and programs on your device';
+
+  @override
+  String get sandboxSectionTitle => 'SANDBOX';
+
+  @override
+  String get sandboxConfirmEveryFile => 'Ask before opening files';
+
+  @override
+  String get sandboxConfirmEveryFileHint =>
+      'Programs, scripts and shortcuts always open only after a warning.';
+
+  @override
+  String get sandboxStrictProcess => 'Strict process isolation';
+
+  @override
+  String get sandboxStrictProcessHint =>
+      'Blocks foreign DLLs injected through AppInit_DLLs, global hooks and legacy IMEs. Screen readers and Punto Switcher may stop working inside ProMax. Takes effect after a restart.';
+
+  @override
+  String get sandboxSettingFailed => 'Couldn\'t change the setting';
+
+  @override
+  String get sandboxSummary =>
+      'Mini apps can\'t reach your files and stay on their own site; downloads land in ProMax\'s private folder; links to files and system protocols don\'t open.';
+
+  @override
+  String get sandboxSummaryWindows =>
+      'On Windows every saved file is marked as downloaded from the internet, so SmartScreen and Office Protected View check it.';
+
+  @override
   String get promptDialogConfirm => 'Confirm';
 
   @override

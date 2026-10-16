@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "flutter_window.h"
+#include "process_hardening.h"
 #include "utils.h"
 
 namespace {
@@ -139,6 +140,8 @@ void ForwardToRunningInstance(const std::wstring& executable,
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
+  HardenProcess();
+
   ::SetCurrentProcessExplicitAppUserModelID(kAppUserModelId);
 
   std::vector<std::string> command_line_arguments =

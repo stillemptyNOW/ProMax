@@ -9050,6 +9050,168 @@ abstract class AppLocalizations {
   /// **'Share'**
   String get webAppPhoneRequestShare;
 
+  /// No description provided for @sandboxRiskyFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Potentially dangerous file'**
+  String get sandboxRiskyFileTitle;
+
+  /// No description provided for @sandboxRiskyFileMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” is a program or script ({extension}). Once opened, it can do anything you can: read your files, install software, change settings. Open it only if you fully trust the sender.'**
+  String sandboxRiskyFileMessage(String name, String extension);
+
+  /// No description provided for @sandboxRiskyFileOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open anyway'**
+  String get sandboxRiskyFileOpen;
+
+  /// No description provided for @sandboxOpenFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the file?'**
+  String get sandboxOpenFileTitle;
+
+  /// No description provided for @sandboxOpenFileMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” will open in another app.'**
+  String sandboxOpenFileMessage(String name);
+
+  /// No description provided for @sandboxOpenFileConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get sandboxOpenFileConfirm;
+
+  /// No description provided for @sandboxDownloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the file?'**
+  String get sandboxDownloadTitle;
+
+  /// No description provided for @sandboxDownloadMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The mini app “{app}” wants to save “{name}” from {host}. The file stays in ProMax\'s private folder; you\'ll find it in Downloads.'**
+  String sandboxDownloadMessage(String app, String name, String host);
+
+  /// No description provided for @sandboxDownloadRiskyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a program or script ({extension}). Don\'t open it unless you trust the mini app.'**
+  String sandboxDownloadRiskyNote(String extension);
+
+  /// No description provided for @sandboxDownloadKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get sandboxDownloadKeep;
+
+  /// No description provided for @sandboxDownloadSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as…'**
+  String get sandboxDownloadSaveAs;
+
+  /// No description provided for @sandboxDownloadSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to ProMax downloads'**
+  String get sandboxDownloadSaved;
+
+  /// No description provided for @sandboxDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t download the file'**
+  String get sandboxDownloadFailed;
+
+  /// No description provided for @sandboxLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Another website'**
+  String get sandboxLeaveTitle;
+
+  /// No description provided for @sandboxLeaveMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The mini app is opening {host}. That site won\'t get access to ProMax features.'**
+  String sandboxLeaveMessage(String host);
+
+  /// No description provided for @sandboxLeaveExternalMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The mini app wants to open {host} in your browser.'**
+  String sandboxLeaveExternalMessage(String host);
+
+  /// No description provided for @sandboxLeaveBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'In browser'**
+  String get sandboxLeaveBrowser;
+
+  /// No description provided for @sandboxLeaveHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Open here'**
+  String get sandboxLeaveHere;
+
+  /// No description provided for @sandboxLinkBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Link blocked: addresses like this can open files and programs on your device'**
+  String get sandboxLinkBlocked;
+
+  /// No description provided for @sandboxSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SANDBOX'**
+  String get sandboxSectionTitle;
+
+  /// No description provided for @sandboxConfirmEveryFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask before opening files'**
+  String get sandboxConfirmEveryFile;
+
+  /// No description provided for @sandboxConfirmEveryFileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Programs, scripts and shortcuts always open only after a warning.'**
+  String get sandboxConfirmEveryFileHint;
+
+  /// No description provided for @sandboxStrictProcess.
+  ///
+  /// In en, this message translates to:
+  /// **'Strict process isolation'**
+  String get sandboxStrictProcess;
+
+  /// No description provided for @sandboxStrictProcessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks foreign DLLs injected through AppInit_DLLs, global hooks and legacy IMEs. Screen readers and Punto Switcher may stop working inside ProMax. Takes effect after a restart.'**
+  String get sandboxStrictProcessHint;
+
+  /// No description provided for @sandboxSettingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change the setting'**
+  String get sandboxSettingFailed;
+
+  /// No description provided for @sandboxSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini apps can\'t reach your files and stay on their own site; downloads land in ProMax\'s private folder; links to files and system protocols don\'t open.'**
+  String get sandboxSummary;
+
+  /// No description provided for @sandboxSummaryWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'On Windows every saved file is marked as downloaded from the internet, so SmartScreen and Office Protected View check it.'**
+  String get sandboxSummaryWindows;
+
   /// No description provided for @promptDialogConfirm.
   ///
   /// In en, this message translates to:

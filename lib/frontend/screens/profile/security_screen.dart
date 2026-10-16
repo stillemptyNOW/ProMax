@@ -21,6 +21,7 @@ import '../../widgets/small_spinner.dart';
 import 'blacklist_screen.dart';
 import 'password_entry_screen.dart';
 import 'passcode_settings_screen.dart';
+import 'sandbox_settings_section.dart';
 import '../../../core/security/app_lock.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../core/config/app_shape.dart';
@@ -227,6 +228,12 @@ class _SecurityScreenState extends State<SecurityScreen>
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                       child: _buildConfidentialSection(cs),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 20, 16, 0),
+                      child: SandboxSettingsSection(),
                     ),
                   ),
                   SliverToBoxAdapter(

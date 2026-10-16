@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../backend/modules/digital_id.dart';
+import '../../../core/security/url_policy.dart';
 import '../../../core/utils/webview_support.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart' show digitalIdModule;
@@ -152,8 +153,8 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
       // Госуслуги (ЕСИА) открываем во ВНЕШНЕМ браузере — их антифрод режет
       // встроенный webview. Возврат придёт диплинком max.ru?externalCallback=1
       // (deep_link_service -> опкод 105), после чего экран перезагрузится.
-      final uri = Uri.tryParse(link.url);
-      if (uri != null) {
+      final uri = parseExternalUri(link.url);
+      if (uri != null && isWebUri(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     } on DigitalIdException catch (e) {

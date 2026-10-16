@@ -5063,6 +5063,104 @@ class AppLocalizationsRu extends AppLocalizations {
   String get webAppPhoneRequestShare => 'Поделиться';
 
   @override
+  String get sandboxRiskyFileTitle => 'Опасный файл';
+
+  @override
+  String sandboxRiskyFileMessage(String name, String extension) {
+    return '«$name» — программа или скрипт ($extension). Открыв его, вы разрешите ему всё, что можете сами: читать файлы, ставить программы, менять настройки. Открывайте, только если полностью доверяете отправителю.';
+  }
+
+  @override
+  String get sandboxRiskyFileOpen => 'Всё равно открыть';
+
+  @override
+  String get sandboxOpenFileTitle => 'Открыть файл?';
+
+  @override
+  String sandboxOpenFileMessage(String name) {
+    return '«$name» откроется в другом приложении.';
+  }
+
+  @override
+  String get sandboxOpenFileConfirm => 'Открыть';
+
+  @override
+  String get sandboxDownloadTitle => 'Скачать файл?';
+
+  @override
+  String sandboxDownloadMessage(String app, String name, String host) {
+    return 'Мини-приложение «$app» хочет сохранить «$name» с $host. Файл останется во внутренней папке ProMax, его можно найти в «Загрузках».';
+  }
+
+  @override
+  String sandboxDownloadRiskyNote(String extension) {
+    return 'Это программа или скрипт ($extension). Не открывайте его, если не доверяете мини-приложению.';
+  }
+
+  @override
+  String get sandboxDownloadKeep => 'Сохранить';
+
+  @override
+  String get sandboxDownloadSaveAs => 'Сохранить как…';
+
+  @override
+  String get sandboxDownloadSaved => 'Файл сохранён в «Загрузки» ProMax';
+
+  @override
+  String get sandboxDownloadFailed => 'Не удалось скачать файл';
+
+  @override
+  String get sandboxLeaveTitle => 'Другой сайт';
+
+  @override
+  String sandboxLeaveMessage(String host) {
+    return 'Мини-приложение открывает $host. У этого сайта не будет доступа к функциям ProMax.';
+  }
+
+  @override
+  String sandboxLeaveExternalMessage(String host) {
+    return 'Мини-приложение хочет открыть $host в браузере.';
+  }
+
+  @override
+  String get sandboxLeaveBrowser => 'В браузере';
+
+  @override
+  String get sandboxLeaveHere => 'Открыть здесь';
+
+  @override
+  String get sandboxLinkBlocked =>
+      'Ссылка заблокирована: такие адреса могут открывать файлы и программы на устройстве';
+
+  @override
+  String get sandboxSectionTitle => 'ПЕСОЧНИЦА';
+
+  @override
+  String get sandboxConfirmEveryFile => 'Спрашивать перед открытием файлов';
+
+  @override
+  String get sandboxConfirmEveryFileHint =>
+      'Программы, скрипты и ярлыки открываются только после предупреждения всегда.';
+
+  @override
+  String get sandboxStrictProcess => 'Строгая изоляция процесса';
+
+  @override
+  String get sandboxStrictProcessHint =>
+      'Запрещает внедрять чужие библиотеки через AppInit_DLLs, глобальные хуки и старые IME. Экранные дикторы и Punto Switcher могут перестать работать в ProMax. Действует после перезапуска.';
+
+  @override
+  String get sandboxSettingFailed => 'Не удалось изменить настройку';
+
+  @override
+  String get sandboxSummary =>
+      'Мини-приложения не видят ваши файлы и остаются на своём сайте, их загрузки лежат во внутренней папке ProMax, а ссылки на файлы и системные протоколы не открываются.';
+
+  @override
+  String get sandboxSummaryWindows =>
+      'На Windows каждый сохранённый файл помечается как скачанный из интернета, поэтому его проверяют SmartScreen и защищённый просмотр Office.';
+
+  @override
   String get promptDialogConfirm => 'Подтвердить';
 
   @override

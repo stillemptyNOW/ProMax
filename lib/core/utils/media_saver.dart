@@ -6,6 +6,8 @@ import 'package:photo_manager/photo_manager.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../config/device_profile.dart';
+import '../security/file_name_policy.dart';
+import '../security/mark_of_the_web.dart';
 import 'download_history.dart';
 import 'image_format.dart';
 import 'media_cache.dart';
@@ -152,6 +154,7 @@ Future<MediaSaveResult> _write(
   required String saveName,
   required SaveMediaKind kind,
 }) async {
+  final safeName = sanitizeFileName(saveName);
   final toGallery = kind == SaveMediaKind.image || kind == SaveMediaKind.video;
   if (savesToGallery && toGallery) {
     if (!await _mayWriteGallery()) {
@@ -161,17 +164,18 @@ Future<MediaSaveResult> _write(
       );
     }
     if (kind == SaveMediaKind.video) {
-      await PhotoManager.editor.saveVideo(file, title: saveName);
+      await PhotoManager.editor.saveVideo(file, title: safeName);
     } else {
       final bytes = await file.readAsBytes();
-      await PhotoManager.editor.saveImage(bytes, filename: saveName);
+      await PhotoManager.editor.saveImage(bytes, filename: safeName);
     }
     return const MediaSaveResult(ok: true, toGallery: true);
   }
 
   final dir = await _targetDirectory();
-  final target = File('${dir.path}${Platform.pathSeparator}$saveName');
+  final target = await availableFileIn(dir.path, safeName);
   await file.copy(target.path);
+  await MarkOfTheWeb.apply(target.path);
   return MediaSaveResult(ok: true, location: target.path);
 }
 

@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 
+import '../../security/incoming_paths.dart';
 import 'clipboard_channel.dart';
 import 'clipboard_media_types.dart';
 import 'dib_image.dart';
@@ -36,7 +38,16 @@ class ClipboardMedia {
 
     if (raw.paths.isNotEmpty) {
       final files = <ClipboardFileRef>[];
+      final privateRoots = await _privateRoots();
       for (final path in raw.paths) {
+        if (privateRoots != null &&
+            !isPastableLocalPath(
+              path,
+              privateRoots: privateRoots,
+              windows: Platform.isWindows,
+            )) {
+          continue;
+        }
         final file = File(path);
         if (!file.existsSync()) continue;
         files.add(
@@ -71,6 +82,15 @@ class ClipboardMedia {
       }
     }
     return null;
+  }
+
+  static Future<List<String>?> _privateRoots() async {
+    if (Platform.isAndroid || Platform.isIOS) return null;
+    try {
+      return [(await getApplicationSupportDirectory()).path];
+    } catch (_) {
+      return const [];
+    }
   }
 
   static Future<RawClipboardMedia?> _readRaw() {

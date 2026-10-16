@@ -14,6 +14,10 @@ class _Controller extends PlatformInAppWebViewController {
 
   final handlers = <String, JavaScriptHandlerCallback>{};
   bool technicalError = true;
+  WebUri? page;
+
+  @override
+  Future<WebUri?> getUrl() async => page;
 
   @override
   Future<String> getDefaultUserAgent() async => 'Synthetic WebView';
@@ -37,12 +41,20 @@ class _Controller extends PlatformInAppWebViewController {
 class _WebWidget extends PlatformInAppWebViewWidget {
   _WebWidget(PlatformInAppWebViewWidgetCreationParams params, this.controller)
     : super.implementation(params) {
+    controller.page = params.initialUrlRequest?.url;
     params.onWebViewCreated?.call(
       controllerFromPlatform<InAppWebViewController>(controller),
     );
   }
 
   final _Controller controller;
+
+  String get nonce => RegExp(
+    r"var nonce = '([0-9a-f]+)'",
+  ).firstMatch(params.initialUserScripts!.first.source)!.group(1)!;
+
+  Future<dynamic> post(List<dynamic> args) =>
+      Future.value(controller.handlers['webAppEvent']!([nonce, ...args]));
 
   @override
   Widget build(BuildContext context) => const SizedBox.expand();
@@ -134,11 +146,7 @@ void main() {
       );
       expect(launches, 1);
       final first = platform.views.single;
-      await first.controller.handlers['webAppEvent']!([
-        'WebAppClose',
-        '{}',
-        false,
-      ]);
+      await first.post(['WebAppClose', '{}', false]);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 20));
       expect(launches, 2);
@@ -161,14 +169,57 @@ void main() {
         url: 'https://example.test/digital-id',
       );
     });
-    final controller = platform.views.single.controller..technicalError = false;
-    await controller.handlers['webAppEvent']!(['WebAppClose', '{}', false]);
+    final view = platform.views.single;
+    view.controller.technicalError = false;
+    await view.post(['WebAppClose', '{}', false]);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(milliseconds: 400));
     expect(launches, 1);
     expect(find.text('Open'), findsOneWidget);
     expect(find.text('Synthetic digital ID'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('ignores bridge calls without the page secret', (tester) async {
+    await open(
+      tester,
+      () async =>
+          const WebAppLaunch(botId: 101, url: 'https://example.test/app'),
+    );
+    final view = platform.views.single;
+    view.controller.technicalError = false;
+    await view.controller.handlers['webAppEvent']!([
+      'WebAppClose',
+      '{}',
+      false,
+    ]);
+    await view.controller.handlers['webAppEvent']!([
+      'forged',
+      'WebAppClose',
+      '{}',
+      false,
+    ]);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Synthetic digital ID'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('ignores bridge calls from a foreign page', (tester) async {
+    await open(
+      tester,
+      () async =>
+          const WebAppLaunch(botId: 101, url: 'https://example.test/app'),
+    );
+    final view = platform.views.single;
+    view.controller
+      ..technicalError = false
+      ..page = WebUri('https://elsewhere.example.org/');
+    await view.post(['WebAppClose', '{}', false]);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Synthetic digital ID'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 }
