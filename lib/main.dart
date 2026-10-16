@@ -772,11 +772,6 @@ class ProMaxAppState extends State<ProMaxApp>
 
   @override
   Future<ui.AppExitResponse> didRequestAppExit() async {
-    final window = DesktopWindow.instance;
-    if (window.supported && window.closeToTray.value) {
-      await window.hide();
-      return ui.AppExitResponse.cancel;
-    }
     await AppExitHooks.run();
     return ui.AppExitResponse.exit;
   }

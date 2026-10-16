@@ -231,6 +231,9 @@ void FlutterWindow::HandleWindowCall(const Call& call,
   } else if (method == "setAutostart") {
     const bool enabled = BoolArgument(call.arguments(), "enabled");
     result->Success(flutter::EncodableValue(SetAutostartEnabled(enabled)));
+  } else if (method == "setCloseToTray") {
+    close_to_tray_ = BoolArgument(call.arguments(), "enabled");
+    result->Success();
   } else if (method == "setTrayLabels") {
     const std::wstring open_label = StringArgument(call.arguments(), "open");
     const std::wstring exit_label = StringArgument(call.arguments(), "exit");
@@ -413,6 +416,11 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  if (message == WM_CLOSE && close_to_tray_ && tray_added_) {
+    HideToTray();
+    return 0;
+  }
+
   // Give Flutter, including plugins, an opportunity to handle window messages.
   if (flutter_controller_) {
     std::optional<LRESULT> result =

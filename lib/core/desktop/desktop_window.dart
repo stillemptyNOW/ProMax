@@ -51,6 +51,7 @@ class DesktopWindow {
     _channel.setMethodCallHandler(_onNativeCall);
     final prefs = await SharedPreferences.getInstance();
     closeToTray.value = prefs.getBool(closeToTrayPrefKey) ?? true;
+    await _invoke<void>('setCloseToTray', {'enabled': closeToTray.value});
     autostart.value = await _invoke<bool>('autostart') ?? false;
     await _invoke<void>('setTrayLabels', {
       'open': 'Открыть ProMax',
@@ -60,6 +61,7 @@ class DesktopWindow {
 
   Future<void> setCloseToTray(bool value) async {
     closeToTray.value = value;
+    await _invoke<void>('setCloseToTray', {'enabled': value});
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(closeToTrayPrefKey, value);
   }

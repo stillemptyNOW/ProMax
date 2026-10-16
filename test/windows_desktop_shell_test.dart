@@ -50,6 +50,7 @@ void main() {
       'quit',
       'autostart',
       'setAutostart',
+      'setCloseToTray',
       'setTrayLabels',
       'quitRequested',
     ]) {

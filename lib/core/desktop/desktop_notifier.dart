@@ -91,15 +91,25 @@ class DesktopNotifier {
               packet.opcode == Opcode.notifMsgDelete,
         )
         .listen(_onPush);
-    _callSub = CallController.instance.incomingCalls.listen(_onIncomingCall);
+    _callSub = CallController.instance.incomingCalls.listen(
+      (call) => unawaited(_guard('звонок', () => _onIncomingCall(call))),
+    );
     _callCanceledSub = CallController.instance.incomingCanceled.listen(
-      (_) => unawaited(_onCallGone()),
+      (_) => unawaited(_guard('пропущенный звонок', _onCallGone)),
     );
     try {
       await initLocalNotificationActions().timeout(const Duration(seconds: 10));
       _ready = true;
     } catch (e) {
       logger.w('DesktopNotifier: уведомления недоступны: $e');
+    }
+  }
+
+  Future<void> _guard(String what, Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (e) {
+      logger.w('DesktopNotifier: $what: $e');
     }
   }
 
@@ -383,7 +393,7 @@ class DesktopNotifier {
       actionId: response.actionId,
     );
     if (intent == null) return false;
-    unawaited(_handle(intent, response));
+    unawaited(_guard('нажатие', () => _handle(intent, response)));
     return true;
   }
 

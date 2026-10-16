@@ -275,6 +275,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   void _bind(CallSession session) {
     _session = session;
     _state = session.currentState;
+    _syncTone(_state);
     _stateSub = session.stateStream.listen(_onState);
     _infoSub = session.infoUpdates.listen((_) {
       if (!mounted) return;
@@ -368,13 +369,17 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   void _onState(CallSessionState state) {
     if (!mounted) return;
     setState(() => _state = state);
+    _syncTone(state);
+    if (state == CallSessionState.ended) _close();
+  }
+
+  void _syncTone(CallSessionState state) {
     if (state == CallSessionState.ringing &&
         _session?.role == CallRole.caller) {
       unawaited(CallTones.instance.play(CallTone.ringback));
     } else {
       unawaited(CallTones.instance.stop());
     }
-    if (state == CallSessionState.ended) _close();
   }
 
   Future<void> _accept() async {

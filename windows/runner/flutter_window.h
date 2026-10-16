@@ -62,6 +62,7 @@ class FlutterWindow : public Win32Window {
   std::unique_ptr<Channel> screen_channel_;
 
   bool start_hidden_ = false;
+  bool close_to_tray_ = true;
   bool tray_added_ = false;
   HWND tray_window_ = nullptr;
   UINT taskbar_created_message_ = 0;
