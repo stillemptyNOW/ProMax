@@ -10,9 +10,7 @@ import '../security/app_lock.dart';
 import '../security/file_name_policy.dart';
 import '../security/mark_of_the_web.dart';
 
-const _documentExport = MethodChannel(
-  'io.github.stillemptynow.promax/media_export',
-);
+const _documentExport = MethodChannel('io.github.stillemptynow.promax/media_export');
 
 // #***! итог сохранить как, отмену отличаем от ошибки
 class SaveFileAsResult {

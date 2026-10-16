@@ -259,6 +259,8 @@ class WebAppBridge {
     return false;
   }
 
+  bool get userHasInteracted => _lastGesture != null;
+
   void registerGesture() => _lastGesture = DateTime.now();
 
   void notifyBackPressed() => _send('WebAppBackButtonPressed', const {});

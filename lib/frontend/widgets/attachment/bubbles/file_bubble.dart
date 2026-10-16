@@ -248,9 +248,8 @@ class FileBubble extends StatelessWidget {
       name.toLowerCase().endsWith('.png') ||
       name.toLowerCase().endsWith('.kce');
 
-  Uint8List? get _sealedTicket => ctx.message.e2ee == CachedMessage.e2eeFile
-      ? ctx.message.sealedText
-      : null;
+  Uint8List? get _sealedTicket =>
+      ctx.message.e2ee == CachedMessage.e2eeFile ? ctx.message.sealedText : null;
 
   static bool _hasCover(String name) {
     final dot = name.lastIndexOf('.');
@@ -546,7 +545,9 @@ class FileBubble extends StatelessWidget {
       final l10n = AppLocalizations.of(context)!;
       showCustomNotification(
         context,
-        l10n.securityLoadError(result.error ?? l10n.fileBubbleOpenFailedReason),
+        l10n.securityLoadError(
+          result.error ?? l10n.fileBubbleOpenFailedReason,
+        ),
       );
     }
   }
@@ -642,8 +643,7 @@ class _AudioFilePlaybackControl extends StatelessWidget {
     return ValueListenableBuilder<AudioFileTrack?>(
       valueListenable: MediaPlayback.instance.audioFile,
       builder: (context, track, _) =>
-          track?.cacheName != cacheName ||
-              !AudioPlaybackController.isInitialized
+          track?.cacheName != cacheName || !AudioPlaybackController.isInitialized
           ? const SizedBox.shrink()
           : _AudioFileScrubber(color: color, textColor: textColor),
     );
@@ -672,10 +672,7 @@ class _AudioFileScrubberState extends State<_AudioFileScrubber> {
         final total = audio.duration.value.inMilliseconds;
         final elapsed = _dragMilliseconds != null
             ? _dragMilliseconds!.round()
-            : audio.position.value.inMilliseconds.clamp(
-                0,
-                total > 0 ? total : 0,
-              );
+            : audio.position.value.inMilliseconds.clamp(0, total > 0 ? total : 0);
         return Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Row(

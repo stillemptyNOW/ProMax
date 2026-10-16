@@ -80,7 +80,6 @@ class _WebAppScreenState extends State<WebAppScreen> {
   WebAppLaunch? _launch;
   WebAppOriginPolicy? _origins;
   WebViewEnvironment? _environment;
-  bool _initialLoadDone = false;
   String? _loadError;
   String _userAgent = '';
   double _progress = 0;
@@ -130,7 +129,6 @@ class _WebAppScreenState extends State<WebAppScreen> {
       setState(() {
         _launch = launch;
         _origins = origins;
-        _initialLoadDone = false;
         _bridge = _createBridge(launch.botId, origins);
       });
     } catch (e) {
@@ -275,7 +273,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
     if (!mainFrame || origins == null || origins.mayNavigate(uri)) {
       return NavigationActionPolicy.ALLOW;
     }
-    if (!_initialLoadDone) {
+    if (!(_bridge?.userHasInteracted ?? false)) {
       origins.trust(uri);
       return NavigationActionPolicy.ALLOW;
     }
@@ -438,7 +436,6 @@ class _WebAppScreenState extends State<WebAppScreen> {
           _handleWebDownload(request),
       onConsoleMessage: widget.onConsoleMessage,
       onLoadStart: widget.onLoadStart,
-      onLoadStop: (controller, url) => _initialLoadDone = true,
       shouldOverrideUrlLoading: _handleNavigation,
       onProgressChanged: (controller, progress) {
         if (!mounted) return;
