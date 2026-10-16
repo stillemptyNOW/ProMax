@@ -11857,6 +11857,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ProMax file · .promax'**
   String get proMaxArchiveTitle;
+
+  /// No description provided for @privacySandboxTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & sandbox'**
+  String get privacySandboxTitle;
+
+  /// No description provided for @privacySandboxIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax has no analytics or crash reporting and sends no telemetry to MAX. These options limit what MAX, mini-apps and third-party services learn about your device and network.'**
+  String get privacySandboxIntro;
+
+  /// No description provided for @privacySectionDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Device'**
+  String get privacySectionDevice;
+
+  /// No description provided for @privacyHideDeviceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide device details'**
+  String get privacyHideDeviceLabel;
+
+  /// No description provided for @privacyHideDeviceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New sign-ins appear as a typical Android phone with random identifiers, without your model, OS build, time zone or language'**
+  String get privacyHideDeviceSubtitle;
+
+  /// No description provided for @privacyAccountRealDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This account was signed in earlier and still sends the real device details'**
+  String get privacyAccountRealDevice;
+
+  /// No description provided for @privacyAccountHiddenDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This account uses a substitute device profile'**
+  String get privacyAccountHiddenDevice;
+
+  /// No description provided for @privacyApplyToAccountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide device for this account'**
+  String get privacyApplyToAccountLabel;
+
+  /// No description provided for @privacyApplyToAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Model, OS, time zone and language will be replaced with a typical profile. The device identifier stays the same, so the session is kept. The app will reconnect.'**
+  String get privacyApplyToAccountMessage;
+
+  /// No description provided for @privacyApplyToAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get privacyApplyToAccountConfirm;
+
+  /// No description provided for @privacyApplyToAccountDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Device details are hidden for this account'**
+  String get privacyApplyToAccountDone;
+
+  /// No description provided for @privacyApplyToAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not apply: {error}'**
+  String privacyApplyToAccountFailed(String error);
+
+  /// No description provided for @privacySectionMiniApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini-apps'**
+  String get privacySectionMiniApps;
+
+  /// No description provided for @privacyNeutralAgentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Neutral User-Agent'**
+  String get privacyNeutralAgentLabel;
+
+  /// No description provided for @privacyNeutralAgentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini-apps and Digital ID do not see your phone model and OS build'**
+  String get privacyNeutralAgentSubtitle;
+
+  /// No description provided for @privacyIsolateMiniAppsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Isolate mini-apps'**
+  String get privacyIsolateMiniAppsLabel;
+
+  /// No description provided for @privacyIsolateMiniAppsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookies and site data of each launch are erased when it closes. Digital ID and Gosuslugi keep their sign-in'**
+  String get privacyIsolateMiniAppsSubtitle;
+
+  /// No description provided for @privacyBlockTrackersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Block trackers'**
+  String get privacyBlockTrackersLabel;
+
+  /// No description provided for @privacyBlockTrackersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Top@Mail.ru, Yandex Metrica, Google Analytics and other counters inside mini-apps'**
+  String get privacyBlockTrackersSubtitle;
+
+  /// No description provided for @privacySectionCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get privacySectionCalls;
+
+  /// No description provided for @privacyHideLocalAddressesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide local addresses'**
+  String get privacyHideLocalAddressesLabel;
+
+  /// No description provided for @privacyHideLocalAddressesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Addresses of your home or office network are not sent to the other party or the server'**
+  String get privacyHideLocalAddressesSubtitle;
+
+  /// No description provided for @privacyRelayCallsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide my IP in calls'**
+  String get privacyRelayCallsLabel;
+
+  /// No description provided for @privacyRelayCallsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls go only through MAX relay servers. Calls may connect slower'**
+  String get privacyRelayCallsSubtitle;
+
+  /// No description provided for @privacySectionNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get privacySectionNetwork;
+
+  /// No description provided for @privacySessionIpLookupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Look up session locations'**
+  String get privacySessionIpLookupLabel;
+
+  /// No description provided for @privacySessionIpLookupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'In Devices, the IP of the session you tap is sent over HTTPS to {host}'**
+  String privacySessionIpLookupSubtitle(String host);
+
+  /// No description provided for @privacySessionIpLookupConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the IP to a third party?'**
+  String get privacySessionIpLookupConfirmTitle;
+
+  /// No description provided for @privacySessionIpLookupConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'To show the location, the session IP is sent over HTTPS to {host}. You can turn this off in Privacy & sandbox.'**
+  String privacySessionIpLookupConfirmMessage(String host);
+
+  /// No description provided for @privacySessionIpLookupConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get privacySessionIpLookupConfirmAction;
+
+  /// No description provided for @privacyAutoUpdateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates automatically'**
+  String get privacyAutoUpdateLabel;
+
+  /// No description provided for @privacyAutoUpdateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'At most every 6 hours a request goes to GitHub. The manual check stays in settings'**
+  String get privacyAutoUpdateSubtitle;
+
+  /// No description provided for @privacyNoticeTls.
+  ///
+  /// In en, this message translates to:
+  /// **'The Russian Ministry of Digital Development root certificate is trusted only for MAX and Gosuslugi servers.'**
+  String get privacyNoticeTls;
+
+  /// No description provided for @privacyNoticeFirebase.
+  ///
+  /// In en, this message translates to:
+  /// **'This build receives notifications through Firebase: the push token is known to Google and MAX.'**
+  String get privacyNoticeFirebase;
 }
 
 class _AppLocalizationsDelegate

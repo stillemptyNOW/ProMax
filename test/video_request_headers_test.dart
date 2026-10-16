@@ -1,25 +1,28 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/core/media/video_request_headers.dart';
 
-const _agent = 'SyntheticAgent/1.0 (Android 14)';
+const _agent = 'SyntheticAgent/1.0 (Android 14; Synthetic Phone; 1x1)';
+const _cdnAgent = 'SyntheticAgent/1.0 (Android)';
 
 Map<String, String> _headers(String url, {String? agent = _agent}) =>
     videoRequestHeaders(Uri.parse(url), sessionUserAgent: agent);
 
 void main() {
-  test('ссылки okcdn получают User-Agent сессии', () {
-    expect(_headers('https://vd1.okcdn.ru/?expires=1'), {'User-Agent': _agent});
+  test('ссылки okcdn получают продукт из User-Agent сессии', () {
+    expect(_headers('https://vd1.okcdn.ru/?expires=1'), {
+      'User-Agent': _cdnAgent,
+    });
   });
 
-  test('ссылки vkuser.net получают User-Agent сессии', () {
+  test('ссылки vkuser.net получают продукт из User-Agent сессии', () {
     expect(_headers('https://cdn-1.vkuser.net/video.mp4?expires=1'), {
-      'User-Agent': _agent,
+      'User-Agent': _cdnAgent,
     });
   });
 
   test('любая ссылка с srcAg привязана к клиенту', () {
     expect(_headers('https://media.example.org/v.mp4?srcAg=UNKNOWN_ANDROID'), {
-      'User-Agent': _agent,
+      'User-Agent': _cdnAgent,
     });
   });
 
@@ -45,11 +48,11 @@ void main() {
     );
   });
 
-  test('агент с Android уходит без изменений', () {
+  test('модель, ОС и экран Android-агента не уходят в CDN', () {
     const androidAgent =
-        'OKMessages/26.31.0 (Android 14; Samsung Galaxy S24 Ultra; '
+        'OKMessages/26.31.0 (Android 14; Synthetic Phone X; '
         'xxhdpi 450dpi 1440x3120)';
-    expect(cdnUserAgent(androidAgent), androidAgent);
+    expect(cdnUserAgent(androidAgent), 'OKMessages/26.31.0 (Android)');
   });
 
   test('агент без продукта заменяется на OKMessages', () {

@@ -6705,4 +6705,128 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proMaxArchiveTitle => 'Файл ProMax · .promax';
+
+  @override
+  String get privacySandboxTitle => 'Приватность и песочница';
+
+  @override
+  String get privacySandboxIntro =>
+      'В ProMax нет аналитики и отчётов о сбоях, телеметрия в MAX не отправляется. Эти настройки ограничивают, что MAX, мини-приложения и сторонние сервисы узнают о вашем устройстве и сети.';
+
+  @override
+  String get privacySectionDevice => 'Устройство';
+
+  @override
+  String get privacyHideDeviceLabel => 'Скрывать данные устройства';
+
+  @override
+  String get privacyHideDeviceSubtitle =>
+      'Новые входы выглядят как типовой Android-смартфон со случайными идентификаторами, без вашей модели, сборки ОС, часового пояса и языка';
+
+  @override
+  String get privacyAccountRealDevice =>
+      'Этот аккаунт вошёл раньше и пока отправляет настоящие данные устройства';
+
+  @override
+  String get privacyAccountHiddenDevice =>
+      'Этот аккаунт представляется подменным устройством';
+
+  @override
+  String get privacyApplyToAccountLabel =>
+      'Скрыть устройство для этого аккаунта';
+
+  @override
+  String get privacyApplyToAccountMessage =>
+      'Модель, ОС, часовой пояс и язык заменятся типовыми. Идентификатор устройства останется прежним, поэтому сессия сохранится. Приложение переподключится.';
+
+  @override
+  String get privacyApplyToAccountConfirm => 'Применить';
+
+  @override
+  String get privacyApplyToAccountDone =>
+      'Данные устройства для этого аккаунта скрыты';
+
+  @override
+  String privacyApplyToAccountFailed(String error) {
+    return 'Не удалось применить: $error';
+  }
+
+  @override
+  String get privacySectionMiniApps => 'Мини-приложения';
+
+  @override
+  String get privacyNeutralAgentLabel => 'Нейтральный User-Agent';
+
+  @override
+  String get privacyNeutralAgentSubtitle =>
+      'Мини-приложения и Цифровой ID не видят модель телефона и сборку ОС';
+
+  @override
+  String get privacyIsolateMiniAppsLabel => 'Изолировать мини-приложения';
+
+  @override
+  String get privacyIsolateMiniAppsSubtitle =>
+      'Куки и данные сайта каждого запуска стираются при закрытии. Цифровой ID и Госуслуги сохраняют вход';
+
+  @override
+  String get privacyBlockTrackersLabel => 'Блокировать трекеры';
+
+  @override
+  String get privacyBlockTrackersSubtitle =>
+      'Счётчики Top@Mail.ru, Яндекс Метрики, Google Analytics и другие внутри мини-приложений';
+
+  @override
+  String get privacySectionCalls => 'Звонки';
+
+  @override
+  String get privacyHideLocalAddressesLabel => 'Скрывать локальные адреса';
+
+  @override
+  String get privacyHideLocalAddressesSubtitle =>
+      'Адреса вашей домашней или рабочей сети не уходят собеседнику и серверу';
+
+  @override
+  String get privacyRelayCallsLabel => 'Скрывать мой IP в звонках';
+
+  @override
+  String get privacyRelayCallsSubtitle =>
+      'Звонки идут только через ретрансляторы MAX. Соединение может устанавливаться медленнее';
+
+  @override
+  String get privacySectionNetwork => 'Сеть';
+
+  @override
+  String get privacySessionIpLookupLabel => 'Определять местоположение сессий';
+
+  @override
+  String privacySessionIpLookupSubtitle(String host) {
+    return 'В «Устройствах» IP выбранной сессии отправляется по HTTPS на $host';
+  }
+
+  @override
+  String get privacySessionIpLookupConfirmTitle =>
+      'Отправить IP стороннему сервису?';
+
+  @override
+  String privacySessionIpLookupConfirmMessage(String host) {
+    return 'Чтобы показать местоположение, IP сессии будет отправлен по HTTPS на $host. Отключить можно в разделе «Приватность и песочница».';
+  }
+
+  @override
+  String get privacySessionIpLookupConfirmAction => 'Отправить';
+
+  @override
+  String get privacyAutoUpdateLabel => 'Проверять обновления автоматически';
+
+  @override
+  String get privacyAutoUpdateSubtitle =>
+      'Не чаще раза в 6 часов уходит запрос на GitHub. Ручная проверка остаётся в настройках';
+
+  @override
+  String get privacyNoticeTls =>
+      'Корневой сертификат Минцифры принимается только для серверов MAX и Госуслуг.';
+
+  @override
+  String get privacyNoticeFirebase =>
+      'Эта сборка получает уведомления через Firebase: push-токен известен Google и MAX.';
 }

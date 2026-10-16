@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/device_presets.dart';
 import '../../models/spoof_profile.dart';
+import 'device_identity.dart';
 import 'token_storage.dart';
 import '../utils/ids.dart';
 import '../utils/logger.dart';
@@ -22,6 +23,15 @@ class SpoofingService {
   static const String pendingScope = 'pending';
   static const String androidDeviceType = 'ANDROID';
   static const String defaultArchitecture = 'arm64-v8a';
+  static const String genericTimezone = 'Europe/Moscow';
+  static const String genericLanguage = 'ru';
+  static const List<String> genericDeviceNames = [
+    'Samsung Galaxy A54',
+    'Samsung Galaxy S24 Ultra',
+    'Samsung Galaxy S21 Ultra',
+    'Redmi Note 11 Pro',
+    'Google Pixel 7a',
+  ];
   static const List<String> supportedArchitectures = [
     'arm64-v8a',
     'armeabi-v7a',
@@ -89,8 +99,9 @@ class SpoofingService {
 
   // #***! новому аккаунту свободный пресет, два одинаковых устройства выглядят подозрительно
   static Future<SpoofProfile> prepareNewAccountSpoof(
-    List<int> existingAccountIds,
-  ) async {
+    List<int> existingAccountIds, {
+    bool generic = false,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
 
     final used = <String>{};
@@ -101,6 +112,23 @@ class SpoofingService {
       }
     }
 
+    final profile = generic
+        ? buildGenericProfile(
+            usedDeviceNames: used,
+            random: _rng,
+            deviceId: _hex(8),
+            instanceId: uuidV4(),
+          )
+        : _randomPresetProfile(used);
+
+    await prefs.setString(
+      _profileKey(pendingScope),
+      jsonEncode(profile.toJson()),
+    );
+    return profile;
+  }
+
+  static SpoofProfile _randomPresetProfile(Set<String> used) {
     bool isAndroid(DevicePreset p) => p.deviceType == androidDeviceType;
     final fresh = devicePresets
         .where((p) => isAndroid(p) && !used.contains(p.deviceName))
@@ -108,11 +136,10 @@ class SpoofingService {
     final pool = fresh.isNotEmpty
         ? fresh
         : devicePresets.where(isAndroid).toList();
-    // #***! свободные кончились, берём любой
     final preset = pool[_rng.nextInt(pool.length)];
     final shortLocale = preset.locale.split(RegExp(r'[-_]')).first;
 
-    final profile = SpoofProfile(
+    return SpoofProfile(
       enabled: true,
       deviceName: preset.deviceName,
       osVersion: preset.osVersion,
@@ -130,11 +157,68 @@ class SpoofingService {
       clientSessionId: _rng.nextInt(0x7FFFFFFF) + 1,
       userAgent: preset.userAgent,
     );
+  }
 
-    await prefs.setString(
-      _profileKey(pendingScope),
-      jsonEncode(profile.toJson()),
+  static List<DevicePreset> get genericPresets => [
+    for (final name in genericDeviceNames)
+      ...devicePresets.where(
+        (p) => p.deviceType == androidDeviceType && p.deviceName == name,
+      ),
+  ];
+
+  static SpoofProfile buildGenericProfile({
+    required Set<String> usedDeviceNames,
+    required Random random,
+    required String deviceId,
+    required String instanceId,
+  }) {
+    final pool = genericPresets;
+    final fresh = pool
+        .where((p) => !usedDeviceNames.contains(p.deviceName))
+        .toList();
+    final choices = fresh.isNotEmpty ? fresh : pool;
+    final preset = choices[random.nextInt(choices.length)];
+    return SpoofProfile(
+      enabled: true,
+      deviceName: preset.deviceName,
+      osVersion: preset.osVersion,
+      screen: preset.screen,
+      timezone: genericTimezone,
+      locale: genericLanguage,
+      deviceLocale: genericLanguage,
+      deviceId: deviceId,
+      deviceType: androidDeviceType,
+      arch: defaultArchitecture,
+      appVersion: hardcodedAppVersion,
+      buildNumber: hardcodedBuildNumber,
+      pushDeviceType: 'GCM',
+      instanceId: instanceId,
+      userAgent: preset.userAgent,
     );
+  }
+
+  static Future<void> ensurePendingProfile({
+    required Future<List<int>> Function() existingAccountIds,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (await _read(prefs, pendingScope) != null) return;
+    await prepareNewAccountSpoof(await existingAccountIds(), generic: true);
+  }
+
+  static Future<bool> sendsRealDevice(String scope) async {
+    if (scope == pendingScope) return false;
+    final profile = await loadProfile(scope);
+    return profile == null || !profile.enabled;
+  }
+
+  static Future<SpoofProfile> hideRealDevice(String scope) async {
+    final profile = buildGenericProfile(
+      usedDeviceNames: const {},
+      random: _rng,
+      deviceId: await DeviceIdentity.deviceId(),
+      instanceId: await DeviceIdentity.instanceId(),
+    );
+    await saveProfile(scope, profile);
     return profile;
   }
 

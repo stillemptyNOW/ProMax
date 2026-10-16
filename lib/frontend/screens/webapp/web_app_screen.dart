@@ -1,10 +1,15 @@
+import 'dart:async';
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../backend/modules/webapp.dart';
+import '../../../core/config/privacy_settings.dart';
+import '../../../core/privacy/host_policy.dart';
+import '../../../core/privacy/neutral_user_agent.dart';
 import '../../../core/storage/spoofing_service.dart';
 import '../../../core/utils/link_opener.dart';
 import '../../../core/utils/logger.dart';
@@ -15,6 +20,7 @@ import '../../widgets/connection_status.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/small_spinner.dart';
 import '../../widgets/webview_permission_prompt.dart';
+import 'mini_app_privacy.dart';
 import 'web_app_bridge.dart';
 
 class WebAppScreen extends StatefulWidget {
@@ -74,6 +80,8 @@ class _WebAppScreenState extends State<WebAppScreen> {
   double _progress = 0;
   bool _recovering = false;
   Size _viewport = Size.zero;
+  final MiniAppVisitedOrigins _visitedOrigins = MiniAppVisitedOrigins();
+  MiniAppPrivacy? _privacy;
 
   @override
   void initState() {
@@ -84,6 +92,9 @@ class _WebAppScreenState extends State<WebAppScreen> {
   @override
   void dispose() {
     _bridge?.dispose();
+    if (_privacy?.wipesVisitedOriginsOnClose ?? false) {
+      unawaited(_visitedOrigins.wipe());
+    }
     super.dispose();
   }
 
@@ -95,32 +106,49 @@ class _WebAppScreenState extends State<WebAppScreen> {
       _bridge = null;
     });
     try {
-      // Тот же UA, что уходит в sessionInit (из handshake-устройства ядра),
-      // чтобы веб-аппы видели нативный клиент; фолбэк — браузерный UA спуфа.
-      // Для веб-аппов с внешней авторизацией (Госуслуги/ЕСИА) клиентский UA
-      // ядра отбраковывается антифродом — там нужен UA настоящего WebView.
-      _userAgent = '';
-      if (widget.preferSystemUserAgent) {
-        try {
-          _userAgent = await InAppWebViewController.getDefaultUserAgent();
-        } catch (_) {}
-      }
-      if (_userAgent.isEmpty) {
-        _userAgent =
-            api.session?.userAgent() ??
-            await SpoofingService.getWebViewUserAgent() ??
-            '';
-      }
+      _userAgent = await _resolveUserAgent();
       final launch = await widget.loader();
       if (!mounted) return;
       setState(() {
         _launch = launch;
+        _privacy = _privacyFor(launch);
         _bridge = _createBridge(launch.botId);
       });
     } catch (e) {
       if (!mounted) return;
       setState(() => _loadError = e.toString());
     }
+  }
+
+  Future<String> _resolveUserAgent() async {
+    final neutral = PrivacySettings.neutralWebUserAgent.current.value;
+    var systemAgent = '';
+    if (neutral || widget.preferSystemUserAgent) {
+      try {
+        systemAgent = await InAppWebViewController.getDefaultUserAgent();
+      } catch (_) {}
+    }
+    if (neutral) return NeutralUserAgent.webView(systemAgent);
+    if (systemAgent.isNotEmpty) return systemAgent;
+    return api.session?.userAgent() ??
+        await SpoofingService.getWebViewUserAgent() ??
+        '';
+  }
+
+  MiniAppPrivacy _privacyFor(WebAppLaunch launch) {
+    final host = Uri.tryParse(launch.url)?.host ?? '';
+    final persistent =
+        widget.privateChannel || HostPolicy.isPersistentWebHost(host);
+    return MiniAppPrivacy(
+      isolated: PrivacySettings.isolateMiniApps.current.value && !persistent,
+      blockTrackers: PrivacySettings.blockTrackers.current.value,
+      platform: defaultTargetPlatform,
+    );
+  }
+
+  void _noteLoad(InAppWebViewController controller, WebUri? url) {
+    _visitedOrigins.note(url);
+    widget.onLoadStart?.call(controller, url);
   }
 
   WebAppBridge _createBridge(int botId) => WebAppBridge(
@@ -294,6 +322,8 @@ class _WebAppScreenState extends State<WebAppScreen> {
   }
 
   Widget _buildWebView(WebAppLaunch launch, WebAppBridge bridge) {
+    final privacy = _privacy ?? _privacyFor(launch);
+    final isolated = privacy.isolated;
     return InAppWebView(
       key: ObjectKey(bridge),
       initialUrlRequest: URLRequest(url: WebUri(launch.url)),
@@ -304,12 +334,15 @@ class _WebAppScreenState extends State<WebAppScreen> {
       initialSettings: InAppWebViewSettings(
         javaScriptEnabled: true,
         domStorageEnabled: true,
-        thirdPartyCookiesEnabled: true,
+        thirdPartyCookiesEnabled: !isolated,
+        incognito: privacy.incognito,
+        cacheEnabled: !isolated,
+        contentBlockers: privacy.contentBlockers,
         supportZoom: false,
         transparentBackground: true,
         mediaPlaybackRequiresUserGesture: false,
         allowsInlineMediaPlayback: true,
-        sharedCookiesEnabled: true,
+        sharedCookiesEnabled: !isolated,
         allowsBackForwardNavigationGestures: true,
         useHybridComposition: true,
         supportMultipleWindows: true,
@@ -332,7 +365,13 @@ class _WebAppScreenState extends State<WebAppScreen> {
         return false;
       },
       onConsoleMessage: widget.onConsoleMessage,
-      onLoadStart: widget.onLoadStart,
+      onLoadStart: _noteLoad,
+      onUpdateVisitedHistory: (controller, url, isReload) =>
+          _visitedOrigins.note(url),
+      shouldInterceptRequest:
+          privacy.trackerBlocking == TrackerBlockingMode.interceptRequests
+          ? MiniAppPrivacy.interceptTracker
+          : null,
       shouldOverrideUrlLoading: _handleNavigation,
       onProgressChanged: (controller, progress) {
         if (!mounted) return;

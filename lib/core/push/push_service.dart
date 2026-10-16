@@ -119,7 +119,9 @@ Future<void> _handleReply(String payloadJson, String text) async {
   try {
     final token = await TokenStorage.readToken(account);
     if (token != null && token.isNotEmpty) {
-      api = Api()..spoofScope = '$account';
+      api = Api()
+        ..spoofScope = '$account'
+        ..reportsPresence = false;
       await api.connect(authenticated: true);
       if (api.state != SessionState.online) {
         await api.stateStream
