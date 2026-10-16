@@ -12145,6 +12145,552 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t reorder folders: {error}'**
   String folderReorderFailed(String error);
+
+  /// No description provided for @searchScopeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything'**
+  String get searchScopeAll;
+
+  /// No description provided for @searchScopePeople.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get searchScopePeople;
+
+  /// No description provided for @searchScopeChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get searchScopeChats;
+
+  /// No description provided for @searchScopeMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get searchScopeMessages;
+
+  /// No description provided for @searchPeriodAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any time'**
+  String get searchPeriodAny;
+
+  /// No description provided for @searchPeriodDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get searchPeriodDay;
+
+  /// No description provided for @searchPeriodWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get searchPeriodWeek;
+
+  /// No description provided for @searchPeriodMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get searchPeriodMonth;
+
+  /// No description provided for @searchPeriodYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get searchPeriodYear;
+
+  /// No description provided for @searchSenderAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any sender'**
+  String get searchSenderAny;
+
+  /// No description provided for @searchSenderMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Me'**
+  String get searchSenderMe;
+
+  /// No description provided for @searchSenderOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Not me'**
+  String get searchSenderOthers;
+
+  /// No description provided for @searchKindAny.
+  ///
+  /// In en, this message translates to:
+  /// **'All chats'**
+  String get searchKindAny;
+
+  /// No description provided for @searchKindDialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get searchKindDialogs;
+
+  /// No description provided for @searchKindGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get searchKindGroups;
+
+  /// No description provided for @searchKindChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels'**
+  String get searchKindChannels;
+
+  /// No description provided for @searchFilterScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for'**
+  String get searchFilterScope;
+
+  /// No description provided for @searchFilterPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Period'**
+  String get searchFilterPeriod;
+
+  /// No description provided for @searchFilterSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender'**
+  String get searchFilterSender;
+
+  /// No description provided for @searchFilterKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat type'**
+  String get searchFilterKind;
+
+  /// No description provided for @chatToolsAtmosphere.
+  ///
+  /// In en, this message translates to:
+  /// **'Atmosphere'**
+  String get chatToolsAtmosphere;
+
+  /// No description provided for @chatToolsAtmosphereDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as everywhere'**
+  String get chatToolsAtmosphereDefault;
+
+  /// No description provided for @chatToolsStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get chatToolsStats;
+
+  /// No description provided for @chatToolsDisappearing.
+  ///
+  /// In en, this message translates to:
+  /// **'Disappearing'**
+  String get chatToolsDisappearing;
+
+  /// No description provided for @chatToolsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get chatToolsOff;
+
+  /// No description provided for @chatToolsQuietHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet hours'**
+  String get chatToolsQuietHours;
+
+  /// No description provided for @chatToolsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get chatToolsNote;
+
+  /// No description provided for @chatToolsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get chatToolsNone;
+
+  /// No description provided for @chatToolsTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'Templates'**
+  String get chatToolsTemplates;
+
+  /// No description provided for @chatToolsExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get chatToolsExport;
+
+  /// No description provided for @chatToolsLeaveSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of the double bottom'**
+  String get chatToolsLeaveSecret;
+
+  /// No description provided for @chatToolsMakeSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Into the double bottom'**
+  String get chatToolsMakeSecret;
+
+  /// No description provided for @chatToolsHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat hidden: it won\'t be visible with the second code'**
+  String get chatToolsHidden;
+
+  /// No description provided for @chatToolsShown.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat is visible with any code again'**
+  String get chatToolsShown;
+
+  /// No description provided for @proMaxSectionAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get proMaxSectionAppearance;
+
+  /// No description provided for @proMaxThemesAndGlass.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes and glass'**
+  String get proMaxThemesAndGlass;
+
+  /// No description provided for @proMaxThemeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get proMaxThemeCustom;
+
+  /// No description provided for @proMaxAtmosphere.
+  ///
+  /// In en, this message translates to:
+  /// **'Atmosphere'**
+  String get proMaxAtmosphere;
+
+  /// No description provided for @proMaxSectionGhost.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost and privacy'**
+  String get proMaxSectionGhost;
+
+  /// No description provided for @proMaxNoTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t send \"typing\"'**
+  String get proMaxNoTyping;
+
+  /// No description provided for @proMaxNoTypingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The other person won\'t see that you\'re typing'**
+  String get proMaxNoTypingHint;
+
+  /// No description provided for @proMaxHideStoryViews.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t mark stories as viewed'**
+  String get proMaxHideStoryViews;
+
+  /// No description provided for @proMaxHideStoryViewsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The author won\'t know you watched the story'**
+  String get proMaxHideStoryViewsHint;
+
+  /// No description provided for @proMaxStreamerMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Streamer mode'**
+  String get proMaxStreamerMode;
+
+  /// No description provided for @proMaxStreamerModeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Blurs numbers, IDs and message previews, hides notification text'**
+  String get proMaxStreamerModeHint;
+
+  /// No description provided for @proMaxSwitcherBlur.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur in the app switcher'**
+  String get proMaxSwitcherBlur;
+
+  /// No description provided for @proMaxSwitcherBlurHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Content is hidden in the iOS app switcher'**
+  String get proMaxSwitcherBlurHint;
+
+  /// No description provided for @proMaxSectionMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get proMaxSectionMessages;
+
+  /// No description provided for @proMaxSectionTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get proMaxSectionTools;
+
+  /// No description provided for @proMaxBookmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmarks'**
+  String get proMaxBookmarks;
+
+  /// No description provided for @proMaxReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get proMaxReminders;
+
+  /// No description provided for @proMaxQuickReplies.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply templates'**
+  String get proMaxQuickReplies;
+
+  /// No description provided for @proMaxOpenChatExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a .pmxchat export'**
+  String get proMaxOpenChatExport;
+
+  /// No description provided for @proMaxSectionChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats and folders'**
+  String get proMaxSectionChats;
+
+  /// No description provided for @proMaxSectionDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics'**
+  String get proMaxSectionDiagnostics;
+
+  /// No description provided for @proMaxDigitalIdNative.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital ID: native mode and report'**
+  String get proMaxDigitalIdNative;
+
+  /// No description provided for @proMaxBasedOnKomet.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax is based on the open Komet client · GPLv3'**
+  String get proMaxBasedOnKomet;
+
+  /// No description provided for @proMaxHeroVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} · {theme}'**
+  String proMaxHeroVersion(String version, String theme);
+
+  /// No description provided for @proMaxHeroCustomTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'custom theme'**
+  String get proMaxHeroCustomTheme;
+
+  /// No description provided for @proMaxHeroTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your MAX, your way'**
+  String get proMaxHeroTagline;
+
+  /// No description provided for @proMaxGhost.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost'**
+  String get proMaxGhost;
+
+  /// No description provided for @proMaxAntiRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t read'**
+  String get proMaxAntiRead;
+
+  /// No description provided for @proMaxStreamer.
+  ///
+  /// In en, this message translates to:
+  /// **'Streamer'**
+  String get proMaxStreamer;
+
+  /// No description provided for @proMaxOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get proMaxOff;
+
+  /// No description provided for @proMaxOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get proMaxOn;
+
+  /// No description provided for @proMaxEntryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost, themes, atmosphere and all the extras'**
+  String get proMaxEntryHint;
+
+  /// No description provided for @chatStatsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get chatStatsTitle;
+
+  /// No description provided for @chatStatsTopSenders.
+  ///
+  /// In en, this message translates to:
+  /// **'Who writes the most'**
+  String get chatStatsTopSenders;
+
+  /// No description provided for @chatStatsByHour.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity by hour'**
+  String get chatStatsByHour;
+
+  /// No description provided for @chatStatsByWeekday.
+  ///
+  /// In en, this message translates to:
+  /// **'By day of the week'**
+  String get chatStatsByWeekday;
+
+  /// No description provided for @chatStatsMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Media and attachments'**
+  String get chatStatsMedia;
+
+  /// No description provided for @chatStatsTopWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequent words'**
+  String get chatStatsTopWords;
+
+  /// No description provided for @chatStatsWeekdaysShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon,Tue,Wed,Thu,Fri,Sat,Sun'**
+  String get chatStatsWeekdaysShort;
+
+  /// No description provided for @chatStatsWeekdaysFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday'**
+  String get chatStatsWeekdaysFull;
+
+  /// No description provided for @chatStatsNoLocalMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages stored on this device'**
+  String get chatStatsNoLocalMessages;
+
+  /// No description provided for @chatStatsRange.
+  ///
+  /// In en, this message translates to:
+  /// **'From {from} to {to} · based on messages stored on this device'**
+  String chatStatsRange(String from, String to);
+
+  /// No description provided for @chatStatsPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get chatStatsPhotos;
+
+  /// No description provided for @chatStatsVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos and video messages'**
+  String get chatStatsVideos;
+
+  /// No description provided for @chatStatsVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice messages'**
+  String get chatStatsVoice;
+
+  /// No description provided for @chatStatsFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get chatStatsFiles;
+
+  /// No description provided for @chatStatsStickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Stickers'**
+  String get chatStatsStickers;
+
+  /// No description provided for @chatStatsContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get chatStatsContacts;
+
+  /// No description provided for @chatStatsLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Locations'**
+  String get chatStatsLocations;
+
+  /// No description provided for @chatStatsPolls.
+  ///
+  /// In en, this message translates to:
+  /// **'Polls'**
+  String get chatStatsPolls;
+
+  /// No description provided for @chatStatsCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get chatStatsCalls;
+
+  /// No description provided for @chatStatsMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get chatStatsMessages;
+
+  /// No description provided for @chatStatsWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Words'**
+  String get chatStatsWords;
+
+  /// No description provided for @chatStatsPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Per day'**
+  String get chatStatsPerDay;
+
+  /// No description provided for @chatStatsBusiestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Busiest day'**
+  String get chatStatsBusiestDay;
+
+  /// No description provided for @chatStatsSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages loaded: {count}'**
+  String chatStatsSynced(int count);
+
+  /// No description provided for @chatStatsSyncAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Load the whole history from the server'**
+  String get chatStatsSyncAll;
 }
 
 class _AppLocalizationsDelegate

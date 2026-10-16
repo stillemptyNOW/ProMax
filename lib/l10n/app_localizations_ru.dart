@@ -6899,4 +6899,290 @@ class AppLocalizationsRu extends AppLocalizations {
   String folderReorderFailed(String error) {
     return 'Не удалось изменить порядок: $error';
   }
+
+  @override
+  String get searchScopeAll => 'Всё';
+
+  @override
+  String get searchScopePeople => 'Люди';
+
+  @override
+  String get searchScopeChats => 'Чаты';
+
+  @override
+  String get searchScopeMessages => 'Сообщения';
+
+  @override
+  String get searchPeriodAny => 'За всё время';
+
+  @override
+  String get searchPeriodDay => 'Сегодня';
+
+  @override
+  String get searchPeriodWeek => 'Неделя';
+
+  @override
+  String get searchPeriodMonth => 'Месяц';
+
+  @override
+  String get searchPeriodYear => 'Год';
+
+  @override
+  String get searchSenderAny => 'Любой отправитель';
+
+  @override
+  String get searchSenderMe => 'Я';
+
+  @override
+  String get searchSenderOthers => 'Не я';
+
+  @override
+  String get searchKindAny => 'Все чаты';
+
+  @override
+  String get searchKindDialogs => 'Личные';
+
+  @override
+  String get searchKindGroups => 'Группы';
+
+  @override
+  String get searchKindChannels => 'Каналы';
+
+  @override
+  String get searchFilterScope => 'Что искать';
+
+  @override
+  String get searchFilterPeriod => 'Период';
+
+  @override
+  String get searchFilterSender => 'Отправитель';
+
+  @override
+  String get searchFilterKind => 'Тип чата';
+
+  @override
+  String get chatToolsAtmosphere => 'Атмосфера';
+
+  @override
+  String get chatToolsAtmosphereDefault => 'Как везде';
+
+  @override
+  String get chatToolsStats => 'Статистика';
+
+  @override
+  String get chatToolsDisappearing => 'Исчезающие';
+
+  @override
+  String get chatToolsOff => 'Выкл';
+
+  @override
+  String get chatToolsQuietHours => 'Тихие часы';
+
+  @override
+  String get chatToolsNote => 'Заметка';
+
+  @override
+  String get chatToolsNone => 'Нет';
+
+  @override
+  String get chatToolsTemplates => 'Шаблоны';
+
+  @override
+  String get chatToolsExport => 'Экспорт';
+
+  @override
+  String get chatToolsLeaveSecret => 'Из двойного дна';
+
+  @override
+  String get chatToolsMakeSecret => 'В двойное дно';
+
+  @override
+  String get chatToolsHidden =>
+      'Чат спрятан: его не будет видно по второму коду';
+
+  @override
+  String get chatToolsShown => 'Чат снова виден по любому коду';
+
+  @override
+  String get proMaxSectionAppearance => 'Внешний вид';
+
+  @override
+  String get proMaxThemesAndGlass => 'Темы и стекло';
+
+  @override
+  String get proMaxThemeCustom => 'Своя';
+
+  @override
+  String get proMaxAtmosphere => 'Атмосфера';
+
+  @override
+  String get proMaxSectionGhost => 'Призрак и приватность';
+
+  @override
+  String get proMaxNoTyping => 'Не отправлять «печатает»';
+
+  @override
+  String get proMaxNoTypingHint =>
+      'Собеседник не увидит, что вы набираете текст';
+
+  @override
+  String get proMaxHideStoryViews => 'Не отмечать просмотры историй';
+
+  @override
+  String get proMaxHideStoryViewsHint =>
+      'Автор истории не узнает, что вы её смотрели';
+
+  @override
+  String get proMaxStreamerMode => 'Режим стримера';
+
+  @override
+  String get proMaxStreamerModeHint =>
+      'Размывает номера, ID и превью сообщений, прячет текст уведомлений';
+
+  @override
+  String get proMaxSwitcherBlur => 'Размытие в переключателе';
+
+  @override
+  String get proMaxSwitcherBlurHint =>
+      'В списке открытых приложений iOS не видно содержимое';
+
+  @override
+  String get proMaxSectionMessages => 'Сообщения';
+
+  @override
+  String get proMaxSectionTools => 'Инструменты';
+
+  @override
+  String get proMaxBookmarks => 'Закладки';
+
+  @override
+  String get proMaxReminders => 'Напоминания';
+
+  @override
+  String get proMaxQuickReplies => 'Шаблоны ответов';
+
+  @override
+  String get proMaxOpenChatExport => 'Открыть экспорт .pmxchat';
+
+  @override
+  String get proMaxSectionChats => 'Чаты и папки';
+
+  @override
+  String get proMaxSectionDiagnostics => 'Диагностика';
+
+  @override
+  String get proMaxDigitalIdNative => 'Цифровой ID: нативный режим и отчёт';
+
+  @override
+  String get proMaxBasedOnKomet =>
+      'ProMax основан на открытом клиенте Komet · GPLv3';
+
+  @override
+  String proMaxHeroVersion(String version, String theme) {
+    return 'Версия $version · $theme';
+  }
+
+  @override
+  String get proMaxHeroCustomTheme => 'своя тема';
+
+  @override
+  String get proMaxHeroTagline => 'Твой MAX — по-своему';
+
+  @override
+  String get proMaxGhost => 'Призрак';
+
+  @override
+  String get proMaxAntiRead => 'Не читать';
+
+  @override
+  String get proMaxStreamer => 'Стример';
+
+  @override
+  String get proMaxOff => 'Выкл';
+
+  @override
+  String get proMaxOn => 'Вкл';
+
+  @override
+  String get proMaxEntryHint => 'Призрак, темы, атмосфера и все фишки';
+
+  @override
+  String get chatStatsTitle => 'Статистика';
+
+  @override
+  String get chatStatsTopSenders => 'Кто пишет больше';
+
+  @override
+  String get chatStatsByHour => 'Активность по часам';
+
+  @override
+  String get chatStatsByWeekday => 'По дням недели';
+
+  @override
+  String get chatStatsMedia => 'Медиа и вложения';
+
+  @override
+  String get chatStatsTopWords => 'Частые слова';
+
+  @override
+  String get chatStatsWeekdaysShort => 'Пн,Вт,Ср,Чт,Пт,Сб,Вс';
+
+  @override
+  String get chatStatsWeekdaysFull =>
+      'Понедельник,Вторник,Среда,Четверг,Пятница,Суббота,Воскресенье';
+
+  @override
+  String get chatStatsNoLocalMessages => 'В памяти телефона нет сообщений';
+
+  @override
+  String chatStatsRange(String from, String to) {
+    return 'С $from по $to · по сообщениям в памяти телефона';
+  }
+
+  @override
+  String get chatStatsPhotos => 'Фото';
+
+  @override
+  String get chatStatsVideos => 'Видео и кружки';
+
+  @override
+  String get chatStatsVoice => 'Голосовые';
+
+  @override
+  String get chatStatsFiles => 'Файлы';
+
+  @override
+  String get chatStatsStickers => 'Стикеры';
+
+  @override
+  String get chatStatsContacts => 'Контакты';
+
+  @override
+  String get chatStatsLocations => 'Геопозиции';
+
+  @override
+  String get chatStatsPolls => 'Опросы';
+
+  @override
+  String get chatStatsCalls => 'Звонки';
+
+  @override
+  String get chatStatsMessages => 'Сообщений';
+
+  @override
+  String get chatStatsWords => 'Слов';
+
+  @override
+  String get chatStatsPerDay => 'В день';
+
+  @override
+  String get chatStatsBusiestDay => 'Рекорд за день';
+
+  @override
+  String chatStatsSynced(int count) {
+    return 'Загружено сообщений: $count';
+  }
+
+  @override
+  String get chatStatsSyncAll => 'Загрузить всю историю с сервера';
 }

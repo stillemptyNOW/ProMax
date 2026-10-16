@@ -3529,6 +3529,7 @@ class _ChatScreenState extends State<ChatScreen>
     final note = ChatNotesStore.instance.noteFor(widget.chatId);
     final templates = QuickRepliesStore.instance.items.value.length;
     final secret = DoubleBottom.isSecret(widget.chatId);
+    final l10n = AppLocalizations.of(context)!;
     void then(VoidCallback action) {
       Navigator.of(context).pop();
       action();
@@ -3544,14 +3545,14 @@ class _ChatScreenState extends State<ChatScreen>
         final tiles = <ChatToolTile>[
           ChatToolTile(
             icon: Symbols.ac_unit,
-            label: 'Атмосфера',
-            value: atmosphere?.title ?? 'Как везде',
+            label: l10n.chatToolsAtmosphere,
+            value: atmosphere?.title ?? l10n.chatToolsAtmosphereDefault,
             onTap: () =>
                 then(() => showChatAtmosphereSheet(context, widget.chatId)),
           ),
           ChatToolTile(
             icon: Symbols.bar_chart,
-            label: 'Статистика',
+            label: l10n.chatToolsStats,
             onTap: () => then(
               () => Navigator.push(
                 context,
@@ -3567,22 +3568,24 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           ChatToolTile(
             icon: Symbols.timer,
-            label: 'Исчезающие',
-            value: timer > 0 ? DisappearingMessages.label(timer) : 'Выкл',
+            label: l10n.chatToolsDisappearing,
+            value: timer > 0
+                ? DisappearingMessages.label(timer)
+                : l10n.chatToolsOff,
             onTap: () =>
                 then(() => showDisappearingSheet(context, widget.chatId)),
           ),
           ChatToolTile(
             icon: Symbols.bedtime,
-            label: 'Тихие часы',
-            value: quiet?.label ?? 'Выкл',
+            label: l10n.chatToolsQuietHours,
+            value: quiet?.label ?? l10n.chatToolsOff,
             onTap: () =>
                 then(() => showQuietHoursSheet(context, widget.chatId)),
           ),
           ChatToolTile(
             icon: Symbols.sticky_note_2,
-            label: 'Заметка',
-            value: note == null ? 'Нет' : note.split('\n').first,
+            label: l10n.chatToolsNote,
+            value: note == null ? l10n.chatToolsNone : note.split('\n').first,
             onTap: () => then(
               () => showChatNoteSheet(
                 context,
@@ -3593,13 +3596,13 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           ChatToolTile(
             icon: Symbols.quickreply,
-            label: 'Шаблоны',
-            value: templates == 0 ? 'Нет' : '$templates',
+            label: l10n.chatToolsTemplates,
+            value: templates == 0 ? l10n.chatToolsNone : '$templates',
             onTap: () => then(_insertQuickReply),
           ),
           ChatToolTile(
             icon: Symbols.ios_share,
-            label: 'Экспорт',
+            label: l10n.chatToolsExport,
             onTap: () => then(
               () => showChatExportSheet(
                 context,
@@ -3612,15 +3615,15 @@ class _ChatScreenState extends State<ChatScreen>
           if (canHide)
             ChatToolTile(
               icon: secret ? Symbols.layers_clear : Symbols.layers,
-              label: secret ? 'Из двойного дна' : 'В двойное дно',
+              label: secret
+                  ? l10n.chatToolsLeaveSecret
+                  : l10n.chatToolsMakeSecret,
               onTap: () => then(() async {
                 await DoubleBottom.setSecret(widget.chatId, !secret);
                 if (!mounted) return;
                 showCustomNotification(
                   context,
-                  !secret
-                      ? 'Чат спрятан: его не будет видно по второму коду'
-                      : 'Чат снова виден по любому коду',
+                  !secret ? l10n.chatToolsHidden : l10n.chatToolsShown,
                 );
               }),
             ),

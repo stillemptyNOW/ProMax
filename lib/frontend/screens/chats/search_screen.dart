@@ -26,29 +26,32 @@ enum SearchSender { any, me, others }
 
 enum SearchChatKind { any, dialogs, groups, channels }
 
-const _scopeLabels = {
-  SearchScope.all: 'Всё',
-  SearchScope.people: 'Люди',
-  SearchScope.chats: 'Чаты',
-  SearchScope.messages: 'Сообщения',
+Map<SearchScope, String> _scopeLabels(AppLocalizations l10n) => {
+  SearchScope.all: l10n.searchScopeAll,
+  SearchScope.people: l10n.searchScopePeople,
+  SearchScope.chats: l10n.searchScopeChats,
+  SearchScope.messages: l10n.searchScopeMessages,
 };
-const _periodLabels = {
-  SearchPeriod.any: 'За всё время',
-  SearchPeriod.day: 'Сегодня',
-  SearchPeriod.week: 'Неделя',
-  SearchPeriod.month: 'Месяц',
-  SearchPeriod.year: 'Год',
+
+Map<SearchPeriod, String> _periodLabels(AppLocalizations l10n) => {
+  SearchPeriod.any: l10n.searchPeriodAny,
+  SearchPeriod.day: l10n.searchPeriodDay,
+  SearchPeriod.week: l10n.searchPeriodWeek,
+  SearchPeriod.month: l10n.searchPeriodMonth,
+  SearchPeriod.year: l10n.searchPeriodYear,
 };
-const _senderLabels = {
-  SearchSender.any: 'Любой отправитель',
-  SearchSender.me: 'Я',
-  SearchSender.others: 'Не я',
+
+Map<SearchSender, String> _senderLabels(AppLocalizations l10n) => {
+  SearchSender.any: l10n.searchSenderAny,
+  SearchSender.me: l10n.searchSenderMe,
+  SearchSender.others: l10n.searchSenderOthers,
 };
-const _kindLabels = {
-  SearchChatKind.any: 'Все чаты',
-  SearchChatKind.dialogs: 'Личные',
-  SearchChatKind.groups: 'Группы',
-  SearchChatKind.channels: 'Каналы',
+
+Map<SearchChatKind, String> _kindLabels(AppLocalizations l10n) => {
+  SearchChatKind.any: l10n.searchKindAny,
+  SearchChatKind.dialogs: l10n.searchKindDialogs,
+  SearchChatKind.groups: l10n.searchKindGroups,
+  SearchChatKind.channels: l10n.searchKindChannels,
 };
 
 class SearchScreen extends StatefulWidget {
@@ -197,6 +200,11 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
     );
+    final l10n = AppLocalizations.of(context)!;
+    final scopeLabels = _scopeLabels(l10n);
+    final periodLabels = _periodLabels(l10n);
+    final senderLabels = _senderLabels(l10n);
+    final kindLabels = _kindLabels(l10n);
     return SizedBox(
       height: 46,
       child: ListView(
@@ -204,39 +212,44 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
         children: [
           pill(
-            _scopeLabels[_scope]!,
+            scopeLabels[_scope]!,
             _scope != SearchScope.all,
             () => _pickFilter(
-              'Что искать',
-              _scopeLabels,
+              l10n.searchFilterScope,
+              scopeLabels,
               _scope,
               (v) => _scope = v,
             ),
           ),
           pill(
-            _periodLabels[_period]!,
+            periodLabels[_period]!,
             _period != SearchPeriod.any,
             () => _pickFilter(
-              'Период',
-              _periodLabels,
+              l10n.searchFilterPeriod,
+              periodLabels,
               _period,
               (v) => _period = v,
             ),
           ),
           pill(
-            _senderLabels[_sender]!,
+            senderLabels[_sender]!,
             _sender != SearchSender.any,
             () => _pickFilter(
-              'Отправитель',
-              _senderLabels,
+              l10n.searchFilterSender,
+              senderLabels,
               _sender,
               (v) => _sender = v,
             ),
           ),
           pill(
-            _kindLabels[_kind]!,
+            kindLabels[_kind]!,
             _kind != SearchChatKind.any,
-            () => _pickFilter('Тип чата', _kindLabels, _kind, (v) => _kind = v),
+            () => _pickFilter(
+              l10n.searchFilterKind,
+              kindLabels,
+              _kind,
+              (v) => _kind = v,
+            ),
           ),
         ],
       ),

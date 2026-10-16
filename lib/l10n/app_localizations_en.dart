@@ -6856,4 +6856,290 @@ class AppLocalizationsEn extends AppLocalizations {
   String folderReorderFailed(String error) {
     return 'Couldn\'t reorder folders: $error';
   }
+
+  @override
+  String get searchScopeAll => 'Everything';
+
+  @override
+  String get searchScopePeople => 'People';
+
+  @override
+  String get searchScopeChats => 'Chats';
+
+  @override
+  String get searchScopeMessages => 'Messages';
+
+  @override
+  String get searchPeriodAny => 'Any time';
+
+  @override
+  String get searchPeriodDay => 'Today';
+
+  @override
+  String get searchPeriodWeek => 'Week';
+
+  @override
+  String get searchPeriodMonth => 'Month';
+
+  @override
+  String get searchPeriodYear => 'Year';
+
+  @override
+  String get searchSenderAny => 'Any sender';
+
+  @override
+  String get searchSenderMe => 'Me';
+
+  @override
+  String get searchSenderOthers => 'Not me';
+
+  @override
+  String get searchKindAny => 'All chats';
+
+  @override
+  String get searchKindDialogs => 'Personal';
+
+  @override
+  String get searchKindGroups => 'Groups';
+
+  @override
+  String get searchKindChannels => 'Channels';
+
+  @override
+  String get searchFilterScope => 'Search for';
+
+  @override
+  String get searchFilterPeriod => 'Period';
+
+  @override
+  String get searchFilterSender => 'Sender';
+
+  @override
+  String get searchFilterKind => 'Chat type';
+
+  @override
+  String get chatToolsAtmosphere => 'Atmosphere';
+
+  @override
+  String get chatToolsAtmosphereDefault => 'Same as everywhere';
+
+  @override
+  String get chatToolsStats => 'Statistics';
+
+  @override
+  String get chatToolsDisappearing => 'Disappearing';
+
+  @override
+  String get chatToolsOff => 'Off';
+
+  @override
+  String get chatToolsQuietHours => 'Quiet hours';
+
+  @override
+  String get chatToolsNote => 'Note';
+
+  @override
+  String get chatToolsNone => 'None';
+
+  @override
+  String get chatToolsTemplates => 'Templates';
+
+  @override
+  String get chatToolsExport => 'Export';
+
+  @override
+  String get chatToolsLeaveSecret => 'Out of the double bottom';
+
+  @override
+  String get chatToolsMakeSecret => 'Into the double bottom';
+
+  @override
+  String get chatToolsHidden =>
+      'Chat hidden: it won\'t be visible with the second code';
+
+  @override
+  String get chatToolsShown => 'The chat is visible with any code again';
+
+  @override
+  String get proMaxSectionAppearance => 'Appearance';
+
+  @override
+  String get proMaxThemesAndGlass => 'Themes and glass';
+
+  @override
+  String get proMaxThemeCustom => 'Custom';
+
+  @override
+  String get proMaxAtmosphere => 'Atmosphere';
+
+  @override
+  String get proMaxSectionGhost => 'Ghost and privacy';
+
+  @override
+  String get proMaxNoTyping => 'Don\'t send \"typing\"';
+
+  @override
+  String get proMaxNoTypingHint =>
+      'The other person won\'t see that you\'re typing';
+
+  @override
+  String get proMaxHideStoryViews => 'Don\'t mark stories as viewed';
+
+  @override
+  String get proMaxHideStoryViewsHint =>
+      'The author won\'t know you watched the story';
+
+  @override
+  String get proMaxStreamerMode => 'Streamer mode';
+
+  @override
+  String get proMaxStreamerModeHint =>
+      'Blurs numbers, IDs and message previews, hides notification text';
+
+  @override
+  String get proMaxSwitcherBlur => 'Blur in the app switcher';
+
+  @override
+  String get proMaxSwitcherBlurHint =>
+      'Content is hidden in the iOS app switcher';
+
+  @override
+  String get proMaxSectionMessages => 'Messages';
+
+  @override
+  String get proMaxSectionTools => 'Tools';
+
+  @override
+  String get proMaxBookmarks => 'Bookmarks';
+
+  @override
+  String get proMaxReminders => 'Reminders';
+
+  @override
+  String get proMaxQuickReplies => 'Reply templates';
+
+  @override
+  String get proMaxOpenChatExport => 'Open a .pmxchat export';
+
+  @override
+  String get proMaxSectionChats => 'Chats and folders';
+
+  @override
+  String get proMaxSectionDiagnostics => 'Diagnostics';
+
+  @override
+  String get proMaxDigitalIdNative => 'Digital ID: native mode and report';
+
+  @override
+  String get proMaxBasedOnKomet =>
+      'ProMax is based on the open Komet client · GPLv3';
+
+  @override
+  String proMaxHeroVersion(String version, String theme) {
+    return 'Version $version · $theme';
+  }
+
+  @override
+  String get proMaxHeroCustomTheme => 'custom theme';
+
+  @override
+  String get proMaxHeroTagline => 'Your MAX, your way';
+
+  @override
+  String get proMaxGhost => 'Ghost';
+
+  @override
+  String get proMaxAntiRead => 'Don\'t read';
+
+  @override
+  String get proMaxStreamer => 'Streamer';
+
+  @override
+  String get proMaxOff => 'Off';
+
+  @override
+  String get proMaxOn => 'On';
+
+  @override
+  String get proMaxEntryHint => 'Ghost, themes, atmosphere and all the extras';
+
+  @override
+  String get chatStatsTitle => 'Statistics';
+
+  @override
+  String get chatStatsTopSenders => 'Who writes the most';
+
+  @override
+  String get chatStatsByHour => 'Activity by hour';
+
+  @override
+  String get chatStatsByWeekday => 'By day of the week';
+
+  @override
+  String get chatStatsMedia => 'Media and attachments';
+
+  @override
+  String get chatStatsTopWords => 'Frequent words';
+
+  @override
+  String get chatStatsWeekdaysShort => 'Mon,Tue,Wed,Thu,Fri,Sat,Sun';
+
+  @override
+  String get chatStatsWeekdaysFull =>
+      'Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday';
+
+  @override
+  String get chatStatsNoLocalMessages => 'No messages stored on this device';
+
+  @override
+  String chatStatsRange(String from, String to) {
+    return 'From $from to $to · based on messages stored on this device';
+  }
+
+  @override
+  String get chatStatsPhotos => 'Photos';
+
+  @override
+  String get chatStatsVideos => 'Videos and video messages';
+
+  @override
+  String get chatStatsVoice => 'Voice messages';
+
+  @override
+  String get chatStatsFiles => 'Files';
+
+  @override
+  String get chatStatsStickers => 'Stickers';
+
+  @override
+  String get chatStatsContacts => 'Contacts';
+
+  @override
+  String get chatStatsLocations => 'Locations';
+
+  @override
+  String get chatStatsPolls => 'Polls';
+
+  @override
+  String get chatStatsCalls => 'Calls';
+
+  @override
+  String get chatStatsMessages => 'Messages';
+
+  @override
+  String get chatStatsWords => 'Words';
+
+  @override
+  String get chatStatsPerDay => 'Per day';
+
+  @override
+  String get chatStatsBusiestDay => 'Busiest day';
+
+  @override
+  String chatStatsSynced(int count) {
+    return 'Messages loaded: $count';
+  }
+
+  @override
+  String get chatStatsSyncAll => 'Load the whole history from the server';
 }
