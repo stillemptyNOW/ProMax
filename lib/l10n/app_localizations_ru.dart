@@ -6864,4 +6864,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String chatActivitySendingFileMany(String name, int count) {
     return '$name и ещё $count отправляют файлы...';
   }
+
+  @override
+  String get newChatAvatarNotSet => 'Аватар не установлен';
 }

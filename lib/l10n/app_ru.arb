@@ -2181,5 +2181,6 @@
   "chatActivitySendingPhotoMany": "{name} и ещё {count} отправляют фото...",
   "chatActivitySendingFile": "Отправляет файл...",
   "chatActivitySendingFileOne": "{name} отправляет файл...",
-  "chatActivitySendingFileMany": "{name} и ещё {count} отправляют файлы..."
+  "chatActivitySendingFileMany": "{name} и ещё {count} отправляют файлы...",
+  "newChatAvatarNotSet": "Аватар не установлен"
 }

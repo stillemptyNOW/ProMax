@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../backend/modules/chats.dart';
 import '../../../core/cache/info_cache.dart';
 import '../../../core/utils/image_utils.dart';
+import '../../../models/chat_info.dart';
 import '../../../main.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/attachment/avatar_editor.dart';
@@ -14,6 +15,7 @@ import '../../widgets/swipe_route.dart';
 import 'chat_admin/channel_type_link_screen.dart';
 import 'chat_admin/chat_admin_state.dart';
 import 'chat_screen.dart';
+import 'new_chat_avatar.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/user_facing_error.dart';
 
@@ -66,71 +68,53 @@ class _CreateChannelFlowState extends State<_CreateChannelFlow> {
   Future<void> _create() async {
     final title = _title.text.trim();
     if (title.isEmpty || _creating) return;
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _creating = true);
     final navigator = Navigator.of(context, rootNavigator: true);
+    final CachedChat? chat;
     try {
-      final chat = await chats.createChannel(api, title: title);
-      if (!mounted) return;
-      if (chat == null) {
+      chat = await chats.createChannel(api, title: title);
+    } catch (e) {
+      if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.createChannelFailed,
+          l10n.devicesGenericError(userFacingError(e, l10n)),
         );
         setState(() => _creating = false);
-        return;
       }
-
-      if (_avatar != null) {
-        final url = await chats.requestChatPhotoUploadUrl(api);
-        if (url != null) {
-          final bytes = await compressAvatarFile(_avatar!.path);
-          if (bytes == null) {
-            if (mounted) {
-              showCustomNotification(
-                context,
-                AppLocalizations.of(context)!.createChannelAvatarProcessFailed,
-              );
-            }
-          } else {
-            final token = await fileUploader.uploadImage(
-              Uri.parse(url),
-              bytes,
-              filename: 'avatar.jpg',
-            );
-            if (token != null) {
-              await chats.setChatPhoto(api, chatId: chat.id, photoToken: token);
-            } else if (mounted) {
-              showCustomNotification(
-                context,
-                AppLocalizations.of(context)!.createChannelAvatarUploadFailed,
-              );
-            }
-          }
-        }
+      return;
+    }
+    if (chat == null) {
+      if (mounted) {
+        showCustomNotification(context, l10n.createChannelFailed);
+        setState(() => _creating = false);
       }
+      return;
+    }
 
-      final info = await ChatInfoFetch.get(chat.id, forceRefresh: true);
-      if (!mounted) return;
-      final name = chat.title ?? title;
-      final imageUrl = chat.iconUrl ?? '';
-      navigator.pop();
-      navigator.push(
-        SwipeRoute(
-          builder: (_) => ChatScreen(
-            chatId: chat.id,
-            name: name,
-            imageUrl: imageUrl,
-            chatType: chat.type,
-          ),
+    final avatar = _avatar;
+    final avatarSet = avatar == null || await setNewChatAvatar(chat.id, avatar);
+    final info = await _freshInfo(chat.id);
+    final name = chat.title ?? title;
+    final imageUrl = chat.iconUrl ?? '';
+    if (mounted) navigator.pop();
+    navigator.push(
+      SwipeRoute(
+        builder: (_) => ChatScreen(
+          chatId: chat!.id,
+          name: name,
+          imageUrl: imageUrl,
+          chatType: chat.type,
         ),
-      );
-      if (info == null) return;
+      ),
+    );
+    if (info != null) {
       navigator.push(
         SwipeRoute(
           builder: (_) => ChannelTypeLinkScreen(
             justCreated: true,
             state: ChatAdminState(
-              chatId: chat.id,
+              chatId: chat!.id,
               myId: chat.accountId,
               name: name,
               imageUrl: imageUrl,
@@ -139,14 +123,18 @@ class _CreateChannelFlowState extends State<_CreateChannelFlow> {
           ),
         ),
       );
-    } catch (e) {
-      if (mounted) {
-        showCustomNotification(
-          context,
-          AppLocalizations.of(context)!.devicesGenericError(userFacingError(e)),
-        );
-        setState(() => _creating = false);
-      }
+    }
+    final overlay = navigator.overlay;
+    if (!avatarSet && overlay != null) {
+      showCustomNotificationOnOverlay(overlay, l10n.newChatAvatarNotSet);
+    }
+  }
+
+  Future<ChatInfo?> _freshInfo(int chatId) async {
+    try {
+      return await ChatInfoFetch.get(chatId, forceRefresh: true);
+    } catch (_) {
+      return null;
     }
   }
 

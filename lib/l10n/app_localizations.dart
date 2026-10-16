@@ -12085,6 +12085,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} and {count} more are sending files...'**
   String chatActivitySendingFileMany(String name, int count);
+
+  /// No description provided for @newChatAvatarNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'The avatar was not set'**
+  String get newChatAvatarNotSet;
 }
 
 class _AppLocalizationsDelegate

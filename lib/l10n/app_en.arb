@@ -2589,5 +2589,6 @@
   "chatActivitySendingFileOne": "{name} is sending a file...",
   "@chatActivitySendingFileOne": {"placeholders": {"name": {"type": "String"}}},
   "chatActivitySendingFileMany": "{name} and {count} more are sending files...",
-  "@chatActivitySendingFileMany": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}}
+  "@chatActivitySendingFileMany": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
+  "newChatAvatarNotSet": "The avatar was not set"
 }
