@@ -11989,6 +11989,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ProMax file · .promax'**
   String get proMaxArchiveTitle;
+
+  /// No description provided for @errorServerNoResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The server did not respond'**
+  String get errorServerNoResponse;
+
+  /// No description provided for @errorNoConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection'**
+  String get errorNoConnection;
+
+  /// No description provided for @errorFileAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t access the file'**
+  String get errorFileAccess;
+
+  /// No description provided for @errorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error'**
+  String get errorUnknown;
 }
 
 class _AppLocalizationsDelegate

@@ -17,6 +17,7 @@ import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
 import '../../widgets/swipe_route.dart';
 import 'chat_screen.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 Future<void> showCreateGroupFlow(BuildContext context) async {
   final cs = Theme.of(context).colorScheme;
@@ -177,15 +178,17 @@ class _CreateGroupFlowState extends State<_CreateGroupFlow> {
       );
     } catch (e) {
       if (mounted) {
-        showCustomNotification(context, l10n.devicesGenericError('$e'));
+        showCustomNotification(
+          context,
+          l10n.devicesGenericError(userFacingError(e)),
+        );
         setState(() => _creating = false);
       }
     }
   }
 
-  String _statusText(AppLocalizations l10n, CachedContact c) => c.isBot
-      ? l10n.contactProfileBot
-      : l10n.contactProfileRecentlyActive;
+  String _statusText(AppLocalizations l10n, CachedContact c) =>
+      c.isBot ? l10n.contactProfileBot : l10n.contactProfileRecentlyActive;
 
   @override
   Widget build(BuildContext context) {

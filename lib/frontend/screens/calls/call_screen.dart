@@ -34,6 +34,7 @@ import 'call_lighting_sheet.dart';
 import 'call_participants_sheet.dart';
 import 'promax_hub.dart';
 import '../../../core/config/app_fonts.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class CallScreen extends StatefulWidget {
   final String name;
@@ -306,7 +307,11 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     final session = _session;
     if (session == null) return;
     setState(() => _chatOpen = true);
-    await showProMaxHub(context, session: session, scheme: _darkScheme(context));
+    await showProMaxHub(
+      context,
+      session: session,
+      scheme: _darkScheme(context),
+    );
     if (mounted) setState(() => _chatOpen = false);
   }
 
@@ -424,7 +429,10 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       await session.setScreenSharing(!session.localScreen);
     } catch (e) {
       if (mounted) {
-        showCustomNotification(context, l10n.callScreenShareFailed('$e'));
+        showCustomNotification(
+          context,
+          l10n.callScreenShareFailed(userFacingError(e)),
+        );
       }
     } finally {
       _syncLocalPreview();

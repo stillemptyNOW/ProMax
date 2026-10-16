@@ -13,6 +13,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/settings_card.dart';
 import '../../../core/security/app_lock.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class PluginsScreen extends StatefulWidget {
   const PluginsScreen({super.key});
@@ -49,7 +50,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
       if (mounted) {
         showCustomNotification(
           context,
-          l10n.pluginsScreenOpenFailed(error.toString()),
+          l10n.pluginsScreenOpenFailed(userFacingError(error)),
         );
       }
     }
@@ -80,7 +81,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
           context,
           AppLocalizations.of(
             context,
-          )!.pluginsScreenDownloadFailed(error.toString()),
+          )!.pluginsScreenDownloadFailed(userFacingError(error)),
         );
       }
     } finally {
@@ -187,7 +188,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
       if (mounted) {
         showCustomNotification(
           context,
-          l10n.pluginsScreenInstallFailed(error.toString()),
+          l10n.pluginsScreenInstallFailed(userFacingError(error)),
         );
       }
     }
@@ -231,7 +232,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
       if (mounted) {
         showCustomNotification(
           context,
-          l10n.pluginsScreenUpdateFailed(error.toString()),
+          l10n.pluginsScreenUpdateFailed(userFacingError(error)),
         );
       }
     } finally {
@@ -269,7 +270,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
       if (mounted) {
         showCustomNotification(
           context,
-          l10n.pluginsScreenUninstallFailed(error.toString()),
+          l10n.pluginsScreenUninstallFailed(userFacingError(error)),
         );
       }
     } finally {

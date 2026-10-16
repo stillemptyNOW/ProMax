@@ -4,6 +4,7 @@ import '../../../core/push/native_ios_push.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/custom_notification.dart';
 import 'web_push_screen.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class NativePushScreen extends StatefulWidget {
   const NativePushScreen({super.key});
@@ -103,7 +104,7 @@ class _NativePushScreenState extends State<NativePushScreen> {
         );
       }
     } catch (e) {
-      if (mounted) showCustomNotification(context, '$e');
+      if (mounted) showCustomNotification(context, userFacingError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

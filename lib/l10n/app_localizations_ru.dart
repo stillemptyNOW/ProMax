@@ -6800,4 +6800,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proMaxArchiveTitle => 'Файл ProMax · .promax';
+
+  @override
+  String get errorServerNoResponse => 'Сервер не ответил';
+
+  @override
+  String get errorNoConnection => 'Нет соединения';
+
+  @override
+  String get errorFileAccess => 'Нет доступа к файлу';
+
+  @override
+  String get errorUnknown => 'Неизвестная ошибка';
 }

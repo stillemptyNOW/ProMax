@@ -24,6 +24,7 @@ import '../../../commands/commands.dart';
 import '../../../widgets/rich_message_controller.dart';
 import 'chat_controller.dart';
 import '../../../../backend/modules/forward_sender.dart';
+import '../../../../core/utils/user_facing_error.dart';
 
 // #***! текстовые сообщения + пересылка + reply-состояние; медиа-отправка
 // живёт отдельно в ChatMediaSendController — здесь то, что завязано на
@@ -566,7 +567,7 @@ class ChatTextSendController {
         unawaited(AppDatabase.deleteMessage(accountId, chatId, tempId));
         if (canUpdateChat()) {
           Haptics.error();
-          notify(e.toString());
+          notify(userFacingError(e));
         }
         return;
       }

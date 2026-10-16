@@ -12,6 +12,7 @@ import '../../widgets/prompt_dialog.dart';
 import '../../widgets/sheet_helpers.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class CallParticipantView {
   final String name;
@@ -94,7 +95,7 @@ class _ParticipantsSheetState extends State<_ParticipantsSheet> {
       if (mounted) {
         showCustomNotification(
           context,
-          _l10n.callParticipantsActionFailed('$e'),
+          _l10n.callParticipantsActionFailed(userFacingError(e)),
         );
       }
       return false;
@@ -542,7 +543,11 @@ class _ParticipantsSheetState extends State<_ParticipantsSheet> {
     ];
 
     return ListTile(
-      leading: ProMaxAvatar(name: view.name, imageUrl: view.avatarUrl, size: 40),
+      leading: ProMaxAvatar(
+        name: view.name,
+        imageUrl: view.avatarUrl,
+        size: 40,
+      ),
       title: Text(
         view.name,
         style: TextStyle(color: cs.onSurface, fontSize: 16),

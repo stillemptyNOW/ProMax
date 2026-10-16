@@ -17,6 +17,7 @@ import '../../widgets/hint_bubble.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../core/security/app_lock.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class TrafficMonitorScreen extends StatefulWidget {
   const TrafficMonitorScreen({super.key});
@@ -82,7 +83,10 @@ class _TrafficMonitorScreenState extends State<TrafficMonitorScreen> {
       );
     } catch (e) {
       if (mounted) {
-        showCustomNotification(context, 'Не удалось поделиться: $e');
+        showCustomNotification(
+          context,
+          'Не удалось поделиться: ${userFacingError(e)}',
+        );
       }
     }
   }

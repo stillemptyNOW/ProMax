@@ -28,6 +28,7 @@ import '../../../main.dart';
 import '../../../core/config/app_frost.dart';
 import '../../../core/config/build_profile.dart';
 import '../../../core/config/app_shape.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class LoginScreen extends StatefulWidget {
   final int? returnToAccountId;
@@ -85,7 +86,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       showCustomNotification(
         context,
-        AppLocalizations.of(context)!.loginScreenReconnectFailed('$e'),
+        AppLocalizations.of(
+          context,
+        )!.loginScreenReconnectFailed(userFacingError(e)),
       );
     } finally {
       if (mounted) setState(() => _switchingSmsMode = false);

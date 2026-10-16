@@ -25,6 +25,7 @@ import '../../widgets/section_header.dart';
 import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
 import '../auth/login_screen.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 enum SpoofingMethod { partial, full }
 
@@ -390,7 +391,9 @@ class _SpoofScreenState extends State<SpoofScreen> {
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.spoofErrorApplyFailed(e.toString()),
+          AppLocalizations.of(
+            context,
+          )!.spoofErrorApplyFailed(userFacingError(e)),
         );
       }
     }

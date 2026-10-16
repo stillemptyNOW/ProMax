@@ -11,6 +11,7 @@ import '../../widgets/connection_status.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/promax_bubble_border.dart';
 import '../chats/chat_export_sheet.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class ExportReaderScreen extends StatefulWidget {
   const ExportReaderScreen({super.key});
@@ -39,7 +40,12 @@ class _ExportReaderScreenState extends State<ExportReaderScreen> {
     } on FormatException catch (e) {
       if (mounted) showCustomNotification(context, e.message);
     } catch (e) {
-      if (mounted) showCustomNotification(context, 'Не удалось открыть: $e');
+      if (mounted) {
+        showCustomNotification(
+          context,
+          'Не удалось открыть: ${userFacingError(e)}',
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

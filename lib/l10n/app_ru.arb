@@ -2165,5 +2165,9 @@
   "proMaxArchiveExport": "Экспорт ProMax · .promax",
   "proMaxArchiveImport": "Импорт ProMax · .promax",
   "proMaxArchiveKey": "Ключ восстановления моей истории",
-  "proMaxArchiveTitle": "Файл ProMax · .promax"
+  "proMaxArchiveTitle": "Файл ProMax · .promax",
+  "errorServerNoResponse": "Сервер не ответил",
+  "errorNoConnection": "Нет соединения",
+  "errorFileAccess": "Нет доступа к файлу",
+  "errorUnknown": "Неизвестная ошибка"
 }

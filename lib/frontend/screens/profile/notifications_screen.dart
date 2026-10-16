@@ -21,6 +21,7 @@ import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
 import '../chats/quiet_hours_sheet.dart';
 import 'web_push_screen.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -81,7 +82,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         setState(() => assign(!value));
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.notificationsSaveFailed(e.toString()),
+          AppLocalizations.of(
+            context,
+          )!.notificationsSaveFailed(userFacingError(e)),
         );
       }
     } finally {
@@ -178,19 +181,18 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       children: [
                         ValueListenableBuilder<bool>(
                           valueListenable: FkmController.instance.enabled,
-                          builder: (context, fkmEnabled, _) =>
-                              SettingsToggleTile(
-                                icon: Symbols.notifications_active,
-                                label: Platform.isIOS
-                                    ? 'Живое соединение'
-                                    : l10n.notificationsFkmEnableLabel,
-                                subtitle: Platform.isIOS
-                                    ? 'ProMax держит связь с MAX в фоне и сразу показывает уведомления. Тратит больше батареи. Если смахнуть ProMax из списка приложений, уведомления остановятся до следующего запуска'
-                                    : l10n.notificationsFkmEnableSubtitle,
-                                value: fkmEnabled,
-                                enabled: !_fkmBusy,
-                                onChanged: _onFkmChanged,
-                              ),
+                          builder: (context, fkmEnabled, _) => SettingsToggleTile(
+                            icon: Symbols.notifications_active,
+                            label: Platform.isIOS
+                                ? 'Живое соединение'
+                                : l10n.notificationsFkmEnableLabel,
+                            subtitle: Platform.isIOS
+                                ? 'ProMax держит связь с MAX в фоне и сразу показывает уведомления. Тратит больше батареи. Если смахнуть ProMax из списка приложений, уведомления остановятся до следующего запуска'
+                                : l10n.notificationsFkmEnableSubtitle,
+                            value: fkmEnabled,
+                            enabled: !_fkmBusy,
+                            onChanged: _onFkmChanged,
+                          ),
                         ),
                       ],
                     ),

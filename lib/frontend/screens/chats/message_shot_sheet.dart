@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../widgets/custom_notification.dart';
 import '../../widgets/promax_ui.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 @immutable
 class MessageShotItem {
@@ -85,7 +86,12 @@ class _MessageShotSheetState extends State<_MessageShotSheet> {
       await file.writeAsBytes(bytes.buffer.asUint8List());
       await Share.shareXFiles([XFile(file.path, mimeType: 'image/png')]);
     } catch (e) {
-      if (mounted) showCustomNotification(context, 'Не удалось сохранить: $e');
+      if (mounted) {
+        showCustomNotification(
+          context,
+          'Не удалось сохранить: ${userFacingError(e)}',
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

@@ -2565,5 +2565,9 @@
   "proMaxArchiveExport": "Export ProMax · .promax",
   "proMaxArchiveImport": "Import ProMax · .promax",
   "proMaxArchiveKey": "History recovery key",
-  "proMaxArchiveTitle": "ProMax file · .promax"
+  "proMaxArchiveTitle": "ProMax file · .promax",
+  "errorServerNoResponse": "The server did not respond",
+  "errorNoConnection": "No connection",
+  "errorFileAccess": "Can't access the file",
+  "errorUnknown": "Unknown error"
 }

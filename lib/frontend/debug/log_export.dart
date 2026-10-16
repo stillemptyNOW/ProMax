@@ -10,6 +10,7 @@ import '../../core/utils/debug_session_log.dart';
 import '../../core/utils/format.dart';
 import '../widgets/custom_notification.dart';
 import '../../core/security/app_lock.dart';
+import '../../core/utils/user_facing_error.dart';
 
 Future<void> exportDebugLog(BuildContext context) async {
   final exportFiles = await DebugSessionLog.instance.buildExportFiles(
@@ -45,7 +46,10 @@ Future<void> exportDebugLog(BuildContext context) async {
     }
   } catch (e) {
     if (context.mounted) {
-      showCustomNotification(context, 'Не удалось сохранить лог: $e');
+      showCustomNotification(
+        context,
+        'Не удалось сохранить лог: ${userFacingError(e)}',
+      );
     }
   }
 }

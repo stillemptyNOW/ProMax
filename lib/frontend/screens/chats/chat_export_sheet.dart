@@ -12,6 +12,7 @@ import '../../../core/crypto/message_decryption_cache.dart';
 import '../../../core/export/chat_export.dart';
 import '../../../core/storage/app_database.dart';
 import '../../widgets/custom_notification.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 Future<String?> askExportPassword(
   BuildContext context, {
@@ -202,7 +203,10 @@ Future<void> showChatExportSheet(
     await Share.shareXFiles([XFile(file.path)]);
   } catch (e) {
     if (context.mounted) {
-      showCustomNotification(context, 'Не удалось экспортировать: $e');
+      showCustomNotification(
+        context,
+        'Не удалось экспортировать: ${userFacingError(e)}',
+      );
     }
   }
 }

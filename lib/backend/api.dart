@@ -411,10 +411,28 @@ class Api {
     return response.payload as Map<dynamic, dynamic>;
   }
 
-  Future<bool> sendRequestOk(int opcode, Map<dynamic, dynamic> payload) async {
-    final response = await sendRequest(opcode, payload);
-    return response.isOk;
+  Future<bool> sendRequestOk(
+    int opcode,
+    Map<dynamic, dynamic> payload, {
+    bool silent = false,
+  }) async {
+    try {
+      final response = await sendRequest(opcode, payload, silent: silent);
+      return response.isOk;
+    } on SessionExpiredException {
+      rethrow;
+    } on PacketError catch (e) {
+      _logRequestFailure(opcode, e);
+    } on StateError catch (e) {
+      _logRequestFailure(opcode, e);
+    } on TimeoutException catch (e) {
+      _logRequestFailure(opcode, e);
+    }
+    return false;
   }
+
+  void _logRequestFailure(int opcode, Object error) =>
+      logger.w('${Opcode.name(opcode)} не выполнен: $error');
 
   Future<Packet> sendRequestOrThrow(
     int opcode,

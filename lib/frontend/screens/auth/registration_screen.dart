@@ -9,6 +9,7 @@ import '../../widgets/auth_limits_sheet.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/login_success_screen.dart';
 import '../../widgets/small_spinner.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class RegistrationScreen extends StatefulWidget {
   final String phoneNumber;
@@ -89,7 +90,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      showCustomNotification(context, e.toString());
+      showCustomNotification(context, userFacingError(e));
     }
   }
 

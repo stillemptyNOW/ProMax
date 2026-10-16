@@ -15,6 +15,7 @@ import 'chat_admin/channel_type_link_screen.dart';
 import 'chat_admin/chat_admin_state.dart';
 import 'chat_screen.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 Future<void> showCreateChannelFlow(BuildContext context) async {
   final cs = Theme.of(context).colorScheme;
@@ -142,7 +143,7 @@ class _CreateChannelFlowState extends State<_CreateChannelFlow> {
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.devicesGenericError('$e'),
+          AppLocalizations.of(context)!.devicesGenericError(userFacingError(e)),
         );
         setState(() => _creating = false);
       }

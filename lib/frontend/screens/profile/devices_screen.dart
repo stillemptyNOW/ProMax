@@ -20,6 +20,7 @@ import '../../widgets/small_spinner.dart';
 import '../../widgets/web_qr_login.dart';
 import 'web_qr_scan_screen.dart';
 import '../../../core/config/app_fonts.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class DevicesScreen extends StatefulWidget {
   const DevicesScreen({super.key});
@@ -69,7 +70,7 @@ class _DevicesScreenState extends State<DevicesScreen>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.devicesLoadFailed(e.toString()),
+          AppLocalizations.of(context)!.devicesLoadFailed(userFacingError(e)),
         );
         setState(() => _isLoading = false);
       }
@@ -123,7 +124,7 @@ class _DevicesScreenState extends State<DevicesScreen>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.devicesGenericError(e.toString()),
+          AppLocalizations.of(context)!.devicesGenericError(userFacingError(e)),
         );
       }
     }
@@ -172,7 +173,9 @@ class _DevicesScreenState extends State<DevicesScreen>
         setState(() => _loadingIps.remove(id));
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.devicesIpLookupError(e.toString()),
+          AppLocalizations.of(
+            context,
+          )!.devicesIpLookupError(userFacingError(e)),
         );
       }
     } finally {

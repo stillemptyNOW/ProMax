@@ -6758,4 +6758,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proMaxArchiveTitle => 'ProMax file · .promax';
+
+  @override
+  String get errorServerNoResponse => 'The server did not respond';
+
+  @override
+  String get errorNoConnection => 'No connection';
+
+  @override
+  String get errorFileAccess => 'Can\'t access the file';
+
+  @override
+  String get errorUnknown => 'Unknown error';
 }

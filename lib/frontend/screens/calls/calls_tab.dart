@@ -23,6 +23,7 @@ import '../../../l10n/app_localizations.dart';
 import 'call_link_sheet.dart';
 import 'call_screen.dart';
 import '../../../core/config/app_fonts.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class CallsTab extends StatefulWidget {
   const CallsTab({super.key});
@@ -45,7 +46,10 @@ Future<void> createGroupCallFromContext(BuildContext context) async {
     created = await controller.createConference();
   } catch (e) {
     if (context.mounted) {
-      showCustomNotification(context, '${l10n.callLinkCreateFailed}: $e');
+      showCustomNotification(
+        context,
+        '${l10n.callLinkCreateFailed}: ${userFacingError(e)}',
+      );
     }
     return;
   }
@@ -66,7 +70,10 @@ Future<void> createGroupCallFromContext(BuildContext context) async {
     );
   } catch (e) {
     if (context.mounted) {
-      showCustomNotification(context, l10n.callsTabStartFailed('$e'));
+      showCustomNotification(
+        context,
+        l10n.callsTabStartFailed(userFacingError(e)),
+      );
     }
   }
 }
@@ -399,7 +406,10 @@ class _CallsTabState extends State<CallsTab>
       created = await controller.createConference();
     } catch (e) {
       if (mounted) {
-        showCustomNotification(context, '${l10n.callLinkCreateFailed}: $e');
+        showCustomNotification(
+          context,
+          '${l10n.callLinkCreateFailed}: ${userFacingError(e)}',
+        );
       }
       return;
     }
@@ -421,7 +431,10 @@ class _CallsTabState extends State<CallsTab>
       );
     } catch (e) {
       if (!mounted) return;
-      showCustomNotification(context, l10n.callsTabStartFailed('$e'));
+      showCustomNotification(
+        context,
+        l10n.callsTabStartFailed(userFacingError(e)),
+      );
     }
   }
 
