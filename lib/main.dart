@@ -99,6 +99,7 @@ import 'core/push/push_service.dart';
 import 'core/storage/app_database.dart';
 import 'core/transport/tls_config.dart';
 import 'core/transport/traffic_monitor.dart';
+import 'core/transport/network_watch.dart';
 import 'core/transport/vpn_bypass.dart';
 import 'core/storage/token_storage.dart';
 import 'core/utils/haptics.dart';
@@ -484,6 +485,7 @@ class ProMaxAppState extends State<ProMaxApp>
   StreamSubscription<PendingDeletionReport>? _deletionReportsSub;
   StreamSubscription<void>? _undoWindowsClosedSub;
   StreamSubscription<String>? _botAnswersSub;
+  final NetworkWatch _networkWatch = NetworkWatch();
   late final AppLifecycleListener _exitListener;
   Timer? _scheduleTimer;
   String? _lastVpnNotice;
@@ -521,6 +523,7 @@ class ProMaxAppState extends State<ProMaxApp>
     _undoWindowsClosedSub = PendingDeletions.instance.undoWindowsClosed.listen(
       (_) => PendingUndo.commitPending(),
     );
+    _networkWatch.start(api.wakeUp);
     _botAnswersSub = BotCallbackAnswers.instance.unclaimed.listen((text) {
       final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
       if (overlay != null) showCustomNotificationOnOverlay(overlay, text);
@@ -776,6 +779,7 @@ class ProMaxAppState extends State<ProMaxApp>
     _deletionReportsSub?.cancel();
     _undoWindowsClosedSub?.cancel();
     _botAnswersSub?.cancel();
+    _networkWatch.stop();
     _exitListener.dispose();
     _scheduleTimer?.cancel();
     _resizeMarkTimer?.cancel();
