@@ -665,6 +665,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get msgActionsReadByUnknownUser => 'User';
 
   @override
+  String readStampToday(String time) {
+    return 'today at $time';
+  }
+
+  @override
+  String readStampYesterday(String time) {
+    return 'yesterday at $time';
+  }
+
+  @override
+  String readStampDate(String date, String time) {
+    return '$date at $time';
+  }
+
+  @override
+  String readReceiptReadAt(String stamp) {
+    return 'Read $stamp';
+  }
+
+  @override
+  String readReceiptReadAtMost(String stamp) {
+    return 'Read no later than $stamp';
+  }
+
+  @override
+  String get readReceiptReadUnknown => 'Read, time unknown';
+
+  @override
+  String get readReceiptNotRead => 'Not read yet';
+
+  @override
+  String readReceiptReadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Read by $count members',
+      one: 'Read by $count member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String readReceiptTimeAtMost(String stamp) {
+    return 'by $stamp';
+  }
+
+  @override
+  String get readReceiptTimeUnknown => 'time unknown';
+
+  @override
+  String get proMaxSettingsReadStamp => 'Read time under messages';
+
+  @override
+  String get proMaxSettingsReadStampSubtitle =>
+      'In a dialog, your latest read message shows when it was read';
+
+  @override
   String get msgActionsReport => 'Report';
 
   @override
@@ -2603,6 +2660,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'After downloading, choose eSign from the Share menu to sign and install the IPA.';
 
   @override
+  String get updateWindowsInstallHint =>
+      'ProMax will close, install the update and start again.';
+
+  @override
   String get updateLater => 'Later';
 
   @override
@@ -3342,8 +3403,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkQrUnavailable => 'Couldn\'t get the link';
 
   @override
-  String get notificationsDesktopNote =>
-      'Notifications aren\'t shown on the computer yet. The settings below are your account\'s push settings for phones.';
+  String get notificationsDesktopSectionTitle => 'Window';
+
+  @override
+  String get notificationsDesktopTrayLabel => 'Minimize to tray on close';
+
+  @override
+  String get notificationsDesktopTraySubtitle =>
+      'The close button hides ProMax in the tray: the connection stays up and notifications keep coming. Quit from the tray icon menu';
+
+  @override
+  String get notificationsDesktopAutostartLabel => 'Start with Windows';
+
+  @override
+  String get notificationsDesktopAutostartSubtitle =>
+      'ProMax starts minimized to the tray and shows notifications right away';
+
+  @override
+  String get notificationsDesktopAutostartFailed =>
+      'Couldn\'t change autostart';
 
   @override
   String get fileNoAppToOpen =>
@@ -4160,6 +4238,101 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get deleteMessagesPeerFallbackNote =>
+      'The other person\'s messages will be deleted for both of you if the server allows it, otherwise only for you.';
+
+  @override
+  String deleteMessagesOthersOnlyForMe(int count) {
+    return 'Other people\'s messages ($count) will be deleted only for you.';
+  }
+
+  @override
+  String deleteMessagesKeptForPeer(int count) {
+    return 'The server didn\'t let you delete $count of the other person\'s messages for both — they were deleted only for you';
+  }
+
+  @override
+  String deleteMessagesFailedWithReason(String reason) {
+    return 'Couldn\'t delete messages: $reason';
+  }
+
+  @override
+  String deleteChatFailedWithReason(String reason) {
+    return 'Couldn\'t delete the chat: $reason';
+  }
+
+  @override
+  String leaveChatFailedWithReason(String reason) {
+    return 'Couldn\'t leave the chat: $reason';
+  }
+
+  @override
+  String get serverUnreachable => 'No connection to the server';
+
+  @override
+  String get wipeForBothAction => 'Delete for both';
+
+  @override
+  String get wipeForBothTitle => 'Delete for both?';
+
+  @override
+  String get wipeForBothMessage =>
+      'ProMax will delete every message in this chat for you and the other person, then delete the chat itself. This can\'t be undone.';
+
+  @override
+  String get wipeCollecting => 'Collecting the history…';
+
+  @override
+  String wipeFound(int count) {
+    return 'Messages found: $count';
+  }
+
+  @override
+  String wipeDeleting(int done, int total) {
+    return 'Deleted $done of $total';
+  }
+
+  @override
+  String wipeSummaryForBoth(int count) {
+    return 'Deleted for both: $count';
+  }
+
+  @override
+  String wipeSummaryOnlyForMe(int count) {
+    return 'Deleted only for you (the server refused to delete them for the other person): $count';
+  }
+
+  @override
+  String wipeSummaryNotDeleted(int count) {
+    return 'Not deleted: $count';
+  }
+
+  @override
+  String get wipeSummaryHistoryIncomplete =>
+      'The server didn\'t return the whole history';
+
+  @override
+  String get wipeSummaryInterrupted =>
+      'The connection dropped and deleting stopped — try again';
+
+  @override
+  String wipeSummaryChatKept(String reason) {
+    return 'The chat wasn\'t deleted: $reason';
+  }
+
+  @override
+  String wipeSummaryClearFailed(String reason) {
+    return 'The history wasn\'t cleared for both: $reason';
+  }
+
+  @override
+  String get messageDeletedMark => 'deleted';
+
+  @override
+  String get messageDeletedMarkHint =>
+      'This message was deleted. You see it because “Show deleted messages” is on';
+
+  @override
   String get chatScreenMenuMute => 'Disable notifications';
 
   @override
@@ -4905,6 +5078,104 @@ class AppLocalizationsEn extends AppLocalizations {
   String get webAppPhoneRequestShare => 'Share';
 
   @override
+  String get sandboxRiskyFileTitle => 'Potentially dangerous file';
+
+  @override
+  String sandboxRiskyFileMessage(String name, String extension) {
+    return '“$name” is a program or script ($extension). Once opened, it can do anything you can: read your files, install software, change settings. Open it only if you fully trust the sender.';
+  }
+
+  @override
+  String get sandboxRiskyFileOpen => 'Open anyway';
+
+  @override
+  String get sandboxOpenFileTitle => 'Open the file?';
+
+  @override
+  String sandboxOpenFileMessage(String name) {
+    return '“$name” will open in another app.';
+  }
+
+  @override
+  String get sandboxOpenFileConfirm => 'Open';
+
+  @override
+  String get sandboxDownloadTitle => 'Download the file?';
+
+  @override
+  String sandboxDownloadMessage(String app, String name, String host) {
+    return 'The mini app “$app” wants to save “$name” from $host. The file stays in ProMax\'s private folder; you\'ll find it in Downloads.';
+  }
+
+  @override
+  String sandboxDownloadRiskyNote(String extension) {
+    return 'This is a program or script ($extension). Don\'t open it unless you trust the mini app.';
+  }
+
+  @override
+  String get sandboxDownloadKeep => 'Save';
+
+  @override
+  String get sandboxDownloadSaveAs => 'Save as…';
+
+  @override
+  String get sandboxDownloadSaved => 'Saved to ProMax downloads';
+
+  @override
+  String get sandboxDownloadFailed => 'Couldn\'t download the file';
+
+  @override
+  String get sandboxLeaveTitle => 'Another website';
+
+  @override
+  String sandboxLeaveMessage(String host) {
+    return 'The mini app is opening $host. That site won\'t get access to ProMax features.';
+  }
+
+  @override
+  String sandboxLeaveExternalMessage(String host) {
+    return 'The mini app wants to open $host in your browser.';
+  }
+
+  @override
+  String get sandboxLeaveBrowser => 'In browser';
+
+  @override
+  String get sandboxLeaveHere => 'Open here';
+
+  @override
+  String get sandboxLinkBlocked =>
+      'Link blocked: addresses like this can open files and programs on your device';
+
+  @override
+  String get sandboxSectionTitle => 'SANDBOX';
+
+  @override
+  String get sandboxConfirmEveryFile => 'Ask before opening files';
+
+  @override
+  String get sandboxConfirmEveryFileHint =>
+      'Programs, scripts and shortcuts always open only after a warning.';
+
+  @override
+  String get sandboxStrictProcess => 'Strict process isolation';
+
+  @override
+  String get sandboxStrictProcessHint =>
+      'Blocks foreign DLLs injected through AppInit_DLLs, global hooks and legacy IMEs. Screen readers and Punto Switcher may stop working inside ProMax. Takes effect after a restart.';
+
+  @override
+  String get sandboxSettingFailed => 'Couldn\'t change the setting';
+
+  @override
+  String get sandboxSummary =>
+      'Mini apps can\'t reach your files and stay on their own site; downloads land in ProMax\'s private folder; links to files and system protocols don\'t open.';
+
+  @override
+  String get sandboxSummaryWindows =>
+      'On Windows every saved file is marked as downloaded from the internet, so SmartScreen and Office Protected View check it.';
+
+  @override
   String get promptDialogConfirm => 'Confirm';
 
   @override
@@ -5438,7 +5709,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pluginsScreenDownload => 'Download';
 
   @override
-  String get proMaxSettingsViewDeletedSubtitle => 'Show deleted messages';
+  String get proMaxSettingsViewDeletedSubtitle =>
+      'Messages deleted by others stay in the chat marked “deleted”';
 
   @override
   String get proMaxSettingsViewRedactedSubtitle =>
@@ -6658,4 +6930,511 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proMaxArchiveTitle => 'ProMax file · .promax';
+
+  @override
+  String get privacySandboxTitle => 'Privacy & sandbox';
+
+  @override
+  String get privacySandboxIntro =>
+      'ProMax has no analytics or crash reporting and sends no telemetry to MAX. These options limit what MAX, mini-apps and third-party services learn about your device and network.';
+
+  @override
+  String get privacySectionDevice => 'Device';
+
+  @override
+  String get privacyHideDeviceLabel => 'Hide device details';
+
+  @override
+  String get privacyHideDeviceSubtitle =>
+      'New sign-ins appear as a typical Android phone with random identifiers, without your model, OS build, time zone or language';
+
+  @override
+  String get privacyAccountRealDevice =>
+      'This account was signed in earlier and still sends the real device details';
+
+  @override
+  String get privacyAccountHiddenDevice =>
+      'This account uses a substitute device profile';
+
+  @override
+  String get privacyApplyToAccountLabel => 'Hide device for this account';
+
+  @override
+  String get privacyApplyToAccountMessage =>
+      'Model, OS, time zone and language will be replaced with a typical profile. The device identifier stays the same, so the session is kept. The app will reconnect.';
+
+  @override
+  String get privacyApplyToAccountConfirm => 'Apply';
+
+  @override
+  String get privacyApplyToAccountDone =>
+      'Device details are hidden for this account';
+
+  @override
+  String privacyApplyToAccountFailed(String error) {
+    return 'Could not apply: $error';
+  }
+
+  @override
+  String get privacySectionMiniApps => 'Mini-apps';
+
+  @override
+  String get privacyNeutralAgentLabel => 'Neutral User-Agent';
+
+  @override
+  String get privacyNeutralAgentSubtitle =>
+      'Mini-apps and Digital ID do not see your phone model and OS build';
+
+  @override
+  String get privacyIsolateMiniAppsLabel => 'Isolate mini-apps';
+
+  @override
+  String get privacyIsolateMiniAppsSubtitle =>
+      'Cookies and site data of each launch are erased when it closes. Digital ID and Gosuslugi keep their sign-in';
+
+  @override
+  String get privacyBlockTrackersLabel => 'Block trackers';
+
+  @override
+  String get privacyBlockTrackersSubtitle =>
+      'Top@Mail.ru, Yandex Metrica, Google Analytics and other counters inside mini-apps';
+
+  @override
+  String get privacySectionCalls => 'Calls';
+
+  @override
+  String get privacyHideLocalAddressesLabel => 'Hide local addresses';
+
+  @override
+  String get privacyHideLocalAddressesSubtitle =>
+      'Addresses of your home or office network are not sent to the other party or the server';
+
+  @override
+  String get privacyRelayCallsLabel => 'Hide my IP in calls';
+
+  @override
+  String get privacyRelayCallsSubtitle =>
+      'Calls go only through MAX relay servers. Calls may connect slower';
+
+  @override
+  String get privacySectionNetwork => 'Network';
+
+  @override
+  String get privacySessionIpLookupLabel => 'Look up session locations';
+
+  @override
+  String privacySessionIpLookupSubtitle(String host) {
+    return 'In Devices, the IP of the session you tap is sent over HTTPS to $host';
+  }
+
+  @override
+  String get privacySessionIpLookupConfirmTitle =>
+      'Send the IP to a third party?';
+
+  @override
+  String privacySessionIpLookupConfirmMessage(String host) {
+    return 'To show the location, the session IP is sent over HTTPS to $host. You can turn this off in Privacy & sandbox.';
+  }
+
+  @override
+  String get privacySessionIpLookupConfirmAction => 'Send';
+
+  @override
+  String get privacyAutoUpdateLabel => 'Check for updates automatically';
+
+  @override
+  String get privacyAutoUpdateSubtitle =>
+      'At most every 6 hours a request goes to GitHub. The manual check stays in settings';
+
+  @override
+  String get privacyNoticeTls =>
+      'The Russian Ministry of Digital Development root certificate is trusted only for MAX and Gosuslugi servers.';
+
+  @override
+  String get privacyNoticeFirebase =>
+      'This build receives notifications through Firebase: the push token is known to Google and MAX.';
+
+  @override
+  String get errorServerNoResponse => 'The server did not respond';
+
+  @override
+  String get errorNoConnection => 'No connection';
+
+  @override
+  String get errorFileAccess => 'Can\'t access the file';
+
+  @override
+  String get errorUnknown => 'Unknown error';
+
+  @override
+  String get chatActivityRecordingVoice => 'Recording a voice message...';
+
+  @override
+  String chatActivityRecordingVoiceOne(String name) {
+    return '$name is recording a voice message...';
+  }
+
+  @override
+  String chatActivityRecordingVoiceMany(String name, int count) {
+    return '$name and $count more are recording voice messages...';
+  }
+
+  @override
+  String get chatActivityRecordingVideoNote => 'Recording a video message...';
+
+  @override
+  String chatActivityRecordingVideoNoteOne(String name) {
+    return '$name is recording a video message...';
+  }
+
+  @override
+  String chatActivityRecordingVideoNoteMany(String name, int count) {
+    return '$name and $count more are recording video messages...';
+  }
+
+  @override
+  String get chatActivitySendingPhoto => 'Sending a photo...';
+
+  @override
+  String chatActivitySendingPhotoOne(String name) {
+    return '$name is sending a photo...';
+  }
+
+  @override
+  String chatActivitySendingPhotoMany(String name, int count) {
+    return '$name and $count more are sending photos...';
+  }
+
+  @override
+  String get chatActivitySendingFile => 'Sending a file...';
+
+  @override
+  String chatActivitySendingFileOne(String name) {
+    return '$name is sending a file...';
+  }
+
+  @override
+  String chatActivitySendingFileMany(String name, int count) {
+    return '$name and $count more are sending files...';
+  }
+
+  @override
+  String get newChatAvatarNotSet => 'The avatar was not set';
+
+  @override
+  String get msgActionsRetrySend => 'Retry sending';
+
+  @override
+  String get msgRetrySendUnavailable => 'This message can no longer be resent';
+
+  @override
+  String get callsTabDeleteFailed => 'Couldn\'t delete the call from history';
+
+  @override
+  String chatCommentsLoadFailed(String error) {
+    return 'Couldn\'t load comments: $error';
+  }
+
+  @override
+  String get folderActionReorder => 'Reorder folders';
+
+  @override
+  String get folderReorderTitle => 'Folder order';
+
+  @override
+  String get folderReorderHint => 'Drag a folder by the handle on the right';
+
+  @override
+  String get folderReorderSave => 'Save';
+
+  @override
+  String folderReorderFailed(String error) {
+    return 'Couldn\'t reorder folders: $error';
+  }
+
+  @override
+  String get searchScopeAll => 'Everything';
+
+  @override
+  String get searchScopePeople => 'People';
+
+  @override
+  String get searchScopeChats => 'Chats';
+
+  @override
+  String get searchScopeMessages => 'Messages';
+
+  @override
+  String get searchPeriodAny => 'Any time';
+
+  @override
+  String get searchPeriodDay => 'Today';
+
+  @override
+  String get searchPeriodWeek => 'Week';
+
+  @override
+  String get searchPeriodMonth => 'Month';
+
+  @override
+  String get searchPeriodYear => 'Year';
+
+  @override
+  String get searchSenderAny => 'Any sender';
+
+  @override
+  String get searchSenderMe => 'Me';
+
+  @override
+  String get searchSenderOthers => 'Not me';
+
+  @override
+  String get searchKindAny => 'All chats';
+
+  @override
+  String get searchKindDialogs => 'Personal';
+
+  @override
+  String get searchKindGroups => 'Groups';
+
+  @override
+  String get searchKindChannels => 'Channels';
+
+  @override
+  String get searchFilterScope => 'Search for';
+
+  @override
+  String get searchFilterPeriod => 'Period';
+
+  @override
+  String get searchFilterSender => 'Sender';
+
+  @override
+  String get searchFilterKind => 'Chat type';
+
+  @override
+  String get chatToolsAtmosphere => 'Atmosphere';
+
+  @override
+  String get chatToolsAtmosphereDefault => 'Same as everywhere';
+
+  @override
+  String get chatToolsStats => 'Statistics';
+
+  @override
+  String get chatToolsDisappearing => 'Disappearing';
+
+  @override
+  String get chatToolsOff => 'Off';
+
+  @override
+  String get chatToolsQuietHours => 'Quiet hours';
+
+  @override
+  String get chatToolsNote => 'Note';
+
+  @override
+  String get chatToolsNone => 'None';
+
+  @override
+  String get chatToolsTemplates => 'Templates';
+
+  @override
+  String get chatToolsExport => 'Export';
+
+  @override
+  String get chatToolsLeaveSecret => 'Out of the double bottom';
+
+  @override
+  String get chatToolsMakeSecret => 'Into the double bottom';
+
+  @override
+  String get chatToolsHidden =>
+      'Chat hidden: it won\'t be visible with the second code';
+
+  @override
+  String get chatToolsShown => 'The chat is visible with any code again';
+
+  @override
+  String get proMaxSectionAppearance => 'Appearance';
+
+  @override
+  String get proMaxThemesAndGlass => 'Themes and glass';
+
+  @override
+  String get proMaxThemeCustom => 'Custom';
+
+  @override
+  String get proMaxAtmosphere => 'Atmosphere';
+
+  @override
+  String get proMaxSectionGhost => 'Ghost and privacy';
+
+  @override
+  String get proMaxNoTyping => 'Don\'t send \"typing\"';
+
+  @override
+  String get proMaxNoTypingHint =>
+      'The other person won\'t see that you\'re typing';
+
+  @override
+  String get proMaxHideStoryViews => 'Don\'t mark stories as viewed';
+
+  @override
+  String get proMaxHideStoryViewsHint =>
+      'The author won\'t know you watched the story';
+
+  @override
+  String get proMaxStreamerMode => 'Streamer mode';
+
+  @override
+  String get proMaxStreamerModeHint =>
+      'Blurs numbers, IDs and message previews, hides notification text';
+
+  @override
+  String get proMaxSwitcherBlur => 'Blur in the app switcher';
+
+  @override
+  String get proMaxSwitcherBlurHint =>
+      'Content is hidden in the iOS app switcher';
+
+  @override
+  String get proMaxSectionMessages => 'Messages';
+
+  @override
+  String get proMaxSectionTools => 'Tools';
+
+  @override
+  String get proMaxBookmarks => 'Bookmarks';
+
+  @override
+  String get proMaxReminders => 'Reminders';
+
+  @override
+  String get proMaxQuickReplies => 'Reply templates';
+
+  @override
+  String get proMaxOpenChatExport => 'Open a .pmxchat export';
+
+  @override
+  String get proMaxSectionChats => 'Chats and folders';
+
+  @override
+  String get proMaxSectionDiagnostics => 'Diagnostics';
+
+  @override
+  String get proMaxDigitalIdNative => 'Digital ID: native mode and report';
+
+  @override
+  String get proMaxBasedOnKomet =>
+      'ProMax is based on the open Komet client · GPLv3';
+
+  @override
+  String proMaxHeroVersion(String version, String theme) {
+    return 'Version $version · $theme';
+  }
+
+  @override
+  String get proMaxHeroCustomTheme => 'custom theme';
+
+  @override
+  String get proMaxHeroTagline => 'Your MAX, your way';
+
+  @override
+  String get proMaxGhost => 'Ghost';
+
+  @override
+  String get proMaxAntiRead => 'Don\'t read';
+
+  @override
+  String get proMaxStreamer => 'Streamer';
+
+  @override
+  String get proMaxOff => 'Off';
+
+  @override
+  String get proMaxOn => 'On';
+
+  @override
+  String get proMaxEntryHint => 'Ghost, themes, atmosphere and all the extras';
+
+  @override
+  String get chatStatsTitle => 'Statistics';
+
+  @override
+  String get chatStatsTopSenders => 'Who writes the most';
+
+  @override
+  String get chatStatsByHour => 'Activity by hour';
+
+  @override
+  String get chatStatsByWeekday => 'By day of the week';
+
+  @override
+  String get chatStatsMedia => 'Media and attachments';
+
+  @override
+  String get chatStatsTopWords => 'Frequent words';
+
+  @override
+  String get chatStatsWeekdaysShort => 'Mon,Tue,Wed,Thu,Fri,Sat,Sun';
+
+  @override
+  String get chatStatsWeekdaysFull =>
+      'Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday';
+
+  @override
+  String get chatStatsNoLocalMessages => 'No messages stored on this device';
+
+  @override
+  String chatStatsRange(String from, String to) {
+    return 'From $from to $to · based on messages stored on this device';
+  }
+
+  @override
+  String get chatStatsPhotos => 'Photos';
+
+  @override
+  String get chatStatsVideos => 'Videos and video messages';
+
+  @override
+  String get chatStatsVoice => 'Voice messages';
+
+  @override
+  String get chatStatsFiles => 'Files';
+
+  @override
+  String get chatStatsStickers => 'Stickers';
+
+  @override
+  String get chatStatsContacts => 'Contacts';
+
+  @override
+  String get chatStatsLocations => 'Locations';
+
+  @override
+  String get chatStatsPolls => 'Polls';
+
+  @override
+  String get chatStatsCalls => 'Calls';
+
+  @override
+  String get chatStatsMessages => 'Messages';
+
+  @override
+  String get chatStatsWords => 'Words';
+
+  @override
+  String get chatStatsPerDay => 'Per day';
+
+  @override
+  String get chatStatsBusiestDay => 'Busiest day';
+
+  @override
+  String chatStatsSynced(int count) {
+    return 'Messages loaded: $count';
+  }
+
+  @override
+  String get chatStatsSyncAll => 'Load the whole history from the server';
 }

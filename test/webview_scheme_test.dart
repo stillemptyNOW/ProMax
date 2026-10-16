@@ -25,6 +25,9 @@ void main() {
         'tel',
         'mailto',
         'intent',
+        'file',
+        'javascript',
+        'ms-msdt',
       ]) {
         expect(leavesWebView(scheme), isTrue, reason: scheme);
       }

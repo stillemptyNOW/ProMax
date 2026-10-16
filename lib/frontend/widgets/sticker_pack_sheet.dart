@@ -11,6 +11,7 @@ import 'small_spinner.dart';
 import 'lottie_image.dart';
 import 'sticker_peek.dart';
 import '../../core/config/app_shape.dart';
+import '../../core/utils/user_facing_error.dart';
 
 enum _PackAction { forward, copyLink }
 
@@ -107,7 +108,7 @@ class _StickerPackSheetState extends State<_StickerPackSheet> {
       if (!mounted) return;
       showCustomNotification(
         context,
-        AppLocalizations.of(context)!.devicesGenericError('$e'),
+        AppLocalizations.of(context)!.devicesGenericError(userFacingError(e)),
       );
     } finally {
       if (mounted) setState(() => _busy = false);

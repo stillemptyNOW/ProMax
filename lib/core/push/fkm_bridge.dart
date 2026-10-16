@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/logger.dart';
@@ -7,15 +9,24 @@ import '../utils/logger.dart';
 // #***! канал к нативному FKM, своё фоновое уведомление вместо фаербейза
 /// Канал к нативному сервису FKM (foreground promax messaging).
 class FkmBridge {
-  FkmBridge._();
-  static final FkmBridge instance = FkmBridge._();
+  FkmBridge._(this.isSupported);
+  static final FkmBridge instance = FkmBridge._(_platformSupported());
+
+  @visibleForTesting
+  FkmBridge.forTesting({required this.isSupported});
 
   static const _method = MethodChannel('io.github.stillemptynow.promax/fkm');
 
-  VoidCallback? _onDisabled;
-  bool _handlerSet = false;
+  final bool isSupported;
 
-  bool get isSupported {
+  VoidCallback? _onDisabled;
+  VoidCallback? _onAttached;
+  bool _handlerSet = false;
+  final StreamController<void> _attached = StreamController<void>.broadcast();
+
+  Stream<void> get attached => _attached.stream;
+
+  static bool _platformSupported() {
     try {
       return Platform.isAndroid || Platform.isIOS;
     } catch (_) {
@@ -24,13 +35,22 @@ class FkmBridge {
   }
 
   // #***! юзер может выключить FKM прямо из уведомления
-  /// Вызывается, когда пользователь выключил FKM кнопкой в самом уведомлении.
-  void setDisabledCallback(VoidCallback callback) {
-    _onDisabled = callback;
+  void listen({
+    required VoidCallback onDisabled,
+    required VoidCallback onAttached,
+  }) {
+    _onDisabled = onDisabled;
+    _onAttached = onAttached;
     if (_handlerSet || !isSupported) return;
     _handlerSet = true;
     _method.setMethodCallHandler((call) async {
-      if (call.method == 'disabled') _onDisabled?.call();
+      switch (call.method) {
+        case 'disabled':
+          _onDisabled?.call();
+        case 'attached':
+          _onAttached?.call();
+          _attached.add(null);
+      }
       return null;
     });
   }

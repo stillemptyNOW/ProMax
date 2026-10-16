@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../models/attachment.dart';
 import '../../lottie_image.dart';
 import '../../sending_clock_icon.dart';
 import 'bubble_context.dart';
+import '../../deleted_message_mark.dart';
 
 class StickerBubble extends StatelessWidget {
   final BubbleContext ctx;
@@ -79,7 +79,7 @@ class StickerBubble extends StatelessWidget {
           ],
           if (ctx.message.deleted) ...[
             const SizedBox(width: 3),
-            const Icon(Symbols.delete, size: 12, color: Colors.white),
+            const DeletedMessageMark(color: Colors.white, size: 12),
           ],
         ],
       ),

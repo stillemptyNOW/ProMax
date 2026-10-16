@@ -4,15 +4,17 @@ import 'build_profile.dart';
 abstract final class UpdateConfig {
   static const String repository = 'stillemptyNOW/ProMax';
   static const String apiUrl =
-      'https://api.github.com/repos/$repository/releases?per_page=1';
+      'https://api.github.com/repos/$repository/releases';
+
+  static const int releasesPerCheck = 20;
 
   // #***! в App Store сборке проверка обновлений не используется
   static bool get isConfigured => !BuildProfile.isAppStoreBuild;
 
   // #***! добавляем метку минуты для обхода промежуточного кеша
-  static Uri get manifestUri => Uri.parse(
-    apiUrl,
-  ).replace(queryParameters: {'per_page': '1', 't': _cacheBuster});
+  static Uri get manifestUri => Uri.parse(apiUrl).replace(
+    queryParameters: {'per_page': '$releasesPerCheck', 't': _cacheBuster},
+  );
 
   static String get downloadsPage => 'https://github.com/$repository/releases';
 

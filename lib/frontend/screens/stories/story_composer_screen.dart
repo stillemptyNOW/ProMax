@@ -11,6 +11,7 @@ import '../../../main.dart' show fileUploader, messagesModule, storiesModule;
 import '../../widgets/custom_notification.dart';
 import '../../widgets/primary_loading_button.dart';
 import '../../../core/config/app_frost.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 const int _storyExpiration = 86400000;
 
@@ -69,7 +70,7 @@ class _StoryComposerScreenState extends State<StoryComposerScreen> {
         await _publishPhoto();
       }
     } catch (e) {
-      _fail(e.toString());
+      _fail(userFacingError(e));
     }
   }
 

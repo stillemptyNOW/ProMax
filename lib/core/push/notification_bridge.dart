@@ -9,14 +9,19 @@ import '../../main.dart';
 import '../storage/app_database.dart';
 import '../storage/token_storage.dart';
 import '../utils/logger.dart';
+import 'native_event_stream.dart';
 
 // #***! открытие чата по тапу на уведомление
 class NotificationBridge {
   NotificationBridge._();
   static final NotificationBridge instance = NotificationBridge._();
 
-  static const _method = MethodChannel('io.github.stillemptynow.promax/notifications');
-  static const _events = EventChannel('io.github.stillemptynow.promax/notification_events');
+  static const _method = MethodChannel(
+    'io.github.stillemptynow.promax/notifications',
+  );
+  static const _events = EventChannel(
+    'io.github.stillemptynow.promax/notification_events',
+  );
   static const _retryDelay = Duration(milliseconds: 300);
   static const _maxRetries = 100;
 
@@ -31,7 +36,7 @@ class NotificationBridge {
   int _retriesLeft = 0;
   Timer? _retry;
 
-  int get _activeChatId => _activeChats.isEmpty ? 0 : _activeChats.last;
+  int get activeChatId => _activeChats.isEmpty ? 0 : _activeChats.last;
 
   bool get _native {
     try {
@@ -51,16 +56,17 @@ class NotificationBridge {
 
   // #***! подписка на уведомления и сессию
   void init() {
-    if (_started || !_native) return;
+    if (_started) return;
     _started = true;
-    _events.receiveBroadcastStream().listen(
-      _onEvent,
-      onError: (e) => logger.w('NotificationBridge: events stream error: $e'),
-    );
+    if (_native) {
+      NativeEventStream(_events, 'NotificationBridge').listen(_onEvent);
+    }
     api.stateStream.listen((state) {
       if (state == SessionState.online) _flushPending();
     });
   }
+
+  void openChat(int chatId) => _onEvent(chatId);
 
   void markReady() {
     _ready = true;
@@ -79,18 +85,18 @@ class NotificationBridge {
 
   // #***! вошли в чат, говорим нативу чтоб не уведомлял
   Future<void> pushActiveChat(int chatId) async {
-    if (!_native || chatId == 0) return;
+    if (chatId == 0) return;
     if (_openingChatId == chatId) _openingChatId = 0;
     _activeChats.add(chatId);
-    await _syncActiveChat();
+    if (_native) await _syncActiveChat();
   }
 
   Future<void> popActiveChat(int chatId) async {
-    if (!_native || chatId == 0) return;
+    if (chatId == 0) return;
     final index = _activeChats.lastIndexOf(chatId);
     if (index < 0) return;
     _activeChats.removeAt(index);
-    await _syncActiveChat();
+    if (_native) await _syncActiveChat();
   }
 
   Future<void> cancelChat(int chatId) async {
@@ -128,13 +134,13 @@ class NotificationBridge {
     if (!_native) return;
     _sentChatId = null;
     await _syncActiveChat();
-    final chatId = _activeChatId;
+    final chatId = activeChatId;
     if (chatId != 0) await cancelChat(chatId);
     await dismissReadChats();
   }
 
   Future<void> _syncActiveChat() async {
-    final chatId = _activeChatId;
+    final chatId = activeChatId;
     if (chatId == _sentChatId) return;
     _sentChatId = chatId;
     try {
@@ -177,7 +183,7 @@ class NotificationBridge {
     }
 
     _pendingChatId = 0;
-    if (_activeChatId == chatId || _openingChatId == chatId) return;
+    if (activeChatId == chatId || _openingChatId == chatId) return;
     _openingChatId = chatId;
     unawaited(
       openChatById(context, chatId).whenComplete(() {

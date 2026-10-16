@@ -15,7 +15,6 @@ import '../../../core/config/app_amoled.dart';
 import '../../../core/config/app_theme_mode.dart';
 import '../../../core/config/app_video_note_quality.dart';
 import '../../../core/config/promax_archive.dart';
-import '../../../core/config/promax_settings.dart';
 import '../../../core/security/app_lock.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/save_file_as.dart';
@@ -182,7 +181,7 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
       if (prefs['app_font_scale'] is num) {
         await app?.applyFontScale((prefs['app_font_scale'] as num).toDouble());
       }
-      api.sendPing(interactive: !ProMaxSettings.ghostMode.value);
+      api.refreshPresence();
       if (mounted) {
         showCustomNotification(
           context,

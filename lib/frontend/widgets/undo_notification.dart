@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/utils/logger.dart';
 import '../../l10n/app_localizations.dart';
 import 'toast_placement.dart';
 
@@ -36,10 +37,16 @@ class PendingUndo {
     required this.onCommit,
     required this.onUndo,
   }) {
-    _lifecycle = AppLifecycleListener(onPause: commit, onDetach: commit);
+    _lifecycle = AppLifecycleListener(
+      onHide: commit,
+      onPause: commit,
+      onDetach: commit,
+    );
   }
 
   static PendingUndo? _current;
+
+  static void commitPending() => _current?.commit(animate: false);
 
   final String message;
   final String undoLabel;
@@ -50,6 +57,7 @@ class PendingUndo {
   final GlobalKey<_UndoToastState> _toastKey = GlobalKey();
   late final OverlayEntry _entry = OverlayEntry(builder: _buildToast);
   late final AppLifecycleListener _lifecycle;
+  Timer? _expiry;
   bool _settled = false;
 
   static PendingUndo _show(
@@ -72,6 +80,7 @@ class PendingUndo {
     );
     _current = pending;
     overlay.insert(pending._entry);
+    pending._expiry = Timer(duration, pending.commit);
     return pending;
   }
 
@@ -85,12 +94,33 @@ class PendingUndo {
     onUndo: undo,
     onContinue: commit,
     onSwiped: () => commit(animate: false),
+    onOrphaned: _commitOrphaned,
   );
+
+  static Future<void> commitCurrent() async {
+    final pending = _current;
+    if (pending == null || !pending._settle()) return;
+    await Future.sync(pending.onCommit);
+    unawaited(pending._dismiss(animate: false));
+  }
 
   void commit({bool animate = true}) {
     if (!_settle()) return;
-    unawaited(Future.sync(onCommit));
+    _runCommit();
     unawaited(_dismiss(animate: animate));
+  }
+
+  void _commitOrphaned() {
+    if (!_settle()) return;
+    _runCommit();
+  }
+
+  void _runCommit() {
+    unawaited(
+      Future.sync(onCommit).catchError((Object error, StackTrace stack) {
+        logger.e('Отложенное действие не выполнилось: $error\n$stack');
+      }),
+    );
   }
 
   void undo() {
@@ -107,6 +137,7 @@ class PendingUndo {
   bool _settle() {
     if (_settled) return false;
     _settled = true;
+    _expiry?.cancel();
     _lifecycle.dispose();
     if (identical(_current, this)) _current = null;
     return true;
@@ -129,6 +160,7 @@ class _UndoToast extends StatefulWidget {
   final VoidCallback onUndo;
   final VoidCallback onContinue;
   final VoidCallback onSwiped;
+  final VoidCallback onOrphaned;
 
   const _UndoToast({
     required this.message,
@@ -139,6 +171,7 @@ class _UndoToast extends StatefulWidget {
     required this.onUndo,
     required this.onContinue,
     required this.onSwiped,
+    required this.onOrphaned,
     super.key,
   });
 
@@ -181,6 +214,7 @@ class _UndoToastState extends State<_UndoToast> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    widget.onOrphaned();
     _countdown.dispose();
     _appear.dispose();
     super.dispose();

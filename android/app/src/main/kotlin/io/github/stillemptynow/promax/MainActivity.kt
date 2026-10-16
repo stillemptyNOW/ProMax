@@ -17,11 +17,9 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.ryanheise.audioservice.AudioServiceFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -49,7 +47,7 @@ import java.util.Collections
 import java.util.Random
 import java.util.concurrent.atomic.AtomicBoolean
 
-class MainActivity : AudioServiceFragmentActivity() {
+class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
 
     private val channelName = "io.github.stillemptynow.promax/vpn_bypass"
     private val iconPackage = MainActivity::class.java.name.substringBeforeLast('.')
@@ -59,6 +57,8 @@ class MainActivity : AudioServiceFragmentActivity() {
 
     private var nfcAdapter: NfcAdapter? = null
     private var nfcEvents: EventChannel.EventSink? = null
+    private var networkEvents: EventChannel.EventSink? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private val nfcHandler = Handler(Looper.getMainLooper())
     private val nfcJitter = Random()
     private val seenPeers = HashSet<Long>()
@@ -119,6 +119,7 @@ class MainActivity : AudioServiceFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        EngineHost.bindActivity(this, flutterEngine)
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
 
@@ -156,6 +157,21 @@ class MainActivity : AudioServiceFragmentActivity() {
 
             override fun onCancel(arguments: Any?) {
                 nfcEvents = null
+            }
+        })
+
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "io.github.stillemptynow.promax/network_events",
+        ).setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                networkEvents = events
+                startNetworkWatch()
+            }
+
+            override fun onCancel(arguments: Any?) {
+                stopNetworkWatch()
+                networkEvents = null
             }
         })
 
@@ -332,78 +348,6 @@ class MainActivity : AudioServiceFragmentActivity() {
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "io.github.stillemptynow.promax/calls",
-        ).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "consumeInitialCall" -> {
-                    val p = pendingCall
-                    pendingCall = null
-                    result.success(p)
-                }
-                "notifyAccepted" -> {
-                    val caller = call.argument<String>("caller") ?: "Звонок"
-                    CallRinger.stop()
-                    NotificationManagerCompat.from(this).cancel(CallConst.NOTIF_ID)
-                    CallForegroundService.start(applicationContext, caller)
-                    result.success(null)
-                }
-                "ensureOngoing" -> {
-                    val caller = call.argument<String>("caller") ?: "Звонок"
-                    CallForegroundService.start(applicationContext, caller)
-                    result.success(null)
-                }
-                "setScreenShare" -> {
-                    val enabled = call.argument<Boolean>("enabled") ?: false
-                    val caller = call.argument<String>("caller") ?: "Звонок"
-                    CallForegroundService.setScreenShare(
-                        applicationContext,
-                        enabled,
-                        caller,
-                    )
-                    result.success(null)
-                }
-                "dropOngoing" -> {
-                    CallForegroundService.stop(applicationContext)
-                    result.success(null)
-                }
-                "notifyEnded" -> {
-                    CallRinger.stop()
-                    NotificationManagerCompat.from(this).cancel(CallConst.NOTIF_ID)
-                    CallForegroundService.stop(applicationContext)
-                    clearCallWindowFlags()
-                    result.success(null)
-                }
-                "cancelIncoming" -> {
-                    CallRinger.stop()
-                    NotificationManagerCompat.from(this).cancel(CallConst.NOTIF_ID)
-                    result.success(null)
-                }
-                "canUseFullScreenIntent" -> {
-                    result.success(
-                        NotificationManagerCompat.from(this).canUseFullScreenIntent(),
-                    )
-                }
-                "openFullScreenIntentSettings" -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        try {
-                            startActivity(
-                                Intent(
-                                    Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
-                                    Uri.parse("package:$packageName"),
-                                ),
-                            )
-                        } catch (e: Exception) {
-                            Log.w("ProMaxFcm", "open FSI settings failed: ${e.message}")
-                        }
-                    }
-                    result.success(null)
-                }
-                else -> result.notImplemented()
-            }
-        }
-
-        MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
             "io.github.stillemptynow.promax/screen",
         ).setMethodCallHandler { call, result ->
             when (call.method) {
@@ -415,118 +359,9 @@ class MainActivity : AudioServiceFragmentActivity() {
             }
         }
 
-        EventChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "io.github.stillemptynow.promax/calls_events",
-        ).setStreamHandler(object : EventChannel.StreamHandler {
-            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                CallEvents.sink = events
-            }
-
-            override fun onCancel(arguments: Any?) {
-                CallEvents.sink = null
-            }
-        })
-
-        MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "io.github.stillemptynow.promax/notifications",
-        ).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "consumeInitialChat" -> {
-                    stashChatOpen(intent, emit = false)
-                    val chatId = pendingChat
-                    pendingChat = 0L
-                    result.success(if (chatId != 0L) chatId else null)
-                }
-                "setActiveChat" -> {
-                    ChatNotifications.activeChatId = longArg(call.argument<Any>("chatId"))
-                    result.success(null)
-                }
-                "clearActiveChat" -> {
-                    ChatNotifications.activeChatId = 0L
-                    result.success(null)
-                }
-                "cancelChat" -> {
-                    ProMaxNotifier(applicationContext).cancelChat(
-                        longArg(call.argument<Any>("chatId")),
-                    )
-                    result.success(null)
-                }
-                "notifiedChats" -> {
-                    result.success(ProMaxNotifier(applicationContext).notifiedChats())
-                }
-                else -> result.notImplemented()
-            }
-        }
-
-        EventChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "io.github.stillemptynow.promax/notification_events",
-        ).setStreamHandler(object : EventChannel.StreamHandler {
-            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                ChatNotifications.sink = events
-            }
-
-            override fun onCancel(arguments: Any?) {
-                ChatNotifications.sink = null
-            }
-        })
-
-        MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "io.github.stillemptynow.promax/share",
-        ).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "consumeInitialShare" -> {
-                    stashShare(intent, emit = false)
-                    val ready = pendingShare
-                    val task = pendingShareTask
-                    if (ready != null) {
-                        pendingShare = null
-                        result.success(ready)
-                    } else if (task != null) {
-                        pendingShareTask = null
-                        shareExecutor.execute {
-                            val payload = try {
-                                task.get()
-                            } catch (e: Exception) {
-                                Log.w(SHARE_TAG, "materialize failed: $e")
-                                null
-                            }
-                            shareHandler.post { result.success(payload) }
-                        }
-                    } else {
-                        result.success(null)
-                    }
-                }
-                "clearCache" -> {
-                    ShareIntake.clearCache(applicationContext)
-                    result.success(null)
-                }
-                else -> result.notImplemented()
-            }
-        }
-
-        EventChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "io.github.stillemptynow.promax/share_events",
-        ).setStreamHandler(object : EventChannel.StreamHandler {
-            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                ShareIntake.sink = events
-            }
-
-            override fun onCancel(arguments: Any?) {
-                ShareIntake.sink = null
-            }
-        })
-
         ClipboardMedia.attach(flutterEngine, this)
 
         MediaExport.attach(flutterEngine, this)
-
-        FkmChannel.attach(flutterEngine, this)
-        LauncherBadge.attach(flutterEngine, this)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -535,6 +370,7 @@ class MainActivity : AudioServiceFragmentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        EngineHost.ensure(this, headless = false)
         if (intent?.hasExtra(CallConst.EXTRA_CALL) == true) applyCallWindowFlags()
         super.onCreate(savedInstanceState)
         applyKeepAwake()
@@ -553,6 +389,44 @@ class MainActivity : AudioServiceFragmentActivity() {
         }
         stashChatOpen(intent, emit = true)
         stashShare(intent, emit = true)
+    }
+
+    override fun consumeInitialChat(): Long? {
+        stashChatOpen(intent, emit = false)
+        val chatId = pendingChat
+        pendingChat = 0L
+        return chatId.takeIf { it != 0L }
+    }
+
+    override fun consumeInitialCall(): Map<String, Any?>? {
+        val call = pendingCall
+        pendingCall = null
+        return call
+    }
+
+    override fun consumeInitialShare(result: MethodChannel.Result) {
+        stashShare(intent, emit = false)
+        val ready = pendingShare
+        val task = pendingShareTask
+        if (ready != null) {
+            pendingShare = null
+            result.success(ready)
+            return
+        }
+        if (task == null) {
+            result.success(null)
+            return
+        }
+        pendingShareTask = null
+        shareExecutor.execute {
+            val payload = try {
+                task.get()
+            } catch (e: Exception) {
+                Log.w(SHARE_TAG, "materialize failed: $e")
+                null
+            }
+            shareHandler.post { result.success(payload) }
+        }
     }
 
     private fun stashChatOpen(source: Intent?, emit: Boolean) {
@@ -631,7 +505,7 @@ class MainActivity : AudioServiceFragmentActivity() {
         }
     }
 
-    private fun clearCallWindowFlags() {
+    override fun clearCallWindowFlags() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(false)
             setTurnScreenOn(false)
@@ -851,12 +725,6 @@ class MainActivity : AudioServiceFragmentActivity() {
         nfcEvents?.success(mapOf("event" to "received", "id" to id, "phone" to phone))
     }
 
-    private fun longArg(value: Any?): Long = when (value) {
-        is Int -> value.toLong()
-        is Long -> value
-        else -> 0L
-    }
-
     private fun onBleError(reason: String) {
         nfcEvents?.success(mapOf("event" to "error", "reason" to reason))
     }
@@ -979,23 +847,33 @@ class MainActivity : AudioServiceFragmentActivity() {
         }
     }
 
-    // Движок переживает смерть активити, пока идёт звонок или включён FKM:
-    // в обоих случаях в фоне должно жить то же соединение, что и в UI.
-    private fun keepEngineAlive(): Boolean = CallState.inCall || FkmState.enabled
-
     // Движок общий с audio_service (AudioServiceFragmentActivity.getCachedEngineId), и
     // уничтожает его AudioServicePlugin.disposeFlutterEngine, когда останавливается
     // медиа-сервис. Активити не должна рвать его из-под сервиса.
     override fun shouldDestroyEngineWithHost(): Boolean = false
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
-        if (!keepEngineAlive()) {
-            FkmChannel.detach()
-            LauncherBadge.detach()
-            ChatNotifications.activeChatId = 0L
-        }
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+        activityChannels().forEach { messenger.setMessageHandler(it, null) }
+        nfcEvents = null
+        stopNetworkWatch()
+        networkEvents = null
+        EngineHost.unbindActivity(this)
         super.cleanUpFlutterEngine(flutterEngine)
     }
+
+    private fun activityChannels() = listOf(
+        "io.github.stillemptynow.promax/nfc",
+        "io.github.stillemptynow.promax/nfc_events",
+        "io.github.stillemptynow.promax/network_events",
+        channelName,
+        "io.github.stillemptynow.promax/app_icon",
+        "io.github.stillemptynow.promax/upload_service",
+        "io.github.stillemptynow.promax/video_note",
+        "io.github.stillemptynow.promax/video",
+        "io.github.stillemptynow.promax/screen",
+        MediaExport.CHANNEL,
+    )
 
     override fun onDestroy() {
         shareExecutor.shutdown()
@@ -1019,6 +897,45 @@ class MainActivity : AudioServiceFragmentActivity() {
 
     private fun connectivityManager(): ConnectivityManager =
         getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+    private fun startNetworkWatch() {
+        if (networkCallback != null) return
+        val main = Handler(Looper.getMainLooper())
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                main.post { networkEvents?.success("available") }
+            }
+
+            override fun onLost(network: Network) {
+                main.post { networkEvents?.success("lost") }
+            }
+        }
+        try {
+            val cm = connectivityManager()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                cm.registerDefaultNetworkCallback(callback)
+            } else {
+                cm.registerNetworkCallback(
+                    NetworkRequest.Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .build(),
+                    callback,
+                )
+            }
+            networkCallback = callback
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "network watch failed: ${e.message}")
+        }
+    }
+
+    private fun stopNetworkWatch() {
+        val callback = networkCallback ?: return
+        networkCallback = null
+        try {
+            connectivityManager().unregisterNetworkCallback(callback)
+        } catch (_: Exception) {
+        }
+    }
 
     // Перечисляет активные интерфейсы: есть ли tun-туннель и какие прямые.
     private fun detectInterfaces(): Map<String, Any> {

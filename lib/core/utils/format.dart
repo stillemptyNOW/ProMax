@@ -219,3 +219,17 @@ String formatReminderStamp(DateTime at, {DateTime? now}) {
   final year = at.year == current.year ? '' : ' ${at.year}';
   return '${at.day} ${_shortMonths[at.month - 1]}$year в $clock';
 }
+
+String formatReadStamp(AppLocalizations l10n, DateTime at, {DateTime? now}) {
+  final current = now ?? DateTime.now();
+  final today = DateTime.utc(current.year, current.month, current.day);
+  final day = DateTime.utc(at.year, at.month, at.day);
+  final days = today.difference(day).inDays;
+  final clock = formatClock(at);
+  if (days <= 0) return l10n.readStampToday(clock);
+  if (days == 1) return l10n.readStampYesterday(clock);
+  final date = at.year == current.year
+      ? formatDayMonth(l10n, at)
+      : formatDateWords(l10n, at);
+  return l10n.readStampDate(date, clock);
+}

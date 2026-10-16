@@ -10,6 +10,7 @@ import '../config/app_camera.dart';
 import '../config/app_microphone.dart';
 import '../config/app_pulse_source.dart';
 import '../config/call_no_mute.dart';
+import '../config/privacy_settings.dart';
 import '../utils/logger.dart';
 import '../utils/parse.dart';
 import 'audio_devices.dart';
@@ -18,6 +19,7 @@ import 'call_admin.dart';
 import 'call_bridge.dart';
 import 'call_info.dart';
 import 'conversation_params.dart';
+import 'ice_privacy.dart';
 import 'pulse_audio.dart';
 import 'sfu_data_channel.dart';
 import 'ws2_signaling.dart';
@@ -27,6 +29,8 @@ enum CallRole { caller, callee, joiner }
 
 // #***! состояние звонка от подключения до конца
 enum CallSessionState { connecting, ringing, active, ended }
+
+enum CallEndCause { local, remote, failed }
 
 // #***! участник звонка, медиа роли и поднятая рука
 class CallParticipant {
@@ -122,6 +126,7 @@ class CallSession {
   ProMaxMask _faceMask = ProMaxMask.none;
   bool _localScreen = false;
   MediaStream? _cameraStream;
+  String? _cameraDeviceId;
   MediaStream? _screenStream;
   // #***! отправители аудио камеры и экрана, треки подменяем на лету
   RTCRtpSender? _audioSender;
@@ -412,7 +417,7 @@ class CallSession {
     _reconnecting = false;
     if (!_ended) {
       logger.w('[call] reconnect gave up');
-      _end();
+      _end(CallEndCause.failed);
     }
   }
 
@@ -421,7 +426,7 @@ class CallSession {
     if (_ended || _iceRestarting || _topology == 'SERVER') return;
     if (_iceRestarts >= _maxIceRestarts) {
       logger.w('[call] ice restart budget exhausted, ending call');
-      _end();
+      _end(CallEndCause.failed);
       return;
     }
     _iceRestarting = true;
@@ -899,8 +904,14 @@ class CallSession {
 
   // #***! создание RTCPeerConnection с ICE серверами
   Future<RTCPeerConnection> _createPc(List ice) async {
+    final relayRequested = PrivacySettings.relayCalls.current.value;
+    final relayOnly = IcePrivacy.useRelayOnly(ice, requested: relayRequested);
+    if (relayRequested && !relayOnly) {
+      logger.w('[call] relay-only requested but no TURN server offered');
+    }
     final pc = await createPeerConnection({
       'iceServers': ice,
+      if (relayOnly) 'iceTransportPolicy': 'relay',
       'sdpSemantics': 'unified-plan',
       'bundlePolicy': 'max-bundle',
       'rtcpMuxPolicy': 'require',
@@ -1617,7 +1628,7 @@ class CallSession {
     try {
       logger.i('[call][sfu] accept-producer ssrcs=$ssrcs');
       final reply = await _signaling?.acceptProducer(
-        description: _labelLocalTracks(answerSdp),
+        description: _labelLocalTracks(_shareableSdp(answerSdp)),
         ssrcs: ssrcs,
         sessionId: _sfuSessionId,
       );
@@ -1642,6 +1653,11 @@ class CallSession {
     unawaited(_collectReceivers());
     unawaited(_publishDisplayLayout(force: true));
   }
+
+  String _shareableSdp(String sdp) =>
+      PrivacySettings.hideLocalAddresses.current.value
+      ? IcePrivacy.stripHostCandidates(sdp)
+      : sdp;
 
   // #***! дальше разбор SDP ради отладочной сводки
   int _countCandidates(String sdp) =>
@@ -2030,7 +2046,7 @@ class CallSession {
       participantType: _peerType,
       deviceIdx: _peerDeviceIdx,
       type: offer.type!,
-      sdp: _labelLocalTracks(sdp),
+      sdp: _labelLocalTracks(_shareableSdp(sdp)),
     );
   }
 
@@ -2107,7 +2123,7 @@ class CallSession {
             participantType: _peerType,
             deviceIdx: _peerDeviceIdx,
             type: answer.type!,
-            sdp: _labelLocalTracks(answer.sdp!),
+            sdp: _labelLocalTracks(_shareableSdp(answer.sdp!)),
           );
         }
         if (_current == CallSessionState.connecting) {
@@ -2180,6 +2196,10 @@ class CallSession {
     if (_topology == 'SERVER') return;
     final peerId = _peerId;
     if (peerId == null || candidate.candidate == null) return;
+    if (PrivacySettings.hideLocalAddresses.current.value &&
+        IcePrivacy.isHostCandidate(line)) {
+      return;
+    }
     _signaling?.transmitCandidate(
       participantId: peerId,
       participantType: _peerType,
@@ -2266,6 +2286,7 @@ class CallSession {
 
     await _disposeStream(_cameraStream);
     _cameraStream = stream;
+    _cameraDeviceId = AppCamera.deviceId;
 
     final tracks = stream.getVideoTracks();
     final track = tracks.isEmpty ? null : tracks.first;
@@ -2307,10 +2328,46 @@ class CallSession {
   Future<bool> switchCamera() async {
     final tracks = _cameraStream?.getVideoTracks();
     if (!_localVideo || tracks == null || tracks.isEmpty) return false;
+    if (_isDesktop) {
+      await _switchDesktopCamera();
+      return _frontCamera;
+    }
     final front = await Helper.switchCamera(tracks.first);
     _frontCamera = front;
     _notifyInfo();
     return front;
+  }
+
+  Future<void> _switchDesktopCamera() async {
+    final pc = _pc;
+    if (pc == null) return;
+    final cameras = await CameraDevices.cameras();
+    final nextId = CameraDevices.nextId([
+      for (final camera in cameras) camera.id,
+    ], _cameraDeviceId);
+    if (nextId == null) return;
+    final stream = await navigator.mediaDevices.getUserMedia(<String, dynamic>{
+      'video': CameraDevices.constraints(nextId),
+      'audio': false,
+    });
+    final tracks = stream.getVideoTracks();
+    if (_pc != pc || tracks.isEmpty || !_localVideo) {
+      await _disposeStream(stream);
+      if (tracks.isEmpty) {
+        throw StateError('Camera did not return a video track');
+      }
+      return;
+    }
+    final previous = _cameraStream;
+    if (_videoSender == null) {
+      _videoSender = await pc.addTrack(tracks.first, stream);
+    } else {
+      await _videoSender!.replaceTrack(tracks.first);
+    }
+    _cameraStream = stream;
+    _cameraDeviceId = nextId;
+    await _disposeStream(previous);
+    _notifyInfo();
   }
 
   Future<void> setCameraTorch(bool enabled) async {
@@ -2438,7 +2495,13 @@ class CallSession {
   }
 
   // #***! завершение звонка
-  Future<void> hangup({String? reason}) async {
+  Future<void> hangup({String? reason}) =>
+      _hangup(CallEndCause.local, reason: reason);
+
+  Future<void> abort() => _hangup(CallEndCause.failed);
+
+  Future<void> _hangup(CallEndCause cause, {String? reason}) async {
+    _endCause ??= cause;
     final r = reason ?? _autoHangupReason();
     try {
       await _signaling?.hangup(reason: r);
@@ -2456,11 +2519,19 @@ class CallSession {
   }
 
   bool _ended = false;
-  void _end() {
+  CallEndCause? _endCause;
+  final Completer<void> _closed = Completer<void>();
+
+  CallEndCause? get endCause => _endCause;
+
+  Future<void> get closed => _closed.future;
+
+  void _end([CallEndCause cause = CallEndCause.remote]) {
     if (_ended) return;
     _ended = true;
+    _endCause ??= cause;
     _setState(CallSessionState.ended);
-    _dispose();
+    _dispose().whenComplete(_closed.complete);
   }
 
   // #***! освобождаем всё, соединение дорожки подписки стримы

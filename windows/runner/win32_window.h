@@ -7,6 +7,9 @@
 #include <memory>
 #include <string>
 
+inline constexpr wchar_t kRunnerWindowClassName[] =
+    L"FLUTTER_RUNNER_WIN32_WINDOW";
+
 // A class abstraction for a high DPI-aware Win32 Window. Intended to be
 // inherited from by classes that wish to specialize with custom
 // rendering and input handling
@@ -71,6 +74,8 @@ class Win32Window {
   // Called when Destroy is called.
   virtual void OnDestroy();
 
+  void SavePlacement(HWND window);
+
  private:
   friend class WindowClassRegistrar;
 
@@ -89,6 +94,11 @@ class Win32Window {
 
   // Update the window frame's theme to match the system theme.
   static void UpdateTheme(HWND const window);
+
+  void RestorePlacement(HWND window);
+
+  int first_show_command_ = SW_SHOWNORMAL;
+  bool shown_ = false;
 
   bool quit_on_close_ = false;
 

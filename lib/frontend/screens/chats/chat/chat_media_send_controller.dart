@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../../../backend/modules/chats.dart';
 import '../../../../backend/modules/contacts.dart';
 import '../../../../backend/modules/messages.dart';
+import '../../../../backend/modules/pending_deletions.dart';
 import '../../../../backend/modules/upload_service.dart';
 import '../../../../core/cache/message_session_cache.dart';
 import '../../../../core/crypto/chat_crypto_service.dart';
@@ -26,6 +27,7 @@ import '../../../../models/sticker.dart';
 import '../../../widgets/sending_clock_icon.dart';
 import 'chat_controller.dart';
 import 'upload_status.dart';
+import '../../../../core/utils/user_facing_error.dart';
 
 // #***! отправка вложений (фото/видео/голос/файл/стикер/контакт/локация) +
 // отслеживание статуса загрузки; текстовые сообщения остаются в chat_screen.dart
@@ -124,6 +126,15 @@ class ChatMediaSendController {
     FileAttachment? attachment,
     String? realId,
   }) {
+    if (realId != null &&
+        PendingDeletions.instance.claimSent(
+          accountId: _myId,
+          chatId: _chatId,
+          tempId: tempId,
+          realId: realId,
+        )) {
+      return;
+    }
     if (!isMounted()) return;
     final idx = chatController.indexOfId(tempId);
     if (idx == -1) return;
@@ -186,6 +197,15 @@ class ChatMediaSendController {
 
     try {
       final serverMsg = await send();
+      if (serverMsg != null &&
+          PendingDeletions.instance.claimSent(
+            accountId: _myId,
+            chatId: _chatId,
+            tempId: tempId,
+            realId: serverMsg['id']?.toString() ?? '',
+          )) {
+        return;
+      }
       final mounted = isMounted();
       final idx = chatController.indexOfId(tempId);
       if (mounted && idx == -1) return;
@@ -194,10 +214,7 @@ class ChatMediaSendController {
           updateFileMessageStatus(tempId, 'error');
           notify(_l10n.cloudStorageSendError);
         } else {
-          _previewInChatList(
-            tempMessage.copyWith(status: 'error'),
-            'error',
-          );
+          _previewInChatList(tempMessage.copyWith(status: 'error'), 'error');
         }
         return;
       }
@@ -212,7 +229,7 @@ class ChatMediaSendController {
     } catch (e) {
       if (!isMounted()) return;
       updateFileMessageStatus(tempId, 'error');
-      notify(_l10n.devicesGenericError('$e'));
+      notify(_l10n.devicesGenericError(userFacingError(e)));
     }
   }
 
@@ -396,7 +413,7 @@ class ChatMediaSendController {
       return ok;
     } catch (e) {
       updateFileMessageStatus(tempId, 'error');
-      if (isMounted()) notify(_l10n.devicesGenericError('$e'));
+      if (isMounted()) notify(_l10n.devicesGenericError(userFacingError(e)));
       return false;
     }
   }

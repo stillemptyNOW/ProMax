@@ -26,8 +26,20 @@ object NotifAvatars {
 
     fun photo(ctx: Context, senderId: String): Bitmap? {
         val url = avatarUrl(ctx, senderId) ?: return null
-        return downloadBitmap(url)?.let { circleCrop(it) }
+        return downloadBitmap(url, cdnUserAgent(ctx))?.let { circleCrop(it) }
     }
+
+    private fun cdnUserAgent(ctx: Context): String {
+        val stored = try {
+            ctx.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                .getString("flutter.privacy_cdn_user_agent", null)
+        } catch (e: Exception) {
+            null
+        }
+        return if (stored.isNullOrBlank()) FALLBACK_CDN_USER_AGENT else stored
+    }
+
+    private const val FALLBACK_CDN_USER_AGENT = "OKMessages (Android)"
 
     fun initials(name: String): Bitmap = initialsBitmap(name)
 
@@ -44,9 +56,10 @@ object NotifAvatars {
         }
     }
 
-    private fun downloadBitmap(url: String): Bitmap? {
+    private fun downloadBitmap(url: String, userAgent: String): Bitmap? {
         return try {
             val conn = URL(url).openConnection() as HttpURLConnection
+            conn.setRequestProperty("User-Agent", userAgent)
             conn.connectTimeout = 4000
             conn.readTimeout = 5000
             conn.doInput = true

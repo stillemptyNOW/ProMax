@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../backend/modules/digital_id.dart';
+import '../../../core/security/url_policy.dart';
 import '../../../core/utils/webview_support.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart' show digitalIdModule;
@@ -18,6 +19,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/hint_bubble.dart';
 import '../../widgets/small_spinner.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 String _documentLabel(AppLocalizations l10n, String type) {
   return switch (type) {
@@ -152,8 +154,8 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
       // Госуслуги (ЕСИА) открываем во ВНЕШНЕМ браузере — их антифрод режет
       // встроенный webview. Возврат придёт диплинком max.ru?externalCallback=1
       // (deep_link_service -> опкод 105), после чего экран перезагрузится.
-      final uri = Uri.tryParse(link.url);
-      if (uri != null) {
+      final uri = parseExternalUri(link.url);
+      if (uri != null && isWebUri(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     } on DigitalIdException catch (e) {
@@ -162,7 +164,7 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.devicesGenericError(e.toString()),
+          AppLocalizations.of(context)!.devicesGenericError(userFacingError(e)),
         );
       }
     } finally {
@@ -192,7 +194,7 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.devicesGenericError(e.toString()),
+          AppLocalizations.of(context)!.devicesGenericError(userFacingError(e)),
         );
       }
     } finally {

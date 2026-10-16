@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:promax/main.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../backend/modules/bot_callback_answers.dart';
 import '../../backend/modules/messages.dart';
 import '../screens/webapp/web_app_bridge.dart';
 import '../screens/webapp/web_app_screen.dart';
@@ -17,8 +18,10 @@ import '../../core/crypto/message_decryption_cache.dart';
 import 'decrypted_text.dart';
 import '../../core/utils/bubble_radius.dart';
 import '../../core/utils/emoji_keyword_index.dart';
+import '../../core/utils/haptics.dart';
 import '../../core/utils/link_opener.dart';
 import '../../core/utils/text_format.dart';
+import '../../core/utils/user_facing_error.dart';
 import '../../core/utils/webview_support.dart';
 import '../../core/config/app_link_preview.dart';
 import '../../l10n/app_localizations.dart';
@@ -28,6 +31,7 @@ import 'formatted_message_text.dart';
 import 'reply_preview.dart';
 import 'text_entity_actions.dart';
 import 'sending_clock_icon.dart';
+import 'small_spinner.dart';
 import 'photo_viewer.dart';
 import 'selectable_message_text.dart';
 import '../../models/attachment.dart';
@@ -49,6 +53,7 @@ import 'attachment/bubbles/forwarded_bubble.dart';
 import 'lottie_image.dart';
 import 'text_with_meta.dart';
 import '../theme/promax_theme.dart';
+import 'deleted_message_mark.dart';
 
 final Expando<MessageType> _contentTypeCache = Expando<MessageType>();
 final Expando<List<MessageAttachment>> _contentAttachmentsCache =
@@ -625,6 +630,43 @@ class _ReactionAnimojiGlyphState extends State<_ReactionAnimojiGlyph> {
       ),
     );
   }
+}
+
+class _InlineButtonGuard extends StatefulWidget {
+  const _InlineButtonGuard({required this.onTap, required this.builder});
+
+  final Future<void> Function(BuildContext context) onTap;
+  final Widget Function(BuildContext context, bool busy, VoidCallback? onTap)
+  builder;
+
+  @override
+  State<_InlineButtonGuard> createState() => _InlineButtonGuardState();
+}
+
+class _InlineButtonGuardState extends State<_InlineButtonGuard> {
+  bool _busy = false;
+
+  Future<void> _handle() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await widget.onTap(context);
+    } catch (e) {
+      if (mounted) {
+        Haptics.error();
+        showHintBubble(
+          context,
+          userFacingError(e, AppLocalizations.of(context)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      widget.builder(context, _busy, _busy ? null : _handle);
 }
 
 class MessageBubble extends StatelessWidget {
@@ -1378,8 +1420,7 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildCommentsFooter(BuildContext context, ColorScheme cs) {
-    final label =
-        commentsLabel ?? AppLocalizations.of(context)!.commentsTitle;
+    final label = commentsLabel ?? AppLocalizations.of(context)!.commentsTitle;
     final accent = isMe ? cs.onPrimaryContainer : cs.primary;
     return Material(
       color: Colors.transparent,
@@ -1473,54 +1514,61 @@ class MessageBubble extends StatelessWidget {
       _ => null,
     };
     final isClipboard = button.type == 'CLIPBOARD';
-    return Material(
-      color: cs.primary.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(12),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _onInlineButtonTap(context, keyboard, button),
-        child: Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: isClipboard ? 26 : 12,
-                vertical: 10,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: Text(
-                      button.text,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: cs.primary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+    return _InlineButtonGuard(
+      onTap: (buttonContext) =>
+          _onInlineButtonTap(buttonContext, keyboard, button),
+      builder: (buttonContext, busy, onTap) => Material(
+        color: cs.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isClipboard ? 26 : 12,
+                  vertical: 10,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        button.text,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: cs.primary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  if (trailingIcon != null) ...[
-                    const SizedBox(width: 4),
-                    Icon(trailingIcon, size: 16, color: cs.primary),
+                    if (busy) ...[
+                      const SizedBox(width: 6),
+                      SmallSpinner(size: 16, color: cs.primary),
+                    ] else if (trailingIcon != null) ...[
+                      const SizedBox(width: 4),
+                      Icon(trailingIcon, size: 16, color: cs.primary),
+                    ],
                   ],
-                ],
-              ),
-            ),
-            if (isClipboard)
-              Positioned(
-                top: 6,
-                right: 8,
-                child: Icon(
-                  Symbols.content_copy,
-                  size: 15,
-                  weight: 500,
-                  color: cs.primary.withValues(alpha: 0.85),
                 ),
               ),
-          ],
+              if (isClipboard)
+                Positioned(
+                  top: 6,
+                  right: 8,
+                  child: Icon(
+                    Symbols.content_copy,
+                    size: 15,
+                    weight: 500,
+                    color: cs.primary.withValues(alpha: 0.85),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -1559,20 +1607,35 @@ class MessageBubble extends StatelessWidget {
           );
           return;
         }
-        final answer = await messagesModule.sendButtonCallback(
-          chatId: message.chatId,
-          messageId: message.id,
-          callbackId: callbackId,
-          payload: button.payload,
-        );
-        if (!context.mounted) return;
-        final url = answer?['url']?.toString();
-        if (url != null && url.isNotEmpty) {
-          await openExternalUrl(context, url);
-          return;
+        final answers = BotCallbackAnswers.instance;
+        final release = answers.anchor(message.id, callbackId, (text) {
+          if (!context.mounted) return false;
+          showHintBubble(context, text);
+          return true;
+        });
+        try {
+          final answer = await messagesModule.sendButtonCallback(
+            chatId: message.chatId,
+            messageId: message.id,
+            callbackId: callbackId,
+            payload: button.payload,
+          );
+          if (!context.mounted) return;
+          final url = answer?['url']?.toString();
+          if (url != null && url.isNotEmpty) {
+            await openExternalUrl(context, url);
+            return;
+          }
+          final text = answer?['text']?.toString();
+          if (text != null && text.isNotEmpty) {
+            answers.noteShown(message.id, callbackId, text);
+            showHintBubble(context, text);
+          }
+        } finally {
+          unawaited(
+            Future<void>.delayed(BotCallbackAnswers.anchorLifetime, release),
+          );
         }
-        final text = answer?['text']?.toString();
-        if (text != null && text.isNotEmpty) showHintBubble(context, text);
     }
   }
 
@@ -1803,7 +1866,7 @@ class MessageBubble extends StatelessWidget {
           ],
           if (ctx.message.deleted) ...[
             const SizedBox(width: 3),
-            const Icon(Symbols.delete, size: 12, color: Colors.white),
+            const DeletedMessageMark(color: Colors.white, size: 12),
           ],
         ],
       ),

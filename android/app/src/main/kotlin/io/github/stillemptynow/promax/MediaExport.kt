@@ -18,7 +18,7 @@ import java.util.concurrent.Executors
 
 object MediaExport {
     private const val TAG = "MediaExport"
-    private const val CHANNEL = "io.github.stillemptynow.promax/media_export"
+    const val CHANNEL = "io.github.stillemptynow.promax/media_export"
     private const val FALLBACK_MIME = "application/octet-stream"
     private const val BUFFER_SIZE = 256 * 1024
     private const val CREATE_DOCUMENT_REQUEST = 7714

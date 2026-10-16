@@ -6,14 +6,17 @@ import 'package:kolibri/kolibri.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 
 import '../core/cache/self_presence.dart';
+import '../core/calls/calls_identity.dart';
 import '../core/config/config.dart';
 import '../core/config/countries.dart';
 import '../core/config/device_profile.dart';
+import '../core/config/privacy_settings.dart';
 import '../core/config/promax_settings.dart';
 import '../core/config/proxy_config.dart';
 import '../core/config/web_client_profile.dart';
 import '../core/protocol/opcode_map.dart';
 import '../core/protocol/packet.dart';
+import '../core/storage/app_database.dart';
 import '../core/storage/device_identity.dart';
 import '../core/storage/spoofing_service.dart';
 import '../core/transport/dispatcher.dart';
@@ -69,6 +72,11 @@ class Api {
   KolibriSession? get session => _session;
 
   String? spoofScope;
+
+  bool reportsPresence = true;
+
+  bool get presenceInteractive =>
+      reportsPresence && !ProMaxSettings.ghostMode.value && AppForeground.value;
 
   static bool _tzInitialized = false;
 
@@ -411,10 +419,28 @@ class Api {
     return response.payload as Map<dynamic, dynamic>;
   }
 
-  Future<bool> sendRequestOk(int opcode, Map<dynamic, dynamic> payload) async {
-    final response = await sendRequest(opcode, payload);
-    return response.isOk;
+  Future<bool> sendRequestOk(
+    int opcode,
+    Map<dynamic, dynamic> payload, {
+    bool silent = false,
+  }) async {
+    try {
+      final response = await sendRequest(opcode, payload, silent: silent);
+      return response.isOk;
+    } on SessionExpiredException {
+      rethrow;
+    } on PacketError catch (e) {
+      _logRequestFailure(opcode, e);
+    } on StateError catch (e) {
+      _logRequestFailure(opcode, e);
+    } on TimeoutException catch (e) {
+      _logRequestFailure(opcode, e);
+    }
+    return false;
   }
+
+  void _logRequestFailure(int opcode, Object error) =>
+      logger.w('${Opcode.name(opcode)} не выполнен: $error');
 
   Future<Packet> sendRequestOrThrow(
     int opcode,
@@ -486,10 +512,19 @@ class Api {
     final androidSdkInt = device.sdkInt;
 
     String? spoofUserAgent;
+    final scope = spoofScope ?? await SpoofingService.activeScope();
+    final hideRealDevice = PrivacySettings.hideDevice.current.value;
+    if (scope == SpoofingService.pendingScope && hideRealDevice) {
+      try {
+        await SpoofingService.ensurePendingProfile(
+          existingAccountIds: _knownAccountIds,
+        );
+      } catch (e) {
+        logger.w('privacy: профиль устройства для входа не создан: $e');
+      }
+    }
     // #***! включена подмена, накрываем реальные значения спуфом
-    final spoofed = await SpoofingService.getSpoofedSessionData(
-      scope: spoofScope,
-    );
+    final spoofed = await SpoofingService.getSpoofedSessionData(scope: scope);
     if (spoofed != null) {
       spoofUserAgent = spoofed['user_agent'] as String?;
       final sDeviceType = spoofed['device_type'] as String?;
@@ -562,15 +597,17 @@ class Api {
     }
 
     // #***! звонкам нужен формат производитель/модель и номер SDK
-    _callsDevice = _resolveCallsDevice(
+    _callsDevice = CallsIdentity.device(
       spoofed: spoofed != null,
+      hideRealDevice: hideRealDevice,
       deviceName: deviceName,
       spoofUserAgent: spoofUserAgent,
       manufacturer: androidManufacturer,
       model: androidModel,
     );
-    _callsOsVersion = _resolveCallsOsVersion(
+    _callsOsVersion = CallsIdentity.osVersion(
       spoofed: spoofed != null,
+      hideRealDevice: hideRealDevice,
       osVersion: osVersion,
       sdkInt: androidSdkInt,
     );
@@ -619,7 +656,7 @@ class Api {
         deviceLocale: deviceLocale,
         clientSessionId: clientSessionId,
         pingIntervalSecs: BigInt.from(ServerConfig.pingInterval.inSeconds),
-        pingInteractive: !ProMaxSettings.ghostMode.value,
+        pingInteractive: presenceInteractive,
         autoReconnect: false,
         insecureTls: insecureTls,
         proxy: proxy,
@@ -629,67 +666,14 @@ class Api {
     );
   }
 
-  // #***! звонкам нужен вид Samsung/SM-G991B, при спуфе собираем из подменённого
-  static String? _resolveCallsDevice({
-    required bool spoofed,
-    required String deviceName,
-    String? spoofUserAgent,
-    String? manufacturer,
-    String? model,
-  }) {
-    if (!spoofed &&
-        manufacturer != null &&
-        manufacturer.isNotEmpty &&
-        model != null &&
-        model.isNotEmpty) {
-      return '$manufacturer/$model';
+  static Future<List<int>> _knownAccountIds() async {
+    try {
+      final profiles = await AppDatabase.loadAllProfiles();
+      return [for (final profile in profiles) profile.id];
+    } catch (_) {
+      return const [];
     }
-    final parts = deviceName.trim().split(RegExp(r'\s+'))
-      ..removeWhere((p) => p.isEmpty);
-    if (parts.isEmpty) return null;
-    final fallbackModel = parts.length > 1
-        ? parts.sublist(1).join(' ')
-        : parts.first;
-    return '${parts.first}/'
-        '${_modelFromUserAgent(spoofUserAgent) ?? fallbackModel}';
   }
-
-  // #***! модель телефона выдираем из юзерагента регуляркой
-  static String? _modelFromUserAgent(String? userAgent) {
-    if (userAgent == null || userAgent.isEmpty) return null;
-    final match = RegExp(r'Android\s+[\d.]+;\s*([^;)]+)').firstMatch(userAgent);
-    final model = match
-        ?.group(1)
-        ?.replaceFirst(RegExp(r'\s+Build/.*$'), '')
-        .trim();
-    return model == null || model.isEmpty ? null : model;
-  }
-
-  // #***! звонки хотят номер SDK а не Android 14
-  static String _resolveCallsOsVersion({
-    required bool spoofed,
-    required String osVersion,
-    int? sdkInt,
-  }) {
-    if (!spoofed && sdkInt != null && sdkInt > 0) return '$sdkInt';
-    final release = RegExp(
-      r'^Android\s+(\d+)',
-    ).firstMatch(osVersion.trim())?.group(1);
-    return '${_androidSdkForRelease(int.tryParse(release ?? ''))}';
-  }
-
-  // #***! таблица релиз -> уровень API
-  static int _androidSdkForRelease(int? release) => switch (release) {
-    null => 34,
-    <= 9 => 28,
-    10 => 29,
-    11 => 30,
-    12 => 31,
-    13 => 33,
-    14 => 34,
-    15 => 35,
-    _ => 36,
-  };
 
   // #***! прокси в строку socks5h://user:pass@host:port
   static Future<String?> _buildProxyUrl() async {
@@ -787,9 +771,7 @@ class Api {
     final epoch = _sessionEpoch;
     try {
       await session
-          .requestMapFull(Opcode.ping, {
-            'interactive': !ProMaxSettings.ghostMode.value,
-          })
+          .requestMapFull(Opcode.ping, {'interactive': presenceInteractive})
           .timeout(const Duration(seconds: 6));
     } catch (_) {
       if (_sessionEpoch != epoch || _sessionState != SessionState.online) {
@@ -816,6 +798,7 @@ class Api {
     _cancelConnectWatchdog();
     _livenessTimer?.cancel();
     _livenessTimer = null;
+    AppForeground.notifier.removeListener(refreshPresence);
     _pushSub?.cancel();
     _pushSub = null;
     _wireLogSub?.cancel();
@@ -885,8 +868,11 @@ class Api {
   /// синхронизация interactive-флага пинга и присутствия.
   void _startLiveness() {
     _livenessTimer?.cancel();
-    _lastInteractive = !ProMaxSettings.ghostMode.value;
+    _lastInteractive = null;
+    AppForeground.notifier.removeListener(refreshPresence);
+    AppForeground.notifier.addListener(refreshPresence);
     _livenessTimer = Timer.periodic(_livenessInterval, (_) => _tickLiveness());
+    refreshPresence();
   }
 
   // #***! заодно синхроним невидимку
@@ -899,7 +885,13 @@ class Api {
       _onDisconnected();
       return;
     }
-    final interactive = !ProMaxSettings.ghostMode.value;
+    refreshPresence();
+  }
+
+  void refreshPresence() {
+    final session = _session;
+    if (session == null || _sessionState != SessionState.online) return;
+    final interactive = presenceInteractive;
     if (interactive != _lastInteractive) {
       _lastInteractive = interactive;
       try {
@@ -910,22 +902,6 @@ class Api {
       SelfPresence.markOnline();
     } else {
       SelfPresence.markOfflineFromPing();
-    }
-  }
-
-  // #***! ручная смена невидимки из настроек
-  void sendPing({required bool interactive}) {
-    final session = _session;
-    if (session != null && _sessionState == SessionState.online) {
-      try {
-        session.setPingInteractive(interactive: interactive);
-      } catch (_) {}
-      _lastInteractive = interactive;
-      if (interactive) {
-        SelfPresence.markOnline();
-      } else {
-        SelfPresence.markOfflineFromPing();
-      }
     }
   }
 

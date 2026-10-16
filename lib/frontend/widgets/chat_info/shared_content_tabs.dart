@@ -25,6 +25,7 @@ import '../custom_notification.dart';
 import '../promax_avatar.dart';
 import '../photo_viewer.dart';
 import '../reload_on_reconnect.dart';
+import '../sandbox_prompts.dart';
 import '../share_unopenable_file.dart';
 import '../small_spinner.dart';
 import '../swipe_route.dart';
@@ -1002,6 +1003,8 @@ class _FileRow extends StatelessWidget {
         chatId: item.chatId,
         fileId: fileId,
       ),
+      confirmOpen: (path) =>
+          confirmOpenReceivedFile(context, name: att.name ?? '', path: path),
       onProgress: (p) => MediaDownloadProgress.set(cacheName, p),
       onReady: () => MediaDownloadProgress.set(cacheName, null),
       download: DownloadMetadata(
@@ -1020,7 +1023,7 @@ class _FileRow extends StatelessWidget {
       ),
     );
 
-    if (!context.mounted) return;
+    if (!context.mounted || result.declined) return;
     final path = result.path;
     if (result.noAppToOpen && path != null) {
       await shareUnopenableFile(context, path);

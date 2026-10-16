@@ -668,6 +668,65 @@ class AppLocalizationsRu extends AppLocalizations {
   String get msgActionsReadByUnknownUser => 'Пользователь';
 
   @override
+  String readStampToday(String time) {
+    return 'сегодня в $time';
+  }
+
+  @override
+  String readStampYesterday(String time) {
+    return 'вчера в $time';
+  }
+
+  @override
+  String readStampDate(String date, String time) {
+    return '$date в $time';
+  }
+
+  @override
+  String readReceiptReadAt(String stamp) {
+    return 'Прочитано $stamp';
+  }
+
+  @override
+  String readReceiptReadAtMost(String stamp) {
+    return 'Прочитано не позже: $stamp';
+  }
+
+  @override
+  String get readReceiptReadUnknown => 'Прочитано, время неизвестно';
+
+  @override
+  String get readReceiptNotRead => 'Не прочитано';
+
+  @override
+  String readReceiptReadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Прочитали $count участника',
+      many: 'Прочитали $count участников',
+      few: 'Прочитали $count участника',
+      one: 'Прочитал $count участник',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String readReceiptTimeAtMost(String stamp) {
+    return 'не позже: $stamp';
+  }
+
+  @override
+  String get readReceiptTimeUnknown => 'время неизвестно';
+
+  @override
+  String get proMaxSettingsReadStamp => 'Время прочтения под сообщением';
+
+  @override
+  String get proMaxSettingsReadStampSubtitle =>
+      'В диалоге под последним прочитанным сообщением видно, когда его прочитали';
+
+  @override
   String get msgActionsReport => 'Пожаловаться';
 
   @override
@@ -2615,6 +2674,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'После загрузки выберите eSign в меню «Поделиться», чтобы подписать и установить IPA.';
 
   @override
+  String get updateWindowsInstallHint =>
+      'ProMax закроется, установит обновление и запустится снова.';
+
+  @override
   String get updateLater => 'Позже';
 
   @override
@@ -3360,8 +3423,25 @@ class AppLocalizationsRu extends AppLocalizations {
   String get linkQrUnavailable => 'Не удалось получить ссылку';
 
   @override
-  String get notificationsDesktopNote =>
-      'На компьютере уведомления пока не показываются. Ниже — push-настройки аккаунта для телефонов.';
+  String get notificationsDesktopSectionTitle => 'Окно';
+
+  @override
+  String get notificationsDesktopTrayLabel => 'Сворачивать в трей при закрытии';
+
+  @override
+  String get notificationsDesktopTraySubtitle =>
+      'Крестик прячет ProMax в трей: связь не рвётся и уведомления продолжают приходить. Выйти можно из меню значка в трее';
+
+  @override
+  String get notificationsDesktopAutostartLabel => 'Запускать вместе с Windows';
+
+  @override
+  String get notificationsDesktopAutostartSubtitle =>
+      'ProMax стартует свёрнутым в трей и сразу показывает уведомления';
+
+  @override
+  String get notificationsDesktopAutostartFailed =>
+      'Не удалось изменить автозапуск';
 
   @override
   String get fileNoAppToOpen =>
@@ -4193,6 +4273,101 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get deleteMessagesPeerFallbackNote =>
+      'Сообщения собеседника удалятся у обоих, если сервер это разрешит, иначе — только у вас.';
+
+  @override
+  String deleteMessagesOthersOnlyForMe(int count) {
+    return 'Чужие сообщения ($count) удалятся только у вас.';
+  }
+
+  @override
+  String deleteMessagesKeptForPeer(int count) {
+    return 'Сервер не дал удалить у собеседника сообщений: $count. У вас они удалены';
+  }
+
+  @override
+  String deleteMessagesFailedWithReason(String reason) {
+    return 'Не удалось удалить сообщения: $reason';
+  }
+
+  @override
+  String deleteChatFailedWithReason(String reason) {
+    return 'Не удалось удалить чат: $reason';
+  }
+
+  @override
+  String leaveChatFailedWithReason(String reason) {
+    return 'Не удалось выйти из чата: $reason';
+  }
+
+  @override
+  String get serverUnreachable => 'Нет связи с сервером';
+
+  @override
+  String get wipeForBothAction => 'Удалить у обоих';
+
+  @override
+  String get wipeForBothTitle => 'Удалить у обоих?';
+
+  @override
+  String get wipeForBothMessage =>
+      'ProMax удалит все сообщения этого диалога для вас и собеседника, затем удалит сам чат. Отменить это нельзя.';
+
+  @override
+  String get wipeCollecting => 'Собираю историю…';
+
+  @override
+  String wipeFound(int count) {
+    return 'Найдено сообщений: $count';
+  }
+
+  @override
+  String wipeDeleting(int done, int total) {
+    return 'Удалено $done из $total';
+  }
+
+  @override
+  String wipeSummaryForBoth(int count) {
+    return 'Удалено у обоих: $count';
+  }
+
+  @override
+  String wipeSummaryOnlyForMe(int count) {
+    return 'Удалено только у вас (сервер не дал удалить у собеседника): $count';
+  }
+
+  @override
+  String wipeSummaryNotDeleted(int count) {
+    return 'Не удалось удалить: $count';
+  }
+
+  @override
+  String get wipeSummaryHistoryIncomplete =>
+      'Сервер отдал историю не полностью';
+
+  @override
+  String get wipeSummaryInterrupted =>
+      'Связь пропала, удаление прервано — попробуйте ещё раз';
+
+  @override
+  String wipeSummaryChatKept(String reason) {
+    return 'Чат не удалён: $reason';
+  }
+
+  @override
+  String wipeSummaryClearFailed(String reason) {
+    return 'История не очищена у обоих: $reason';
+  }
+
+  @override
+  String get messageDeletedMark => 'удалено';
+
+  @override
+  String get messageDeletedMarkHint =>
+      'Сообщение удалено. Оно видно, потому что включено «Показывать удалённые сообщения»';
+
+  @override
   String get chatScreenMenuMute => 'Отключить уведомления';
 
   @override
@@ -4947,6 +5122,104 @@ class AppLocalizationsRu extends AppLocalizations {
   String get webAppPhoneRequestShare => 'Поделиться';
 
   @override
+  String get sandboxRiskyFileTitle => 'Опасный файл';
+
+  @override
+  String sandboxRiskyFileMessage(String name, String extension) {
+    return '«$name» — программа или скрипт ($extension). Открыв его, вы разрешите ему всё, что можете сами: читать файлы, ставить программы, менять настройки. Открывайте, только если полностью доверяете отправителю.';
+  }
+
+  @override
+  String get sandboxRiskyFileOpen => 'Всё равно открыть';
+
+  @override
+  String get sandboxOpenFileTitle => 'Открыть файл?';
+
+  @override
+  String sandboxOpenFileMessage(String name) {
+    return '«$name» откроется в другом приложении.';
+  }
+
+  @override
+  String get sandboxOpenFileConfirm => 'Открыть';
+
+  @override
+  String get sandboxDownloadTitle => 'Скачать файл?';
+
+  @override
+  String sandboxDownloadMessage(String app, String name, String host) {
+    return 'Мини-приложение «$app» хочет сохранить «$name» с $host. Файл останется во внутренней папке ProMax, его можно найти в «Загрузках».';
+  }
+
+  @override
+  String sandboxDownloadRiskyNote(String extension) {
+    return 'Это программа или скрипт ($extension). Не открывайте его, если не доверяете мини-приложению.';
+  }
+
+  @override
+  String get sandboxDownloadKeep => 'Сохранить';
+
+  @override
+  String get sandboxDownloadSaveAs => 'Сохранить как…';
+
+  @override
+  String get sandboxDownloadSaved => 'Файл сохранён в «Загрузки» ProMax';
+
+  @override
+  String get sandboxDownloadFailed => 'Не удалось скачать файл';
+
+  @override
+  String get sandboxLeaveTitle => 'Другой сайт';
+
+  @override
+  String sandboxLeaveMessage(String host) {
+    return 'Мини-приложение открывает $host. У этого сайта не будет доступа к функциям ProMax.';
+  }
+
+  @override
+  String sandboxLeaveExternalMessage(String host) {
+    return 'Мини-приложение хочет открыть $host в браузере.';
+  }
+
+  @override
+  String get sandboxLeaveBrowser => 'В браузере';
+
+  @override
+  String get sandboxLeaveHere => 'Открыть здесь';
+
+  @override
+  String get sandboxLinkBlocked =>
+      'Ссылка заблокирована: такие адреса могут открывать файлы и программы на устройстве';
+
+  @override
+  String get sandboxSectionTitle => 'ПЕСОЧНИЦА';
+
+  @override
+  String get sandboxConfirmEveryFile => 'Спрашивать перед открытием файлов';
+
+  @override
+  String get sandboxConfirmEveryFileHint =>
+      'Программы, скрипты и ярлыки открываются только после предупреждения всегда.';
+
+  @override
+  String get sandboxStrictProcess => 'Строгая изоляция процесса';
+
+  @override
+  String get sandboxStrictProcessHint =>
+      'Запрещает внедрять чужие библиотеки через AppInit_DLLs, глобальные хуки и старые IME. Экранные дикторы и Punto Switcher могут перестать работать в ProMax. Действует после перезапуска.';
+
+  @override
+  String get sandboxSettingFailed => 'Не удалось изменить настройку';
+
+  @override
+  String get sandboxSummary =>
+      'Мини-приложения не видят ваши файлы и остаются на своём сайте, их загрузки лежат во внутренней папке ProMax, а ссылки на файлы и системные протоколы не открываются.';
+
+  @override
+  String get sandboxSummaryWindows =>
+      'На Windows каждый сохранённый файл помечается как скачанный из интернета, поэтому его проверяют SmartScreen и защищённый просмотр Office.';
+
+  @override
   String get promptDialogConfirm => 'Подтвердить';
 
   @override
@@ -5482,7 +5755,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proMaxSettingsViewDeletedSubtitle =>
-      'Показывать удалённые сообщения';
+      'Удалённые собеседником сообщения остаются в чате с пометкой «удалено»';
 
   @override
   String get proMaxSettingsViewRedactedSubtitle =>
@@ -6701,4 +6974,513 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proMaxArchiveTitle => 'Файл ProMax · .promax';
+
+  @override
+  String get privacySandboxTitle => 'Приватность и песочница';
+
+  @override
+  String get privacySandboxIntro =>
+      'В ProMax нет аналитики и отчётов о сбоях, телеметрия в MAX не отправляется. Эти настройки ограничивают, что MAX, мини-приложения и сторонние сервисы узнают о вашем устройстве и сети.';
+
+  @override
+  String get privacySectionDevice => 'Устройство';
+
+  @override
+  String get privacyHideDeviceLabel => 'Скрывать данные устройства';
+
+  @override
+  String get privacyHideDeviceSubtitle =>
+      'Новые входы выглядят как типовой Android-смартфон со случайными идентификаторами, без вашей модели, сборки ОС, часового пояса и языка';
+
+  @override
+  String get privacyAccountRealDevice =>
+      'Этот аккаунт вошёл раньше и пока отправляет настоящие данные устройства';
+
+  @override
+  String get privacyAccountHiddenDevice =>
+      'Этот аккаунт представляется подменным устройством';
+
+  @override
+  String get privacyApplyToAccountLabel =>
+      'Скрыть устройство для этого аккаунта';
+
+  @override
+  String get privacyApplyToAccountMessage =>
+      'Модель, ОС, часовой пояс и язык заменятся типовыми. Идентификатор устройства останется прежним, поэтому сессия сохранится. Приложение переподключится.';
+
+  @override
+  String get privacyApplyToAccountConfirm => 'Применить';
+
+  @override
+  String get privacyApplyToAccountDone =>
+      'Данные устройства для этого аккаунта скрыты';
+
+  @override
+  String privacyApplyToAccountFailed(String error) {
+    return 'Не удалось применить: $error';
+  }
+
+  @override
+  String get privacySectionMiniApps => 'Мини-приложения';
+
+  @override
+  String get privacyNeutralAgentLabel => 'Нейтральный User-Agent';
+
+  @override
+  String get privacyNeutralAgentSubtitle =>
+      'Мини-приложения и Цифровой ID не видят модель телефона и сборку ОС';
+
+  @override
+  String get privacyIsolateMiniAppsLabel => 'Изолировать мини-приложения';
+
+  @override
+  String get privacyIsolateMiniAppsSubtitle =>
+      'Куки и данные сайта каждого запуска стираются при закрытии. Цифровой ID и Госуслуги сохраняют вход';
+
+  @override
+  String get privacyBlockTrackersLabel => 'Блокировать трекеры';
+
+  @override
+  String get privacyBlockTrackersSubtitle =>
+      'Счётчики Top@Mail.ru, Яндекс Метрики, Google Analytics и другие внутри мини-приложений';
+
+  @override
+  String get privacySectionCalls => 'Звонки';
+
+  @override
+  String get privacyHideLocalAddressesLabel => 'Скрывать локальные адреса';
+
+  @override
+  String get privacyHideLocalAddressesSubtitle =>
+      'Адреса вашей домашней или рабочей сети не уходят собеседнику и серверу';
+
+  @override
+  String get privacyRelayCallsLabel => 'Скрывать мой IP в звонках';
+
+  @override
+  String get privacyRelayCallsSubtitle =>
+      'Звонки идут только через ретрансляторы MAX. Соединение может устанавливаться медленнее';
+
+  @override
+  String get privacySectionNetwork => 'Сеть';
+
+  @override
+  String get privacySessionIpLookupLabel => 'Определять местоположение сессий';
+
+  @override
+  String privacySessionIpLookupSubtitle(String host) {
+    return 'В «Устройствах» IP выбранной сессии отправляется по HTTPS на $host';
+  }
+
+  @override
+  String get privacySessionIpLookupConfirmTitle =>
+      'Отправить IP стороннему сервису?';
+
+  @override
+  String privacySessionIpLookupConfirmMessage(String host) {
+    return 'Чтобы показать местоположение, IP сессии будет отправлен по HTTPS на $host. Отключить можно в разделе «Приватность и песочница».';
+  }
+
+  @override
+  String get privacySessionIpLookupConfirmAction => 'Отправить';
+
+  @override
+  String get privacyAutoUpdateLabel => 'Проверять обновления автоматически';
+
+  @override
+  String get privacyAutoUpdateSubtitle =>
+      'Не чаще раза в 6 часов уходит запрос на GitHub. Ручная проверка остаётся в настройках';
+
+  @override
+  String get privacyNoticeTls =>
+      'Корневой сертификат Минцифры принимается только для серверов MAX и Госуслуг.';
+
+  @override
+  String get privacyNoticeFirebase =>
+      'Эта сборка получает уведомления через Firebase: push-токен известен Google и MAX.';
+
+  @override
+  String get errorServerNoResponse => 'Сервер не ответил';
+
+  @override
+  String get errorNoConnection => 'Нет соединения';
+
+  @override
+  String get errorFileAccess => 'Нет доступа к файлу';
+
+  @override
+  String get errorUnknown => 'Неизвестная ошибка';
+
+  @override
+  String get chatActivityRecordingVoice => 'Записывает голосовое...';
+
+  @override
+  String chatActivityRecordingVoiceOne(String name) {
+    return '$name записывает голосовое...';
+  }
+
+  @override
+  String chatActivityRecordingVoiceMany(String name, int count) {
+    return '$name и ещё $count записывают голосовые...';
+  }
+
+  @override
+  String get chatActivityRecordingVideoNote => 'Записывает кружок...';
+
+  @override
+  String chatActivityRecordingVideoNoteOne(String name) {
+    return '$name записывает кружок...';
+  }
+
+  @override
+  String chatActivityRecordingVideoNoteMany(String name, int count) {
+    return '$name и ещё $count записывают кружки...';
+  }
+
+  @override
+  String get chatActivitySendingPhoto => 'Отправляет фото...';
+
+  @override
+  String chatActivitySendingPhotoOne(String name) {
+    return '$name отправляет фото...';
+  }
+
+  @override
+  String chatActivitySendingPhotoMany(String name, int count) {
+    return '$name и ещё $count отправляют фото...';
+  }
+
+  @override
+  String get chatActivitySendingFile => 'Отправляет файл...';
+
+  @override
+  String chatActivitySendingFileOne(String name) {
+    return '$name отправляет файл...';
+  }
+
+  @override
+  String chatActivitySendingFileMany(String name, int count) {
+    return '$name и ещё $count отправляют файлы...';
+  }
+
+  @override
+  String get newChatAvatarNotSet => 'Аватар не установлен';
+
+  @override
+  String get msgActionsRetrySend => 'Повторить отправку';
+
+  @override
+  String get msgRetrySendUnavailable =>
+      'Это сообщение уже нельзя отправить повторно';
+
+  @override
+  String get callsTabDeleteFailed => 'Не удалось удалить звонок из истории';
+
+  @override
+  String chatCommentsLoadFailed(String error) {
+    return 'Не удалось загрузить комментарии: $error';
+  }
+
+  @override
+  String get folderActionReorder => 'Изменить порядок';
+
+  @override
+  String get folderReorderTitle => 'Порядок папок';
+
+  @override
+  String get folderReorderHint => 'Перетащите папку за ручку справа';
+
+  @override
+  String get folderReorderSave => 'Сохранить';
+
+  @override
+  String folderReorderFailed(String error) {
+    return 'Не удалось изменить порядок: $error';
+  }
+
+  @override
+  String get searchScopeAll => 'Всё';
+
+  @override
+  String get searchScopePeople => 'Люди';
+
+  @override
+  String get searchScopeChats => 'Чаты';
+
+  @override
+  String get searchScopeMessages => 'Сообщения';
+
+  @override
+  String get searchPeriodAny => 'За всё время';
+
+  @override
+  String get searchPeriodDay => 'Сегодня';
+
+  @override
+  String get searchPeriodWeek => 'Неделя';
+
+  @override
+  String get searchPeriodMonth => 'Месяц';
+
+  @override
+  String get searchPeriodYear => 'Год';
+
+  @override
+  String get searchSenderAny => 'Любой отправитель';
+
+  @override
+  String get searchSenderMe => 'Я';
+
+  @override
+  String get searchSenderOthers => 'Не я';
+
+  @override
+  String get searchKindAny => 'Все чаты';
+
+  @override
+  String get searchKindDialogs => 'Личные';
+
+  @override
+  String get searchKindGroups => 'Группы';
+
+  @override
+  String get searchKindChannels => 'Каналы';
+
+  @override
+  String get searchFilterScope => 'Что искать';
+
+  @override
+  String get searchFilterPeriod => 'Период';
+
+  @override
+  String get searchFilterSender => 'Отправитель';
+
+  @override
+  String get searchFilterKind => 'Тип чата';
+
+  @override
+  String get chatToolsAtmosphere => 'Атмосфера';
+
+  @override
+  String get chatToolsAtmosphereDefault => 'Как везде';
+
+  @override
+  String get chatToolsStats => 'Статистика';
+
+  @override
+  String get chatToolsDisappearing => 'Исчезающие';
+
+  @override
+  String get chatToolsOff => 'Выкл';
+
+  @override
+  String get chatToolsQuietHours => 'Тихие часы';
+
+  @override
+  String get chatToolsNote => 'Заметка';
+
+  @override
+  String get chatToolsNone => 'Нет';
+
+  @override
+  String get chatToolsTemplates => 'Шаблоны';
+
+  @override
+  String get chatToolsExport => 'Экспорт';
+
+  @override
+  String get chatToolsLeaveSecret => 'Из двойного дна';
+
+  @override
+  String get chatToolsMakeSecret => 'В двойное дно';
+
+  @override
+  String get chatToolsHidden =>
+      'Чат спрятан: его не будет видно по второму коду';
+
+  @override
+  String get chatToolsShown => 'Чат снова виден по любому коду';
+
+  @override
+  String get proMaxSectionAppearance => 'Внешний вид';
+
+  @override
+  String get proMaxThemesAndGlass => 'Темы и стекло';
+
+  @override
+  String get proMaxThemeCustom => 'Своя';
+
+  @override
+  String get proMaxAtmosphere => 'Атмосфера';
+
+  @override
+  String get proMaxSectionGhost => 'Призрак и приватность';
+
+  @override
+  String get proMaxNoTyping => 'Не отправлять «печатает»';
+
+  @override
+  String get proMaxNoTypingHint =>
+      'Собеседник не увидит, что вы набираете текст';
+
+  @override
+  String get proMaxHideStoryViews => 'Не отмечать просмотры историй';
+
+  @override
+  String get proMaxHideStoryViewsHint =>
+      'Автор истории не узнает, что вы её смотрели';
+
+  @override
+  String get proMaxStreamerMode => 'Режим стримера';
+
+  @override
+  String get proMaxStreamerModeHint =>
+      'Размывает номера, ID и превью сообщений, прячет текст уведомлений';
+
+  @override
+  String get proMaxSwitcherBlur => 'Размытие в переключателе';
+
+  @override
+  String get proMaxSwitcherBlurHint =>
+      'В списке открытых приложений iOS не видно содержимое';
+
+  @override
+  String get proMaxSectionMessages => 'Сообщения';
+
+  @override
+  String get proMaxSectionTools => 'Инструменты';
+
+  @override
+  String get proMaxBookmarks => 'Закладки';
+
+  @override
+  String get proMaxReminders => 'Напоминания';
+
+  @override
+  String get proMaxQuickReplies => 'Шаблоны ответов';
+
+  @override
+  String get proMaxOpenChatExport => 'Открыть экспорт .pmxchat';
+
+  @override
+  String get proMaxSectionChats => 'Чаты и папки';
+
+  @override
+  String get proMaxSectionDiagnostics => 'Диагностика';
+
+  @override
+  String get proMaxDigitalIdNative => 'Цифровой ID: нативный режим и отчёт';
+
+  @override
+  String get proMaxBasedOnKomet =>
+      'ProMax основан на открытом клиенте Komet · GPLv3';
+
+  @override
+  String proMaxHeroVersion(String version, String theme) {
+    return 'Версия $version · $theme';
+  }
+
+  @override
+  String get proMaxHeroCustomTheme => 'своя тема';
+
+  @override
+  String get proMaxHeroTagline => 'Твой MAX — по-своему';
+
+  @override
+  String get proMaxGhost => 'Призрак';
+
+  @override
+  String get proMaxAntiRead => 'Не читать';
+
+  @override
+  String get proMaxStreamer => 'Стример';
+
+  @override
+  String get proMaxOff => 'Выкл';
+
+  @override
+  String get proMaxOn => 'Вкл';
+
+  @override
+  String get proMaxEntryHint => 'Призрак, темы, атмосфера и все фишки';
+
+  @override
+  String get chatStatsTitle => 'Статистика';
+
+  @override
+  String get chatStatsTopSenders => 'Кто пишет больше';
+
+  @override
+  String get chatStatsByHour => 'Активность по часам';
+
+  @override
+  String get chatStatsByWeekday => 'По дням недели';
+
+  @override
+  String get chatStatsMedia => 'Медиа и вложения';
+
+  @override
+  String get chatStatsTopWords => 'Частые слова';
+
+  @override
+  String get chatStatsWeekdaysShort => 'Пн,Вт,Ср,Чт,Пт,Сб,Вс';
+
+  @override
+  String get chatStatsWeekdaysFull =>
+      'Понедельник,Вторник,Среда,Четверг,Пятница,Суббота,Воскресенье';
+
+  @override
+  String get chatStatsNoLocalMessages => 'В памяти телефона нет сообщений';
+
+  @override
+  String chatStatsRange(String from, String to) {
+    return 'С $from по $to · по сообщениям в памяти телефона';
+  }
+
+  @override
+  String get chatStatsPhotos => 'Фото';
+
+  @override
+  String get chatStatsVideos => 'Видео и кружки';
+
+  @override
+  String get chatStatsVoice => 'Голосовые';
+
+  @override
+  String get chatStatsFiles => 'Файлы';
+
+  @override
+  String get chatStatsStickers => 'Стикеры';
+
+  @override
+  String get chatStatsContacts => 'Контакты';
+
+  @override
+  String get chatStatsLocations => 'Геопозиции';
+
+  @override
+  String get chatStatsPolls => 'Опросы';
+
+  @override
+  String get chatStatsCalls => 'Звонки';
+
+  @override
+  String get chatStatsMessages => 'Сообщений';
+
+  @override
+  String get chatStatsWords => 'Слов';
+
+  @override
+  String get chatStatsPerDay => 'В день';
+
+  @override
+  String get chatStatsBusiestDay => 'Рекорд за день';
+
+  @override
+  String chatStatsSynced(int count) {
+    return 'Загружено сообщений: $count';
+  }
+
+  @override
+  String get chatStatsSyncAll => 'Загрузить всю историю с сервера';
 }

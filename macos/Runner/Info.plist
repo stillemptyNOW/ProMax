@@ -26,6 +26,14 @@
 	<string>$(PRODUCT_COPYRIGHT)</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Камера нужна для видеозвонков, сканирования QR-кода входа и работы веб-приложений.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Микрофон нужен для звонков, голосовых и видеосообщений.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Геопозиция нужна, только когда вы сами отправляете своё местоположение в чат.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Доступ к фото нужен, чтобы отправлять снимки и видео в чаты.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>CFBundleURLTypes</key>

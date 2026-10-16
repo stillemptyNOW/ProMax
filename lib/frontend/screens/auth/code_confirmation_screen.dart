@@ -14,6 +14,7 @@ import '../../widgets/auth_limits_sheet.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/login_success_screen.dart';
 import '../../widgets/small_spinner.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class CodeConfirmationScreen extends StatefulWidget {
   final String phoneNumber;
@@ -125,7 +126,9 @@ class _CodeConfirmationScreenState extends State<CodeConfirmationScreen>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.codeConfirmationReconnectFailed('$e'),
+          AppLocalizations.of(
+            context,
+          )!.codeConfirmationReconnectFailed(userFacingError(e)),
         );
       }
     } finally {
@@ -175,7 +178,9 @@ class _CodeConfirmationScreenState extends State<CodeConfirmationScreen>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.codeConfirmationRefreshFailed('$e'),
+          AppLocalizations.of(
+            context,
+          )!.codeConfirmationRefreshFailed(userFacingError(e)),
         );
       }
     } finally {
@@ -368,7 +373,7 @@ class _CodeConfirmationScreenState extends State<CodeConfirmationScreen>
     } catch (e) {
       if (!mounted) return;
       if (verified) {
-        _showError(e.toString());
+        _showError(userFacingError(e));
       } else if (isAuthSessionLostError(e)) {
         await _requestFreshCode(
           AppLocalizations.of(context)!.codeConfirmationCodeExpired,
@@ -376,7 +381,7 @@ class _CodeConfirmationScreenState extends State<CodeConfirmationScreen>
       } else if (isSessionStateError(e) || sessionStale) {
         await recoverStaleSession();
       } else {
-        _showError(e.toString());
+        _showError(userFacingError(e));
       }
     } finally {
       if (mounted) setState(() => _verifying = false);
@@ -562,21 +567,21 @@ class _CodeConfirmationScreenState extends State<CodeConfirmationScreen>
                     : const SizedBox.shrink(),
               ),
               GestureDetector(
-                  onTap: _resendCode,
-                  child: AnimatedDefaultTextStyle(
-                    duration: const Duration(milliseconds: 200),
-                    style: TextStyle(
-                      color: _timerSeconds > 0 ? cs.outline : cs.tertiary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    child: Text(
-                      _timerSeconds > 0
-                          ? l10n.codeResendInSeconds(_timerSeconds)
-                          : l10n.codeResendSms,
-                    ),
+                onTap: _resendCode,
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
+                  style: TextStyle(
+                    color: _timerSeconds > 0 ? cs.outline : cs.tertiary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  child: Text(
+                    _timerSeconds > 0
+                        ? l10n.codeResendInSeconds(_timerSeconds)
+                        : l10n.codeResendSms,
                   ),
                 ),
+              ),
               const Spacer(),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,

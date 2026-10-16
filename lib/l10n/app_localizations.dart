@@ -1358,6 +1358,78 @@ abstract class AppLocalizations {
   /// **'User'**
   String get msgActionsReadByUnknownUser;
 
+  /// No description provided for @readStampToday.
+  ///
+  /// In en, this message translates to:
+  /// **'today at {time}'**
+  String readStampToday(String time);
+
+  /// No description provided for @readStampYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'yesterday at {time}'**
+  String readStampYesterday(String time);
+
+  /// No description provided for @readStampDate.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} at {time}'**
+  String readStampDate(String date, String time);
+
+  /// No description provided for @readReceiptReadAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Read {stamp}'**
+  String readReceiptReadAt(String stamp);
+
+  /// No description provided for @readReceiptReadAtMost.
+  ///
+  /// In en, this message translates to:
+  /// **'Read no later than {stamp}'**
+  String readReceiptReadAtMost(String stamp);
+
+  /// No description provided for @readReceiptReadUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Read, time unknown'**
+  String get readReceiptReadUnknown;
+
+  /// No description provided for @readReceiptNotRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Not read yet'**
+  String get readReceiptNotRead;
+
+  /// No description provided for @readReceiptReadCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Read by {count} member} other{Read by {count} members}}'**
+  String readReceiptReadCount(int count);
+
+  /// No description provided for @readReceiptTimeAtMost.
+  ///
+  /// In en, this message translates to:
+  /// **'by {stamp}'**
+  String readReceiptTimeAtMost(String stamp);
+
+  /// No description provided for @readReceiptTimeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'time unknown'**
+  String get readReceiptTimeUnknown;
+
+  /// No description provided for @proMaxSettingsReadStamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Read time under messages'**
+  String get proMaxSettingsReadStamp;
+
+  /// No description provided for @proMaxSettingsReadStampSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'In a dialog, your latest read message shows when it was read'**
+  String get proMaxSettingsReadStampSubtitle;
+
   /// No description provided for @msgActionsReport.
   ///
   /// In en, this message translates to:
@@ -4976,6 +5048,12 @@ abstract class AppLocalizations {
   /// **'After downloading, choose eSign from the Share menu to sign and install the IPA.'**
   String get updateIosInstallHint;
 
+  /// No description provided for @updateWindowsInstallHint.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax will close, install the update and start again.'**
+  String get updateWindowsInstallHint;
+
   /// No description provided for @updateLater.
   ///
   /// In en, this message translates to:
@@ -6230,11 +6308,41 @@ abstract class AppLocalizations {
   /// **'Couldn\'t get the link'**
   String get linkQrUnavailable;
 
-  /// No description provided for @notificationsDesktopNote.
+  /// No description provided for @notificationsDesktopSectionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Notifications aren\'t shown on the computer yet. The settings below are your account\'s push settings for phones.'**
-  String get notificationsDesktopNote;
+  /// **'Window'**
+  String get notificationsDesktopSectionTitle;
+
+  /// No description provided for @notificationsDesktopTrayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize to tray on close'**
+  String get notificationsDesktopTrayLabel;
+
+  /// No description provided for @notificationsDesktopTraySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The close button hides ProMax in the tray: the connection stays up and notifications keep coming. Quit from the tray icon menu'**
+  String get notificationsDesktopTraySubtitle;
+
+  /// No description provided for @notificationsDesktopAutostartLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with Windows'**
+  String get notificationsDesktopAutostartLabel;
+
+  /// No description provided for @notificationsDesktopAutostartSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax starts minimized to the tray and shows notifications right away'**
+  String get notificationsDesktopAutostartSubtitle;
+
+  /// No description provided for @notificationsDesktopAutostartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change autostart'**
+  String get notificationsDesktopAutostartFailed;
 
   /// No description provided for @fileNoAppToOpen.
   ///
@@ -7622,6 +7730,138 @@ abstract class AppLocalizations {
   /// **'Also delete for {name}'**
   String chatScreenDeleteAlsoFor(String name);
 
+  /// No description provided for @deleteMessagesPeerFallbackNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The other person\'s messages will be deleted for both of you if the server allows it, otherwise only for you.'**
+  String get deleteMessagesPeerFallbackNote;
+
+  /// No description provided for @deleteMessagesOthersOnlyForMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Other people\'s messages ({count}) will be deleted only for you.'**
+  String deleteMessagesOthersOnlyForMe(int count);
+
+  /// No description provided for @deleteMessagesKeptForPeer.
+  ///
+  /// In en, this message translates to:
+  /// **'The server didn\'t let you delete {count} of the other person\'s messages for both — they were deleted only for you'**
+  String deleteMessagesKeptForPeer(int count);
+
+  /// No description provided for @deleteMessagesFailedWithReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete messages: {reason}'**
+  String deleteMessagesFailedWithReason(String reason);
+
+  /// No description provided for @deleteChatFailedWithReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the chat: {reason}'**
+  String deleteChatFailedWithReason(String reason);
+
+  /// No description provided for @leaveChatFailedWithReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t leave the chat: {reason}'**
+  String leaveChatFailedWithReason(String reason);
+
+  /// No description provided for @serverUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection to the server'**
+  String get serverUnreachable;
+
+  /// No description provided for @wipeForBothAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete for both'**
+  String get wipeForBothAction;
+
+  /// No description provided for @wipeForBothTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete for both?'**
+  String get wipeForBothTitle;
+
+  /// No description provided for @wipeForBothMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax will delete every message in this chat for you and the other person, then delete the chat itself. This can\'t be undone.'**
+  String get wipeForBothMessage;
+
+  /// No description provided for @wipeCollecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Collecting the history…'**
+  String get wipeCollecting;
+
+  /// No description provided for @wipeFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages found: {count}'**
+  String wipeFound(int count);
+
+  /// No description provided for @wipeDeleting.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {done} of {total}'**
+  String wipeDeleting(int done, int total);
+
+  /// No description provided for @wipeSummaryForBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted for both: {count}'**
+  String wipeSummaryForBoth(int count);
+
+  /// No description provided for @wipeSummaryOnlyForMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted only for you (the server refused to delete them for the other person): {count}'**
+  String wipeSummaryOnlyForMe(int count);
+
+  /// No description provided for @wipeSummaryNotDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not deleted: {count}'**
+  String wipeSummaryNotDeleted(int count);
+
+  /// No description provided for @wipeSummaryHistoryIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'The server didn\'t return the whole history'**
+  String get wipeSummaryHistoryIncomplete;
+
+  /// No description provided for @wipeSummaryInterrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection dropped and deleting stopped — try again'**
+  String get wipeSummaryInterrupted;
+
+  /// No description provided for @wipeSummaryChatKept.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat wasn\'t deleted: {reason}'**
+  String wipeSummaryChatKept(String reason);
+
+  /// No description provided for @wipeSummaryClearFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The history wasn\'t cleared for both: {reason}'**
+  String wipeSummaryClearFailed(String reason);
+
+  /// No description provided for @messageDeletedMark.
+  ///
+  /// In en, this message translates to:
+  /// **'deleted'**
+  String get messageDeletedMark;
+
+  /// No description provided for @messageDeletedMarkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This message was deleted. You see it because “Show deleted messages” is on'**
+  String get messageDeletedMarkHint;
+
   /// No description provided for @chatScreenMenuMute.
   ///
   /// In en, this message translates to:
@@ -8882,6 +9122,168 @@ abstract class AppLocalizations {
   /// **'Share'**
   String get webAppPhoneRequestShare;
 
+  /// No description provided for @sandboxRiskyFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Potentially dangerous file'**
+  String get sandboxRiskyFileTitle;
+
+  /// No description provided for @sandboxRiskyFileMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” is a program or script ({extension}). Once opened, it can do anything you can: read your files, install software, change settings. Open it only if you fully trust the sender.'**
+  String sandboxRiskyFileMessage(String name, String extension);
+
+  /// No description provided for @sandboxRiskyFileOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open anyway'**
+  String get sandboxRiskyFileOpen;
+
+  /// No description provided for @sandboxOpenFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the file?'**
+  String get sandboxOpenFileTitle;
+
+  /// No description provided for @sandboxOpenFileMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” will open in another app.'**
+  String sandboxOpenFileMessage(String name);
+
+  /// No description provided for @sandboxOpenFileConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get sandboxOpenFileConfirm;
+
+  /// No description provided for @sandboxDownloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the file?'**
+  String get sandboxDownloadTitle;
+
+  /// No description provided for @sandboxDownloadMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The mini app “{app}” wants to save “{name}” from {host}. The file stays in ProMax\'s private folder; you\'ll find it in Downloads.'**
+  String sandboxDownloadMessage(String app, String name, String host);
+
+  /// No description provided for @sandboxDownloadRiskyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a program or script ({extension}). Don\'t open it unless you trust the mini app.'**
+  String sandboxDownloadRiskyNote(String extension);
+
+  /// No description provided for @sandboxDownloadKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get sandboxDownloadKeep;
+
+  /// No description provided for @sandboxDownloadSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as…'**
+  String get sandboxDownloadSaveAs;
+
+  /// No description provided for @sandboxDownloadSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to ProMax downloads'**
+  String get sandboxDownloadSaved;
+
+  /// No description provided for @sandboxDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t download the file'**
+  String get sandboxDownloadFailed;
+
+  /// No description provided for @sandboxLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Another website'**
+  String get sandboxLeaveTitle;
+
+  /// No description provided for @sandboxLeaveMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The mini app is opening {host}. That site won\'t get access to ProMax features.'**
+  String sandboxLeaveMessage(String host);
+
+  /// No description provided for @sandboxLeaveExternalMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The mini app wants to open {host} in your browser.'**
+  String sandboxLeaveExternalMessage(String host);
+
+  /// No description provided for @sandboxLeaveBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'In browser'**
+  String get sandboxLeaveBrowser;
+
+  /// No description provided for @sandboxLeaveHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Open here'**
+  String get sandboxLeaveHere;
+
+  /// No description provided for @sandboxLinkBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Link blocked: addresses like this can open files and programs on your device'**
+  String get sandboxLinkBlocked;
+
+  /// No description provided for @sandboxSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SANDBOX'**
+  String get sandboxSectionTitle;
+
+  /// No description provided for @sandboxConfirmEveryFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask before opening files'**
+  String get sandboxConfirmEveryFile;
+
+  /// No description provided for @sandboxConfirmEveryFileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Programs, scripts and shortcuts always open only after a warning.'**
+  String get sandboxConfirmEveryFileHint;
+
+  /// No description provided for @sandboxStrictProcess.
+  ///
+  /// In en, this message translates to:
+  /// **'Strict process isolation'**
+  String get sandboxStrictProcess;
+
+  /// No description provided for @sandboxStrictProcessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks foreign DLLs injected through AppInit_DLLs, global hooks and legacy IMEs. Screen readers and Punto Switcher may stop working inside ProMax. Takes effect after a restart.'**
+  String get sandboxStrictProcessHint;
+
+  /// No description provided for @sandboxSettingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change the setting'**
+  String get sandboxSettingFailed;
+
+  /// No description provided for @sandboxSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini apps can\'t reach your files and stay on their own site; downloads land in ProMax\'s private folder; links to files and system protocols don\'t open.'**
+  String get sandboxSummary;
+
+  /// No description provided for @sandboxSummaryWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'On Windows every saved file is marked as downloaded from the internet, so SmartScreen and Office Protected View check it.'**
+  String get sandboxSummaryWindows;
+
   /// No description provided for @promptDialogConfirm.
   ///
   /// In en, this message translates to:
@@ -9761,7 +10163,7 @@ abstract class AppLocalizations {
   /// No description provided for @proMaxSettingsViewDeletedSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Show deleted messages'**
+  /// **'Messages deleted by others stay in the chat marked “deleted”'**
   String get proMaxSettingsViewDeletedSubtitle;
 
   /// No description provided for @proMaxSettingsViewRedactedSubtitle.
@@ -11851,6 +12253,912 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ProMax file · .promax'**
   String get proMaxArchiveTitle;
+
+  /// No description provided for @privacySandboxTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & sandbox'**
+  String get privacySandboxTitle;
+
+  /// No description provided for @privacySandboxIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax has no analytics or crash reporting and sends no telemetry to MAX. These options limit what MAX, mini-apps and third-party services learn about your device and network.'**
+  String get privacySandboxIntro;
+
+  /// No description provided for @privacySectionDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Device'**
+  String get privacySectionDevice;
+
+  /// No description provided for @privacyHideDeviceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide device details'**
+  String get privacyHideDeviceLabel;
+
+  /// No description provided for @privacyHideDeviceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New sign-ins appear as a typical Android phone with random identifiers, without your model, OS build, time zone or language'**
+  String get privacyHideDeviceSubtitle;
+
+  /// No description provided for @privacyAccountRealDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This account was signed in earlier and still sends the real device details'**
+  String get privacyAccountRealDevice;
+
+  /// No description provided for @privacyAccountHiddenDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This account uses a substitute device profile'**
+  String get privacyAccountHiddenDevice;
+
+  /// No description provided for @privacyApplyToAccountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide device for this account'**
+  String get privacyApplyToAccountLabel;
+
+  /// No description provided for @privacyApplyToAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Model, OS, time zone and language will be replaced with a typical profile. The device identifier stays the same, so the session is kept. The app will reconnect.'**
+  String get privacyApplyToAccountMessage;
+
+  /// No description provided for @privacyApplyToAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get privacyApplyToAccountConfirm;
+
+  /// No description provided for @privacyApplyToAccountDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Device details are hidden for this account'**
+  String get privacyApplyToAccountDone;
+
+  /// No description provided for @privacyApplyToAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not apply: {error}'**
+  String privacyApplyToAccountFailed(String error);
+
+  /// No description provided for @privacySectionMiniApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini-apps'**
+  String get privacySectionMiniApps;
+
+  /// No description provided for @privacyNeutralAgentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Neutral User-Agent'**
+  String get privacyNeutralAgentLabel;
+
+  /// No description provided for @privacyNeutralAgentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini-apps and Digital ID do not see your phone model and OS build'**
+  String get privacyNeutralAgentSubtitle;
+
+  /// No description provided for @privacyIsolateMiniAppsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Isolate mini-apps'**
+  String get privacyIsolateMiniAppsLabel;
+
+  /// No description provided for @privacyIsolateMiniAppsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookies and site data of each launch are erased when it closes. Digital ID and Gosuslugi keep their sign-in'**
+  String get privacyIsolateMiniAppsSubtitle;
+
+  /// No description provided for @privacyBlockTrackersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Block trackers'**
+  String get privacyBlockTrackersLabel;
+
+  /// No description provided for @privacyBlockTrackersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Top@Mail.ru, Yandex Metrica, Google Analytics and other counters inside mini-apps'**
+  String get privacyBlockTrackersSubtitle;
+
+  /// No description provided for @privacySectionCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get privacySectionCalls;
+
+  /// No description provided for @privacyHideLocalAddressesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide local addresses'**
+  String get privacyHideLocalAddressesLabel;
+
+  /// No description provided for @privacyHideLocalAddressesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Addresses of your home or office network are not sent to the other party or the server'**
+  String get privacyHideLocalAddressesSubtitle;
+
+  /// No description provided for @privacyRelayCallsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide my IP in calls'**
+  String get privacyRelayCallsLabel;
+
+  /// No description provided for @privacyRelayCallsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls go only through MAX relay servers. Calls may connect slower'**
+  String get privacyRelayCallsSubtitle;
+
+  /// No description provided for @privacySectionNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get privacySectionNetwork;
+
+  /// No description provided for @privacySessionIpLookupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Look up session locations'**
+  String get privacySessionIpLookupLabel;
+
+  /// No description provided for @privacySessionIpLookupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'In Devices, the IP of the session you tap is sent over HTTPS to {host}'**
+  String privacySessionIpLookupSubtitle(String host);
+
+  /// No description provided for @privacySessionIpLookupConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the IP to a third party?'**
+  String get privacySessionIpLookupConfirmTitle;
+
+  /// No description provided for @privacySessionIpLookupConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'To show the location, the session IP is sent over HTTPS to {host}. You can turn this off in Privacy & sandbox.'**
+  String privacySessionIpLookupConfirmMessage(String host);
+
+  /// No description provided for @privacySessionIpLookupConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get privacySessionIpLookupConfirmAction;
+
+  /// No description provided for @privacyAutoUpdateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates automatically'**
+  String get privacyAutoUpdateLabel;
+
+  /// No description provided for @privacyAutoUpdateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'At most every 6 hours a request goes to GitHub. The manual check stays in settings'**
+  String get privacyAutoUpdateSubtitle;
+
+  /// No description provided for @privacyNoticeTls.
+  ///
+  /// In en, this message translates to:
+  /// **'The Russian Ministry of Digital Development root certificate is trusted only for MAX and Gosuslugi servers.'**
+  String get privacyNoticeTls;
+
+  /// No description provided for @privacyNoticeFirebase.
+  ///
+  /// In en, this message translates to:
+  /// **'This build receives notifications through Firebase: the push token is known to Google and MAX.'**
+  String get privacyNoticeFirebase;
+
+  /// No description provided for @errorServerNoResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The server did not respond'**
+  String get errorServerNoResponse;
+
+  /// No description provided for @errorNoConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection'**
+  String get errorNoConnection;
+
+  /// No description provided for @errorFileAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t access the file'**
+  String get errorFileAccess;
+
+  /// No description provided for @errorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error'**
+  String get errorUnknown;
+
+  /// No description provided for @chatActivityRecordingVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording a voice message...'**
+  String get chatActivityRecordingVoice;
+
+  /// No description provided for @chatActivityRecordingVoiceOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is recording a voice message...'**
+  String chatActivityRecordingVoiceOne(String name);
+
+  /// No description provided for @chatActivityRecordingVoiceMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} more are recording voice messages...'**
+  String chatActivityRecordingVoiceMany(String name, int count);
+
+  /// No description provided for @chatActivityRecordingVideoNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording a video message...'**
+  String get chatActivityRecordingVideoNote;
+
+  /// No description provided for @chatActivityRecordingVideoNoteOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is recording a video message...'**
+  String chatActivityRecordingVideoNoteOne(String name);
+
+  /// No description provided for @chatActivityRecordingVideoNoteMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} more are recording video messages...'**
+  String chatActivityRecordingVideoNoteMany(String name, int count);
+
+  /// No description provided for @chatActivitySendingPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending a photo...'**
+  String get chatActivitySendingPhoto;
+
+  /// No description provided for @chatActivitySendingPhotoOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is sending a photo...'**
+  String chatActivitySendingPhotoOne(String name);
+
+  /// No description provided for @chatActivitySendingPhotoMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} more are sending photos...'**
+  String chatActivitySendingPhotoMany(String name, int count);
+
+  /// No description provided for @chatActivitySendingFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending a file...'**
+  String get chatActivitySendingFile;
+
+  /// No description provided for @chatActivitySendingFileOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is sending a file...'**
+  String chatActivitySendingFileOne(String name);
+
+  /// No description provided for @chatActivitySendingFileMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} more are sending files...'**
+  String chatActivitySendingFileMany(String name, int count);
+
+  /// No description provided for @newChatAvatarNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'The avatar was not set'**
+  String get newChatAvatarNotSet;
+
+  /// No description provided for @msgActionsRetrySend.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry sending'**
+  String get msgActionsRetrySend;
+
+  /// No description provided for @msgRetrySendUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This message can no longer be resent'**
+  String get msgRetrySendUnavailable;
+
+  /// No description provided for @callsTabDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the call from history'**
+  String get callsTabDeleteFailed;
+
+  /// No description provided for @chatCommentsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load comments: {error}'**
+  String chatCommentsLoadFailed(String error);
+
+  /// No description provided for @folderActionReorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder folders'**
+  String get folderActionReorder;
+
+  /// No description provided for @folderReorderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder order'**
+  String get folderReorderTitle;
+
+  /// No description provided for @folderReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a folder by the handle on the right'**
+  String get folderReorderHint;
+
+  /// No description provided for @folderReorderSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get folderReorderSave;
+
+  /// No description provided for @folderReorderFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reorder folders: {error}'**
+  String folderReorderFailed(String error);
+
+  /// No description provided for @searchScopeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything'**
+  String get searchScopeAll;
+
+  /// No description provided for @searchScopePeople.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get searchScopePeople;
+
+  /// No description provided for @searchScopeChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get searchScopeChats;
+
+  /// No description provided for @searchScopeMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get searchScopeMessages;
+
+  /// No description provided for @searchPeriodAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any time'**
+  String get searchPeriodAny;
+
+  /// No description provided for @searchPeriodDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get searchPeriodDay;
+
+  /// No description provided for @searchPeriodWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get searchPeriodWeek;
+
+  /// No description provided for @searchPeriodMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get searchPeriodMonth;
+
+  /// No description provided for @searchPeriodYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get searchPeriodYear;
+
+  /// No description provided for @searchSenderAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any sender'**
+  String get searchSenderAny;
+
+  /// No description provided for @searchSenderMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Me'**
+  String get searchSenderMe;
+
+  /// No description provided for @searchSenderOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Not me'**
+  String get searchSenderOthers;
+
+  /// No description provided for @searchKindAny.
+  ///
+  /// In en, this message translates to:
+  /// **'All chats'**
+  String get searchKindAny;
+
+  /// No description provided for @searchKindDialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get searchKindDialogs;
+
+  /// No description provided for @searchKindGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get searchKindGroups;
+
+  /// No description provided for @searchKindChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels'**
+  String get searchKindChannels;
+
+  /// No description provided for @searchFilterScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for'**
+  String get searchFilterScope;
+
+  /// No description provided for @searchFilterPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Period'**
+  String get searchFilterPeriod;
+
+  /// No description provided for @searchFilterSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender'**
+  String get searchFilterSender;
+
+  /// No description provided for @searchFilterKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat type'**
+  String get searchFilterKind;
+
+  /// No description provided for @chatToolsAtmosphere.
+  ///
+  /// In en, this message translates to:
+  /// **'Atmosphere'**
+  String get chatToolsAtmosphere;
+
+  /// No description provided for @chatToolsAtmosphereDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as everywhere'**
+  String get chatToolsAtmosphereDefault;
+
+  /// No description provided for @chatToolsStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get chatToolsStats;
+
+  /// No description provided for @chatToolsDisappearing.
+  ///
+  /// In en, this message translates to:
+  /// **'Disappearing'**
+  String get chatToolsDisappearing;
+
+  /// No description provided for @chatToolsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get chatToolsOff;
+
+  /// No description provided for @chatToolsQuietHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet hours'**
+  String get chatToolsQuietHours;
+
+  /// No description provided for @chatToolsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get chatToolsNote;
+
+  /// No description provided for @chatToolsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get chatToolsNone;
+
+  /// No description provided for @chatToolsTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'Templates'**
+  String get chatToolsTemplates;
+
+  /// No description provided for @chatToolsExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get chatToolsExport;
+
+  /// No description provided for @chatToolsLeaveSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of the double bottom'**
+  String get chatToolsLeaveSecret;
+
+  /// No description provided for @chatToolsMakeSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Into the double bottom'**
+  String get chatToolsMakeSecret;
+
+  /// No description provided for @chatToolsHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat hidden: it won\'t be visible with the second code'**
+  String get chatToolsHidden;
+
+  /// No description provided for @chatToolsShown.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat is visible with any code again'**
+  String get chatToolsShown;
+
+  /// No description provided for @proMaxSectionAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get proMaxSectionAppearance;
+
+  /// No description provided for @proMaxThemesAndGlass.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes and glass'**
+  String get proMaxThemesAndGlass;
+
+  /// No description provided for @proMaxThemeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get proMaxThemeCustom;
+
+  /// No description provided for @proMaxAtmosphere.
+  ///
+  /// In en, this message translates to:
+  /// **'Atmosphere'**
+  String get proMaxAtmosphere;
+
+  /// No description provided for @proMaxSectionGhost.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost and privacy'**
+  String get proMaxSectionGhost;
+
+  /// No description provided for @proMaxNoTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t send \"typing\"'**
+  String get proMaxNoTyping;
+
+  /// No description provided for @proMaxNoTypingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The other person won\'t see that you\'re typing'**
+  String get proMaxNoTypingHint;
+
+  /// No description provided for @proMaxHideStoryViews.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t mark stories as viewed'**
+  String get proMaxHideStoryViews;
+
+  /// No description provided for @proMaxHideStoryViewsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The author won\'t know you watched the story'**
+  String get proMaxHideStoryViewsHint;
+
+  /// No description provided for @proMaxStreamerMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Streamer mode'**
+  String get proMaxStreamerMode;
+
+  /// No description provided for @proMaxStreamerModeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Blurs numbers, IDs and message previews, hides notification text'**
+  String get proMaxStreamerModeHint;
+
+  /// No description provided for @proMaxSwitcherBlur.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur in the app switcher'**
+  String get proMaxSwitcherBlur;
+
+  /// No description provided for @proMaxSwitcherBlurHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Content is hidden in the iOS app switcher'**
+  String get proMaxSwitcherBlurHint;
+
+  /// No description provided for @proMaxSectionMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get proMaxSectionMessages;
+
+  /// No description provided for @proMaxSectionTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get proMaxSectionTools;
+
+  /// No description provided for @proMaxBookmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmarks'**
+  String get proMaxBookmarks;
+
+  /// No description provided for @proMaxReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get proMaxReminders;
+
+  /// No description provided for @proMaxQuickReplies.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply templates'**
+  String get proMaxQuickReplies;
+
+  /// No description provided for @proMaxOpenChatExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a .pmxchat export'**
+  String get proMaxOpenChatExport;
+
+  /// No description provided for @proMaxSectionChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats and folders'**
+  String get proMaxSectionChats;
+
+  /// No description provided for @proMaxSectionDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics'**
+  String get proMaxSectionDiagnostics;
+
+  /// No description provided for @proMaxDigitalIdNative.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital ID: native mode and report'**
+  String get proMaxDigitalIdNative;
+
+  /// No description provided for @proMaxBasedOnKomet.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax is based on the open Komet client · GPLv3'**
+  String get proMaxBasedOnKomet;
+
+  /// No description provided for @proMaxHeroVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} · {theme}'**
+  String proMaxHeroVersion(String version, String theme);
+
+  /// No description provided for @proMaxHeroCustomTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'custom theme'**
+  String get proMaxHeroCustomTheme;
+
+  /// No description provided for @proMaxHeroTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your MAX, your way'**
+  String get proMaxHeroTagline;
+
+  /// No description provided for @proMaxGhost.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost'**
+  String get proMaxGhost;
+
+  /// No description provided for @proMaxAntiRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t read'**
+  String get proMaxAntiRead;
+
+  /// No description provided for @proMaxStreamer.
+  ///
+  /// In en, this message translates to:
+  /// **'Streamer'**
+  String get proMaxStreamer;
+
+  /// No description provided for @proMaxOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get proMaxOff;
+
+  /// No description provided for @proMaxOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get proMaxOn;
+
+  /// No description provided for @proMaxEntryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost, themes, atmosphere and all the extras'**
+  String get proMaxEntryHint;
+
+  /// No description provided for @chatStatsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get chatStatsTitle;
+
+  /// No description provided for @chatStatsTopSenders.
+  ///
+  /// In en, this message translates to:
+  /// **'Who writes the most'**
+  String get chatStatsTopSenders;
+
+  /// No description provided for @chatStatsByHour.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity by hour'**
+  String get chatStatsByHour;
+
+  /// No description provided for @chatStatsByWeekday.
+  ///
+  /// In en, this message translates to:
+  /// **'By day of the week'**
+  String get chatStatsByWeekday;
+
+  /// No description provided for @chatStatsMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Media and attachments'**
+  String get chatStatsMedia;
+
+  /// No description provided for @chatStatsTopWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequent words'**
+  String get chatStatsTopWords;
+
+  /// No description provided for @chatStatsWeekdaysShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon,Tue,Wed,Thu,Fri,Sat,Sun'**
+  String get chatStatsWeekdaysShort;
+
+  /// No description provided for @chatStatsWeekdaysFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday'**
+  String get chatStatsWeekdaysFull;
+
+  /// No description provided for @chatStatsNoLocalMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages stored on this device'**
+  String get chatStatsNoLocalMessages;
+
+  /// No description provided for @chatStatsRange.
+  ///
+  /// In en, this message translates to:
+  /// **'From {from} to {to} · based on messages stored on this device'**
+  String chatStatsRange(String from, String to);
+
+  /// No description provided for @chatStatsPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get chatStatsPhotos;
+
+  /// No description provided for @chatStatsVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos and video messages'**
+  String get chatStatsVideos;
+
+  /// No description provided for @chatStatsVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice messages'**
+  String get chatStatsVoice;
+
+  /// No description provided for @chatStatsFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get chatStatsFiles;
+
+  /// No description provided for @chatStatsStickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Stickers'**
+  String get chatStatsStickers;
+
+  /// No description provided for @chatStatsContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get chatStatsContacts;
+
+  /// No description provided for @chatStatsLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Locations'**
+  String get chatStatsLocations;
+
+  /// No description provided for @chatStatsPolls.
+  ///
+  /// In en, this message translates to:
+  /// **'Polls'**
+  String get chatStatsPolls;
+
+  /// No description provided for @chatStatsCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get chatStatsCalls;
+
+  /// No description provided for @chatStatsMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get chatStatsMessages;
+
+  /// No description provided for @chatStatsWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Words'**
+  String get chatStatsWords;
+
+  /// No description provided for @chatStatsPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Per day'**
+  String get chatStatsPerDay;
+
+  /// No description provided for @chatStatsBusiestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Busiest day'**
+  String get chatStatsBusiestDay;
+
+  /// No description provided for @chatStatsSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages loaded: {count}'**
+  String chatStatsSynced(int count);
+
+  /// No description provided for @chatStatsSyncAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Load the whole history from the server'**
+  String get chatStatsSyncAll;
 }
 
 class _AppLocalizationsDelegate

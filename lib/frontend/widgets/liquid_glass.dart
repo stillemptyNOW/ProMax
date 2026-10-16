@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -14,6 +15,9 @@ class LiquidGlass {
   static bool _loadAttempted = false;
 
   static bool get isSupported => _program != null;
+
+  static bool get flipsBackdrop =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   static bool get active =>
       isSupported && AppVisualStyle.current.value == VisualStyle.liquidGlass;
@@ -401,7 +405,8 @@ class _RenderLiquidGlass extends RenderProxyBox {
       ..setFloat(15, _light.dx)
       ..setFloat(16, _light.dy)
       ..setFloat(17, _tintFeather * dpr)
-      ..setFloat(18, _rimWidth * dpr);
+      ..setFloat(18, _rimWidth * dpr)
+      ..setFloat(19, LiquidGlass.flipsBackdrop ? 1 : 0);
 
     return ui.ImageFilter.shader(shader);
   }

@@ -21,9 +21,11 @@ import '../../widgets/small_spinner.dart';
 import 'blacklist_screen.dart';
 import 'password_entry_screen.dart';
 import 'passcode_settings_screen.dart';
+import 'sandbox_settings_section.dart';
 import '../../../core/security/app_lock.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../core/config/app_shape.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 const bool _showFamilyProtection = false;
 
@@ -93,7 +95,7 @@ class _SecurityScreenState extends State<SecurityScreen>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.securityLoadError(e.toString()),
+          AppLocalizations.of(context)!.securityLoadError(userFacingError(e)),
         );
         setState(() => _isLoading = false);
       }
@@ -115,7 +117,7 @@ class _SecurityScreenState extends State<SecurityScreen>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.securitySaveError(e.toString()),
+          AppLocalizations.of(context)!.securitySaveError(userFacingError(e)),
         );
       }
     } finally {
@@ -181,7 +183,7 @@ class _SecurityScreenState extends State<SecurityScreen>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.securitySaveError(e.toString()),
+          AppLocalizations.of(context)!.securitySaveError(userFacingError(e)),
         );
       }
     } finally {
@@ -227,6 +229,12 @@ class _SecurityScreenState extends State<SecurityScreen>
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                       child: _buildConfidentialSection(cs),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 20, 16, 0),
+                      child: SandboxSettingsSection(),
                     ),
                   ),
                   SliverToBoxAdapter(
@@ -631,7 +639,8 @@ class _SecurityScreenState extends State<SecurityScreen>
                 ('CONTACTS', l10n.securityPrivacyContacts),
                 ('NOBODY', l10n.securityPrivacyNobody),
               ],
-              onSelect: (value) => _updateSetting('PHONE_NUMBER_PRIVACY', value),
+              onSelect: (value) =>
+                  _updateSetting('PHONE_NUMBER_PRIVACY', value),
             ),
           ),
         ],
@@ -648,10 +657,7 @@ class _SecurityScreenState extends State<SecurityScreen>
           child: InkWell(
             onTap: _isSaving ? null : () => _setSafeMode(!isSafeMode),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 17,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 17),
               child: Row(
                 children: [
                   Icon(
@@ -837,18 +843,13 @@ class _SecurityScreenState extends State<SecurityScreen>
             label: l10n.securityReadReceipts,
             trailingWidget: Switch(
               value: showReadMark,
-              onChanged: (v) => _updateConfidentialSetting(
-                'SHOW_READ_MARK',
-                v,
-              ),
+              onChanged: (v) => _updateConfidentialSetting('SHOW_READ_MARK', v),
             ),
             showChevron: false,
             verticalPadding: 14,
             isLast: false,
-            onTap: () => _updateConfidentialSetting(
-              'SHOW_READ_MARK',
-              !showReadMark,
-            ),
+            onTap: () =>
+                _updateConfidentialSetting('SHOW_READ_MARK', !showReadMark),
           ),
           _settingsRow(
             cs,
@@ -861,10 +862,8 @@ class _SecurityScreenState extends State<SecurityScreen>
             showChevron: false,
             verticalPadding: 14,
             isLast: false,
-            onTap: () => _updateConfidentialSetting(
-              'ALT_KEYBOARD',
-              !altKeyboard,
-            ),
+            onTap: () =>
+                _updateConfidentialSetting('ALT_KEYBOARD', !altKeyboard),
           ),
           _settingsRow(
             cs,
@@ -877,10 +876,8 @@ class _SecurityScreenState extends State<SecurityScreen>
             showChevron: false,
             verticalPadding: 14,
             isLast: false,
-            onTap: () => _updateConfidentialSetting(
-              'UNSAFE_FILES',
-              !unsafeFiles,
-            ),
+            onTap: () =>
+                _updateConfidentialSetting('UNSAFE_FILES', !unsafeFiles),
           ),
           _settingsRow(
             cs,
@@ -888,10 +885,8 @@ class _SecurityScreenState extends State<SecurityScreen>
             label: l10n.securityAudioTranscription,
             trailingWidget: Switch(
               value: audioTranscription,
-              onChanged: (v) => _updateConfidentialSetting(
-                'AUDIO_TRANSCRIPTION_ENABLED',
-                v,
-              ),
+              onChanged: (v) =>
+                  _updateConfidentialSetting('AUDIO_TRANSCRIPTION_ENABLED', v),
             ),
             showChevron: false,
             verticalPadding: 14,
@@ -950,7 +945,9 @@ class _SecurityScreenState extends State<SecurityScreen>
       if (!mounted) return;
       showCustomNotification(
         context,
-        AppLocalizations.of(context)!.securityDeleteProfileError(e.toString()),
+        AppLocalizations.of(
+          context,
+        )!.securityDeleteProfileError(userFacingError(e)),
       );
     } finally {
       if (mounted) setState(() => _deletionBusy = false);

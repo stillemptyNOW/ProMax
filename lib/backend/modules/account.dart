@@ -4,7 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import '../api.dart';
 import '../../core/config/debug_test.dart';
-import '../../core/config/promax_settings.dart';
+import '../../core/config/privacy_settings.dart';
 import '../../core/protocol/chat_cache_fingerprint.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
@@ -16,6 +16,7 @@ import '../../core/storage/profile_deletion_store.dart';
 import '../../core/storage/spoofing_service.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
+import '../../core/utils/server_clock.dart';
 import '../../models/login_info.dart';
 import 'banners.dart';
 import 'chats.dart';
@@ -23,6 +24,7 @@ import 'complaints.dart';
 import 'contacts.dart';
 import 'folders.dart';
 import 'messages.dart';
+import 'pending_deletions.dart';
 import 'webapp.dart';
 
 import 'account/account_models.dart';
@@ -358,7 +360,9 @@ class AccountModule {
     final existing = await AppDatabase.loadAllProfiles();
     await SpoofingService.prepareNewAccountSpoof(
       existing.map((p) => p.id).toList(growable: false),
+      generic: PrivacySettings.hideDevice.current.value,
     );
+    await PendingDeletions.instance.settleBeforeAccountChange();
 
     try {
       await _api.disconnect();
@@ -587,8 +591,7 @@ class AccountModule {
   }
 
   static String _generateStrongPassword() {
-    const chars =
-        'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
     final rng = Random.secure();
     return List.generate(16, (_) => chars[rng.nextInt(chars.length)]).join();
   }
@@ -602,10 +605,7 @@ class AccountModule {
     final text = msg['text'];
     final looksLikeLogin =
         text is String &&
-        RegExp(
-          r'код|code|войти|профил',
-          caseSensitive: false,
-        ).hasMatch(text);
+        RegExp(r'код|code|войти|профил', caseSensitive: false).hasMatch(text);
     if (!looksLikeLogin) return null;
 
     final attaches = msg['attaches'];
@@ -644,6 +644,7 @@ class AccountModule {
       throw AccountSessionLostException(accountId);
     }
     MediaPlayback.instance.closeAudioFile();
+    await PendingDeletions.instance.settleBeforeAccountChange();
 
     try {
       await _api.disconnect();
@@ -681,6 +682,7 @@ class AccountModule {
 
   // #***! удаляем локально, база токен спуф и заявка
   Future<void> removeAccount(int accountId) async {
+    PendingDeletions.instance.forgetAccount(accountId);
     await E2eeService.instance.eraseAccount(accountId);
     await AppDatabase.deleteAccount(accountId);
     await TokenStorage.deleteAccount(accountId);
@@ -725,6 +727,7 @@ class AccountModule {
   // #***! выход, сначала сервер потом чистка
   Future<void> logout() async {
     MediaPlayback.instance.closeAudioFile();
+    await PendingDeletions.instance.settleBeforeAccountChange();
     final accountId = await TokenStorage.getActiveAccountId();
     try {
       await _logoutOnServer(accountId);
@@ -843,7 +846,7 @@ class AccountModule {
   }) {
     final payload = <dynamic, dynamic>{
       'token': token,
-      'interactive': interactive ?? !ProMaxSettings.ghostMode.value,
+      'interactive': interactive ?? _api.presenceInteractive,
       // #***! exp это экспериментальные фичи которые просим
       'exp': {
         'chatsCountGroups': Uint8List.fromList([0x0b, 0x32]),
@@ -888,8 +891,10 @@ class AccountModule {
     Map<dynamic, dynamic> data,
     int accountId,
   ) async {
-    final serverTime =
-        (data['time'] as int?) ?? DateTime.now().millisecondsSinceEpoch;
+    final reportedTime = data['time'];
+    if (reportedTime is int) ServerClock.sync(reportedTime);
+    final serverTime = reportedTime is int ? reportedTime : ServerClock.now();
+    chats.beginReadSession(serverTime);
 
     final updatedToken = data['token'] as String?;
     if (updatedToken != null) {

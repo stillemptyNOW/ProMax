@@ -52,4 +52,14 @@ void main() {
     expect(error, isA<StateError>());
     expect((error as StateError).message, isNot(contains('CONTACT_PHOTOS')));
   });
+
+  test(
+    'sendRequestOk без подключения возвращает false, а не бросает',
+    () async {
+      final api = Api();
+      addTearDown(api.dispose);
+
+      expect(await api.sendRequestOk(Opcode.contactPhotos, const {}), isFalse);
+    },
+  );
 }

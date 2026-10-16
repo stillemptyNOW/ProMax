@@ -77,6 +77,50 @@ class MessageSessionCache {
     save(accountId, chatId, merged, reachedStart: cached.reachedStart);
   }
 
+  static void removeMessages(
+    int accountId,
+    int chatId,
+    Iterable<String> messageIds,
+  ) {
+    final cached = _store[_key(accountId, chatId)];
+    if (cached == null) return;
+    final gone = messageIds.toSet();
+    final kept = [
+      for (final message in cached.messages)
+        if (!gone.contains(message.id)) message,
+    ];
+    if (kept.length == cached.messages.length) return;
+    if (kept.isEmpty) {
+      remove(accountId, chatId);
+      return;
+    }
+    _store[_key(accountId, chatId)] = CachedChatMessages(
+      kept,
+      cached.reachedStart,
+    );
+  }
+
+  static void markDeleted(
+    int accountId,
+    int chatId,
+    Iterable<String> messageIds,
+  ) {
+    final cached = _store[_key(accountId, chatId)];
+    if (cached == null) return;
+    final gone = messageIds.toSet();
+    bool affected(CachedMessage message) =>
+        gone.contains(message.id) && !message.deleted;
+    if (!cached.messages.any(affected)) return;
+    final marked = [
+      for (final message in cached.messages)
+        affected(message) ? message.copyWith(deleted: true) : message,
+    ];
+    _store[_key(accountId, chatId)] = CachedChatMessages(
+      marked,
+      cached.reachedStart,
+    );
+  }
+
   static void remove(int accountId, int chatId) =>
       _store.remove(_key(accountId, chatId));
 

@@ -5,6 +5,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../config/app_media_cache.dart';
+import '../security/file_name_policy.dart';
+import '../security/mark_of_the_web.dart';
 import 'logger.dart';
 import '../storage/app_instance.dart';
 
@@ -196,6 +198,7 @@ class MediaCache {
         return null;
       }
       await part.rename(file.path);
+      await MarkOfTheWeb.apply(file.path);
       _markPresent(name, true);
       final known = _cachedSize;
       if (known != null) {
@@ -330,9 +333,5 @@ class MediaCache {
     }
   }
 
-  // #***! запрещённые символы в имени в подчёркивания
-  static String _sanitize(String name) {
-    final cleaned = name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
-    return cleaned.isEmpty ? 'file' : cleaned;
-  }
+  static String _sanitize(String name) => sanitizeFileName(name);
 }

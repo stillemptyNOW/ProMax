@@ -1,0 +1,6 @@
+#ifndef RUNNER_PROCESS_HARDENING_H_
+#define RUNNER_PROCESS_HARDENING_H_
+
+void HardenProcess();
+
+#endif  // RUNNER_PROCESS_HARDENING_H_

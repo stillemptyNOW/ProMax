@@ -1,21 +1,29 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/links/max_link.dart';
+import '../../../core/security/file_name_policy.dart';
+import '../../../core/security/url_policy.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/storage/webapp_storage.dart';
+import '../../../core/utils/file_names.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/utils/link_opener.dart';
-import '../../../core/utils/media_saver.dart';
+import '../../../core/utils/logger.dart';
 import '../../../core/utils/share_origin.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart' show api, messagesModule, webAppModule;
 import '../../widgets/confirm_dialog.dart';
+import '../../widgets/sandbox_prompts.dart';
 import '../chats/chat_list_screen.dart' show openForwardScreen;
 import '../profile/web_qr_scan_screen.dart';
 import 'web_app_biometry.dart';
+import 'web_app_downloads.dart';
+import 'web_app_origin_policy.dart';
 import '../../../core/security/app_lock.dart';
 
 abstract class WebAppEntryPoint {
@@ -89,10 +97,13 @@ const Set<String> _silentMethods = {
   'WebAppBackButtonPressed',
 };
 
+const String _nonceToken = '__PROMAX_BRIDGE_NONCE__';
+
 const String _shim = r'''
 (function(){
   if (window.__proMaxWebAppBridge) { return; }
   window.__proMaxWebAppBridge = true;
+  var nonce = '__PROMAX_BRIDGE_NONCE__';
   var pending = [];
   function target(priv){
     var box = priv ? window.PrivateWebApp : window.WebApp;
@@ -116,7 +127,8 @@ const String _shim = r'''
   };
   function post(name, data, priv){
     try {
-      window.flutter_inappwebview.callHandler('webAppEvent', name, data, priv);
+      window.flutter_inappwebview.callHandler(
+        'webAppEvent', nonce, name, data, priv);
     } catch (e) {}
   }
   var lastGesture = 0;
@@ -124,7 +136,9 @@ const String _shim = r'''
     var now = Date.now();
     if (now - lastGesture < 400) { return; }
     lastGesture = now;
-    try { window.flutter_inappwebview.callHandler('webAppGesture'); } catch (e) {}
+    try {
+      window.flutter_inappwebview.callHandler('webAppGesture', nonce);
+    } catch (e) {}
   }
   ['touchstart', 'pointerdown', 'mousedown', 'click'].forEach(function(name){
     try { document.addEventListener(name, gesture, true); } catch (e) {}
@@ -134,7 +148,7 @@ const String _shim = r'''
     resolveShare: function(requestId, bytes, mimeType, fileName){
       try {
         window.flutter_inappwebview.callHandler(
-          'webAppResolveShare', requestId, mimeType, fileName);
+          'webAppResolveShare', nonce, requestId, mimeType, fileName);
       } catch (e) {}
     }
   };
@@ -158,8 +172,19 @@ class WebAppBridge {
     this.privateChannel = false,
     this.mobileIdVerifier,
     this.emitter,
+    this.origins,
+    this.appTitle = '',
     WebAppBiometry? biometry,
-  }) : biometry = biometry ?? DeviceWebAppBiometry(contextResolver);
+  }) : biometry = biometry ?? DeviceWebAppBiometry(contextResolver),
+       _nonce = _newNonce();
+
+  static String _newNonce() {
+    final random = Random.secure();
+    return List.generate(
+      24,
+      (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+  }
 
   final int botId;
   final String entryPoint;
@@ -170,6 +195,9 @@ class WebAppBridge {
   final WebAppMobileIdVerifier? mobileIdVerifier;
   final WebAppEmitter? emitter;
   final WebAppBiometry biometry;
+  final WebAppOriginPolicy? origins;
+  final String appTitle;
+  final String _nonce;
 
   InAppWebViewController? _controller;
   DateTime? _lastGesture;
@@ -181,27 +209,29 @@ class WebAppBridge {
   bool get needsCloseConfirmation => _closeConfirmation;
 
   UserScript get userScript => UserScript(
-    source: _shim,
+    source: _shim.replaceAll(_nonceToken, _nonce),
     injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    forMainFrameOnly: true,
   );
 
   void attach(InAppWebViewController controller) {
     _controller = controller;
     controller.addJavaScriptHandler(
       handlerName: 'webAppEvent',
-      callback: (args) {
-        final name = args.isNotEmpty ? args[0]?.toString() : null;
+      callback: (args) async {
+        if (!await _fromTrustedPage(controller, args)) return null;
+        final name = args.length > 1 ? args[1]?.toString() : null;
         if (name == null || name.isEmpty) return null;
-        final raw = args.length > 1 ? args[1]?.toString() : null;
-        final private = args.length > 2 && args[2] == true;
+        final raw = args.length > 2 ? args[2]?.toString() : null;
+        final private = args.length > 3 && args[3] == true;
         handleEvent(name, raw, private);
         return null;
       },
     );
     controller.addJavaScriptHandler(
       handlerName: 'webAppGesture',
-      callback: (args) {
-        registerGesture();
+      callback: (args) async {
+        if (await _fromTrustedPage(controller, args)) registerGesture();
         return null;
       },
     );
@@ -210,6 +240,26 @@ class WebAppBridge {
       callback: (args) => null,
     );
   }
+
+  Future<bool> _fromTrustedPage(
+    InAppWebViewController controller,
+    List<dynamic> args,
+  ) async {
+    if (args.isEmpty || args.first != _nonce) return false;
+    final policy = origins;
+    if (policy == null) return true;
+    Uri? page;
+    try {
+      page = await controller.getUrl();
+    } catch (_) {
+      page = null;
+    }
+    if (policy.trusts(page)) return true;
+    logger.w('[webapp] мост отклонил вызов со страницы ${page?.host ?? '?'}');
+    return false;
+  }
+
+  bool get userHasInteracted => _lastGesture != null;
 
   void registerGesture() => _lastGesture = DateTime.now();
 
@@ -309,7 +359,7 @@ class WebAppBridge {
           return;
         case 'WebAppOpenLink':
         case 'WebAppOpenMaxLink':
-          await _openLink(data['url']?.toString());
+          await _openLink(method, data['url']?.toString());
           return;
         case 'WebAppShare':
           await _share(method, requestId, data);
@@ -423,10 +473,22 @@ class WebAppBridge {
     }
   }
 
-  Future<void> _openLink(String? url) async {
+  Future<void> _openLink(String method, String? url) async {
     if (url == null || url.isEmpty) return;
     final context = contextResolver();
     if (context == null) return;
+    final uri = Uri.tryParse(url.trim());
+    final needsConsent =
+        method == 'WebAppOpenLink' &&
+        uri != null &&
+        isWebUri(uri) &&
+        !MaxLink.isMaxLink(url);
+    if (needsConsent) {
+      final choice = await askExternalNavigation(context, target: uri);
+      if (choice != ExternalNavigationChoice.browser || !context.mounted) {
+        return;
+      }
+    }
     await openExternalUrl(context, url);
   }
 
@@ -797,24 +859,45 @@ class WebAppBridge {
     String? requestId,
     Map<String, dynamic> data,
   ) async {
-    final url = data['url']?.toString();
-    if (url == null || url.isEmpty) {
+    final url = data['url']?.toString().trim() ?? '';
+    final uri = Uri.tryParse(url);
+    if (uri == null || !isWebUri(uri)) {
       _fail(method, requestId, 'invalid_request');
       return;
     }
-    final rawName = data['file_name']?.toString();
-    final name = (rawName == null || rawName.isEmpty)
-        ? 'webapp_${DateTime.now().millisecondsSinceEpoch}'
-        : rawName;
-    final result = await saveMediaFile(
-      cacheName: 'webapp_${botId}_${url.hashCode & 0x7fffffff}_$name',
-      resolveUrl: () async => url,
-      saveName: name,
-      kind: SaveMediaKind.file,
+    final context = contextResolver();
+    if (context == null) {
+      _fail(method, requestId, 'request_error');
+      return;
+    }
+    final name = sanitizeFileName(
+      repairFileName(data['file_name']?.toString() ?? ''),
+      fallback: 'webapp_${DateTime.now().millisecondsSinceEpoch}',
     );
+    final choice = await askMiniAppDownload(
+      context,
+      appTitle: appTitle,
+      fileName: name,
+      host: uri.host,
+    );
+    if (choice == MiniAppDownloadChoice.cancel) {
+      _send(method, {'requestId': ?requestId, 'status': 'cancelled'});
+      return;
+    }
+    final saved = await saveMiniAppDownload(
+      choice: choice,
+      url: url,
+      fileName: name,
+      botId: botId,
+      sourceName: appTitle,
+      dialogTitle: context.mounted
+          ? AppLocalizations.of(context)!.photoViewerSaveAs
+          : name,
+    );
+    reportMiniAppDownload(contextResolver(), choice, saved);
     _send(method, {
       'requestId': ?requestId,
-      'status': result.ok ? 'success' : 'cancelled',
+      'status': saved == true ? 'success' : 'cancelled',
     });
   }
 

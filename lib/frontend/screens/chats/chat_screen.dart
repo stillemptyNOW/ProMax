@@ -13,6 +13,7 @@ import 'package:promax/backend/modules/chat_preview.dart';
 import 'package:promax/backend/modules/chats.dart';
 import 'package:promax/backend/modules/comments.dart';
 import 'package:promax/backend/modules/upload_service.dart';
+import '../../../backend/modules/outbox.dart';
 import 'package:promax/backend/modules/webapp.dart';
 import 'package:promax/frontend/screens/webapp/open_mini_app.dart';
 import 'package:promax/core/media/clipboard/clipboard_media.dart';
@@ -27,7 +28,8 @@ import 'package:promax/frontend/screens/chats/poll_create_screen.dart';
 import 'package:promax/frontend/widgets/custom_notification.dart';
 import 'package:promax/frontend/widgets/hint_bubble.dart';
 import 'package:promax/frontend/widgets/undo_notification.dart';
-import 'package:promax/backend/modules/pending_message_deletions.dart';
+import 'package:promax/backend/modules/pending_deletions.dart';
+import 'package:promax/backend/modules/read_receipts.dart';
 import 'package:promax/frontend/screens/chats/chat_removal_undo.dart';
 import 'package:promax/frontend/widgets/chat_menu_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -46,6 +48,7 @@ import '../../../core/protocol/packet.dart';
 import '../../../core/push/notification_bridge.dart';
 import '../../../core/push/push_service.dart';
 import '../../../core/storage/app_database.dart';
+import '../../../backend/modules/chat_activity_sender.dart';
 import '../../../core/storage/chat_activity_store.dart';
 import '../../../core/storage/chat_members_store.dart';
 import '../../../core/crypto/chat_crypto_service.dart';
@@ -58,11 +61,13 @@ import '../../../core/storage/archived_chats_store.dart';
 import '../../../core/cache/info_cache.dart';
 import '../../../core/links/message_link_token.dart';
 import '../../../core/cache/message_session_cache.dart';
+import '../../../core/utils/app_exit_hooks.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/utils/emoji_keyword_index.dart';
 import '../../../models/admin_rights.dart';
 import '../../../models/chat_reaction_settings.dart';
 import '../../../core/utils/logger.dart';
+import '../../../core/utils/user_facing_error.dart';
 import '../../../core/utils/route_settle.dart';
 import '../../../core/config/app_cache_extent.dart';
 import '../../../core/config/app_swipe_back_desktop.dart';
@@ -87,6 +92,7 @@ import '../../../backend/modules/forward_sender.dart';
 import 'chat/view/greeting_sticker_card.dart';
 import 'chat/view/message_list_decorations.dart';
 import 'chat/view/message_row_widgets.dart';
+import 'chat/view/read_stamp_label.dart';
 import 'chat/view/scroll_down_button.dart';
 import 'chat/view/throttled_message_scrollbar.dart';
 import 'chat/view/chat_app_bar.dart';
@@ -95,7 +101,9 @@ import 'chat/view/composer_input.dart' show BotStartPrompt;
 import 'chat/view/chat_body_layout.dart';
 import 'chat/view/shimmer_loading.dart';
 import '../../../core/config/app_visual_style.dart';
-import '../../../backend/modules/chat_wipe.dart';
+import 'chat/chat_wipe_flow.dart';
+import 'chat/message_deletion.dart';
+import 'deletion_feedback.dart';
 import '../../../core/security/double_bottom.dart';
 import '../../../core/config/promax_atmosphere.dart';
 import '../../widgets/atmosphere_overlay.dart';
@@ -146,7 +154,6 @@ import 'e2ee_screen.dart';
 import 'chat_wallpaper_preview_screen.dart';
 import 'profile_action_sheets.dart';
 import '../../../core/media/media_playback.dart';
-import '../../../core/config/app_shape.dart';
 import '../../../core/security/app_lock.dart';
 
 class _DateSeparatorItem {
@@ -277,6 +284,7 @@ class _ChatScreenState extends State<ChatScreen>
   StreamSubscription<Object>? _reactionUpdatesSub;
   StreamSubscription<List<CachedMessage>>? _forwardedSub;
   StreamSubscription<MessageEvent>? _messageEventSub;
+  StreamSubscription<RestoredMessages>? _restoredSub;
   StreamSubscription<Map<String, CommentsInfo>>? _commentsInfoSub;
   StreamSubscription<CommentAddedEvent>? _commentSub;
   final Map<String, int> _commentCounts = {};
@@ -308,6 +316,11 @@ class _ChatScreenState extends State<ChatScreen>
   );
 
   StreamSubscription<UploadJobEvent>? _uploadEventSub;
+
+  late final ChatActivitySender _activitySender = ChatActivitySender(
+    _broadcastActivity,
+  );
+  String _typedText = '';
 
   ValueListenable<List<double>>? _photoProgressFor(CachedMessage m) =>
       UploadService.instance.progressFor(m.id);
@@ -535,6 +548,18 @@ class _ChatScreenState extends State<ChatScreen>
   );
   final ValueNotifier<String> _headerStatusNotifier = ValueNotifier('');
   final ValueNotifier<int> _otherReadTime = ValueNotifier(0);
+  final ValueNotifier<int> _readMarksRevision = ValueNotifier(0);
+  late final Listenable _readRevision = Listenable.merge([
+    ReadReceipts.instance,
+    _readMarksRevision,
+    _messagesRev,
+  ]);
+  late final Listenable _readStampRevision = Listenable.merge([
+    _readRevision,
+    ProMaxSettings.showReadStamp,
+  ]);
+  ({int mark, int revision, int count, String? lastId, String? id})?
+  _readStampTarget;
   late final AnimationController _attachAnim;
   late final CommandPanelController _commandPanel;
   late final MentionPanelController _mentionPanel;
@@ -686,6 +711,7 @@ class _ChatScreenState extends State<ChatScreen>
     if (!_commentsMode && !widget.preview) {
       unawaited(NotificationBridge.instance.pushActiveChat(widget.chatId));
     }
+    AppExitHooks.add(_saveDraft);
     unawaited(
       animojiModule
           .ensureLoaded()
@@ -722,8 +748,10 @@ class _ChatScreenState extends State<ChatScreen>
     );
     _stickers = StickerPanelController(
       vsync: this,
-      onSendTyping: () => messagesModule.sendTyping(widget.chatId, 'STICKER'),
+      onSendTyping: () => _broadcastActivity(ChatActivity.sticker),
     );
+    _voiceRec.isRecording.addListener(_onVoiceRecordingChanged);
+    _note.isRecording.addListener(_onVideoNoteRecordingChanged);
     _showAttachmentPanel.addListener(_onAttachPanelToggle);
     _commandPanel = CommandPanelController(
       vsync: this,
@@ -794,6 +822,9 @@ class _ChatScreenState extends State<ChatScreen>
     _messageEventSub = chats.messageEvents
         .where((e) => e.chatId == widget.chatId)
         .listen(_onMessageEvent);
+    _restoredSub = PendingDeletions.instance.restored.listen(
+      _onDeletionRestored,
+    );
     if (_commentsMode) {
       _commentSub = commentsModule.commentStream
           .where(
@@ -919,6 +950,9 @@ class _ChatScreenState extends State<ChatScreen>
     final p = await AppDatabase.loadActiveProfile();
     if (!mounted) return;
     _myId = p?.id ?? 0;
+    if (_myId != 0) {
+      unawaited(ReadReceipts.instance.preload(_myId, widget.chatId));
+    }
     if (p != null && p.id != 0) {
       final myName = [
         p.firstName,
@@ -1300,8 +1334,7 @@ class _ChatScreenState extends State<ChatScreen>
   late final PhotoViewerActions _photoActions = PhotoViewerActions(
     goToMessage: _requestGoToMessage,
     forward: _forwardMessageById,
-    delete: (messageId, senderId) =>
-        _confirmDeleteMessage(messageId, senderId == _myId),
+    delete: (messageId, _) => _confirmDeleteMessage(messageId),
     viewAllMedia: () => _openChatInfo(initialTab: ChatInfoTab.media),
   );
 
@@ -1471,6 +1504,134 @@ class _ChatScreenState extends State<ChatScreen>
     return type == 'CHAT' || type == 'GROUP';
   }
 
+  bool _canShowReadSummary(CachedMessage message) {
+    if (_commentsMode || widget.preview) return false;
+    if (_myId == 0 || message.senderId != _myId) return false;
+    if (message.isControl || message.deleted) return false;
+    if (int.tryParse(message.id) == null) return false;
+    if (_effectiveStatus(message) != 'sent') return false;
+    final type = chat?.type ?? widget.chatType;
+    if (type == 'DIALOG') return _resolveOtherId() != null;
+    return type == 'CHAT' || type == 'GROUP';
+  }
+
+  Map<int, int> _firstMessageTimesAfter(int time) =>
+      ReadReceipts.firstMessageTimesAfter(_messages, time);
+
+  MessageReadState _readStateOf(
+    CachedMessage message,
+    int userId,
+    int? mark,
+    Map<int, int> replies,
+  ) => ReadReceipts.instance.stateFor(
+    accountId: _myId,
+    chatId: widget.chatId,
+    userId: userId,
+    mark: mark,
+    messageTime: message.time,
+    replyTime: replies[userId],
+  );
+
+  MessageReadSummary? _readSummaryFor(CachedMessage message) {
+    if (!mounted || !_canShowReadSummary(message)) return null;
+    final c = chat;
+    if (c == null) return null;
+    unawaited(ReadReceipts.instance.preload(_myId, widget.chatId));
+    if (c.type != 'DIALOG') {
+      return MessageReadSummary.readers(
+        ReadReceipts.readerCount(
+          c.participants,
+          myId: _myId,
+          messageTime: message.time,
+        ),
+      );
+    }
+    final peerId = _resolveOtherId();
+    if (peerId == null) return null;
+    final l10n = AppLocalizations.of(context)!;
+    final state = _readStateOf(
+      message,
+      peerId,
+      c.participants[peerId],
+      _firstMessageTimesAfter(message.time),
+    );
+    String stamp() =>
+        formatReadStamp(l10n, DateTime.fromMillisecondsSinceEpoch(state.at!));
+    return switch (state.kind) {
+      MessageReadKind.hidden => null,
+      MessageReadKind.unread => MessageReadSummary.status(
+        l10n.readReceiptNotRead,
+        read: false,
+      ),
+      MessageReadKind.unknown => MessageReadSummary.status(
+        l10n.readReceiptReadUnknown,
+        read: true,
+      ),
+      MessageReadKind.exact => MessageReadSummary.status(
+        l10n.readReceiptReadAt(stamp()),
+        read: true,
+      ),
+      MessageReadKind.atMost => MessageReadSummary.status(
+        l10n.readReceiptReadAtMost(stamp()),
+        read: true,
+      ),
+    };
+  }
+
+  bool _canShowReadStamp(CachedMessage message) {
+    if (_commentsMode || widget.preview) return false;
+    if (_myId == 0 || message.senderId != _myId) return false;
+    if (message.isControl || message.deleted) return false;
+    return (chat?.type ?? widget.chatType) == 'DIALOG' &&
+        _resolveOtherId() != null;
+  }
+
+  String? _readStampTargetId(int mark) {
+    final revision = _messagesRev.value;
+    final lastId = _messages.isEmpty ? null : _messages.last.id;
+    final cached = _readStampTarget;
+    if (cached != null &&
+        cached.mark == mark &&
+        cached.revision == revision &&
+        cached.count == _messages.length &&
+        cached.lastId == lastId) {
+      return cached.id;
+    }
+    final target = ReadReceipts.stampTargetId(
+      _messages,
+      mark: mark,
+      myId: _myId,
+    );
+    _readStampTarget = (
+      mark: mark,
+      revision: revision,
+      count: _messages.length,
+      lastId: lastId,
+      id: target,
+    );
+    return target;
+  }
+
+  String? _readStampFor(CachedMessage message) {
+    if (!mounted || !ProMaxSettings.showReadStamp.value) return null;
+    final c = chat;
+    final peerId = _resolveOtherId();
+    if (c == null || peerId == null) return null;
+    final mark = c.participants[peerId];
+    if (mark == null || _readStampTargetId(mark) != message.id) return null;
+    final state = _readStateOf(
+      message,
+      peerId,
+      mark,
+      _firstMessageTimesAfter(message.time),
+    );
+    if (state.kind != MessageReadKind.exact) return null;
+    final l10n = AppLocalizations.of(context)!;
+    return l10n.readReceiptReadAt(
+      formatReadStamp(l10n, DateTime.fromMillisecondsSinceEpoch(state.at!)),
+    );
+  }
+
   Future<List<MessageReader>> _loadReadBy(CachedMessage message) async {
     final marks = await chats.getReadMarks(api, _myId, widget.chatId);
     final reactions = await messagesModule.getDetailedReactions(
@@ -1486,7 +1647,9 @@ class _ChatScreenState extends State<ChatScreen>
 
     await messagesModule.ensureContactNames(readerIds);
     await animojiModule.ensureLoaded();
+    await ReadReceipts.instance.preload(_myId, widget.chatId);
     if (!mounted) return const [];
+    final replies = _firstMessageTimesAfter(message.time);
 
     final animojiByEmoji = {
       for (final animoji in animojiModule.animojis)
@@ -1502,10 +1665,16 @@ class _ChatScreenState extends State<ChatScreen>
           ? null
           : animojiByEmoji[EmojiKeywordIndex.normalize(emoji)];
       final name = ContactCache.get(id);
+      final state = _readStateOf(message, id, marks[id], replies);
+      final timed =
+          state.kind == MessageReadKind.exact ||
+          state.kind == MessageReadKind.atMost;
       return MessageReader(
         id: id,
         name: name == null || name.isEmpty ? unknownName : name,
         avatarUrl: ContactCache.getAvatar(id),
+        readAt: timed ? state.at : null,
+        readAtMost: state.kind == MessageReadKind.atMost,
         reaction: emoji == null
             ? null
             : ReactionEmoji(
@@ -1517,9 +1686,8 @@ class _ChatScreenState extends State<ChatScreen>
     }).toList();
 
     readers.sort((a, b) {
-      final aReacted = a.reaction != null;
-      final bReacted = b.reaction != null;
-      if (aReacted != bReacted) return aReacted ? -1 : 1;
+      final byTime = (b.readAt ?? -1).compareTo(a.readAt ?? -1);
+      if (byTime != 0) return byTime;
       return (marks[b.id] ?? 0).compareTo(marks[a.id] ?? 0);
     });
     return readers;
@@ -2198,19 +2366,34 @@ class _ChatScreenState extends State<ChatScreen>
 
   Future<void> _loadCommentsHistory() async {
     final post = widget.postMessage;
-    final loaded = await commentsModule.fetchHistory(
-      _myId,
-      widget.chatId,
-      widget.commentPostId!,
-      fromTime: post?.time ?? DateTime.now().millisecondsSinceEpoch,
-      forward: 30,
-      backward: 0,
-    );
+    List<CachedMessage> loaded;
+    Object? failure;
+    try {
+      loaded = await commentsModule.fetchHistory(
+        _myId,
+        widget.chatId,
+        widget.commentPostId!,
+        fromTime: post?.time ?? DateTime.now().millisecondsSinceEpoch,
+        forward: 30,
+        backward: 0,
+      );
+    } catch (e) {
+      logger.w('Комментарии ${widget.commentPostId} не загрузились: $e');
+      loaded = const [];
+      failure = e;
+    }
     if (!mounted) return;
+    if (failure != null) {
+      final l10n = AppLocalizations.of(context)!;
+      showCustomNotification(
+        context,
+        l10n.chatCommentsLoadFailed(userFacingError(failure, l10n)),
+      );
+    }
     final comments = [...loaded]..sort((a, b) => a.time.compareTo(b.time));
     _messages = post != null ? [post, ...comments] : comments;
     _deferredIds.clear();
-    _commentsHasMore = comments.isNotEmpty;
+    _commentsHasMore = failure != null || comments.isNotEmpty;
     _syncReactionNotifiersFromMessages();
     unawaited(_resolveCommentNames(comments));
     _bumpMessages();
@@ -2245,6 +2428,8 @@ class _ChatScreenState extends State<ChatScreen>
         unawaited(_resolveCommentNames(fresh));
         _bumpMessages();
       }
+    } catch (e) {
+      logger.w('Следующие комментарии не загрузились: $e');
     } finally {
       _commentsLoadingMore = false;
     }
@@ -2327,6 +2512,7 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   void dispose() {
     ChatScreen._open.remove(this);
+    AppExitHooks.remove(_saveDraft);
     if (!_commentsMode && !widget.preview) {
       unawaited(NotificationBridge.instance.popActiveChat(widget.chatId));
     }
@@ -2369,9 +2555,13 @@ class _ChatScreenState extends State<ChatScreen>
     _reactionUpdatesSub?.cancel();
     _forwardedSub?.cancel();
     _messageEventSub?.cancel();
+    _restoredSub?.cancel();
     _commentsInfoSub?.cancel();
     _commentSub?.cancel();
     _connSub?.cancel();
+    _voiceRec.isRecording.removeListener(_onVoiceRecordingChanged);
+    _note.isRecording.removeListener(_onVideoNoteRecordingChanged);
+    _activitySender.dispose();
     _voiceRec.dispose();
     _note.dispose();
     debugForceOffline.removeListener(_recomputeHeaderStatus);
@@ -2399,6 +2589,7 @@ class _ChatScreenState extends State<ChatScreen>
     }
     _headerStatusNotifier.dispose();
     _otherReadTime.dispose();
+    _readMarksRevision.dispose();
     _chatController.dispose();
     _prank.dispose();
     _uploadStatus.dispose();
@@ -2429,12 +2620,45 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   void _onTextChanged() {
-    final newHasText = _messageController.text.trim().isNotEmpty;
+    final text = _messageController.text;
+    final newHasText = text.trim().isNotEmpty;
     if (newHasText != _hasText.value) {
       _hasText.value = newHasText;
     }
+    if (text != _typedText) {
+      _typedText = text;
+      if (newHasText) {
+        _activitySender.pulse(ChatActivity.typing);
+      } else {
+        _activitySender.reset();
+      }
+    }
     _commandPanel.update();
     _mentionPanel.update();
+  }
+
+  void _broadcastActivity(ChatActivity activity) {
+    if (widget.preview) return;
+    final postId = widget.commentPostId;
+    if (postId != null) {
+      commentsModule.sendTyping(widget.chatId, postId, activity);
+    } else {
+      messagesModule.sendTyping(widget.chatId, activity);
+    }
+  }
+
+  void _onVoiceRecordingChanged() =>
+      _trackRecording(_voiceRec.isRecording.value, ChatActivity.recordingVoice);
+
+  void _onVideoNoteRecordingChanged() =>
+      _trackRecording(_note.isRecording.value, ChatActivity.recordingVideoNote);
+
+  void _trackRecording(bool recording, ChatActivity activity) {
+    if (recording) {
+      _activitySender.hold(activity);
+    } else {
+      _activitySender.release(activity);
+    }
   }
 
   bool _mentionsAvailable() =>
@@ -2586,6 +2810,7 @@ class _ChatScreenState extends State<ChatScreen>
   void _syncOtherReadTime() {
     final t = _computeOtherReadTime();
     if (_otherReadTime.value != t) _otherReadTime.value = t;
+    _readMarksRevision.value++;
   }
 
   String? _effectiveStatus(CachedMessage msg) {
@@ -2763,24 +2988,61 @@ class _ChatScreenState extends State<ChatScreen>
     final msgs = _selectedMessages(_selectedIds.value);
     if (msgs.isEmpty) return;
 
-    final serverMsgs = msgs.where((m) => !m.id.startsWith('temp_')).toList();
-    if (serverMsgs.isEmpty) {
-      for (final m in msgs) {
-        _startDeleteAnimation(m.id);
-      }
+    final sending = msgs.where((m) => m.id.startsWith('temp_')).toList();
+    final plan = _deletionPlan(
+      msgs.where((m) => !m.id.startsWith('temp_')).toList(),
+    );
+    if (plan.isEmpty) {
+      _cancelSending(sending);
       _clearSelection();
       return;
     }
 
-    final canForEveryone = serverMsgs.every((m) => m.senderId == _myId);
-    final forEveryone = await _showDeleteMessageDialog(canForEveryone);
+    final forEveryone = await showDeleteMessagesDialog(
+      context,
+      plan: plan,
+      peerName: widget.name,
+    );
     if (forEveryone == null || !mounted) return;
 
-    for (final m in msgs) {
-      if (m.id.startsWith('temp_')) _startDeleteAnimation(m.id);
-    }
-    _deleteWithUndo(serverMsgs, forEveryone: forEveryone);
+    _cancelSending(sending);
+    _deleteWithUndo(plan, forEveryone: forEveryone);
     _clearSelection();
+  }
+
+  MessageDeletionPlan _deletionPlan(List<CachedMessage> messages) {
+    final isDialog = (chat?.type ?? widget.chatType) == 'DIALOG';
+    return MessageDeletionPlan(
+      myId: _myId,
+      messages: messages,
+      isDialog: isDialog && widget.chatId != 0,
+      canDeleteOthersForEveryone: !isDialog && _canDeleteOthers,
+    );
+  }
+
+  void _cancelSending(List<CachedMessage> messages) {
+    if (messages.isEmpty) return;
+    PendingDeletions.instance.cancelSending(
+      _myId,
+      widget.chatId,
+      messages.map((m) => m.id),
+    );
+    for (final m in messages) {
+      _startDeleteAnimation(m.id);
+    }
+    unawaited(_forgetCancelledSending(messages.map((m) => m.id).toList()));
+  }
+
+  Future<void> _forgetCancelledSending(List<String> tempIds) async {
+    final accountId = _myId;
+    final chatId = widget.chatId;
+    try {
+      await AppDatabase.deleteMessages(accountId, chatId, tempIds);
+      MessageSessionCache.removeMessages(accountId, chatId, tempIds);
+      await chats.reconcileLastMessage(accountId, chatId);
+    } catch (e) {
+      logger.w('Отменённые исходящие не убраны: $e');
+    }
   }
 
   void _replySelected() {
@@ -3061,70 +3323,94 @@ class _ChatScreenState extends State<ChatScreen>
     Haptics.send();
   }
 
-  Future<void> _confirmDeleteMessage(String messageId, bool isMe) async {
-    final isLocalOnly = messageId.startsWith('temp_');
-    final canForEveryone = (isMe || _canDeleteOthers) && !isLocalOnly;
+  bool _canRetrySend(CachedMessage message) {
+    if (message.senderId != _myId || !message.id.startsWith('temp_')) {
+      return false;
+    }
+    final status = message.status;
+    if (status != 'error' && status != 'pending') return false;
+    if (UploadService.instance.canRetry(message.id)) return true;
+    return !_commentsMode &&
+        (message.attachments?.isEmpty ?? true) &&
+        (message.text?.isNotEmpty ?? false);
+  }
 
-    if (isLocalOnly) {
-      _startDeleteAnimation(messageId);
+  Future<void> _retrySend(CachedMessage message) async {
+    final l10n = AppLocalizations.of(context)!;
+    final idx = _chatController.indexOfId(message.id);
+    if (UploadService.instance.retry(message.id)) {
+      if (idx != -1) {
+        _chatController.setMessageAt(idx, message.copyWith(status: 'sending'));
+        _bumpMessages();
+      }
+      return;
+    }
+    final requeued = await OutboxService.instance.retry(
+      _myId,
+      widget.chatId,
+      message.id,
+    );
+    if (!mounted) return;
+    if (!requeued) {
+      showCustomNotification(context, l10n.msgRetrySendUnavailable);
+      return;
+    }
+    final current = _chatController.indexOfId(message.id);
+    if (current != -1) {
+      _chatController.setMessageAt(
+        current,
+        _messages[current].copyWith(status: 'pending'),
+      );
+      _bumpMessages();
+    }
+    unawaited(chats.reconcileLastMessage(_myId, widget.chatId));
+  }
+
+  Future<void> _confirmDeleteMessage(String messageId) async {
+    final message = _chatController.byId(messageId);
+    if (message == null) return;
+    if (messageId.startsWith('temp_')) {
+      _cancelSending([message]);
       return;
     }
 
-    final message = _chatController.byId(messageId);
-    if (message == null) return;
-    final forEveryone = await _showDeleteMessageDialog(canForEveryone);
+    final plan = _deletionPlan([message]);
+    final forEveryone = await showDeleteMessagesDialog(
+      context,
+      plan: plan,
+      peerName: widget.name,
+    );
     if (forEveryone == null || !mounted) return;
-    _deleteWithUndo([message], forEveryone: forEveryone);
+    _deleteWithUndo(plan, forEveryone: forEveryone);
   }
 
-  void _deleteWithUndo(
-    List<CachedMessage> messages, {
-    required bool forEveryone,
-  }) {
-    final chatId = widget.chatId;
-    final accountId = _myId;
-    final ids = messages.map((m) => m.id).toList();
-    final overlay = Overlay.of(context, rootOverlay: true);
-    final deleteFailedText = AppLocalizations.of(
-      context,
-    )!.chatScreenDeleteMessagesFailed;
-    final pending = PendingMessageDeletions.instance..hold(chatId, messages);
+  void _deleteWithUndo(MessageDeletionPlan plan, {required bool forEveryone}) {
+    final pending = PendingDeletions.instance;
+    final keys = pending.holdMessages(
+      accountId: _myId,
+      chatId: widget.chatId,
+      parts: plan.parts(forEveryone: forEveryone),
+    );
+    if (keys.isEmpty) return;
+    final ids = [...plan.own, ...plan.peer].map((m) => m.id).toList();
     ids.forEach(_startDeleteAnimation);
-    void restore() {
-      if (mounted) {
-        _deletingIds.removeAll(ids);
-        _bumpMessages();
-      }
-      pending.restore(chatId, ids);
-    }
-
     showUndoNotification(
       context,
       AppLocalizations.of(context)!.undoMessagesDeleted(ids.length),
-      onUndo: restore,
-      onCommit: () async {
-        final ok = await messagesModule.deleteMessages(
-          chatId,
-          ids,
-          forEveryone: forEveryone,
-        );
-        if (!ok) {
-          restore();
-          Haptics.error();
-          if (overlay.mounted) {
-            showCustomNotificationOnOverlay(overlay, deleteFailedText);
-          }
-          return;
-        }
-        pending.drop(chatId, ids);
-        try {
-          for (final id in ids) {
-            await AppDatabase.deleteMessage(accountId, chatId, id);
-          }
-          await chats.reconcileLastMessage(accountId, chatId);
-        } catch (_) {}
-      },
+      onUndo: () => pending.cancel(keys),
+      onCommit: () => pending.commit(keys),
     );
+  }
+
+  void _onDeletionRestored(RestoredMessages restored) {
+    if (!mounted ||
+        restored.accountId != _myId ||
+        restored.chatId != widget.chatId) {
+      return;
+    }
+    final before = _deletingIds.length;
+    _deletingIds.removeAll(restored.messages.map((m) => m.id));
+    if (_deletingIds.length != before) _bumpMessages();
   }
 
   void _startDeleteAnimation(String messageId) {
@@ -3141,87 +3427,18 @@ class _ChatScreenState extends State<ChatScreen>
       _reactionNotifiers.remove(messageId)?.dispose();
     }
     _bumpMessages();
-    if (PendingMessageDeletions.instance.isPending(widget.chatId, messageId)) {
+    if (PendingDeletions.instance.isMessageHeld(
+      _myId,
+      widget.chatId,
+      messageId,
+    )) {
       return;
     }
     try {
       await AppDatabase.deleteMessage(_myId, widget.chatId, messageId);
+      MessageSessionCache.removeMessages(_myId, widget.chatId, [messageId]);
       await chats.reconcileLastMessage(_myId, widget.chatId);
     } catch (_) {}
-  }
-
-  Future<bool?> _showDeleteMessageDialog(bool canForEveryone) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    var alsoForEveryone = canForEveryone;
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setLocalState) {
-            return AlertDialog(
-              backgroundColor: cs.surfaceContainerHigh,
-              shape: AppShape.dialogBorder,
-              title: Text(l10n.chatScreenDeleteMessageTitle),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.chatScreenDeleteMessageConfirm,
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
-                  ),
-                  if (canForEveryone) ...[
-                    const SizedBox(height: 16),
-                    InkWell(
-                      onTap: () => setLocalState(
-                        () => alsoForEveryone = !alsoForEveryone,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Row(
-                        children: [
-                          Checkbox(
-                            value: alsoForEveryone,
-                            onChanged: (v) => setLocalState(
-                              () => alsoForEveryone = v ?? false,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              l10n.chatScreenDeleteAlsoFor(widget.name),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: cs.onSurface,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text(l10n.chatInfoActionCancel),
-                ),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pop(ctx, canForEveryone && alsoForEveryone),
-                  child: Text(
-                    l10n.msgActionsDelete,
-                    style: TextStyle(color: cs.error),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
   }
 
   void _onMessageEvent(MessageEvent event) {
@@ -3469,6 +3686,7 @@ class _ChatScreenState extends State<ChatScreen>
     final note = ChatNotesStore.instance.noteFor(widget.chatId);
     final templates = QuickRepliesStore.instance.items.value.length;
     final secret = DoubleBottom.isSecret(widget.chatId);
+    final l10n = AppLocalizations.of(context)!;
     void then(VoidCallback action) {
       Navigator.of(context).pop();
       action();
@@ -3484,14 +3702,14 @@ class _ChatScreenState extends State<ChatScreen>
         final tiles = <ChatToolTile>[
           ChatToolTile(
             icon: Symbols.ac_unit,
-            label: 'Атмосфера',
-            value: atmosphere?.title ?? 'Как везде',
+            label: l10n.chatToolsAtmosphere,
+            value: atmosphere?.title ?? l10n.chatToolsAtmosphereDefault,
             onTap: () =>
                 then(() => showChatAtmosphereSheet(context, widget.chatId)),
           ),
           ChatToolTile(
             icon: Symbols.bar_chart,
-            label: 'Статистика',
+            label: l10n.chatToolsStats,
             onTap: () => then(
               () => Navigator.push(
                 context,
@@ -3507,22 +3725,24 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           ChatToolTile(
             icon: Symbols.timer,
-            label: 'Исчезающие',
-            value: timer > 0 ? DisappearingMessages.label(timer) : 'Выкл',
+            label: l10n.chatToolsDisappearing,
+            value: timer > 0
+                ? DisappearingMessages.label(timer)
+                : l10n.chatToolsOff,
             onTap: () =>
                 then(() => showDisappearingSheet(context, widget.chatId)),
           ),
           ChatToolTile(
             icon: Symbols.bedtime,
-            label: 'Тихие часы',
-            value: quiet?.label ?? 'Выкл',
+            label: l10n.chatToolsQuietHours,
+            value: quiet?.label ?? l10n.chatToolsOff,
             onTap: () =>
                 then(() => showQuietHoursSheet(context, widget.chatId)),
           ),
           ChatToolTile(
             icon: Symbols.sticky_note_2,
-            label: 'Заметка',
-            value: note == null ? 'Нет' : note.split('\n').first,
+            label: l10n.chatToolsNote,
+            value: note == null ? l10n.chatToolsNone : note.split('\n').first,
             onTap: () => then(
               () => showChatNoteSheet(
                 context,
@@ -3533,13 +3753,13 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           ChatToolTile(
             icon: Symbols.quickreply,
-            label: 'Шаблоны',
-            value: templates == 0 ? 'Нет' : '$templates',
+            label: l10n.chatToolsTemplates,
+            value: templates == 0 ? l10n.chatToolsNone : '$templates',
             onTap: () => then(_insertQuickReply),
           ),
           ChatToolTile(
             icon: Symbols.ios_share,
-            label: 'Экспорт',
+            label: l10n.chatToolsExport,
             onTap: () => then(
               () => showChatExportSheet(
                 context,
@@ -3552,15 +3772,15 @@ class _ChatScreenState extends State<ChatScreen>
           if (canHide)
             ChatToolTile(
               icon: secret ? Symbols.layers_clear : Symbols.layers,
-              label: secret ? 'Из двойного дна' : 'В двойное дно',
+              label: secret
+                  ? l10n.chatToolsLeaveSecret
+                  : l10n.chatToolsMakeSecret,
               onTap: () => then(() async {
                 await DoubleBottom.setSecret(widget.chatId, !secret);
                 if (!mounted) return;
                 showCustomNotification(
                   context,
-                  !secret
-                      ? 'Чат спрятан: его не будет видно по второму коду'
-                      : 'Чат снова виден по любому коду',
+                  !secret ? l10n.chatToolsHidden : l10n.chatToolsShown,
                 );
               }),
             ),
@@ -3603,7 +3823,9 @@ class _ChatScreenState extends State<ChatScreen>
                       ),
                       onPressed: () => then(_wipeForBoth),
                       icon: const Icon(Symbols.delete_forever),
-                      label: const Text('Удалить у обоих'),
+                      label: Text(
+                        AppLocalizations.of(sheetContext)!.wipeForBothAction,
+                      ),
                     ),
                   ),
                 ],
@@ -3616,83 +3838,12 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Future<void> _wipeForBoth() async {
-    final choice = await showBlurredConfirm(
+    final removed = await wipeDialogForBoth(
       context,
-      title: 'Удалить у обоих?',
-      message:
-          'ProMax удалит все сообщения этого диалога для вас и собеседника, затем удалит сам чат. Отменить это нельзя.',
-      confirmLabel: 'Удалить у обоих',
-      cancelLabel: AppLocalizations.of(context)!.chatInfoActionCancel,
-      destructive: true,
-    );
-    if (!mounted || !choice.confirmed) return;
-    final progress = ValueNotifier<String>('Собираю историю…');
-    final navigator = Navigator.of(context, rootNavigator: true);
-    unawaited(
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => PopScope(
-          canPop: false,
-          child: AlertDialog(
-            content: Row(
-              children: [
-                const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(strokeWidth: 3),
-                ),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: ValueListenableBuilder<String>(
-                    valueListenable: progress,
-                    builder: (context, text, _) => Text(text),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    final lastEventTime = chat?.lastEventTime ?? 0;
-    final result = await ChatWipe.run(
       myId: _myId,
-      fetchPage: (from, count) => messagesModule.fetchHistory(
-        _myId,
-        widget.chatId,
-        fromTime: from,
-        count: count,
-      ),
-      deleteBatch: (ids, {required forEveryone}) => messagesModule
-          .deleteMessages(widget.chatId, ids, forEveryone: forEveryone),
-      clearForAll: () => chats.clearHistory(
-        api,
-        chatId: widget.chatId,
-        lastEventTime: lastEventTime,
-        forAll: true,
-      ),
-      deleteChatForAll: () => chats.deleteChat(
-        api,
-        chatId: widget.chatId,
-        lastEventTime: lastEventTime,
-        forAll: true,
-      ),
-      onProgress: (scanned, deleted) => progress.value = deleted == 0
-          ? 'Найдено сообщений: $scanned'
-          : 'Удалено $deleted из $scanned',
+      chatId: widget.chatId,
     );
-    navigator.pop();
-    progress.dispose();
-    if (!mounted) return;
-    final summary = result.keptOnPeerSide == 0
-        ? 'Удалено у обоих: ${result.deletedForBoth}'
-        : 'Удалено у обоих: ${result.deletedForBoth}. Сервер не дал удалить у собеседника: ${result.keptOnPeerSide}';
-    showCustomNotification(
-      context,
-      result.chatError == null ? summary : '$summary. ${result.chatError}',
-    );
-    if (result.chatError == null) _leaveChat();
+    if (removed && mounted) _leaveChat();
   }
 
   Future<void> _subscribeChannel() async {
@@ -3905,6 +4056,16 @@ class _ChatScreenState extends State<ChatScreen>
     return (type == 'CHAT' || type == 'CHANNEL') && _canDeleteOthers;
   }
 
+  int _newestKnownTime(CachedChat? current) {
+    var newest = current?.lastEventTime ?? 0;
+    for (final message in _chatController.messages.reversed) {
+      if (message.id.startsWith('temp_')) continue;
+      if (message.time > newest) newest = message.time;
+      break;
+    }
+    return newest;
+  }
+
   Future<void> _clearHistory() async {
     final current = chat;
     final canClearForAll = _canActForAll;
@@ -3919,15 +4080,16 @@ class _ChatScreenState extends State<ChatScreen>
       checkboxLabel: canClearForAll ? l10n.chatInfoClearHistoryForAll : null,
     );
     if (!mounted || !choice.confirmed) return;
-    final err = await chats.clearHistory(
+    final outcome = await chats.clearHistory(
       api,
       chatId: widget.chatId,
-      lastEventTime: current?.lastEventTime ?? 0,
       forAll: canClearForAll && choice.checked,
+      seenEventTime: _newestKnownTime(current),
     );
     if (!mounted) return;
-    if (err != null) {
-      showCustomNotification(context, err);
+    final failure = outcomeFailureText(outcome, l10n);
+    if (failure != null) {
+      showCustomNotification(context, failure);
       return;
     }
     setState(() {
@@ -3952,18 +4114,13 @@ class _ChatScreenState extends State<ChatScreen>
       checkboxLabel: canDeleteForAll ? l10n.chatInfoClearHistoryForAll : null,
     );
     if (!mounted || !choice.confirmed) return;
-    final lastEventTime = chat?.lastEventTime ?? 0;
-    final forAll = canDeleteForAll && choice.checked;
     removeChatsWithUndo(
       context,
-      message: AppLocalizations.of(context)!.undoChatsDeleted(1),
-      chatIds: [widget.chatId],
-      remove: (chatId) => chats.deleteChat(
-        api,
-        chatId: chatId,
-        lastEventTime: lastEventTime,
-        forAll: forAll,
-      ),
+      message: l10n.undoChatsDeleted(1),
+      accountId: _myId,
+      chats: [
+        (chatId: widget.chatId, forAll: canDeleteForAll && choice.checked),
+      ],
     );
     _leaveChat();
   }
@@ -4030,13 +4187,11 @@ class _ChatScreenState extends State<ChatScreen>
         _myId,
         widget.chatId,
       );
-      if (ProMaxSettings.viewDeleted.value) {
-        await chats.reconcileDeletedFromFetch(
-          _myId,
-          widget.chatId,
-          serverMessages,
-        );
-      }
+      await chats.reconcileDeletedFromFetch(
+        _myId,
+        widget.chatId,
+        serverMessages,
+      );
       final rows = await AppDatabase.loadMessages(
         _myId,
         widget.chatId,
@@ -5371,8 +5526,10 @@ class _ChatScreenState extends State<ChatScreen>
                               _startTextSelection(message, pos),
                           onDragTextSelection: (pos) =>
                               _textSelectionDrag.value = pos,
-                          onDelete: () =>
-                              _confirmDeleteMessage(message.id, isMe),
+                          onDelete: () => _confirmDeleteMessage(message.id),
+                          onRetrySend: _canRetrySend(message)
+                              ? () => _retrySend(message)
+                              : null,
                           allowDelete:
                               !message.isControl &&
                               (isMe || !_isChannel || _canDeleteOthers),
@@ -5429,6 +5586,8 @@ class _ChatScreenState extends State<ChatScreen>
                               ? () => _loadReadBy(message)
                               : null,
                           onReaderTap: _openSenderProfile,
+                          readSummary: () => _readSummaryFor(message),
+                          readRevision: _readRevision,
                           loadReportReasons: canReport
                               ? () => _loadReportReasons(reportTypeId)
                               : null,
@@ -5494,11 +5653,25 @@ class _ChatScreenState extends State<ChatScreen>
                           child: child,
                         );
 
+                        final stamped = _canShowReadStamp(message)
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  highlightable,
+                                  ReadStampLabel(
+                                    listenable: _readStampRevision,
+                                    text: () => _readStampFor(message),
+                                  ),
+                                ],
+                              )
+                            : highlightable;
+
                         final builtItem = RepaintBoundary(
                           key: ValueKey('msg_${message.id}'),
                           child: KeyedSubtree(
                             key: _keyForMessage(message.id),
-                            child: highlightable,
+                            child: stamped,
                           ),
                         );
                         if (widget.preview) {

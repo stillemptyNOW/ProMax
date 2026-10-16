@@ -1,31 +1,30 @@
 import 'package:flutter/material.dart';
 
-import '../../../backend/modules/chats.dart' show chats;
-import '../../widgets/custom_notification.dart';
+import '../../../backend/modules/pending_deletions.dart';
 import '../../widgets/undo_notification.dart';
 
 void removeChatsWithUndo(
   BuildContext context, {
   required String message,
-  required List<int> chatIds,
-  required Future<String?> Function(int chatId) remove,
+  required int accountId,
+  required List<({int chatId, bool forAll})> chats,
+  PendingDeletionKind kind = PendingDeletionKind.deleteChat,
 }) {
-  if (chatIds.isEmpty) return;
-  final overlay = Overlay.of(context, rootOverlay: true);
-  chats.holdForRemoval(chatIds);
+  if (chats.isEmpty) return;
+  final pending = PendingDeletions.instance;
+  final keys = [
+    for (final chat in chats)
+      pending.holdChat(
+        accountId: accountId,
+        chatId: chat.chatId,
+        kind: kind,
+        forAll: chat.forAll,
+      ),
+  ];
   showUndoNotification(
     context,
     message,
-    onUndo: () => chats.releaseRemoval(chatIds),
-    onCommit: () async {
-      final errors = <String>[];
-      for (final chatId in chatIds) {
-        final error = await remove(chatId);
-        if (error != null) errors.add(error);
-      }
-      chats.releaseRemoval(chatIds);
-      if (errors.isEmpty || !overlay.mounted) return;
-      showCustomNotificationOnOverlay(overlay, errors.first);
-    },
+    onUndo: () => pending.cancel(keys),
+    onCommit: () => pending.commit(keys),
   );
 }

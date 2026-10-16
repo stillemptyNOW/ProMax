@@ -73,18 +73,22 @@ jobs:
           flutter build apk --release --flavor promax \
             --obfuscate --split-debug-info=build/symbols
       - name: Collect APKs
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
         run: |
           version=$(awk '/^version:/ {split($2, v, "+"); print v[1]; exit}' pubspec.yaml)
+          channel=promax
+          if [ "$SIGNED" != "true" ]; then channel=preview; fi
           mkdir -p dist
           for abi in arm64-v8a armeabi-v7a x86_64; do
             cp "build/app/outputs/flutter-apk/app-$abi-promax-release.apk" \
-              "dist/ProMax-$version-promax-$abi.apk"
+              "dist/ProMax-$version-$channel-$abi.apk"
           done
           cp build/app/outputs/flutter-apk/app-promax-release.apk \
-            "dist/ProMax-$version-promax-universal.apk"
+            "dist/ProMax-$version-$channel-universal.apk"
           ls -la dist
       - name: Publish release
-        if: env.RELEASE_TAG != '' && steps.signing.outputs.signed == 'true'
+        if: env.RELEASE_TAG != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/publish-release.sh "$RELEASE_TAG" dist/*.apk
@@ -119,21 +123,75 @@ jobs:
         run: flutter pub get
       - name: Build
         run: flutter build windows --release
+      - name: Bundle the Visual C++ runtime
+        shell: pwsh
+        run: |
+          $bundle = 'build/windows/x64/runner/Release'
+          $runtime = @(
+            'msvcp140.dll'
+            'msvcp140_1.dll'
+            'msvcp140_2.dll'
+            'msvcp140_atomic_wait.dll'
+            'msvcp140_codecvt_ids.dll'
+            'vcruntime140.dll'
+            'vcruntime140_1.dll'
+            'concrt140.dll'
+          )
+          foreach ($dll in $runtime) {
+            $source = Join-Path $env:WINDIR "System32\$dll"
+            if (Test-Path $source) { Copy-Item $source $bundle -Force }
+          }
+          foreach ($required in 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
+            if (-not (Test-Path (Join-Path $bundle $required))) { throw "$required is missing from the bundle" }
+          }
       - name: Package
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath dist/ProMax-windows-x64.zip
+      - name: Installer
+        shell: pwsh
+        run: |
+          function Get-IsccVersion([string] $path) {
+            $info = (Get-Item $path).VersionInfo
+            [version]::new($info.FileMajorPart, $info.FileMinorPart, $info.FileBuildPart)
+          }
+          function Find-Iscc {
+            $env:ProgramFiles, ${env:ProgramFiles(x86)}, (Join-Path $env:LOCALAPPDATA 'Programs') |
+              Where-Object { $_ -and (Test-Path $_) } |
+              ForEach-Object { Get-ChildItem $_ -Directory -Filter 'Inno Setup*' } |
+              ForEach-Object { Join-Path $_.FullName 'ISCC.exe' } |
+              Where-Object { Test-Path $_ } |
+              Sort-Object { Get-IsccVersion $_ } -Descending |
+              Select-Object -First 1
+          }
+          $iscc = Find-Iscc
+          if (-not $iscc -or (Get-IsccVersion $iscc) -lt [version]'6.5.2') {
+            choco upgrade innosetup -y --no-progress
+            if ($LASTEXITCODE -notin 0, 1641, 3010) { throw "choco could not install Inno Setup ($LASTEXITCODE)" }
+            $iscc = Find-Iscc
+          }
+          if (-not $iscc) { throw 'Inno Setup was not installed' }
+          Write-Host "Inno Setup $(Get-IsccVersion $iscc) at $iscc"
+          $match = Select-String -Path pubspec.yaml -Pattern '^version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$'
+          if (-not $match) { throw 'pubspec.yaml has no X.Y.Z+N version' }
+          $name = $match.Matches[0].Groups[1].Value
+          $build = $match.Matches[0].Groups[2].Value
+          & $iscc "/DAppVersion=$name" "/DAppBuild=$build" windows/installer/promax.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with $LASTEXITCODE" }
+          Get-ChildItem dist
       - name: Publish release
         if: env.RELEASE_TAG != ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: .github/scripts/publish-release.sh "$RELEASE_TAG" dist/ProMax-windows-x64.zip
+        run: .github/scripts/publish-release.sh "$RELEASE_TAG" dist/ProMax-windows-x64.zip dist/ProMax-Setup-*.exe
       - uses: actions/upload-artifact@v4
         with:
           name: ProMax-windows-x64
-          path: dist/ProMax-windows-x64.zip
+          path: |
+            dist/ProMax-windows-x64.zip
+            dist/ProMax-Setup-*.exe
           retention-days: 14
 
   linux:

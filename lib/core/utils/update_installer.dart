@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'dart:ui' show AppExitType;
 
 import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/services.dart' show ServicesBinding;
 import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -40,14 +43,44 @@ class _DigestSink implements Sink<Digest> {
 
 // #***! загрузка обновления для текущей платформы
 abstract class UpdateInstaller {
-  static bool get isSupported => Platform.isAndroid || Platform.isIOS;
+  static const String windowsSetupPrefix = 'ProMax-Setup-';
+  static const String windowsUninstaller = 'unins000.exe';
+
+  static const List<String> windowsSetupArguments = [
+    '/SILENT',
+    '/SUPPRESSMSGBOXES',
+    '/NORESTART',
+    '/LOG',
+    '/relaunch=1',
+  ];
+
+  static bool canInstall(AppUpdateInfo info) => canInstallOn(
+    Platform.operatingSystem,
+    info,
+    installedBySetup: Platform.isWindows && _installedBySetup(),
+  );
+
+  static bool canInstallOn(
+    String operatingSystem,
+    AppUpdateInfo info, {
+    bool installedBySetup = false,
+  }) => switch (operatingSystem) {
+    'android' => true,
+    'ios' => info.assetWithSuffix('.ipa') != null,
+    'windows' => installedBySetup && resolveWindowsSetup(info) != null,
+    _ => false,
+  };
+
+  static bool _installedBySetup() => File(
+    p.join(p.dirname(Platform.resolvedExecutable), windowsUninstaller),
+  ).existsSync();
 
   // #***! весь путь, выбрать скачать проверить отдать установщику
   static Future<UpdateInstallResult> downloadAndInstall(
     AppUpdateInfo info, {
     void Function(double progress)? onProgress,
   }) async {
-    final asset = Platform.isIOS ? resolveIpa(info) : await resolveApk(info);
+    final asset = await _resolve(info);
     if (asset == null) {
       return const UpdateInstallResult(UpdateInstallStatus.noAsset);
     }
@@ -67,6 +100,7 @@ abstract class UpdateInstaller {
       );
     }
 
+    if (Platform.isWindows) return _runWindowsSetup(file);
     if (Platform.isIOS) {
       await Share.shareXFiles([
         XFile(file.path, mimeType: 'application/octet-stream'),
@@ -84,6 +118,39 @@ abstract class UpdateInstaller {
       }
     }
     return const UpdateInstallResult(UpdateInstallStatus.done);
+  }
+
+  static Future<UpdateAsset?> _resolve(AppUpdateInfo info) async {
+    if (Platform.isIOS) return resolveIpa(info);
+    if (Platform.isWindows) return resolveWindowsSetup(info);
+    return resolveApk(info);
+  }
+
+  static Future<UpdateInstallResult> _runWindowsSetup(File setup) async {
+    try {
+      await Process.start(
+        setup.path,
+        windowsSetupArguments,
+        workingDirectory: setup.parent.path,
+        mode: ProcessStartMode.detached,
+      );
+    } catch (e) {
+      return UpdateInstallResult(
+        UpdateInstallStatus.installFailed,
+        error: e.toString(),
+      );
+    }
+    await ServicesBinding.instance.exitApplication(AppExitType.required);
+    return const UpdateInstallResult(UpdateInstallStatus.done);
+  }
+
+  static UpdateAsset? resolveWindowsSetup(AppUpdateInfo info) {
+    final setup = info.assetMatching(
+      prefix: windowsSetupPrefix,
+      suffix: '.exe',
+    );
+    if (setup == null || setup.sha256.isEmpty) return null;
+    return setup;
   }
 
   static UpdateAsset? resolveIpa(AppUpdateInfo info) {
@@ -110,6 +177,14 @@ abstract class UpdateInstaller {
     return info.assetWithSuffix('-$flavor-universal.apk');
   }
 
+  static String packageExtension(String assetName) {
+    final name = assetName.toLowerCase();
+    for (final extension in const ['ipa', 'exe']) {
+      if (name.endsWith('.$extension')) return extension;
+    }
+    return 'apk';
+  }
+
   // #***! качаем в .part и переименовываем после проверки
   static Future<File> _download(
     UpdateAsset asset,
@@ -118,8 +193,12 @@ abstract class UpdateInstaller {
   ) async {
     final dir = await getTemporaryDirectory();
     final safeTag = tag.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-    final extension = asset.name.toLowerCase().endsWith('.ipa') ? 'ipa' : 'apk';
-    final file = File('${dir.path}/promax-update-$safeTag.$extension');
+    final file = File(
+      p.join(
+        dir.path,
+        'promax-update-$safeTag.${packageExtension(asset.name)}',
+      ),
+    );
     final part = File('${file.path}.part');
 
     final client = HttpClient();

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../utils/external_tool.dart';
 import '../utils/logger.dart';
 import 'desktop_video_probe.dart';
 
@@ -312,7 +313,9 @@ class VideoTranscoder {
       }
       args.addAll(['-movflags', '+faststart', spec.output]);
 
-      final process = await Process.start('ffmpeg', args);
+      final ffmpeg = ExternalTool.resolve('ffmpeg');
+      if (ffmpeg == null) return false;
+      final process = await Process.start(ffmpeg, args);
       _desktopProcess = process;
       final totalMs = (endMs ?? 0) - startMs;
       final progress = process.stdout

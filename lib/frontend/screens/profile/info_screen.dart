@@ -10,6 +10,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/glossy_pill.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/small_spinner.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class InfoScreen extends StatefulWidget {
   const InfoScreen({super.key});
@@ -45,7 +46,7 @@ class _InfoScreenState extends State<InfoScreen> {
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.infoLoadError(e.toString()),
+          AppLocalizations.of(context)!.infoLoadError(userFacingError(e)),
         );
         setState(() => _isLoading = false);
       }

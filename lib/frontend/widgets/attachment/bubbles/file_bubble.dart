@@ -23,6 +23,7 @@ import '../../../../models/attachment.dart';
 import '../../custom_notification.dart';
 import '../../decrypted_photo.dart';
 import '../../photo_viewer.dart';
+import '../../sandbox_prompts.dart';
 import '../../share_unopenable_file.dart';
 import '../../upload_progress_ring.dart';
 import 'bubble_context.dart';
@@ -516,6 +517,8 @@ class FileBubble extends StatelessWidget {
         chatId: ctx.message.chatId,
         fileId: fileId,
       ),
+      confirmOpen: (path) =>
+          confirmOpenReceivedFile(context, name: name, path: path),
       onProgress: (p) => MediaDownloadProgress.set(cacheName, p),
       onReady: () {
         if (!cached) MediaDownloadProgress.set(cacheName, null);
@@ -532,7 +535,7 @@ class FileBubble extends StatelessWidget {
         messageTime: ctx.message.time,
       ),
     );
-    if (!context.mounted) return;
+    if (!context.mounted || result.declined) return;
     final path = result.path;
     if (result.noAppToOpen && path != null) {
       await shareUnopenableFile(context, path);

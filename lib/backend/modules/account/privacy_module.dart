@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../api.dart';
 import '../../../core/protocol/opcode_map.dart';
 import '../../../core/protocol/packet.dart';
@@ -20,6 +22,32 @@ class PrivacyModule extends AccountApiBase {
       if (saved != null) return PrivacyConfig.fromJson(saved);
     }
     return PrivacyConfig.empty();
+  }
+
+  static Future<bool> applyConfigPush(
+    int accountId,
+    Map<dynamic, dynamic> payload,
+  ) async {
+    final config = payload['config'];
+    final user = config is Map ? config['user'] : payload['user'];
+    if (user is! Map || user.isEmpty) return false;
+    final saved = await AppDatabase.getPrivacyConfig(accountId);
+    final merged = <dynamic, dynamic>{...?_decodeMap(saved), ...user};
+    await AppDatabase.savePrivacyConfig(
+      accountId,
+      PrivacyConfig.fromMap(merged).toJson(),
+    );
+    return true;
+  }
+
+  static Map<dynamic, dynamic>? _decodeMap(String? raw) {
+    if (raw == null) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map ? decoded : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   // #***! список заблокированных

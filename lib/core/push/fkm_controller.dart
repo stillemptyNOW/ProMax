@@ -5,22 +5,18 @@ import 'package:flutter/foundation.dart';
 import '../security/double_bottom.dart';
 import '../../backend/api.dart';
 import '../../backend/modules/account/account_models.dart';
-import '../../backend/modules/chat_preview.dart';
-import '../../backend/modules/chats.dart';
 import '../../backend/modules/messages.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
-import '../crypto/e2ee_service.dart';
+import '../calls/call_kit.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/token_storage.dart';
 import '../config/promax_settings.dart';
 import '../utils/logger.dart';
 import 'fkm_bridge.dart';
+import 'notification_policy.dart';
 import 'quiet_hours.dart';
 import 'push_service.dart';
-
-const _fallbackSender = 'MAX';
-const _hiddenPreview = 'Новое сообщение';
 
 // #***! FKM, своё фоновое уведомление для флейвора без гугла
 /// FKM — уведомления через собственное фоновое соединение, без FCM.
@@ -28,8 +24,13 @@ const _hiddenPreview = 'Новое сообщение';
 /// Пуш из сокета превращается в тот же набор полей, что присылает FCM, и
 /// отрисовывается нативным `ProMaxNotifier` — общий код с пушевой версией.
 class FkmController {
-  FkmController._();
-  static final FkmController instance = FkmController._();
+  FkmController._(this._bridge);
+  static final FkmController instance = FkmController._(FkmBridge.instance);
+
+  @visibleForTesting
+  FkmController.withBridge(this._bridge);
+
+  final FkmBridge _bridge;
 
   // #***! enabled, на него подписан переключатель в настройках
   final ValueNotifier<bool> enabled = ValueNotifier(false);
@@ -39,7 +40,7 @@ class FkmController {
   StreamSubscription<SessionState>? _stateSub;
   bool _started = false;
 
-  bool get isSupported => FkmBridge.instance.isSupported;
+  bool get isSupported => _bridge.isSupported;
 
   // #***! подписка на пуши сокета и сессию
   Future<void> init(Api api) async {
@@ -47,10 +48,10 @@ class FkmController {
     _started = true;
     _api = api;
 
-    FkmBridge.instance.setDisabledCallback(_onDisabledFromNotification);
-    enabled.value = await FkmBridge.instance.isEnabled();
-    Api.keepAliveInBackground = enabled.value;
-
+    _bridge.listen(
+      onDisabled: _onDisabledFromNotification,
+      onAttached: () => unawaited(_syncWithNative()),
+    );
     _pushSub = api.pushStream
         .where(
           (packet) =>
@@ -60,22 +61,28 @@ class FkmController {
         .listen(_onPush);
     _stateSub = api.stateStream.listen(_onSessionState);
 
-    if (enabled.value) {
-      await initLocalNotificationActions();
-      await FkmBridge.instance.setEnabled(true);
-      await _pushConnectionState();
-    }
+    await _syncWithNative();
+  }
+
+  Future<void> _syncWithNative() async {
+    final value = await _bridge.isEnabled();
+    enabled.value = value;
+    Api.keepAliveInBackground = value;
+    if (!value) return;
+    await initLocalNotificationActions();
+    await _bridge.setEnabled(true);
+    await _pushConnectionState();
   }
 
   // #***! включение и выключение сервиса
   /// Возвращает false, если пользователь не выдал разрешение на уведомления.
   Future<bool> setEnabled(bool value) async {
     if (!isSupported) return false;
-    if (value && !await FkmBridge.instance.requestNotificationPermission()) {
+    if (value && !await _bridge.requestNotificationPermission()) {
       return false;
     }
     if (value) await initLocalNotificationActions();
-    await FkmBridge.instance.setEnabled(value);
+    await _bridge.setEnabled(value);
     enabled.value = value;
     Api.keepAliveInBackground = value;
     if (value) await _pushConnectionState();
@@ -90,12 +97,12 @@ class FkmController {
 
   void _onSessionState(SessionState state) {
     if (!enabled.value) return;
-    unawaited(FkmBridge.instance.setConnected(state == SessionState.online));
+    unawaited(_bridge.setConnected(state == SessionState.online));
   }
 
   // #***! говорим нативу есть ли связь, от этого текст постоянного уведомления
   Future<void> _pushConnectionState() =>
-      FkmBridge.instance.setConnected(_api?.state == SessionState.online);
+      _bridge.setConnected(_api?.state == SessionState.online);
 
   // #***! входящий звонок, натив рисует полноэкранное
   /// Входящий звонок, когда приложение не на переднем плане.
@@ -106,7 +113,9 @@ class FkmController {
     if (!enabled.value) return;
     try {
       final data = await _buildCallNotification(payload);
-      if (data != null) await FkmBridge.instance.showCall(data);
+      if (data == null) return;
+      if (await CallKitBridge.instance.reportIncoming(data)) return;
+      await _bridge.showCall(_withFallbackSender(data));
     } catch (e) {
       logger.w('FKM: не удалось показать звонок: $e');
     }
@@ -126,12 +135,13 @@ class FkmController {
     if (accountId == null) return null;
 
     final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
-    if (rawConfig != null &&
-        PrivacyConfig.fromJson(rawConfig).mCallPushNotification != 'ON') {
+    if (!NotificationPolicy.callsEnabled(
+      rawConfig == null ? null : PrivacyConfig.fromJson(rawConfig),
+    )) {
       return null;
     }
 
-    final name = ContactCache.get(callerId) ?? _fallbackSender;
+    final name = ContactCache.get(callerId);
 
     return {
       'type': 'InboundCall',
@@ -139,12 +149,18 @@ class FkmController {
       'conversationId': conversationId,
       'callerId': '$callerId',
       'suid': '$callerId',
-      'userName': name,
-      'title': name,
+      'userName': ?name,
+      'title': ?name,
       'c': '$accountId',
       'iv': payload['type'] == 'VIDEO' ? 'true' : 'false',
     };
   }
+
+  Map<String, String> _withFallbackSender(Map<String, String> data) => {
+    'userName': NotificationPolicy.fallbackSender,
+    'title': NotificationPolicy.fallbackSender,
+    ...data,
+  };
 
   // #***! роутер пушей, новое правка удаление
   Future<void> _onPush(Packet packet) async {
@@ -162,68 +178,52 @@ class FkmController {
 
   // #***! новое сообщение в уведомление
   Future<void> _onMessagePush(Packet packet) async {
-    final payload = packet.payload;
-    if (payload is! Map) return;
-
-    final chatId = payload['chatId'];
-    if (chatId is! int) return;
-    if (DoubleBottom.hides(chatId)) return;
-
-    final msg = payload['message'];
-    if (msg is! Map) return;
-
-    if (payload['postId'] != null || msg['postId'] != null) return;
-
-    final msgId = msg['id']?.toString();
-    switch (msg['status']?.toString()) {
-      case 'REMOVED':
+    final push = NotificationPolicy.parseMessage(
+      packet.payload,
+      isHiddenChat: DoubleBottom.hides,
+    );
+    if (push == null) return;
+    final chatId = push.chatId;
+    final msgId = push.messageId;
+    switch (push.kind) {
+      case MessagePushKind.removed:
         if (msgId != null) await _removeNotification(chatId, msgId);
         return;
-      case 'EDITED':
-        if (msgId != null) await _editNotification(chatId, msgId, msg);
+      case MessagePushKind.edited:
+        if (msgId != null) await _editNotification(chatId, msgId, push.message);
         return;
+      case MessagePushKind.created:
+        break;
     }
 
-    if (await _isOwnMessage(msg)) {
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (NotificationPolicy.isOwn(push, accountId)) {
       await PushService.clearChatNotification(chatId);
       return;
     }
     if (QuietHours.instance.isQuiet(chatId)) return;
 
-    final data = await _buildNotification(chatId, msg);
-    if (data != null) await FkmBridge.instance.showMessage(data);
-  }
-
-  Future<bool> _isOwnMessage(Map<dynamic, dynamic> msg) async {
-    final senderId = msg['sender'];
-    if (senderId is! int) return false;
-    return senderId == await TokenStorage.getActiveAccountId();
+    final facts = await NotificationFacts.load(chatId, senderId: push.senderId);
+    if (facts == null) return;
+    final notification = NotificationPolicy.compose(push, facts);
+    if (notification != null) {
+      await _bridge.showMessage(notification.toFkmData());
+    }
   }
 
   // #***! сообщение удалили, гасим уведомление
   Future<void> _onDeletePush(Packet packet) async {
-    final payload = packet.payload;
-    if (payload is! Map) return;
-
-    final chat = payload['chat'];
-    final chatId = (chat is Map && chat['id'] is int)
-        ? chat['id'] as int
-        : payload['chatId'];
-    if (chatId is! int) return;
-
-    final ids = payload['messageIds'];
-    if (ids is! List) return;
-    for (final raw in ids) {
-      final id = raw?.toString();
-      if (id == null || id.isEmpty) continue;
-      await _removeNotification(chatId, id);
+    final deletion = NotificationPolicy.parseDeletion(packet.payload);
+    if (deletion == null) return;
+    for (final id in deletion.messageIds) {
+      await _removeNotification(deletion.chatId, id);
     }
   }
 
   /// Удалённое сообщение уезжает из шторки, а при включённом «показывать
   /// удалённые сообщения» остаётся в ней зачёркнутым.
   Future<void> _removeNotification(int chatId, String msgId) =>
-      FkmBridge.instance.removeMessage({
+      _bridge.removeMessage({
         'mc': '$chatId',
         'msgid': msgId,
         'keep': ProMaxSettings.viewDeleted.value ? 'true' : 'false',
@@ -239,80 +239,13 @@ class FkmController {
     if (accountId == null) return;
 
     final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
-    if (rawConfig != null) {
-      final config = PrivacyConfig.fromJson(rawConfig);
-      if (config.chatsPushNotification != 'ON') return;
-      if (!config.pushDetails) return;
-    }
+    final text = NotificationPolicy.editedText(
+      msg,
+      rawConfig == null ? null : PrivacyConfig.fromJson(rawConfig),
+    );
+    if (text == null) return;
 
-    final text = _previewText(msg);
-    if (text == _hiddenPreview) return;
-
-    await FkmBridge.instance.editMessage({
-      'mc': '$chatId',
-      'msgid': msgId,
-      'msg': text,
-    });
-  }
-
-  // #***! сборка уведомления, заголовок текст аватарка
-  Future<Map<String, String>?> _buildNotification(
-    int chatId,
-    Map<dynamic, dynamic> msg,
-  ) async {
-    final senderId = msg['sender'];
-    if (senderId is! int) return null;
-
-    final accountId = await TokenStorage.getActiveAccountId();
-    if (accountId == null || senderId == accountId) return null;
-
-    final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
-    var showPreview = true;
-    if (rawConfig != null) {
-      final config = PrivacyConfig.fromJson(rawConfig);
-      if (config.chatsPushNotification != 'ON') return null;
-      showPreview = config.pushDetails;
-    }
-
-    final rows = await AppDatabase.loadChat(accountId, chatId);
-    final chat = rows.isEmpty ? null : CachedChat.fromDbRow(rows.first);
-    if (chat != null && chat.isMuted) return null;
-
-    final senderName =
-        ContactCache.get(senderId) ?? chat?.title ?? _fallbackSender;
-    final chatTitle = (chat != null && chat.isGroupChat)
-        ? (chat.title ?? senderName)
-        : senderName;
-
-    await E2eeService.instance.ensureLoaded(accountId);
-    final text =
-        showPreview &&
-            !ProMaxSettings.streamerMode.value &&
-            !E2eeService.instance.isOn(accountId, chatId)
-        ? _previewText(msg)
-        : _hiddenPreview;
-    final time = msg['time'];
-    final msgId = msg['id'];
-
-    return {
-      'mc': '$chatId',
-      'c': '$accountId',
-      'suid': '$senderId',
-      'userName': senderName,
-      'title': chatTitle,
-      'msg': text,
-      'ctime': '${time is int ? time : DateTime.now().millisecondsSinceEpoch}',
-      if (msgId != null) 'msgid': '$msgId',
-    };
-  }
-
-  // #***! текст превью, для вложений их описание
-  String _previewText(Map<dynamic, dynamic> msg) {
-    final text = msg['text']?.toString().trim();
-    if (text != null && text.isNotEmpty) return text;
-    final attach = attachPreviewLabel(msg['attaches']);
-    if (attach != null && attach.isNotEmpty) return attach;
-    return _hiddenPreview;
+    await _bridge.editMessage({'mc': '$chatId', 'msgid': msgId, 'msg': text});
   }
 
   void dispose() {

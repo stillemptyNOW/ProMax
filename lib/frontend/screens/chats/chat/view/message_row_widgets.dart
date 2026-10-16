@@ -24,6 +24,7 @@ import 'package:promax/frontend/widgets/message_actions_overlay.dart'
     show
         MessageActionsController,
         MessageActionsInteraction,
+        MessageReadSummary,
         MessageReader,
         ReactionEmoji,
         showMessageActions;
@@ -349,6 +350,7 @@ class SelectableMessageRow extends StatefulWidget {
   final void Function(Offset globalPosition) onStartTextSelection;
   final void Function(Offset? globalPosition) onDragTextSelection;
   final VoidCallback onDelete;
+  final VoidCallback? onRetrySend;
   final bool allowDelete;
   final VoidCallback? onEdit;
   final VoidCallback? onReply;
@@ -364,6 +366,8 @@ class SelectableMessageRow extends StatefulWidget {
   final bool Function() isPinned;
   final Future<List<MessageReader>> Function()? loadReadBy;
   final void Function(int userId)? onReaderTap;
+  final MessageReadSummary? Function()? readSummary;
+  final Listenable? readRevision;
   final Future<List<({int id, String title})>> Function()? loadReportReasons;
   final Future<bool> Function(int reasonId)? onReport;
   final void Function(String emoji)? onReact;
@@ -384,6 +388,7 @@ class SelectableMessageRow extends StatefulWidget {
     required this.onStartTextSelection,
     required this.onDragTextSelection,
     required this.onDelete,
+    this.onRetrySend,
     this.allowDelete = true,
     this.onEdit,
     this.onReply,
@@ -399,6 +404,8 @@ class SelectableMessageRow extends StatefulWidget {
     required this.isPinned,
     this.loadReadBy,
     this.onReaderTap,
+    this.readSummary,
+    this.readRevision,
     this.loadReportReasons,
     this.onReport,
     this.onReact,
@@ -464,8 +471,11 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       infoRows: _infoRows(),
       loadReadBy: widget.loadReadBy,
       onReaderTap: widget.onReaderTap,
+      readSummary: widget.readSummary,
+      readRevision: widget.readRevision,
       loadReportReasons: widget.loadReportReasons,
       onReport: widget.onReport,
+      onRetrySend: widget.onRetrySend,
       onDelete: widget.onDelete,
       allowDelete: widget.allowDelete,
       onEdit: widget.onEdit,
@@ -583,8 +593,11 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       infoRows: _infoRows(),
       loadReadBy: widget.loadReadBy,
       onReaderTap: widget.onReaderTap,
+      readSummary: widget.readSummary,
+      readRevision: widget.readRevision,
       loadReportReasons: widget.loadReportReasons,
       onReport: widget.onReport,
+      onRetrySend: widget.onRetrySend,
       onDelete: widget.onDelete,
       allowDelete: widget.allowDelete,
       onEdit: widget.onEdit,

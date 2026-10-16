@@ -9,13 +9,16 @@ import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
 import '../../core/crypto/e2ee_service.dart';
 import '../../core/storage/app_database.dart';
+import '../../core/storage/chat_activity_store.dart';
 import '../../core/storage/message_ranges.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
 import '../../core/utils/text_format.dart';
 import '../../models/attachment.dart';
+import 'chat_activity_sender.dart';
 import 'chats.dart' show chats;
 import 'message_copy.dart';
+import 'server_outcome.dart';
 
 // #***! быстрый кэш id -> имя аватарка телефон, из него подписи в пузырях
 class ContactCache {
@@ -787,6 +790,14 @@ class MessagesModule {
     return _lastCid;
   }
 
+  static int newClientId() => -_nextCid();
+
+  static int? clientIdOf(Map<String, dynamic>? payload) {
+    final cid = payload?['cid'];
+    if (cid is int) return cid;
+    return cid == null ? null : int.tryParse(cid.toString());
+  }
+
   // #***! история с сервера
   Future<List<CachedMessage>> fetchHistory(
     int accountId,
@@ -1013,10 +1024,11 @@ class MessagesModule {
     int? replySourceChatId,
     List<Map<String, dynamic>> elements = const [],
     void Function()? beforeSend,
+    int? cid,
   }) async {
     final message = <String, dynamic>{
       'text': text,
-      'cid': -_nextCid(),
+      'cid': cid ?? newClientId(),
       'elements': elements,
       'attaches': [],
     };
@@ -1412,7 +1424,7 @@ class MessagesModule {
   }
 
   // #***! удаление, deleteForAll значит у всех
-  Future<bool> deleteMessages(
+  Future<ServerOutcome> deleteMessages(
     int chatId,
     List<String> messageIds, {
     bool forEveryone = false,
@@ -1422,7 +1434,7 @@ class MessagesModule {
         .map((id) => int.tryParse(id))
         .whereType<int>()
         .toList();
-    if (ids.isEmpty) return false;
+    if (ids.isEmpty) return const ServerDone();
 
     final payload = {
       'messageIds': ids,
@@ -1431,7 +1443,7 @@ class MessagesModule {
       'itemType': itemType,
     };
 
-    return _api.sendRequestOk(Opcode.msgDelete, payload);
+    return runServerAction(() => _api.sendRequest(Opcode.msgDelete, payload));
   }
 
   // #***! поставить реакцию
@@ -1994,14 +2006,14 @@ class MessagesModule {
   }
 
   // #***! печатает и записывает, ответ не ждём
-  void sendTyping(int chatId, String type) {
-    if (ProMaxSettings.noTyping.value) return;
+  void sendTyping(int chatId, ChatActivity activity) {
+    if (!chatActivityBroadcastAllowed || chatId == 0) return;
     unawaited(() async {
       try {
         await _api.sendRequest(Opcode.msgTyping, {
           'chatId': chatId,
-          'type': type,
-        });
+          'type': activity.wireType,
+        }, silent: true);
       } catch (_) {}
     }());
   }

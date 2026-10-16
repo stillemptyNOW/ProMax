@@ -9,6 +9,7 @@ import '../../frontend/widgets/swipe_route.dart';
 import '../../main.dart';
 import '../../models/shared_payload.dart';
 import '../utils/logger.dart';
+import '../push/native_event_stream.dart';
 
 // #***! системное поделиться, файлы с натива
 class ShareIntentBridge {
@@ -16,7 +17,9 @@ class ShareIntentBridge {
   static final ShareIntentBridge instance = ShareIntentBridge._();
 
   static const _method = MethodChannel('io.github.stillemptynow.promax/share');
-  static const _events = EventChannel('io.github.stillemptynow.promax/share_events');
+  static const _events = EventChannel(
+    'io.github.stillemptynow.promax/share_events',
+  );
   // #***! экран может быть не готов, ретраим
   static const _retryDelay = Duration(milliseconds: 300);
   static const _maxRetries = 100;
@@ -40,10 +43,7 @@ class ShareIntentBridge {
   void init() {
     if (_started || !_native) return;
     _started = true;
-    _events.receiveBroadcastStream().listen(
-      _onEvent,
-      onError: (e) => logger.w('ShareIntentBridge: events stream error: $e'),
-    );
+    NativeEventStream(_events, 'ShareIntentBridge').listen(_onEvent);
     api.stateStream.listen((state) {
       if (state == SessionState.online) _flushPending();
     });

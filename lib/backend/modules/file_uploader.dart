@@ -6,9 +6,9 @@ import 'dart:typed_data';
 import 'package:kolibri/kolibri.dart' as kb;
 
 import '../api.dart';
-import '../../core/protocol/opcode_map.dart';
 import '../../core/utils/file_names.dart';
 import '../../core/utils/logger.dart';
+import '../../core/storage/chat_activity_store.dart';
 import 'messages.dart';
 
 // #***! события загрузки, прогресс успех ошибка
@@ -95,15 +95,7 @@ class FileUploader {
           return;
         }
 
-        // #***! отправляет файл в чате, параллельно заливке ошибку игнорим
-        unawaited(() async {
-          try {
-            await api.sendRequest(Opcode.msgTyping, {
-              'chatId': chatId,
-              'type': 'FILE',
-            });
-          } catch (_) {}
-        }());
+        messages.sendTyping(chatId, ChatActivity.sendingFile);
 
         var status = 0;
         String? error;

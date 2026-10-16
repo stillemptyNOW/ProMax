@@ -4,46 +4,46 @@ import 'package:flutter/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../links/deep_link_service.dart';
+import '../security/url_policy.dart';
 
 import '../../frontend/widgets/custom_notification.dart';
 import '../../frontend/widgets/max_link_handler.dart';
+import '../../l10n/app_localizations.dart';
 
-// #***! схемы которые вебвью открывает сам, остальное уводит из приложения
-const Set<String> _webViewSchemes = {
-  'http',
-  'https',
-  'about',
-  'data',
-  'blob',
-  'javascript',
-  'file',
-};
+const Set<String> _webViewSchemes = {'http', 'https', 'about', 'data', 'blob'};
 
 bool leavesWebView(String? scheme) {
   if (scheme == null || scheme.isEmpty) return false;
   return !_webViewSchemes.contains(scheme.toLowerCase());
 }
 
-// #***! свои схемы ловим внутри, системе не отдаём
-const Set<String> _appSchemes = {'promax', 'max'};
-
-// #***! открытие ссылки, сначала наша схема потом max потом браузер
 Future<void> openExternalUrl(BuildContext context, String url) async {
-  final appUri = Uri.tryParse(url.trim());
-  if (appUri != null && _appSchemes.contains(appUri.scheme.toLowerCase())) {
-    DeepLinkService.instance.handle(appUri);
+  final uri = Uri.tryParse(url.trim());
+  if (uri != null && isAppLinkUri(uri)) {
+    DeepLinkService.instance.handle(uri);
     return;
   }
 
   if (await tryHandleMaxLink(context, url)) return;
   if (!context.mounted) return;
 
-  final uri = Uri.tryParse(url);
   if (uri == null) {
     showCustomNotification(context, 'Некорректная ссылка');
     return;
   }
-  final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!isAllowedExternalUri(uri)) {
+    showCustomNotification(
+      context,
+      AppLocalizations.of(context)!.sandboxLinkBlocked,
+    );
+    return;
+  }
+  var ok = false;
+  try {
+    ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (_) {
+    ok = false;
+  }
   if (!ok && context.mounted) {
     showCustomNotification(context, 'Не удалось открыть ссылку');
   }

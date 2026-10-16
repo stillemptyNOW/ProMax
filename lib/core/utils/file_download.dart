@@ -1,6 +1,5 @@
-import 'package:open_filex/open_filex.dart';
-
 import 'download_history.dart';
+import 'local_file_opener.dart';
 import 'media_cache.dart';
 
 // #***! итог скачивания, путь или ошибка
@@ -9,12 +8,14 @@ class FileDownloadResult {
   final String? path;
   final String? error;
   final bool noAppToOpen;
+  final bool declined;
 
   const FileDownloadResult({
     required this.ok,
     this.path,
     this.error,
     this.noAppToOpen = false,
+    this.declined = false,
   });
 }
 
@@ -30,6 +31,7 @@ class FileDownloadResult {
 Future<FileDownloadResult> openCachedFile(
   String cacheName,
   Future<String?> Function() resolveUrl, {
+  required Future<bool> Function(String path) confirmOpen,
   void Function(double progress)? onProgress,
   void Function()? onReady,
   DownloadMetadata? download,
@@ -41,22 +43,18 @@ Future<FileDownloadResult> openCachedFile(
     onReady: onReady,
     download: download,
   );
-  if (!result.ok || result.path == null) return result;
-  try {
-    final opened = await OpenFilex.open(result.path!);
-    return FileDownloadResult(
-      ok: opened.type == ResultType.done,
-      path: result.path,
-      error: opened.type == ResultType.done ? null : opened.message,
-      noAppToOpen: opened.type == ResultType.noAppToOpen,
-    );
-  } catch (e) {
-    return FileDownloadResult(
-      ok: false,
-      path: result.path,
-      error: e.toString(),
-    );
+  final path = result.path;
+  if (!result.ok || path == null) return result;
+  if (!await confirmOpen(path)) {
+    return FileDownloadResult(ok: false, path: path, declined: true);
   }
+  final opened = await openLocalFile(path);
+  return FileDownloadResult(
+    ok: opened.opened,
+    path: path,
+    error: opened.opened ? null : opened.error,
+    noAppToOpen: opened.status == LocalFileOpenStatus.noApp,
+  );
 }
 
 // #***! скачивание в кэш, onReady зовётся как только файл на диске

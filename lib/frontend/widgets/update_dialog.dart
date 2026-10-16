@@ -11,6 +11,11 @@ import '../../core/config/app_shape.dart';
 
 Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
   final l10n = AppLocalizations.of(context)!;
+  final installHint = Platform.isIOS
+      ? l10n.updateIosInstallHint
+      : Platform.isWindows && UpdateInstaller.canInstall(info)
+      ? l10n.updateWindowsInstallHint
+      : null;
   await showDialog<void>(
     context: context,
     builder: (dialogContext) {
@@ -40,10 +45,10 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
                 height: 1.35,
               ),
             ),
-            if (Platform.isIOS) ...[
+            if (installHint != null) ...[
               const SizedBox(height: 12),
               Text(
-                l10n.updateIosInstallHint,
+                installHint,
                 style: TextStyle(
                   color: cs.onSurfaceVariant,
                   fontSize: 13,
@@ -112,8 +117,7 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
 }
 
 Future<void> _startUpdate(BuildContext context, AppUpdateInfo info) async {
-  if (!UpdateInstaller.isSupported ||
-      (Platform.isIOS && UpdateInstaller.resolveIpa(info) == null)) {
+  if (!UpdateInstaller.canInstall(info)) {
     await openExternalUrl(context, info.url);
     return;
   }

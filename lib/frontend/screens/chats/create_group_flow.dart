@@ -17,6 +17,8 @@ import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
 import '../../widgets/swipe_route.dart';
 import 'chat_screen.dart';
+import 'new_chat_avatar.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 Future<void> showCreateGroupFlow(BuildContext context) async {
   final cs = Theme.of(context).colorScheme;
@@ -121,71 +123,52 @@ class _CreateGroupFlowState extends State<_CreateGroupFlow> {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _creating = true);
     final navigator = Navigator.of(context, rootNavigator: true);
+    final CachedChat? chat;
     try {
-      final chat = await chats.createGroupChat(
+      chat = await chats.createGroupChat(
         api,
         title: title,
         userIds: _selected.map((c) => c.id).toList(),
       );
-      if (!mounted) return;
-      if (chat == null) {
-        showCustomNotification(context, l10n.createGroupFailed);
-        setState(() => _creating = false);
-        return;
-      }
-
-      if (_avatar != null) {
-        final url = await chats.requestChatPhotoUploadUrl(api);
-        if (url != null) {
-          final bytes = await compressAvatarFile(_avatar!.path);
-          if (bytes == null) {
-            if (mounted) {
-              showCustomNotification(
-                context,
-                l10n.createGroupAvatarProcessFailed,
-              );
-            }
-          } else {
-            final token = await fileUploader.uploadImage(
-              Uri.parse(url),
-              bytes,
-              filename: 'avatar.jpg',
-            );
-            if (token != null) {
-              await chats.setChatPhoto(api, chatId: chat.id, photoToken: token);
-            } else if (mounted) {
-              showCustomNotification(
-                context,
-                l10n.createGroupAvatarUploadFailed,
-              );
-            }
-          }
-        }
-      }
-
-      if (!mounted) return;
-      navigator.pop();
-      navigator.push(
-        SwipeRoute(
-          builder: (_) => ChatScreen(
-            chatId: chat.id,
-            name: chat.title ?? title,
-            imageUrl: chat.iconUrl ?? '',
-            chatType: chat.type,
-          ),
-        ),
-      );
     } catch (e) {
       if (mounted) {
-        showCustomNotification(context, l10n.devicesGenericError('$e'));
+        showCustomNotification(
+          context,
+          l10n.devicesGenericError(userFacingError(e, l10n)),
+        );
         setState(() => _creating = false);
       }
+      return;
+    }
+    if (chat == null) {
+      if (mounted) {
+        showCustomNotification(context, l10n.createGroupFailed);
+        setState(() => _creating = false);
+      }
+      return;
+    }
+
+    final avatar = _avatar;
+    final avatarSet = avatar == null || await setNewChatAvatar(chat.id, avatar);
+    if (mounted) navigator.pop();
+    navigator.push(
+      SwipeRoute(
+        builder: (_) => ChatScreen(
+          chatId: chat!.id,
+          name: chat.title ?? title,
+          imageUrl: chat.iconUrl ?? '',
+          chatType: chat.type,
+        ),
+      ),
+    );
+    final overlay = navigator.overlay;
+    if (!avatarSet && overlay != null) {
+      showCustomNotificationOnOverlay(overlay, l10n.newChatAvatarNotSet);
     }
   }
 
-  String _statusText(AppLocalizations l10n, CachedContact c) => c.isBot
-      ? l10n.contactProfileBot
-      : l10n.contactProfileRecentlyActive;
+  String _statusText(AppLocalizations l10n, CachedContact c) =>
+      c.isBot ? l10n.contactProfileBot : l10n.contactProfileRecentlyActive;
 
   @override
   Widget build(BuildContext context) {

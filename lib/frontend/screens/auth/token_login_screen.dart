@@ -10,6 +10,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/config/app_shape.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class TokenLoginScreen extends StatefulWidget {
   final int? returnToAccountId;
@@ -113,7 +114,10 @@ class _TokenLoginScreenState extends State<TokenLoginScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      showCustomNotification(context, '${l10n.tokenLoginFailed}: $e');
+      showCustomNotification(
+        context,
+        '${l10n.tokenLoginFailed}: ${userFacingError(e)}',
+      );
     }
   }
 

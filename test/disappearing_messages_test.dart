@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/backend/modules/chats.dart';
 import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/backend/modules/server_outcome.dart';
 import 'package:promax/core/disappearing/disappearing_messages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,21 +20,21 @@ void main() {
   final service = DisappearingMessages.instance;
   late StreamController<MessageEvent> events;
   late List<(int, List<String>)> deleted;
-  late bool succeed;
+  late ServerOutcome answer;
   var clock = DateTime(2026, 10, 6, 12);
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     events = StreamController<MessageEvent>.broadcast();
     deleted = [];
-    succeed = true;
+    answer = const ServerDone();
     clock = DateTime(2026, 10, 6, 12);
     service.now = () => clock;
     await service.start(
       events: events.stream,
       delete: (chatId, ids) async {
         deleted.add((chatId, ids));
-        return succeed;
+        return answer;
       },
       myId: () async => 1,
     );
@@ -80,7 +81,7 @@ void main() {
 
   test('failures retry and the queue survives a restart', () async {
     await service.setTimer(9, 30);
-    succeed = false;
+    answer = const ServerRejected('отказ');
     await service.schedule(9, '301', clock.millisecondsSinceEpoch);
     clock = clock.add(const Duration(minutes: 1));
     await service.runDue();
@@ -91,7 +92,7 @@ void main() {
       events: events.stream,
       delete: (chatId, ids) async {
         deleted.add((chatId, ids));
-        return true;
+        return const ServerDone();
       },
       myId: () async => 1,
     );
@@ -100,5 +101,33 @@ void main() {
     await service.runDue();
     expect(service.pending, isEmpty);
     expect(deleted.last.$2, ['301']);
+  });
+
+  test('no connection keeps the attempt count and retries later', () async {
+    await service.setTimer(9, 30);
+    answer = const ServerUnreachable('нет сети');
+    await service.schedule(9, '401', clock.millisecondsSinceEpoch);
+    clock = clock.add(const Duration(minutes: 1));
+    await service.runDue();
+    expect(service.pending.single.tries, 0);
+
+    answer = const ServerDone();
+    clock = clock.add(const Duration(minutes: 1));
+    await service.runDue();
+    expect(service.pending, isEmpty);
+  });
+
+  test('entries of another account wait for that account', () async {
+    await service.setTimer(9, 30);
+    await service.schedule(
+      9,
+      '501',
+      clock.millisecondsSinceEpoch,
+      accountId: 2,
+    );
+    clock = clock.add(const Duration(minutes: 1));
+    await service.runDue();
+    expect(deleted, isEmpty);
+    expect(service.pending.single.accountId, 2);
   });
 }

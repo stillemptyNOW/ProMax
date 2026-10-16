@@ -18,6 +18,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/promax_avatar.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/config/app_shape.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 enum _Stage {
   checking,
@@ -171,7 +172,7 @@ class _NfcExchangeSheetState extends State<NfcExchangeSheet>
       setState(() => _stage = _Stage.found);
       showCustomNotification(
         context,
-        AppLocalizations.of(context)!.nfcAddFailed(e.toString()),
+        AppLocalizations.of(context)!.nfcAddFailed(userFacingError(e)),
       );
     }
   }

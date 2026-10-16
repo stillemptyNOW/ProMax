@@ -31,6 +31,7 @@ import 'core/config/app_spectrum_background.dart';
 import 'core/config/app_bubble_behavior.dart';
 import 'core/config/app_camera.dart';
 import 'core/config/promax_settings.dart';
+import 'core/config/privacy_settings.dart';
 import 'core/security/app_lock.dart';
 import 'core/config/call_no_mute.dart';
 import 'core/config/debug_test.dart';
@@ -63,14 +64,18 @@ import 'core/config/app_theme_schedule.dart';
 import 'core/config/app_digital_id_mode.dart';
 import 'backend/modules/account.dart';
 import 'backend/modules/chat_admin.dart';
+import 'backend/modules/bot_callback_answers.dart';
 import 'backend/modules/chats.dart';
 import 'backend/modules/comments.dart';
 import 'backend/modules/contacts.dart';
+import 'backend/modules/deletion_gateway.dart';
 import 'backend/modules/file_uploader.dart';
 import 'backend/modules/folders.dart';
 import 'backend/modules/messages.dart';
 import 'backend/modules/outbox.dart';
+import 'backend/modules/pending_deletions.dart';
 import 'backend/modules/polls.dart';
+import 'backend/modules/read_mark_queue.dart';
 import 'backend/modules/stickers.dart';
 import 'backend/modules/animoji.dart';
 import 'backend/modules/stories.dart';
@@ -80,11 +85,15 @@ import 'backend/modules/webapp.dart';
 import 'backend/modules/digital_id.dart';
 import 'core/calls/call_bridge.dart';
 import 'core/calls/call_controller.dart';
+import 'core/calls/call_kit.dart';
+import 'core/calls/call_session.dart';
 import 'core/media/audio_playback_controller.dart';
 import 'core/media/media_kit_video_platform.dart';
 import 'core/links/deep_link_service.dart';
 import 'frontend/screens/calls/call_screen.dart';
 import 'frontend/screens/lock/app_lock_layer.dart';
+import 'core/desktop/desktop_notifier.dart';
+import 'core/desktop/desktop_window.dart';
 import 'core/push/fkm_controller.dart';
 import 'core/push/launcher_badge.dart';
 import 'core/push/notification_bridge.dart';
@@ -93,9 +102,11 @@ import 'core/push/push_service.dart';
 import 'core/storage/app_database.dart';
 import 'core/transport/tls_config.dart';
 import 'core/transport/traffic_monitor.dart';
+import 'core/transport/network_watch.dart';
 import 'core/transport/vpn_bypass.dart';
 import 'core/storage/token_storage.dart';
 import 'core/utils/haptics.dart';
+import 'core/utils/app_exit_hooks.dart';
 import 'core/utils/debug_session_log.dart';
 import 'frontend/commands/commands.dart';
 import 'core/protocol/packet.dart';
@@ -103,7 +114,9 @@ import 'frontend/debug/fps_overlay_layer.dart';
 import 'frontend/debug/performance_monitor.dart';
 import 'frontend/screens/auth/login_screen.dart';
 import 'frontend/widgets/adaptive_shell.dart';
+import 'frontend/screens/chats/deletion_feedback.dart';
 import 'frontend/widgets/custom_notification.dart';
+import 'frontend/widgets/undo_notification.dart';
 import 'frontend/widgets/hint_bubble.dart';
 import 'frontend/widgets/liquid_glass.dart';
 import 'frontend/widgets/mesh_gradient_background.dart';
@@ -244,9 +257,16 @@ void main(List<String> args) async {
     ),
   );
   chats.attachGlobalPushHandlers(api);
+  unawaited(
+    PendingDeletions.instance.start(ApiDeletionGateway(api, messagesModule)),
+  );
+  unawaited(OutboxService.instance.recoverInterruptedSends());
   unawaited(FkmController.instance.init(api));
+  if (DesktopWindow.instance.isDesktop) Api.keepAliveInBackground = true;
   FoldersModule.attachGlobalPushHandlers(api);
   TranscriptionPushHandler.attach(api);
+  BotCallbackAnswers.instance.attach(api);
+  ReadMarkQueue.instance.attach(api);
   commentsModule.attachPushHandlers(api);
   storiesModule.attach();
   unawaited(storiesModule.loadCache());
@@ -332,6 +352,7 @@ void main(List<String> args) async {
   await ChatEncryptionStore.instance.load();
   E2eeService.instance.attach(messagesModule);
   await ProMaxSettings.load();
+  await PrivacySettings.load();
   await AppLock.instance.load();
   if (BuildProfile.plugins) await PluginStore.instance.load();
   CommandRegistry.instance.initialize();
@@ -454,6 +475,7 @@ class ProMaxAppState extends State<ProMaxApp>
   bool _shellReady = false;
   bool _incomingRouteActive = false;
   IncomingCall? _pendingIncoming;
+  CallSession? _pendingAnsweredSession;
   late final ValueNotifier<Color?> accentSeed = ValueNotifier(
     widget.initialAccentSeed,
   );
@@ -463,8 +485,14 @@ class ProMaxAppState extends State<ProMaxApp>
   StreamSubscription<LoginStatus>? _loginStatusSub;
   StreamSubscription<VpnBypassResult>? _vpnBypassSub;
   StreamSubscription<IncomingCall>? _callIncomingSub;
+  StreamSubscription<AnsweredCall>? _callAnsweredSub;
   StreamSubscription<String>? _serverErrorSub;
   StreamSubscription<AccountNotice>? _accountNoticeSub;
+  StreamSubscription<PendingDeletionReport>? _deletionReportsSub;
+  StreamSubscription<void>? _undoWindowsClosedSub;
+  StreamSubscription<String>? _botAnswersSub;
+  final NetworkWatch _networkWatch = NetworkWatch();
+  late final AppLifecycleListener _exitListener;
   Timer? _scheduleTimer;
   String? _lastVpnNotice;
   DateTime _lastVpnNoticeAt = DateTime.fromMillisecondsSinceEpoch(0);
@@ -492,6 +520,20 @@ class ProMaxAppState extends State<ProMaxApp>
     _fontId = widget.initialFontId;
 
     WidgetsBinding.instance.addObserver(this);
+    _exitListener = AppLifecycleListener(
+      onExitRequested: _settleDeletionsBeforeExit,
+    );
+    _deletionReportsSub = PendingDeletions.instance.reports.listen(
+      _onDeletionReport,
+    );
+    _undoWindowsClosedSub = PendingDeletions.instance.undoWindowsClosed.listen(
+      (_) => PendingUndo.commitPending(),
+    );
+    _networkWatch.start(api.wakeUp);
+    _botAnswersSub = BotCallbackAnswers.instance.unclaimed.listen((text) {
+      final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
+      if (overlay != null) showCustomNotificationOnOverlay(overlay, text);
+    });
     HardwareKeyboard.instance.addHandler(_noteKeyInteraction);
     AudioPlaybackController.error.addListener(_onAudioPlaybackError);
     AppThemeModeConfig.current.addListener(_onThemeModeChanged);
@@ -527,7 +569,11 @@ class ProMaxAppState extends State<ProMaxApp>
         CallController.instance.init(api);
         OutboxService.instance.init(api, messagesModule);
         SelfCheckService.instance.init(api);
-        SelfCheckService.instance.checkNow();
+        if (AppForeground.value) {
+          SelfCheckService.instance.checkNow();
+        } else {
+          SelfCheckService.instance.pause();
+        }
         if (BuildProfile.firebasePush) {
           await PushService.instance.init(api: api, account: accountModule);
           await PushService.instance.onLoginSuccess();
@@ -539,10 +585,21 @@ class ProMaxAppState extends State<ProMaxApp>
     _callIncomingSub = CallController.instance.incomingCalls.listen(
       _onIncomingCall,
     );
-    CallController.instance.appResumed = true;
+    _callAnsweredSub = CallController.instance.answeredCalls.listen(
+      _onAnsweredCall,
+    );
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    AppForeground.update(foreground: AppForeground.visibleIn(lifecycle));
+    CallController.instance.appResumed = AppForeground.interactiveIn(lifecycle);
     CallBridge.instance.init();
+    CallKitBridge.instance.init();
     NotificationBridge.instance.init();
     unawaited(LauncherBadge.instance.init());
+    AppExitHooks.add(PendingUndo.commitCurrent);
+    AppExitHooks.add(CallController.instance.endActive);
+    AppExitHooks.add(DebugSessionLog.instance.flushNow);
+    unawaited(DesktopWindow.instance.init(onQuitRequested: AppExitHooks.run));
+    unawaited(DesktopNotifier.instance.init(api));
     ShareIntentBridge.instance.init();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       CallBridge.instance.checkInitialCall();
@@ -629,7 +686,28 @@ class ProMaxAppState extends State<ProMaxApp>
     });
   }
 
+  Future<ui.AppExitResponse> _settleDeletionsBeforeExit() async {
+    PendingUndo.commitPending();
+    await PendingDeletions.instance.flush(
+      timeout: const Duration(seconds: 3),
+      closeUndoWindows: true,
+    );
+    return ui.AppExitResponse.exit;
+  }
+
+  void _onDeletionReport(PendingDeletionReport report) {
+    final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
+    final l10n = overlay == null ? null : AppLocalizations.of(overlay.context);
+    if (overlay == null || l10n == null) return;
+    if (report is PendingDeletionFailed) Haptics.error();
+    showCustomNotificationOnOverlay(
+      overlay,
+      pendingDeletionReportText(report, l10n),
+    );
+  }
+
   Future<void> _ensureFullScreenIntentPermission() async {
+    if (!AppForeground.value) return;
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool('fsi_prompted') ?? false) return;
     if (await CallBridge.instance.canUseFullScreenIntent()) return;
@@ -639,6 +717,13 @@ class ProMaxAppState extends State<ProMaxApp>
 
   void _onIncomingCall(IncomingCall call) {
     _pendingIncoming = call;
+    _pendingAnsweredSession = null;
+    _presentIncomingCall();
+  }
+
+  void _onAnsweredCall(AnsweredCall answered) {
+    _pendingIncoming = answered.call;
+    _pendingAnsweredSession = answered.session;
     _presentIncomingCall();
   }
 
@@ -651,6 +736,16 @@ class ProMaxAppState extends State<ProMaxApp>
   void _presentIncomingCall() {
     final call = _pendingIncoming;
     if (call == null || _incomingRouteActive || !_shellReady) return;
+    final session = _pendingAnsweredSession;
+    final stale = session == null
+        ? !identical(CallController.instance.pendingIncoming, call)
+        : session.currentState == CallSessionState.ended;
+    if (stale) {
+      _pendingIncoming = null;
+      _pendingAnsweredSession = null;
+      return;
+    }
+    if (session != null && !CallController.instance.appResumed) return;
     final navState = ProMaxApp.navigatorKey.currentState;
     if (navState == null) {
       WidgetsBinding.instance.addPostFrameCallback(
@@ -665,6 +760,7 @@ class ProMaxAppState extends State<ProMaxApp>
             builder: (_) => CallScreen(
               name: ContactCache.get(call.callerId) ?? call.callerName ?? '',
               avatarUrl: ContactCache.getAvatar(call.callerId),
+              session: session,
               incoming: call,
               autoAccept: call.autoAccept,
             ),
@@ -672,7 +768,12 @@ class ProMaxAppState extends State<ProMaxApp>
         )
         .whenComplete(() {
           _incomingRouteActive = false;
-          if (identical(_pendingIncoming, call)) _pendingIncoming = null;
+          if (identical(_pendingIncoming, call)) {
+            _pendingIncoming = null;
+            _pendingAnsweredSession = null;
+            return;
+          }
+          _presentIncomingCall();
         });
   }
 
@@ -683,8 +784,14 @@ class ProMaxAppState extends State<ProMaxApp>
     _loginStatusSub?.cancel();
     _vpnBypassSub?.cancel();
     _callIncomingSub?.cancel();
+    _callAnsweredSub?.cancel();
     _serverErrorSub?.cancel();
     _accountNoticeSub?.cancel();
+    _deletionReportsSub?.cancel();
+    _undoWindowsClosedSub?.cancel();
+    _botAnswersSub?.cancel();
+    _networkWatch.stop();
+    _exitListener.dispose();
     _scheduleTimer?.cancel();
     _resizeMarkTimer?.cancel();
     AppThemeModeConfig.current.removeListener(_onThemeModeChanged);
@@ -729,24 +836,31 @@ class ProMaxAppState extends State<ProMaxApp>
   Future<bool> didPopRoute() async => AppLock.instance.locked.value;
 
   @override
+  Future<ui.AppExitResponse> didRequestAppExit() async {
+    await AppExitHooks.run();
+    return ui.AppExitResponse.exit;
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     AppLock.instance.onLifecycle(state);
-    final background =
-        state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.detached;
+    final background = !AppForeground.visibleIn(state);
     AppForeground.update(foreground: !background);
-    CallController.instance.appResumed = state == AppLifecycleState.resumed;
+    CallController.instance.appResumed = AppForeground.interactiveIn(state);
     if (state == AppLifecycleState.inactive && CallController.instance.isBusy) {
       unawaited(CallBridge.instance.ensureOngoing());
     }
     if (background) {
+      PendingUndo.commitPending();
+      unawaited(PendingDeletions.instance.flush(closeUndoWindows: true));
       DebugSessionLog.instance.flushNow();
       SelfCheckService.instance.pause();
       E2eeService.instance.lock();
     }
     if (state != AppLifecycleState.resumed) return;
     api.wakeUp();
+    unawaited(DesktopNotifier.instance.onWindowAttended());
+    _presentIncomingCall();
     SelfCheckService.instance.resume();
     if (!CallController.instance.isBusy) {
       unawaited(CallBridge.instance.dropOngoing());

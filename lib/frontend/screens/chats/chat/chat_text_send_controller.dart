@@ -7,6 +7,8 @@ import '../../../../backend/modules/chats.dart';
 import '../../../../backend/modules/comments.dart';
 import '../../../../backend/modules/message_copy.dart';
 import '../../../../backend/modules/messages.dart';
+import '../../../../backend/modules/outbox.dart';
+import '../../../../backend/modules/pending_deletions.dart';
 import '../../../../core/config/app_commands.dart';
 import '../../../../core/crypto/message_decryption_cache.dart';
 import '../../../../core/plugins/plugin_outgoing_text.dart';
@@ -23,6 +25,7 @@ import '../../../commands/commands.dart';
 import '../../../widgets/rich_message_controller.dart';
 import 'chat_controller.dart';
 import '../../../../backend/modules/forward_sender.dart';
+import '../../../../core/utils/user_facing_error.dart';
 
 // #***! текстовые сообщения + пересылка + reply-состояние; медиа-отправка
 // живёт отдельно в ChatMediaSendController — здесь то, что завязано на
@@ -268,6 +271,14 @@ class ChatTextSendController {
     await _syncForwardOutgoing(optimistic);
     try {
       final sent = await send();
+      if (PendingDeletions.instance.claimSent(
+        accountId: optimistic.accountId,
+        chatId: optimistic.chatId,
+        tempId: optimistic.id,
+        realId: sent.id,
+      )) {
+        return true;
+      }
       if (canUpdateChat()) {
         final index = chatController.indexOfId(optimistic.id);
         if (index != -1) {
@@ -392,10 +403,12 @@ class ChatTextSendController {
     final elements = encrypted
         ? const <Map<String, dynamic>>[]
         : trimmedElements(content.elements, rawText, text);
-    final Map<String, dynamic>? composedPayload =
-        (replyPayload == null && elements.isEmpty)
-        ? null
-        : {...?replyPayload, if (elements.isNotEmpty) 'elements': elements};
+    final cid = MessagesModule.newClientId();
+    final Map<String, dynamic> composedPayload = {
+      ...?replyPayload,
+      if (elements.isNotEmpty) 'elements': elements,
+      'cid': cid,
+    };
 
     final composed = CachedMessage(
       id: tempId,
@@ -476,7 +489,18 @@ class ChatTextSendController {
               replySourceChatId: replySrcChatId,
               elements: elements,
               beforeSend: checkSession,
+              cid: cid,
             );
+
+      if (!commentsMode &&
+          PendingDeletions.instance.claimSent(
+            accountId: accountId,
+            chatId: chatId,
+            tempId: tempId,
+            realId: actualId,
+          )) {
+        return;
+      }
 
       final mounted = canUpdateChat();
       final index = chatController.indexOfId(tempId);
@@ -547,7 +571,7 @@ class ChatTextSendController {
         unawaited(AppDatabase.deleteMessage(accountId, chatId, tempId));
         if (canUpdateChat()) {
           Haptics.error();
-          notify(e.toString());
+          notify(userFacingError(e));
         }
         return;
       }
@@ -571,6 +595,7 @@ class ChatTextSendController {
       if (!commentsMode) {
         MessageSessionCache.replace(accountId, chatId, tempId, (_) => queued);
         await chats.reconcileLastMessage(accountId, chatId);
+        if (status == 'pending') OutboxService.instance.scheduleRetry();
       }
     }
   }
@@ -612,14 +637,18 @@ class ChatTextSendController {
     final tempId = chatController.nextTempId();
     final now = DateTime.now().millisecondsSinceEpoch;
     final online = _api.state == SessionState.online;
+    final accountId = _myId;
+    final chatId = _chatId;
+    final cid = MessagesModule.newClientId();
     final composed = CachedMessage(
       id: tempId,
-      accountId: _myId,
-      chatId: _chatId,
-      senderId: _myId,
+      accountId: accountId,
+      chatId: chatId,
+      senderId: accountId,
       text: outgoing.wireText,
       time: now,
       status: online ? 'sending' : 'pending',
+      payload: {'cid': cid},
     );
     if (outgoing.encrypted) {
       MessageDecryptionCache.instance.seed(tempId, outgoing.plaintext);
@@ -627,11 +656,12 @@ class ChatTextSendController {
     chatController.addMessage(composed);
     bumpMessages();
     scrollToBottom();
-    unawaited(chatController.persistOutgoing(composed));
+    final persisted = chatController.persistOutgoing(composed);
+    unawaited(persisted);
     unawaited(
       chats.applyOutgoing(
-        _myId,
-        _chatId,
+        accountId,
+        chatId,
         messageId: tempId,
         time: now,
         text: outgoing.wireText,
@@ -641,10 +671,19 @@ class ChatTextSendController {
     if (!online) return tempId;
     try {
       final actualId = await _messages.sendMessage(
-        _myId,
-        _chatId,
+        accountId,
+        chatId,
         outgoing.wireText,
+        cid: cid,
       );
+      if (PendingDeletions.instance.claimSent(
+        accountId: _myId,
+        chatId: _chatId,
+        tempId: tempId,
+        realId: actualId,
+      )) {
+        return '';
+      }
       final realId = actualId.isNotEmpty ? actualId : tempId;
       final i = chatController.indexOfId(tempId);
       if (i != -1) {
@@ -665,9 +704,41 @@ class ChatTextSendController {
         );
       }
       return realId;
-    } catch (_) {
+    } catch (e) {
+      await persisted;
+      await _settleFailedCommand(composed, e);
       return tempId;
     }
+  }
+
+  Future<void> _settleFailedCommand(
+    CachedMessage composed,
+    Object error,
+  ) async {
+    final queued = composed.withSendFailure(error);
+    final status = queued.status!;
+    final stored = await AppDatabase.updateSendingMessageStatus(
+      composed.accountId,
+      composed.chatId,
+      composed.id,
+      status,
+    );
+    if (!stored) return;
+    if (_myId == composed.accountId && _chatId == composed.chatId) {
+      final index = chatController.indexOfId(composed.id);
+      if (index != -1 && isMounted()) {
+        chatController.setMessageAt(index, queued);
+        bumpMessages();
+      }
+    }
+    MessageSessionCache.replace(
+      composed.accountId,
+      composed.chatId,
+      composed.id,
+      (_) => queued,
+    );
+    await chats.reconcileLastMessage(composed.accountId, composed.chatId);
+    if (status == 'pending') OutboxService.instance.scheduleRetry();
   }
 
   Future<void> updateCommandMessage(String id, String text) async {

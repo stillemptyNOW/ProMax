@@ -27,6 +27,7 @@ class StoriesModule {
 
   // #***! две карты, превью для колец и сами истории
   final Map<int, StoryPreview> _previews = {};
+  final Map<int, ({int updateTime, int readCount})> _seenLocally = {};
   final Map<int, List<Story>> _peerStories = {};
 
   /// ownerId → storyId, на котором пользователь остановил просмотр.
@@ -50,9 +51,7 @@ class StoriesModule {
   int _nowMs() => DateTime.now().millisecondsSinceEpoch;
 
   // #***! время то в секундах то в мс, приводим
-  int _normMs(int t) => t <= 0
-      ? 0
-      : (t < 1000000000000 ? t * 1000 : t);
+  int _normMs(int t) => t <= 0 ? 0 : (t < 1000000000000 ? t * 1000 : t);
 
   // ── Кэш (SQLite) ───────────────────────────────────────────────────────
 
@@ -209,9 +208,7 @@ class StoriesModule {
       final chunk = missing.sublist(i, end);
       try {
         final packet = await _api.sendRequest(Opcode.storiesGetByOwner, {
-          'owners': [
-            for (final id in chunk) StoryOwner(ownerId: id).toMap(),
-          ],
+          'owners': [for (final id in chunk) StoryOwner(ownerId: id).toMap()],
         }, silent: true);
         if (packet.isError) continue;
         if (_applyOwnerPayload(packet.payload, chunk)) changed = true;
@@ -244,7 +241,9 @@ class StoriesModule {
       }
     }
     for (final id in requested) {
-      if (!seen.contains(id) && _peerPreviews.remove(id) != null) changed = true;
+      if (!seen.contains(id) && _peerPreviews.remove(id) != null) {
+        changed = true;
+      }
     }
     final rawPeers = data['peerStories'];
     if (rawPeers is List) {
@@ -290,8 +289,20 @@ class StoriesModule {
       _previews.remove(preview.owner.ownerId);
       _peerStories.remove(preview.owner.ownerId);
     } else {
-      _previews[preview.owner.ownerId] = preview;
+      _previews[preview.owner.ownerId] = _withLocalViews(preview);
     }
+  }
+
+  StoryPreview _withLocalViews(StoryPreview preview) {
+    final seen = _seenLocally[preview.owner.ownerId];
+    if (seen == null || seen.updateTime != preview.updateTime) {
+      _seenLocally.remove(preview.owner.ownerId);
+      return preview;
+    }
+    if (seen.readCount <= preview.readCount) return preview;
+    return preview.copyWith(
+      readCount: math.min(seen.readCount, preview.totalCount),
+    );
   }
 
   // #***! первая страница, список колец заменяем целиком
@@ -396,7 +407,7 @@ class StoriesModule {
   Future<bool> mark(StoryOwner owner, int storyId) async {
     if (_api.state != SessionState.online) return false;
     try {
-      final ok = await _api.sendRequestOk(Opcode.storiesMark, {
+      final ok = await _api.sendRequestOk(Opcode.storiesMark, silent: true, {
         'owner': owner.toMap(),
         'storyId': storyId,
       });
@@ -406,6 +417,16 @@ class StoriesModule {
       logger.w('StoriesModule.mark: $e');
       return false;
     }
+  }
+
+  void markSeenLocally(StoryOwner owner) {
+    _markReadLocally(owner.ownerId);
+    final preview = _previews[owner.ownerId];
+    if (preview == null) return;
+    _seenLocally[owner.ownerId] = (
+      updateTime: preview.updateTime,
+      readCount: preview.readCount,
+    );
   }
 
   void _markReadLocally(int ownerId) {

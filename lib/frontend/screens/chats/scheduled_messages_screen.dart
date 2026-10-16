@@ -18,6 +18,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/schedule_time_picker.dart';
 import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
+import 'deletion_feedback.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../../core/config/app_fonts.dart';
 
@@ -189,13 +190,17 @@ class _ScheduledMessagesScreenState extends State<ScheduledMessagesScreen>
       return;
     }
 
-    final ok = await messagesModule.editScheduledMessage(
-      widget.chatId,
-      msg.id,
-      text: controller.text.trim(),
-      timeToFire: when.millisecondsSinceEpoch,
-    );
-    controller.dispose();
+    final bool ok;
+    try {
+      ok = await messagesModule.editScheduledMessage(
+        widget.chatId,
+        msg.id,
+        text: controller.text.trim(),
+        timeToFire: when.millisecondsSinceEpoch,
+      );
+    } finally {
+      controller.dispose();
+    }
     if (!mounted) return;
     if (ok) {
       Haptics.send();
@@ -216,18 +221,23 @@ class _ScheduledMessagesScreenState extends State<ScheduledMessagesScreen>
     );
     if (!confirmed || !mounted) return;
 
-    final ok = await messagesModule.deleteMessages(
+    final outcome = await messagesModule.deleteMessages(
       widget.chatId,
       [msg.id],
       forEveryone: true,
       itemType: 'DELAYED',
     );
     if (!mounted) return;
-    if (ok) {
+    final failure = outcomeFailureText(outcome, l10n);
+    if (failure == null) {
       Haptics.send();
       setState(() => _messages.removeWhere((m) => m.id == msg.id));
     } else {
-      showCustomNotification(context, l10n.scheduledDeleteFailed);
+      Haptics.error();
+      showCustomNotification(
+        context,
+        '${l10n.scheduledDeleteFailed}: $failure',
+      );
     }
   }
 

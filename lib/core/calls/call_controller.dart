@@ -1,12 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../../backend/api.dart';
 import '../../backend/modules/calls.dart';
 import '../protocol/opcode_map.dart';
 import '../push/fkm_controller.dart';
 import '../protocol/packet.dart';
+import '../utils/logger.dart';
 import '../utils/parse.dart';
 import 'call_bridge.dart';
+import 'call_kit.dart';
 import 'call_session.dart';
 import 'conversation_params.dart';
 import 'ws2_signaling.dart';
@@ -35,6 +39,53 @@ class IncomingCall {
     this.callerName,
     this.autoAccept = false,
   });
+
+  static IncomingCall? fromNative(
+    Map<dynamic, dynamic> data, {
+    bool autoAccept = false,
+  }) {
+    final vcp = data['vcp']?.toString();
+    if (vcp == null || vcp.isEmpty) return null;
+
+    final conversationId = (data['conversationId'] ?? data['vcId'])?.toString();
+    if (conversationId == null || conversationId.isEmpty) return null;
+
+    final callerId = parseIntOrNull(data['callerId'] ?? data['suid']);
+    if (callerId == null) return null;
+
+    final params = ConversationParams.decode(vcp);
+    if (params == null) return null;
+
+    final type = (data['type'] ?? data['callType'])?.toString();
+    final iv = data['iv'];
+    final isVideo =
+        params.isVideo || type == 'VIDEO' || iv == true || iv == 'true';
+
+    return IncomingCall(
+      conversationId: conversationId,
+      callerId: callerId,
+      isVideo: isVideo,
+      params: params,
+      country: data['country']?.toString(),
+      isContact: data['isContact'] is bool ? data['isContact'] as bool : null,
+      callerName: data['userName']?.toString(),
+      autoAccept: autoAccept,
+    );
+  }
+}
+
+class AnsweredCall {
+  const AnsweredCall({required this.call, required this.session});
+
+  final IncomingCall call;
+  final CallSession session;
+}
+
+class IncomingDecision {
+  const IncomingDecision({required this.call, required this.accept});
+
+  final IncomingCall call;
+  final bool accept;
 }
 
 // #***! управление звонками поверх сессии
@@ -46,10 +97,22 @@ class CallController {
   CallsModule? _calls;
   StreamSubscription<Packet>? _pushSub;
 
-  // #***! три стрима наружу
+  // #***! стримы наружу
   final _incoming = StreamController<IncomingCall>.broadcast();
   final _ended = StreamController<void>.broadcast();
   final _canceled = StreamController<void>.broadcast();
+  final _answered = StreamController<AnsweredCall>.broadcast();
+  final _decisions = StreamController<IncomingDecision>.broadcast();
+
+  static const ringTimeout = Duration(seconds: 60);
+  Timer? _ringTimer;
+
+  bool get _desktop {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+  }
 
   // #***! приложение в фоне, звонок показывает натив а не мы
   bool appResumed = false;
@@ -59,6 +122,10 @@ class CallController {
   Stream<void> get callEnded => _ended.stream;
 
   Stream<void> get incomingCanceled => _canceled.stream;
+
+  Stream<AnsweredCall> get answeredCalls => _answered.stream;
+
+  Stream<IncomingDecision> get incomingDecisions => _decisions.stream;
 
   CallSession? _active;
   StreamSubscription<CallSessionState>? _activeSub;
@@ -85,6 +152,10 @@ class CallController {
 
   // #***! разбор пуша входящего
   void _onPush(Packet packet) {
+    if (packet.opcode == Opcode.notifMessage) {
+      _onCallRecord(packet.payload);
+      return;
+    }
     if (packet.opcode != Opcode.notifCallStart) return;
     final payload = packet.payload;
     if (payload is! Map) return;
@@ -96,10 +167,12 @@ class CallController {
 
     // Приложение свёрнуто — звонок показывает FKM отдельным уведомлением,
     // приём оттуда вернётся через injectFromNative.
-    if (!appResumed) {
+    if (!appResumed && !_desktop) {
       unawaited(FkmController.instance.showIncomingCall(payload));
       return;
     }
+
+    if (CallKitBridge.instance.owns(conversationId)) return;
 
     final params = ConversationParams.decode(vcp);
     if (params == null) return;
@@ -116,37 +189,35 @@ class CallController {
     );
   }
 
+  void _onCallRecord(Object? payload) {
+    final record = FinishedCallRecord.fromPush(payload);
+    if (record == null) return;
+    CallKitBridge.instance.finishRinging(record);
+    if (_pending?.conversationId == record.conversationId) dismissIncoming();
+  }
+
   // #***! звонок с натива, autoAccept значит там уже нажали принять
   void injectFromNative(Map<dynamic, dynamic> data, {bool autoAccept = false}) {
-    final vcp = data['vcp']?.toString();
-    if (vcp == null || vcp.isEmpty) return;
+    final call = IncomingCall.fromNative(data, autoAccept: autoAccept);
+    if (call != null) _emitIncoming(call);
+  }
 
-    final params = ConversationParams.decode(vcp);
-    if (params == null) return;
-
-    final conversationId = (data['conversationId'] ?? data['vcId'])?.toString();
-    if (conversationId == null || conversationId.isEmpty) return;
-
-    final callerId = parseIntOrNull(data['callerId'] ?? data['suid']);
-    if (callerId == null) return;
-
-    final type = (data['type'] ?? data['callType'])?.toString();
-    final iv = data['iv'];
-    final isVideo =
-        params.isVideo || type == 'VIDEO' || iv == true || iv == 'true';
-
-    _emitIncoming(
-      IncomingCall(
-        conversationId: conversationId,
-        callerId: callerId,
-        isVideo: isVideo,
-        params: params,
-        country: data['country']?.toString(),
-        isContact: data['isContact'] is bool ? data['isContact'] as bool : null,
-        callerName: data['userName']?.toString(),
-        autoAccept: autoAccept,
+  CallSession? answerFromSystem(Map<dynamic, dynamic> data) {
+    if (isBusy) return null;
+    final call = IncomingCall.fromNative(data);
+    if (call == null) return null;
+    if (_pending != null && _pending!.conversationId != call.conversationId) {
+      dismissIncoming();
+    }
+    final session = _calleeSession(call);
+    unawaited(
+      _launchCallee(session, call).then<void>(
+        (_) {},
+        onError: (Object e) => logger.w('CallController.answerFromSystem: $e'),
       ),
     );
+    _answered.add(AnsweredCall(call: call, session: session));
+    return session;
   }
 
   // #***! входящий наружу, юишка решит что показать
@@ -154,12 +225,31 @@ class CallController {
     if (isBusy) return;
     if (_pending?.conversationId == incoming.conversationId) return;
     _pending = incoming;
+    _ringTimer?.cancel();
+    if (_desktop) {
+      _ringTimer = Timer(ringTimeout, () {
+        if (identical(_pending, incoming)) dismissIncoming();
+      });
+    }
     _incoming.add(incoming);
   }
 
   void dismissIncoming() {
     if (_pending == null) return;
     _pending = null;
+    _ringTimer?.cancel();
+    _canceled.add(null);
+  }
+
+  void decideIncoming(String conversationId, {required bool accept}) {
+    final call = _pending;
+    if (call == null || call.conversationId != conversationId) return;
+    if (_decisions.hasListener) {
+      _decisions.add(IncomingDecision(call: call, accept: accept));
+      return;
+    }
+    if (accept) return;
+    unawaited(rejectIncoming(call));
     _canceled.add(null);
   }
 
@@ -218,8 +308,12 @@ class CallController {
   }
 
   // #***! принятие входящего
-  Future<CallSession> acceptIncoming(IncomingCall call) async {
+  Future<CallSession> acceptIncoming(IncomingCall call) =>
+      _launchCallee(_calleeSession(call), call);
+
+  CallSession _calleeSession(IncomingCall call) {
     _pending = null;
+    _ringTimer?.cancel();
     CallBridge.instance.cancelIncoming();
     final config = Ws2Config.fromVcp(
       call.params,
@@ -227,24 +321,28 @@ class CallController {
       device: _api?.callsDevice,
       osVersion: _api?.callsOsVersion,
     );
-    final session = CallSession(
+    return CallSession(
       ws2Config: config,
       params: call.params,
       role: CallRole.callee,
     );
-    return _launch(
-      session,
-      () async {
+  }
+
+  Future<CallSession> _launchCallee(CallSession session, IncomingCall call) =>
+      _launch(session, () async {
         await session.start();
         await session.accept();
-      },
-      caller: call.callerName,
-    );
+      }, caller: call.callerName);
+
+  Future<void> rejectFromSystem(Map<dynamic, dynamic> data) async {
+    final call = IncomingCall.fromNative(data);
+    if (call != null) await rejectIncoming(call);
   }
 
   // #***! отклонение
   Future<void> rejectIncoming(IncomingCall call) async {
     _pending = null;
+    _ringTimer?.cancel();
     CallBridge.instance.notifyEnded();
     final config = Ws2Config.fromVcp(
       call.params,
@@ -284,7 +382,7 @@ class CallController {
     } catch (_) {
       await _release(session);
       try {
-        await session.hangup();
+        await session.abort();
       } catch (_) {}
       rethrow;
     }
@@ -296,6 +394,7 @@ class CallController {
   void _bind(CallSession session) {
     unawaited(_activeSub?.cancel());
     _active = session;
+    unawaited(CallKitBridge.instance.setAppCallActive(true));
     _activeSub = session.stateStream.listen((state) {
       if (state != CallSessionState.ended) return;
       unawaited(_release(session));
@@ -310,13 +409,21 @@ class CallController {
     _activeSub = null;
     CallBridge.instance.notifyEnded();
     _ended.add(null);
+    unawaited(
+      session.closed.whenComplete(
+        () => CallKitBridge.instance.setAppCallActive(_active != null),
+      ),
+    );
   }
 
   void dispose() {
+    _ringTimer?.cancel();
     _activeSub?.cancel();
     _pushSub?.cancel();
+    _decisions.close();
     _incoming.close();
     _ended.close();
     _canceled.close();
+    _answered.close();
   }
 }
