@@ -36,7 +36,11 @@ class PendingUndo {
     required this.onCommit,
     required this.onUndo,
   }) {
-    _lifecycle = AppLifecycleListener(onPause: commit, onDetach: commit);
+    _lifecycle = AppLifecycleListener(
+      onHide: commit,
+      onPause: commit,
+      onDetach: commit,
+    );
   }
 
   static PendingUndo? _current;
@@ -86,6 +90,13 @@ class PendingUndo {
     onContinue: commit,
     onSwiped: () => commit(animate: false),
   );
+
+  static Future<void> commitCurrent() async {
+    final pending = _current;
+    if (pending == null || !pending._settle()) return;
+    await Future.sync(pending.onCommit);
+    unawaited(pending._dismiss(animate: false));
+  }
 
   void commit({bool animate = true}) {
     if (!_settle()) return;

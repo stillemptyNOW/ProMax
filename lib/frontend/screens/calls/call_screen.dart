@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' show cos, pi;
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart'
@@ -15,6 +16,8 @@ import '../../../core/calls/active_call.dart';
 import '../../../core/calls/call_controller.dart';
 import '../../../core/calls/call_info.dart';
 import '../../../core/calls/call_session.dart';
+import '../../../core/calls/call_tones.dart';
+import '../../../core/calls/camera_devices.dart';
 import '../../../core/config/app_colors.dart';
 import '../../../core/config/call_no_mute.dart';
 import '../../../core/config/call_lighting.dart';
@@ -61,6 +64,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   CallSession? _session;
   StreamSubscription<CallSessionState>? _stateSub;
   StreamSubscription<void>? _canceledSub;
+  StreamSubscription<IncomingDecision>? _decisionSub;
   StreamSubscription<void>? _infoSub;
   StreamSubscription<void>? _proMaxSub;
   StreamSubscription<CallChatMessage>? _chatSub;
@@ -168,12 +172,32 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       _canceledSub = CallController.instance.incomingCanceled.listen((_) {
         if (mounted && _incomingPending) _close();
       });
+      _decisionSub = CallController.instance.incomingDecisions.listen((d) {
+        if (!mounted || !_incomingPending) return;
+        if (d.call.conversationId != incoming.conversationId) return;
+        unawaited(d.accept ? _accept() : _decline());
+      });
     }
     if (widget.autoAccept && incoming != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _incomingPending) _accept();
       });
+    } else if (_incomingPending) {
+      unawaited(CallTones.instance.play(CallTone.ringtone));
     }
+    if (_desktop) unawaited(_countCameras());
+  }
+
+  bool get _desktop =>
+      defaultTargetPlatform == TargetPlatform.windows ||
+      defaultTargetPlatform == TargetPlatform.linux ||
+      defaultTargetPlatform == TargetPlatform.macOS;
+
+  int _cameraCount = 0;
+
+  Future<void> _countCameras() async {
+    final cameras = await CameraDevices.cameras();
+    if (mounted) setState(() => _cameraCount = cameras.length);
   }
 
   Future<void> _resolvePeerInfo(int id) async {
@@ -306,7 +330,11 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     final session = _session;
     if (session == null) return;
     setState(() => _chatOpen = true);
-    await showProMaxHub(context, session: session, scheme: _darkScheme(context));
+    await showProMaxHub(
+      context,
+      session: session,
+      scheme: _darkScheme(context),
+    );
     if (mounted) setState(() => _chatOpen = false);
   }
 
@@ -340,12 +368,19 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   void _onState(CallSessionState state) {
     if (!mounted) return;
     setState(() => _state = state);
+    if (state == CallSessionState.ringing &&
+        _session?.role == CallRole.caller) {
+      unawaited(CallTones.instance.play(CallTone.ringback));
+    } else {
+      unawaited(CallTones.instance.stop());
+    }
     if (state == CallSessionState.ended) _close();
   }
 
   Future<void> _accept() async {
     final incoming = widget.incoming;
     if (incoming == null) return;
+    unawaited(CallTones.instance.stop());
     setState(() {
       _incomingPending = false;
       _state = CallSessionState.connecting;
@@ -360,6 +395,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _decline() async {
+    unawaited(CallTones.instance.stop());
     final incoming = widget.incoming;
     if (incoming != null) {
       await CallController.instance.rejectIncoming(incoming);
@@ -637,8 +673,10 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     }
     ActiveCall.instance.leaveScreen();
     unawaited(ScreenWake.instance.release(this));
+    unawaited(CallTones.instance.stop());
     _stateSub?.cancel();
     _canceledSub?.cancel();
+    _decisionSub?.cancel();
     _infoSub?.cancel();
     _proMaxSub?.cancel();
     _chatSub?.cancel();
@@ -1598,7 +1636,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (video)
+                if (video && (!_desktop || _cameraCount > 1))
                   action(
                     Symbols.cameraswitch,
                     'Камера',
@@ -1631,17 +1669,18 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: _CallButton(
-                  icon: _isSpeaker ? Symbols.volume_up : Symbols.volume_down,
-                  label: l10n.callSpeaker,
-                  background: _isSpeaker
-                      ? cs.primary
-                      : cs.surfaceContainerHighest,
-                  foreground: _isSpeaker ? cs.onPrimary : cs.onSurface,
-                  onTap: _toggleSpeaker,
+              if (!_desktop)
+                Expanded(
+                  child: _CallButton(
+                    icon: _isSpeaker ? Symbols.volume_up : Symbols.volume_down,
+                    label: l10n.callSpeaker,
+                    background: _isSpeaker
+                        ? cs.primary
+                        : cs.surfaceContainerHighest,
+                    foreground: _isSpeaker ? cs.onPrimary : cs.onSurface,
+                    onTap: _toggleSpeaker,
+                  ),
                 ),
-              ),
               Expanded(
                 child: _CallButton(
                   icon: Symbols.videocam,

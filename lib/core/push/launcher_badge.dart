@@ -95,7 +95,8 @@ class LauncherBadge {
   ];
 
   Future<void> init() async {
-    if (kIsWeb || !Platform.isAndroid || supported.value) return;
+    if (kIsWeb || supported.value) return;
+    if (!Platform.isAndroid && !Platform.isWindows) return;
     try {
       supported.value =
           await _method.invokeMethod<bool>('isSupported') ?? false;

@@ -5,23 +5,18 @@ import 'package:flutter/foundation.dart';
 import '../security/double_bottom.dart';
 import '../../backend/api.dart';
 import '../../backend/modules/account/account_models.dart';
-import '../../backend/modules/chat_preview.dart';
-import '../../backend/modules/chats.dart';
 import '../../backend/modules/messages.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
 import '../calls/call_kit.dart';
-import '../crypto/e2ee_service.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/token_storage.dart';
 import '../config/promax_settings.dart';
 import '../utils/logger.dart';
 import 'fkm_bridge.dart';
+import 'notification_policy.dart';
 import 'quiet_hours.dart';
 import 'push_service.dart';
-
-const _fallbackSender = 'MAX';
-const _hiddenPreview = 'Новое сообщение';
 
 // #***! FKM, своё фоновое уведомление для флейвора без гугла
 /// FKM — уведомления через собственное фоновое соединение, без FCM.
@@ -129,8 +124,9 @@ class FkmController {
     if (accountId == null) return null;
 
     final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
-    if (rawConfig != null &&
-        PrivacyConfig.fromJson(rawConfig).mCallPushNotification != 'ON') {
+    if (!NotificationPolicy.callsEnabled(
+      rawConfig == null ? null : PrivacyConfig.fromJson(rawConfig),
+    )) {
       return null;
     }
 
@@ -150,8 +146,8 @@ class FkmController {
   }
 
   Map<String, String> _withFallbackSender(Map<String, String> data) => {
-    'userName': _fallbackSender,
-    'title': _fallbackSender,
+    'userName': NotificationPolicy.fallbackSender,
+    'title': NotificationPolicy.fallbackSender,
     ...data,
   };
 
@@ -171,61 +167,45 @@ class FkmController {
 
   // #***! новое сообщение в уведомление
   Future<void> _onMessagePush(Packet packet) async {
-    final payload = packet.payload;
-    if (payload is! Map) return;
-
-    final chatId = payload['chatId'];
-    if (chatId is! int) return;
-    if (DoubleBottom.hides(chatId)) return;
-
-    final msg = payload['message'];
-    if (msg is! Map) return;
-
-    if (payload['postId'] != null || msg['postId'] != null) return;
-
-    final msgId = msg['id']?.toString();
-    switch (msg['status']?.toString()) {
-      case 'REMOVED':
+    final push = NotificationPolicy.parseMessage(
+      packet.payload,
+      isHiddenChat: DoubleBottom.hides,
+    );
+    if (push == null) return;
+    final chatId = push.chatId;
+    final msgId = push.messageId;
+    switch (push.kind) {
+      case MessagePushKind.removed:
         if (msgId != null) await _removeNotification(chatId, msgId);
         return;
-      case 'EDITED':
-        if (msgId != null) await _editNotification(chatId, msgId, msg);
+      case MessagePushKind.edited:
+        if (msgId != null) await _editNotification(chatId, msgId, push.message);
         return;
+      case MessagePushKind.created:
+        break;
     }
 
-    if (await _isOwnMessage(msg)) {
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (NotificationPolicy.isOwn(push, accountId)) {
       await PushService.clearChatNotification(chatId);
       return;
     }
     if (QuietHours.instance.isQuiet(chatId)) return;
 
-    final data = await _buildNotification(chatId, msg);
-    if (data != null) await FkmBridge.instance.showMessage(data);
-  }
-
-  Future<bool> _isOwnMessage(Map<dynamic, dynamic> msg) async {
-    final senderId = msg['sender'];
-    if (senderId is! int) return false;
-    return senderId == await TokenStorage.getActiveAccountId();
+    final facts = await NotificationFacts.load(chatId, senderId: push.senderId);
+    if (facts == null) return;
+    final notification = NotificationPolicy.compose(push, facts);
+    if (notification != null) {
+      await FkmBridge.instance.showMessage(notification.toFkmData());
+    }
   }
 
   // #***! сообщение удалили, гасим уведомление
   Future<void> _onDeletePush(Packet packet) async {
-    final payload = packet.payload;
-    if (payload is! Map) return;
-
-    final chat = payload['chat'];
-    final chatId = (chat is Map && chat['id'] is int)
-        ? chat['id'] as int
-        : payload['chatId'];
-    if (chatId is! int) return;
-
-    final ids = payload['messageIds'];
-    if (ids is! List) return;
-    for (final raw in ids) {
-      final id = raw?.toString();
-      if (id == null || id.isEmpty) continue;
-      await _removeNotification(chatId, id);
+    final deletion = NotificationPolicy.parseDeletion(packet.payload);
+    if (deletion == null) return;
+    for (final id in deletion.messageIds) {
+      await _removeNotification(deletion.chatId, id);
     }
   }
 
@@ -248,80 +228,17 @@ class FkmController {
     if (accountId == null) return;
 
     final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
-    if (rawConfig != null) {
-      final config = PrivacyConfig.fromJson(rawConfig);
-      if (config.chatsPushNotification != 'ON') return;
-      if (!config.pushDetails) return;
-    }
-
-    final text = _previewText(msg);
-    if (text == _hiddenPreview) return;
+    final text = NotificationPolicy.editedText(
+      msg,
+      rawConfig == null ? null : PrivacyConfig.fromJson(rawConfig),
+    );
+    if (text == null) return;
 
     await FkmBridge.instance.editMessage({
       'mc': '$chatId',
       'msgid': msgId,
       'msg': text,
     });
-  }
-
-  // #***! сборка уведомления, заголовок текст аватарка
-  Future<Map<String, String>?> _buildNotification(
-    int chatId,
-    Map<dynamic, dynamic> msg,
-  ) async {
-    final senderId = msg['sender'];
-    if (senderId is! int) return null;
-
-    final accountId = await TokenStorage.getActiveAccountId();
-    if (accountId == null || senderId == accountId) return null;
-
-    final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
-    var showPreview = true;
-    if (rawConfig != null) {
-      final config = PrivacyConfig.fromJson(rawConfig);
-      if (config.chatsPushNotification != 'ON') return null;
-      showPreview = config.pushDetails;
-    }
-
-    final rows = await AppDatabase.loadChat(accountId, chatId);
-    final chat = rows.isEmpty ? null : CachedChat.fromDbRow(rows.first);
-    if (chat != null && chat.isMuted) return null;
-
-    final senderName =
-        ContactCache.get(senderId) ?? chat?.title ?? _fallbackSender;
-    final chatTitle = (chat != null && chat.isGroupChat)
-        ? (chat.title ?? senderName)
-        : senderName;
-
-    await E2eeService.instance.ensureLoaded(accountId);
-    final text =
-        showPreview &&
-            !ProMaxSettings.streamerMode.value &&
-            !E2eeService.instance.isOn(accountId, chatId)
-        ? _previewText(msg)
-        : _hiddenPreview;
-    final time = msg['time'];
-    final msgId = msg['id'];
-
-    return {
-      'mc': '$chatId',
-      'c': '$accountId',
-      'suid': '$senderId',
-      'userName': senderName,
-      'title': chatTitle,
-      'msg': text,
-      'ctime': '${time is int ? time : DateTime.now().millisecondsSinceEpoch}',
-      if (msgId != null) 'msgid': '$msgId',
-    };
-  }
-
-  // #***! текст превью, для вложений их описание
-  String _previewText(Map<dynamic, dynamic> msg) {
-    final text = msg['text']?.toString().trim();
-    if (text != null && text.isNotEmpty) return text;
-    final attach = attachPreviewLabel(msg['attaches']);
-    if (attach != null && attach.isNotEmpty) return attach;
-    return _hiddenPreview;
   }
 
   void dispose() {

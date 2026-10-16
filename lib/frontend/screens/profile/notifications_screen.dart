@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/config/app_badge.dart';
+import '../../../core/desktop/desktop_window.dart';
 import '../../../core/push/fkm_controller.dart';
 import '../../../core/push/launcher_badge.dart';
 import '../../../core/push/quiet_hours.dart';
@@ -178,36 +179,25 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       children: [
                         ValueListenableBuilder<bool>(
                           valueListenable: FkmController.instance.enabled,
-                          builder: (context, fkmEnabled, _) =>
-                              SettingsToggleTile(
-                                icon: Symbols.notifications_active,
-                                label: Platform.isIOS
-                                    ? 'Живое соединение'
-                                    : l10n.notificationsFkmEnableLabel,
-                                subtitle: Platform.isIOS
-                                    ? 'ProMax держит связь с MAX в фоне и сразу показывает уведомления. Тратит больше батареи. Если смахнуть ProMax из списка приложений, уведомления остановятся до следующего запуска'
-                                    : l10n.notificationsFkmEnableSubtitle,
-                                value: fkmEnabled,
-                                enabled: !_fkmBusy,
-                                onChanged: _onFkmChanged,
-                              ),
+                          builder: (context, fkmEnabled, _) => SettingsToggleTile(
+                            icon: Symbols.notifications_active,
+                            label: Platform.isIOS
+                                ? 'Живое соединение'
+                                : l10n.notificationsFkmEnableLabel,
+                            subtitle: Platform.isIOS
+                                ? 'ProMax держит связь с MAX в фоне и сразу показывает уведомления. Тратит больше батареи. Если смахнуть ProMax из списка приложений, уведомления остановятся до следующего запуска'
+                                : l10n.notificationsFkmEnableSubtitle,
+                            value: fkmEnabled,
+                            enabled: !_fkmBusy,
+                            onChanged: _onFkmChanged,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
                   ],
-                  if (!Platform.isAndroid && !Platform.isIOS)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                      child: Text(
-                        l10n.notificationsDesktopNote,
-                        style: TextStyle(
-                          color: cs.onSurfaceVariant,
-                          fontSize: 13,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
+                  if (DesktopWindow.instance.supported)
+                    const _DesktopWindowSection(),
                   SectionHeader(
                     l10n.notificationsMainSectionTitle,
                     padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -299,26 +289,90 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  SectionHeader(
-                    l10n.notificationsHapticsSectionTitle,
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    fontSize: 14,
-                  ),
-                  SettingsCard(
-                    children: [
-                      SettingsToggleTile(
-                        icon: Symbols.vibration,
-                        label: l10n.notificationsHapticsLabel,
-                        subtitle: l10n.notificationsHapticsSubtitle,
-                        value: _hapticsEnabled,
-                        onChanged: _setHaptics,
-                      ),
-                    ],
-                  ),
+                  if (Platform.isAndroid || Platform.isIOS) ...[
+                    const SizedBox(height: 20),
+                    SectionHeader(
+                      l10n.notificationsHapticsSectionTitle,
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      fontSize: 14,
+                    ),
+                    SettingsCard(
+                      children: [
+                        SettingsToggleTile(
+                          icon: Symbols.vibration,
+                          label: l10n.notificationsHapticsLabel,
+                          subtitle: l10n.notificationsHapticsSubtitle,
+                          value: _hapticsEnabled,
+                          onChanged: _setHaptics,
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
       ),
+    );
+  }
+}
+
+class _DesktopWindowSection extends StatefulWidget {
+  const _DesktopWindowSection();
+
+  @override
+  State<_DesktopWindowSection> createState() => _DesktopWindowSectionState();
+}
+
+class _DesktopWindowSectionState extends State<_DesktopWindowSection> {
+  bool _autostartBusy = false;
+
+  Future<void> _setAutostart(bool value) async {
+    if (_autostartBusy) return;
+    final failed = AppLocalizations.of(
+      context,
+    )!.notificationsDesktopAutostartFailed;
+    setState(() => _autostartBusy = true);
+    final applied = await DesktopWindow.instance.setAutostart(value);
+    if (!mounted) return;
+    setState(() => _autostartBusy = false);
+    if (!applied) showCustomNotification(context, failed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final window = DesktopWindow.instance;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(
+          l10n.notificationsDesktopSectionTitle,
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          fontSize: 14,
+        ),
+        ListenableBuilder(
+          listenable: Listenable.merge([window.closeToTray, window.autostart]),
+          builder: (context, _) => SettingsCard(
+            children: [
+              SettingsToggleTile(
+                icon: Symbols.minimize,
+                label: l10n.notificationsDesktopTrayLabel,
+                subtitle: l10n.notificationsDesktopTraySubtitle,
+                value: window.closeToTray.value,
+                onChanged: window.setCloseToTray,
+              ),
+              SettingsToggleTile(
+                icon: Symbols.rocket_launch,
+                label: l10n.notificationsDesktopAutostartLabel,
+                subtitle: l10n.notificationsDesktopAutostartSubtitle,
+                value: window.autostart.value,
+                enabled: !_autostartBusy,
+                onChanged: _setAutostart,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 }

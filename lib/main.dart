@@ -87,6 +87,8 @@ import 'core/media/media_kit_video_platform.dart';
 import 'core/links/deep_link_service.dart';
 import 'frontend/screens/calls/call_screen.dart';
 import 'frontend/screens/lock/app_lock_layer.dart';
+import 'core/desktop/desktop_notifier.dart';
+import 'core/desktop/desktop_window.dart';
 import 'core/push/fkm_controller.dart';
 import 'core/push/launcher_badge.dart';
 import 'core/push/notification_bridge.dart';
@@ -98,6 +100,7 @@ import 'core/transport/traffic_monitor.dart';
 import 'core/transport/vpn_bypass.dart';
 import 'core/storage/token_storage.dart';
 import 'core/utils/haptics.dart';
+import 'core/utils/app_exit_hooks.dart';
 import 'core/utils/debug_session_log.dart';
 import 'frontend/commands/commands.dart';
 import 'core/protocol/packet.dart';
@@ -111,6 +114,7 @@ import 'frontend/widgets/liquid_glass.dart';
 import 'frontend/widgets/mesh_gradient_background.dart';
 import 'frontend/widgets/small_spinner.dart';
 import 'frontend/widgets/theme_reveal.dart';
+import 'frontend/widgets/undo_notification.dart';
 import 'frontend/widgets/floating_call_badge.dart';
 import 'frontend/widgets/floating_video_note.dart';
 import 'frontend/widgets/keyboard_dismissal.dart';
@@ -247,6 +251,7 @@ void main(List<String> args) async {
   );
   chats.attachGlobalPushHandlers(api);
   unawaited(FkmController.instance.init(api));
+  if (DesktopWindow.instance.isDesktop) Api.keepAliveInBackground = true;
   FoldersModule.attachGlobalPushHandlers(api);
   TranscriptionPushHandler.attach(api);
   commentsModule.attachPushHandlers(api);
@@ -551,6 +556,11 @@ class ProMaxAppState extends State<ProMaxApp>
     CallKitBridge.instance.init();
     NotificationBridge.instance.init();
     unawaited(LauncherBadge.instance.init());
+    AppExitHooks.add(PendingUndo.commitCurrent);
+    AppExitHooks.add(CallController.instance.endActive);
+    AppExitHooks.add(DebugSessionLog.instance.flushNow);
+    unawaited(DesktopWindow.instance.init(onQuitRequested: AppExitHooks.run));
+    unawaited(DesktopNotifier.instance.init(api));
     ShareIntentBridge.instance.init();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       CallBridge.instance.checkInitialCall();
@@ -761,6 +771,17 @@ class ProMaxAppState extends State<ProMaxApp>
   Future<bool> didPopRoute() async => AppLock.instance.locked.value;
 
   @override
+  Future<ui.AppExitResponse> didRequestAppExit() async {
+    final window = DesktopWindow.instance;
+    if (window.supported && window.closeToTray.value) {
+      await window.hide();
+      return ui.AppExitResponse.cancel;
+    }
+    await AppExitHooks.run();
+    return ui.AppExitResponse.exit;
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     AppLock.instance.onLifecycle(state);
     final background =
@@ -779,6 +800,7 @@ class ProMaxAppState extends State<ProMaxApp>
     }
     if (state != AppLifecycleState.resumed) return;
     api.wakeUp();
+    unawaited(DesktopNotifier.instance.onWindowAttended());
     _presentIncomingCall();
     SelfCheckService.instance.resume();
     if (!CallController.instance.isBusy) {

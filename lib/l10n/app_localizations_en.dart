@@ -3346,8 +3346,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkQrUnavailable => 'Couldn\'t get the link';
 
   @override
-  String get notificationsDesktopNote =>
-      'Notifications aren\'t shown on the computer yet. The settings below are your account\'s push settings for phones.';
+  String get notificationsDesktopSectionTitle => 'Window';
+
+  @override
+  String get notificationsDesktopTrayLabel => 'Minimize to tray on close';
+
+  @override
+  String get notificationsDesktopTraySubtitle =>
+      'The close button hides ProMax in the tray: the connection stays up and notifications keep coming. Quit from the tray icon menu';
+
+  @override
+  String get notificationsDesktopAutostartLabel => 'Start with Windows';
+
+  @override
+  String get notificationsDesktopAutostartSubtitle =>
+      'ProMax starts minimized to the tray and shows notifications right away';
+
+  @override
+  String get notificationsDesktopAutostartFailed =>
+      'Couldn\'t change autostart';
 
   @override
   String get fileNoAppToOpen =>
