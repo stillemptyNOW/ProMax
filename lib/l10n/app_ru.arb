@@ -2186,5 +2186,10 @@
   "msgActionsRetrySend": "Повторить отправку",
   "msgRetrySendUnavailable": "Это сообщение уже нельзя отправить повторно",
   "callsTabDeleteFailed": "Не удалось удалить звонок из истории",
-  "chatCommentsLoadFailed": "Не удалось загрузить комментарии: {error}"
+  "chatCommentsLoadFailed": "Не удалось загрузить комментарии: {error}",
+  "folderActionReorder": "Изменить порядок",
+  "folderReorderTitle": "Порядок папок",
+  "folderReorderHint": "Перетащите папку за ручку справа",
+  "folderReorderSave": "Сохранить",
+  "folderReorderFailed": "Не удалось изменить порядок: {error}"
 }

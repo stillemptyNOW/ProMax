@@ -6839,4 +6839,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String chatCommentsLoadFailed(String error) {
     return 'Couldn\'t load comments: $error';
   }
+
+  @override
+  String get folderActionReorder => 'Reorder folders';
+
+  @override
+  String get folderReorderTitle => 'Folder order';
+
+  @override
+  String get folderReorderHint => 'Drag a folder by the handle on the right';
+
+  @override
+  String get folderReorderSave => 'Save';
+
+  @override
+  String folderReorderFailed(String error) {
+    return 'Couldn\'t reorder folders: $error';
+  }
 }

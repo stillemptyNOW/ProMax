@@ -6882,4 +6882,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String chatCommentsLoadFailed(String error) {
     return 'Не удалось загрузить комментарии: $error';
   }
+
+  @override
+  String get folderActionReorder => 'Изменить порядок';
+
+  @override
+  String get folderReorderTitle => 'Порядок папок';
+
+  @override
+  String get folderReorderHint => 'Перетащите папку за ручку справа';
+
+  @override
+  String get folderReorderSave => 'Сохранить';
+
+  @override
+  String folderReorderFailed(String error) {
+    return 'Не удалось изменить порядок: $error';
+  }
 }

@@ -2595,5 +2595,11 @@
   "msgRetrySendUnavailable": "This message can no longer be resent",
   "callsTabDeleteFailed": "Couldn't delete the call from history",
   "chatCommentsLoadFailed": "Couldn't load comments: {error}",
-  "@chatCommentsLoadFailed": {"placeholders": {"error": {"type": "String"}}}
+  "@chatCommentsLoadFailed": {"placeholders": {"error": {"type": "String"}}},
+  "folderActionReorder": "Reorder folders",
+  "folderReorderTitle": "Folder order",
+  "folderReorderHint": "Drag a folder by the handle on the right",
+  "folderReorderSave": "Save",
+  "folderReorderFailed": "Couldn't reorder folders: {error}",
+  "@folderReorderFailed": {"placeholders": {"error": {"type": "String"}}}
 }

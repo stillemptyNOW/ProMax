@@ -12115,6 +12115,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t load comments: {error}'**
   String chatCommentsLoadFailed(String error);
+
+  /// No description provided for @folderActionReorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder folders'**
+  String get folderActionReorder;
+
+  /// No description provided for @folderReorderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder order'**
+  String get folderReorderTitle;
+
+  /// No description provided for @folderReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a folder by the handle on the right'**
+  String get folderReorderHint;
+
+  /// No description provided for @folderReorderSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get folderReorderSave;
+
+  /// No description provided for @folderReorderFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reorder folders: {error}'**
+  String folderReorderFailed(String error);
 }
 
 class _AppLocalizationsDelegate
