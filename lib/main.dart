@@ -74,6 +74,7 @@ import 'backend/modules/messages.dart';
 import 'backend/modules/outbox.dart';
 import 'backend/modules/pending_deletions.dart';
 import 'backend/modules/polls.dart';
+import 'backend/modules/read_mark_queue.dart';
 import 'backend/modules/stickers.dart';
 import 'backend/modules/animoji.dart';
 import 'backend/modules/stories.dart';
@@ -259,6 +260,7 @@ void main(List<String> args) async {
   FoldersModule.attachGlobalPushHandlers(api);
   TranscriptionPushHandler.attach(api);
   BotCallbackAnswers.instance.attach(api);
+  ReadMarkQueue.instance.attach(api);
   commentsModule.attachPushHandlers(api);
   storiesModule.attach();
   unawaited(storiesModule.loadCache());

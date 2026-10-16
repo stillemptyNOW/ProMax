@@ -31,6 +31,7 @@ import 'chat_preview.dart';
 import 'folders.dart';
 import 'messages.dart' show ContactCache, CachedMessage, MessagesModule;
 import 'pending_deletions.dart';
+import 'read_mark_queue.dart';
 import 'server_outcome.dart';
 
 // #***! участники картой id -> время прочтения, в базе строкой
@@ -577,14 +578,15 @@ class ChatsModule {
 
     final msgIdNum = int.tryParse(messageId);
     if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
-      try {
-        await api.sendRequest(Opcode.chatMark, {
-          'type': 'READ_MESSAGE',
-          'chatId': chatId,
-          'messageId': msgIdNum,
-          'mark': mark,
-        }, silent: true);
-      } catch (_) {}
+      await ReadMarkQueue.instance.submit(
+        api,
+        ReadMark(
+          accountId: accountId,
+          chatId: chatId,
+          messageId: msgIdNum,
+          mark: mark,
+        ),
+      );
     }
 
     final fresh = await AppDatabase.loadChat(accountId, chatId);
@@ -655,14 +657,15 @@ class ChatsModule {
   }) async {
     final msgIdNum = int.tryParse(messageId);
     if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
-      try {
-        await api.sendRequest(Opcode.chatMark, {
-          'type': 'READ_MESSAGE',
-          'chatId': chatId,
-          'messageId': msgIdNum,
-          'mark': mark,
-        }, silent: true);
-      } catch (_) {}
+      await ReadMarkQueue.instance.submit(
+        api,
+        ReadMark(
+          accountId: accountId,
+          chatId: chatId,
+          messageId: msgIdNum,
+          mark: mark,
+        ),
+      );
     }
 
     final rows = await AppDatabase.loadChat(accountId, chatId);
