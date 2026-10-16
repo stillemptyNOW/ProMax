@@ -27,6 +27,7 @@ class StoriesModule {
 
   // #***! две карты, превью для колец и сами истории
   final Map<int, StoryPreview> _previews = {};
+  final Map<int, ({int updateTime, int readCount})> _seenLocally = {};
   final Map<int, List<Story>> _peerStories = {};
 
   /// ownerId → storyId, на котором пользователь остановил просмотр.
@@ -288,8 +289,20 @@ class StoriesModule {
       _previews.remove(preview.owner.ownerId);
       _peerStories.remove(preview.owner.ownerId);
     } else {
-      _previews[preview.owner.ownerId] = preview;
+      _previews[preview.owner.ownerId] = _withLocalViews(preview);
     }
+  }
+
+  StoryPreview _withLocalViews(StoryPreview preview) {
+    final seen = _seenLocally[preview.owner.ownerId];
+    if (seen == null || seen.updateTime != preview.updateTime) {
+      _seenLocally.remove(preview.owner.ownerId);
+      return preview;
+    }
+    if (seen.readCount <= preview.readCount) return preview;
+    return preview.copyWith(
+      readCount: math.min(seen.readCount, preview.totalCount),
+    );
   }
 
   // #***! первая страница, список колец заменяем целиком
@@ -404,6 +417,16 @@ class StoriesModule {
       logger.w('StoriesModule.mark: $e');
       return false;
     }
+  }
+
+  void markSeenLocally(StoryOwner owner) {
+    _markReadLocally(owner.ownerId);
+    final preview = _previews[owner.ownerId];
+    if (preview == null) return;
+    _seenLocally[owner.ownerId] = (
+      updateTime: preview.updateTime,
+      readCount: preview.readCount,
+    );
   }
 
   void _markReadLocally(int ownerId) {

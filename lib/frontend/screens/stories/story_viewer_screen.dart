@@ -285,12 +285,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   }
 
   void _markViewed(Story story) {
-    if (story.id == 0 ||
-        _marked.contains(story.id) ||
-        ProMaxSettings.hideStoryViews.value) {
+    if (story.id == 0 || !_marked.add(story.id)) return;
+    if (ProMaxSettings.hideStoryViews.value) {
+      storiesModule.markSeenLocally(story.owner);
       return;
     }
-    _marked.add(story.id);
     storiesModule.mark(story.owner, story.id);
   }
 
