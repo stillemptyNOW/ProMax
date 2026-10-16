@@ -11,23 +11,27 @@ class MiniAppPrivacy {
     required this.isolated,
     required this.blockTrackers,
     required this.platform,
+    this.isWeb = false,
   });
 
   final bool isolated;
   final bool blockTrackers;
   final TargetPlatform platform;
+  final bool isWeb;
 
   bool get _isAppleWebKit =>
-      platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
+      !isWeb &&
+      (platform == TargetPlatform.iOS || platform == TargetPlatform.macOS);
 
   bool get incognito =>
-      isolated && (_isAppleWebKit || platform == TargetPlatform.windows);
+      isolated &&
+      (_isAppleWebKit || (!isWeb && platform == TargetPlatform.windows));
 
   bool get wipesVisitedOriginsOnClose =>
-      isolated && platform == TargetPlatform.android;
+      isolated && !isWeb && platform == TargetPlatform.android;
 
   TrackerBlockingMode get trackerBlocking {
-    if (!blockTrackers) return TrackerBlockingMode.none;
+    if (!blockTrackers || isWeb) return TrackerBlockingMode.none;
     if (_isAppleWebKit) return TrackerBlockingMode.contentBlockers;
     if (platform == TargetPlatform.android ||
         platform == TargetPlatform.windows) {
@@ -79,8 +83,16 @@ class MiniAppVisitedOrigins {
   Future<void> wipe() async {
     final origins = List<String>.of(_origins);
     _origins.clear();
-    final cookies = CookieManager.instance();
-    final storage = WebStorageManager.instance();
+    if (origins.isEmpty) return;
+    final CookieManager cookies;
+    final WebStorageManager storage;
+    try {
+      cookies = CookieManager.instance();
+      storage = WebStorageManager.instance();
+    } catch (e) {
+      logger.w('mini app data cannot be cleared here: $e');
+      return;
+    }
     for (final origin in origins) {
       final url = WebUri(origin);
       try {

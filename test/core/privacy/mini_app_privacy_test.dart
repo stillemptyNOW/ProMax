@@ -57,6 +57,18 @@ void main() {
     );
   });
 
+  test('в вебе плагин не трогает куки и не перехватывает запросы', () {
+    const web = MiniAppPrivacy(
+      isolated: true,
+      blockTrackers: true,
+      platform: TargetPlatform.android,
+      isWeb: true,
+    );
+    expect(web.incognito, isFalse);
+    expect(web.wipesVisitedOriginsOnClose, isFalse);
+    expect(web.trackerBlocking, TrackerBlockingMode.none);
+  });
+
   test('посещённые источники запоминаются без Цифрового ID', () {
     final origins = MiniAppVisitedOrigins()
       ..note(Uri.parse('https://game.example.org/play?x=1'))

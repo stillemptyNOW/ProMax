@@ -143,6 +143,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
       isolated: PrivacySettings.isolateMiniApps.current.value && !persistent,
       blockTrackers: PrivacySettings.blockTrackers.current.value,
       platform: defaultTargetPlatform,
+      isWeb: kIsWeb,
     );
   }
 
