@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../../core/protocol/packet.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/token_storage.dart';
@@ -15,10 +17,74 @@ class OutboxService {
 
   static final OutboxService instance = OutboxService._();
 
+  static const List<Duration> retryDelays = [
+    Duration(seconds: 5),
+    Duration(seconds: 15),
+    Duration(seconds: 30),
+    Duration(seconds: 60),
+    Duration(seconds: 120),
+  ];
+
   Api? _api;
   MessagesModule? _messages;
   bool _flushing = false;
   bool _flushRequested = false;
+  Future<void> _recovery = Future.value();
+  Timer? _retryTimer;
+  int _retryRound = 0;
+
+  @visibleForTesting
+  bool get retryScheduled => _retryTimer?.isActive ?? false;
+
+  Future<void> recoverInterruptedSends() {
+    return _recovery = _recover();
+  }
+
+  Future<void> _recover() async {
+    try {
+      final rows = await AppDatabase.loadInterruptedSends();
+      for (final row in rows) {
+        final message = CachedMessage.fromDbRow(row);
+        if (!message.id.startsWith('temp_')) continue;
+        final textOnly =
+            (message.attachments?.isEmpty ?? true) &&
+            (message.text?.isNotEmpty ?? false);
+        await AppDatabase.settleInterruptedSend(
+          message.accountId,
+          message.id,
+          textOnly ? 'pending' : 'error',
+        );
+      }
+    } catch (e) {
+      logger.w('Outbox: незавершённые отправки не разобраны: $e');
+    }
+  }
+
+  void scheduleRetry() {
+    if (_retryTimer?.isActive ?? false) return;
+    final delay =
+        retryDelays[_retryRound.clamp(0, retryDelays.length - 1).toInt()];
+    _retryRound++;
+    _retryTimer = Timer(delay, () => unawaited(flush()));
+  }
+
+  void _settleRetries() {
+    _retryRound = 0;
+    _retryTimer?.cancel();
+    _retryTimer = null;
+  }
+
+  Future<bool> retry(int accountId, int chatId, String messageId) async {
+    final requeued = await AppDatabase.requeueUnsentMessage(
+      accountId,
+      chatId,
+      messageId,
+    );
+    if (!requeued) return false;
+    _retryRound = 0;
+    unawaited(flush());
+    return true;
+  }
 
   // #***! подписка на сессию, онлайн значит пробуем разослать
   void init(Api api, MessagesModule messages) {
@@ -65,6 +131,8 @@ class OutboxService {
 
   Future<void> _flushSession(Api api, MessagesModule messages) async {
     final epoch = api.sessionEpoch;
+    await _recovery;
+    var deferred = false;
     try {
       final accountId = await TokenStorage.getActiveAccountId();
       if (accountId == null || !_isCurrentSession(api, epoch)) return;
@@ -77,7 +145,7 @@ class OutboxService {
         final text = pending.text;
         if (text == null || text.isEmpty) continue;
 
-        final payload = pending.payload;
+        final payload = await _withClientId(pending);
         final replyToMessageId = _replyIdFromPayload(payload);
         final replySourceChatId = _replySourceChatIdFromPayload(payload);
         final elements = _elementsFromPayload(payload);
@@ -90,6 +158,7 @@ class OutboxService {
             replyToMessageId: replyToMessageId,
             replySourceChatId: replySourceChatId,
             elements: elements,
+            cid: MessagesModule.clientIdOf(payload),
           );
           if (PendingDeletions.instance.claimSent(
             accountId: accountId,
@@ -142,6 +211,7 @@ class OutboxService {
           if (!await _ownsSession(api, epoch, accountId)) return;
           if (!isPermanentSendFailure(e)) {
             logger.w('Outbox: отправка ${pending.id} не удалась: $e');
+            deferred = true;
             continue;
           }
           logger.w('Outbox: ${pending.id} отклонено сервером: $e');
@@ -162,7 +232,26 @@ class OutboxService {
       }
     } catch (e) {
       logger.e('Outbox flush: $e');
+      deferred = true;
     }
+    if (deferred) {
+      scheduleRetry();
+    } else if (_isCurrentSession(api, epoch)) {
+      _settleRetries();
+    }
+  }
+
+  Future<Map<String, dynamic>> _withClientId(CachedMessage pending) async {
+    final payload = {...?pending.payload};
+    if (MessagesModule.clientIdOf(payload) != null) return payload;
+    payload['cid'] = MessagesModule.newClientId();
+    await AppDatabase.updateMessagePayload(
+      pending.accountId,
+      pending.chatId,
+      pending.id,
+      payload,
+    );
+    return payload;
   }
 
   // #***! детали и форматирование в сыром payload, вытаскиваем при переотправке

@@ -12091,6 +12091,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The avatar was not set'**
   String get newChatAvatarNotSet;
+
+  /// No description provided for @msgActionsRetrySend.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry sending'**
+  String get msgActionsRetrySend;
+
+  /// No description provided for @msgRetrySendUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This message can no longer be resent'**
+  String get msgRetrySendUnavailable;
 }
 
 class _AppLocalizationsDelegate

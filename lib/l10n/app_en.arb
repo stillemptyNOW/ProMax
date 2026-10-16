@@ -2590,5 +2590,7 @@
   "@chatActivitySendingFileOne": {"placeholders": {"name": {"type": "String"}}},
   "chatActivitySendingFileMany": "{name} and {count} more are sending files...",
   "@chatActivitySendingFileMany": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
-  "newChatAvatarNotSet": "The avatar was not set"
+  "newChatAvatarNotSet": "The avatar was not set",
+  "msgActionsRetrySend": "Retry sending",
+  "msgRetrySendUnavailable": "This message can no longer be resent"
 }

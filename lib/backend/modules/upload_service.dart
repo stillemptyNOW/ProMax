@@ -124,6 +124,18 @@ class UploadJob {
   bool get scheduled => scheduledTime != null;
   int get slots => _slots;
 
+  UploadJob restarted() => UploadJob._(
+    id: id,
+    accountId: accountId,
+    chatId: chatId,
+    kind: kind,
+    slots: _slots,
+    filename: filename,
+    totalBytes: totalBytes,
+    placeholder: placeholder,
+    scheduledTime: scheduledTime,
+  );
+
   // #***! прогресс по слоту, дальше считаем общий
   void report(int slot, int sent, int total) {
     if (slot < 0 || slot >= _slots) return;
@@ -202,6 +214,7 @@ class UploadService {
   final Map<String, UploadJob> _jobs = {};
   final Map<String, CachedMessage> _completed = {};
   final Set<String> _failed = {};
+  final Map<String, Future<void> Function()> _relaunch = {};
 
   int _tempIdCounter = 0;
 
@@ -236,6 +249,16 @@ class UploadService {
   CachedMessage? completedFor(String tempId) => _completed[tempId];
 
   bool didFail(String tempId) => _failed.contains(tempId);
+
+  bool canRetry(String tempId) => _relaunch.containsKey(tempId);
+
+  bool retry(String tempId) {
+    final relaunch = _relaunch.remove(tempId);
+    if (relaunch == null) return false;
+    _failed.remove(tempId);
+    unawaited(relaunch());
+    return true;
+  }
 
   // #***! альбом фото, собираем токены потом одно сообщение
   Future<void> sendPhotos({
@@ -576,6 +599,7 @@ class UploadService {
       if (!job.scheduled) {
         _replaceInSessionCache(job.accountId, job.chatId, job.id, null);
         _remember(job.id, null);
+        _relaunch[job.id] = () => _run(job.restarted(), upload);
         await _syncChatPreview(job.placeholder, 'error');
       }
       _events.add(
@@ -668,6 +692,7 @@ class UploadService {
     if (_completed.length + _failed.length > _historyLimit) {
       _completed.clear();
       _failed.clear();
+      _relaunch.clear();
     }
     if (real == null) {
       _failed.add(tempId);

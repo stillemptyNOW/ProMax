@@ -790,6 +790,14 @@ class MessagesModule {
     return _lastCid;
   }
 
+  static int newClientId() => -_nextCid();
+
+  static int? clientIdOf(Map<String, dynamic>? payload) {
+    final cid = payload?['cid'];
+    if (cid is int) return cid;
+    return cid == null ? null : int.tryParse(cid.toString());
+  }
+
   // #***! история с сервера
   Future<List<CachedMessage>> fetchHistory(
     int accountId,
@@ -1016,10 +1024,11 @@ class MessagesModule {
     int? replySourceChatId,
     List<Map<String, dynamic>> elements = const [],
     void Function()? beforeSend,
+    int? cid,
   }) async {
     final message = <String, dynamic>{
       'text': text,
-      'cid': -_nextCid(),
+      'cid': cid ?? newClientId(),
       'elements': elements,
       'attaches': [],
     };

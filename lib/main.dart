@@ -253,6 +253,7 @@ void main(List<String> args) async {
   unawaited(
     PendingDeletions.instance.start(ApiDeletionGateway(api, messagesModule)),
   );
+  unawaited(OutboxService.instance.recoverInterruptedSends());
   unawaited(FkmController.instance.init(api));
   FoldersModule.attachGlobalPushHandlers(api);
   TranscriptionPushHandler.attach(api);

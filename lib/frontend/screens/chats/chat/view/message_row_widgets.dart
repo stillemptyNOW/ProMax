@@ -349,6 +349,7 @@ class SelectableMessageRow extends StatefulWidget {
   final void Function(Offset globalPosition) onStartTextSelection;
   final void Function(Offset? globalPosition) onDragTextSelection;
   final VoidCallback onDelete;
+  final VoidCallback? onRetrySend;
   final bool allowDelete;
   final VoidCallback? onEdit;
   final VoidCallback? onReply;
@@ -384,6 +385,7 @@ class SelectableMessageRow extends StatefulWidget {
     required this.onStartTextSelection,
     required this.onDragTextSelection,
     required this.onDelete,
+    this.onRetrySend,
     this.allowDelete = true,
     this.onEdit,
     this.onReply,
@@ -466,6 +468,7 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       onReaderTap: widget.onReaderTap,
       loadReportReasons: widget.loadReportReasons,
       onReport: widget.onReport,
+      onRetrySend: widget.onRetrySend,
       onDelete: widget.onDelete,
       allowDelete: widget.allowDelete,
       onEdit: widget.onEdit,
@@ -585,6 +588,7 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       onReaderTap: widget.onReaderTap,
       loadReportReasons: widget.loadReportReasons,
       onReport: widget.onReport,
+      onRetrySend: widget.onRetrySend,
       onDelete: widget.onDelete,
       allowDelete: widget.allowDelete,
       onEdit: widget.onEdit,

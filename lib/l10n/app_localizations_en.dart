@@ -6825,4 +6825,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newChatAvatarNotSet => 'The avatar was not set';
+
+  @override
+  String get msgActionsRetrySend => 'Retry sending';
+
+  @override
+  String get msgRetrySendUnavailable => 'This message can no longer be resent';
 }

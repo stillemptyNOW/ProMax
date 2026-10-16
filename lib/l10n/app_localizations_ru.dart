@@ -6867,4 +6867,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get newChatAvatarNotSet => 'Аватар не установлен';
+
+  @override
+  String get msgActionsRetrySend => 'Повторить отправку';
+
+  @override
+  String get msgRetrySendUnavailable =>
+      'Это сообщение уже нельзя отправить повторно';
 }

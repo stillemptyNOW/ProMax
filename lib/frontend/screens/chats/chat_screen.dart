@@ -13,6 +13,7 @@ import 'package:promax/backend/modules/chat_preview.dart';
 import 'package:promax/backend/modules/chats.dart';
 import 'package:promax/backend/modules/comments.dart';
 import 'package:promax/backend/modules/upload_service.dart';
+import '../../../backend/modules/outbox.dart';
 import 'package:promax/backend/modules/webapp.dart';
 import 'package:promax/frontend/screens/webapp/open_mini_app.dart';
 import 'package:promax/core/media/clipboard/clipboard_media.dart';
@@ -3147,6 +3148,49 @@ class _ChatScreenState extends State<ChatScreen>
     Haptics.send();
   }
 
+  bool _canRetrySend(CachedMessage message) {
+    if (message.senderId != _myId || !message.id.startsWith('temp_')) {
+      return false;
+    }
+    final status = message.status;
+    if (status != 'error' && status != 'pending') return false;
+    if (UploadService.instance.canRetry(message.id)) return true;
+    return !_commentsMode &&
+        (message.attachments?.isEmpty ?? true) &&
+        (message.text?.isNotEmpty ?? false);
+  }
+
+  Future<void> _retrySend(CachedMessage message) async {
+    final l10n = AppLocalizations.of(context)!;
+    final idx = _chatController.indexOfId(message.id);
+    if (UploadService.instance.retry(message.id)) {
+      if (idx != -1) {
+        _chatController.setMessageAt(idx, message.copyWith(status: 'sending'));
+        _bumpMessages();
+      }
+      return;
+    }
+    final requeued = await OutboxService.instance.retry(
+      _myId,
+      widget.chatId,
+      message.id,
+    );
+    if (!mounted) return;
+    if (!requeued) {
+      showCustomNotification(context, l10n.msgRetrySendUnavailable);
+      return;
+    }
+    final current = _chatController.indexOfId(message.id);
+    if (current != -1) {
+      _chatController.setMessageAt(
+        current,
+        _messages[current].copyWith(status: 'pending'),
+      );
+      _bumpMessages();
+    }
+    unawaited(chats.reconcileLastMessage(_myId, widget.chatId));
+  }
+
   Future<void> _confirmDeleteMessage(String messageId) async {
     final message = _chatController.byId(messageId);
     if (message == null) return;
@@ -5305,6 +5349,9 @@ class _ChatScreenState extends State<ChatScreen>
                           onDragTextSelection: (pos) =>
                               _textSelectionDrag.value = pos,
                           onDelete: () => _confirmDeleteMessage(message.id),
+                          onRetrySend: _canRetrySend(message)
+                              ? () => _retrySend(message)
+                              : null,
                           allowDelete:
                               !message.isControl &&
                               (isMe || !_isChannel || _canDeleteOthers),

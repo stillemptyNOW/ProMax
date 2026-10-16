@@ -11,6 +11,7 @@ import '../../core/cache/info_cache.dart';
 import '../../core/cache/message_session_cache.dart';
 import 'shared_content.dart';
 import '../../core/crypto/e2ee_service.dart';
+import '../../core/crypto/message_decryption_cache.dart';
 import '../../core/media/deleted_media_keeper.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/local_read_state.dart';
@@ -28,7 +29,7 @@ import '../api.dart';
 import 'chat_parsing.dart';
 import 'chat_preview.dart';
 import 'folders.dart';
-import 'messages.dart' show ContactCache, CachedMessage;
+import 'messages.dart' show ContactCache, CachedMessage, MessagesModule;
 import 'pending_deletions.dart';
 import 'server_outcome.dart';
 
@@ -1414,7 +1415,10 @@ class ChatsModule {
       _messageEventsController.add(
         MessageEditedEvent(chatId, CachedMessage.fromDbRow(newRow)),
       );
-    } else if (msgIdStr != null && existing == null) {
+    } else if (msgIdStr != null &&
+        existing == null &&
+        !(senderId == accountId &&
+            await _adoptSentEcho(accountId, chatId, msg))) {
       final cached = await E2eeService.instance.inspect(
         CachedMessage.fromPushPayload(
           accountId,
@@ -1475,6 +1479,28 @@ class ChatsModule {
     }
 
     await _commitChatContent([(rows.first, newRow)]);
+  }
+
+  Future<bool> _adoptSentEcho(int accountId, int chatId, Map msg) async {
+    final cid = MessagesModule.clientIdOf({'cid': msg['cid']});
+    if (cid == null) return false;
+    final unsent = await AppDatabase.loadUnsentOwnMessages(accountId, chatId);
+    for (final row in unsent) {
+      final temp = CachedMessage.fromDbRow(row);
+      if (MessagesModule.clientIdOf(temp.payload) != cid) continue;
+      final sent = CachedMessage.fromPushPayload(
+        accountId,
+        chatId,
+        msg,
+      ).copyWith(status: 'sent', sealedText: temp.sealedText, e2ee: temp.e2ee);
+      await AppDatabase.saveMessages([sent.toDbRow()]);
+      await AppDatabase.deleteMessage(accountId, chatId, temp.id);
+      MessageDecryptionCache.instance.adopt(temp.id, sent.id);
+      MessageSessionCache.replace(accountId, chatId, temp.id, (_) => sent);
+      emitMessageSent(chatId, temp.id, sent);
+      return true;
+    }
+    return false;
   }
 
   ({int? id, String? text, int? time, bool isPreview})? _extractPinnedMessage(

@@ -2182,5 +2182,7 @@
   "chatActivitySendingFile": "Отправляет файл...",
   "chatActivitySendingFileOne": "{name} отправляет файл...",
   "chatActivitySendingFileMany": "{name} и ещё {count} отправляют файлы...",
-  "newChatAvatarNotSet": "Аватар не установлен"
+  "newChatAvatarNotSet": "Аватар не установлен",
+  "msgActionsRetrySend": "Повторить отправку",
+  "msgRetrySendUnavailable": "Это сообщение уже нельзя отправить повторно"
 }
