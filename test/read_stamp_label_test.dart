@@ -68,6 +68,41 @@ void main() {
     expect(tester.getSize(find.byType(ReadStampLabel)).height, 0);
   });
 
+  testWidgets('a long stamp wraps under large text instead of overflowing', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    const stamp = 'Прочитано 12 окт 2025 в 14:32';
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(360, 640),
+            textScaler: TextScaler.linear(2),
+          ),
+          child: Scaffold(
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ReadStampLabel(
+                  listenable: const AlwaysStoppedAnimation(0),
+                  text: () => stamp,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(stamp), findsOneWidget);
+    expect(tester.getRect(find.text(stamp)).right, lessThanOrEqualTo(360));
+  });
+
   test('the in-bubble read time is on by default and persists', () async {
     SharedPreferences.setMockInitialValues({});
     await ProMaxSettings.load();

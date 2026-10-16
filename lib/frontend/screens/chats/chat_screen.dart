@@ -543,12 +543,14 @@ class _ChatScreenState extends State<ChatScreen>
   late final Listenable _readRevision = Listenable.merge([
     ReadReceipts.instance,
     _readMarksRevision,
+    _messagesRev,
   ]);
   late final Listenable _readStampRevision = Listenable.merge([
     _readRevision,
     ProMaxSettings.showReadStamp,
   ]);
-  ({int mark, int count, String? lastId, String? id})? _readStampTarget;
+  ({int mark, int revision, int count, String? lastId, String? id})?
+  _readStampTarget;
   late final AnimationController _attachAnim;
   late final CommandPanelController _commandPanel;
   late final MentionPanelController _mentionPanel;
@@ -1501,15 +1503,8 @@ class _ChatScreenState extends State<ChatScreen>
     return type == 'CHAT' || type == 'GROUP';
   }
 
-  Map<int, int> _firstMessageTimesAfter(int time) {
-    final firsts = <int, int>{};
-    for (final m in _messages) {
-      if (m.time <= time || m.isControl) continue;
-      final known = firsts[m.senderId];
-      if (known == null || m.time < known) firsts[m.senderId] = m.time;
-    }
-    return firsts;
-  }
+  Map<int, int> _firstMessageTimesAfter(int time) =>
+      ReadReceipts.firstMessageTimesAfter(_messages, time);
 
   MessageReadState _readStateOf(
     CachedMessage message,
@@ -1531,10 +1526,13 @@ class _ChatScreenState extends State<ChatScreen>
     if (c == null) return null;
     unawaited(ReadReceipts.instance.preload(_myId, widget.chatId));
     if (c.type != 'DIALOG') {
-      final readers = c.participants.entries.where(
-        (e) => e.key != _myId && e.value >= message.time,
+      return MessageReadSummary.readers(
+        ReadReceipts.readerCount(
+          c.participants,
+          myId: _myId,
+          messageTime: message.time,
+        ),
       );
-      return MessageReadSummary.readers(readers.length);
     }
     final peerId = _resolveOtherId();
     if (peerId == null) return null;
@@ -1570,32 +1568,31 @@ class _ChatScreenState extends State<ChatScreen>
 
   bool _canShowReadStamp(CachedMessage message) {
     if (_commentsMode || widget.preview) return false;
-    if (_myId == 0 || message.senderId != _myId || message.isControl) {
-      return false;
-    }
+    if (_myId == 0 || message.senderId != _myId) return false;
+    if (message.isControl || message.deleted) return false;
     return (chat?.type ?? widget.chatType) == 'DIALOG' &&
         _resolveOtherId() != null;
   }
 
   String? _readStampTargetId(int mark) {
+    final revision = _messagesRev.value;
     final lastId = _messages.isEmpty ? null : _messages.last.id;
     final cached = _readStampTarget;
     if (cached != null &&
         cached.mark == mark &&
+        cached.revision == revision &&
         cached.count == _messages.length &&
         cached.lastId == lastId) {
       return cached.id;
     }
-    String? target;
-    for (var i = _messages.length - 1; i >= 0; i--) {
-      final m = _messages[i];
-      if (m.time > mark || m.senderId != _myId) continue;
-      if (m.isControl || m.deleted || int.tryParse(m.id) == null) continue;
-      target = m.id;
-      break;
-    }
+    final target = ReadReceipts.stampTargetId(
+      _messages,
+      mark: mark,
+      myId: _myId,
+    );
     _readStampTarget = (
       mark: mark,
+      revision: revision,
       count: _messages.length,
       lastId: lastId,
       id: target,

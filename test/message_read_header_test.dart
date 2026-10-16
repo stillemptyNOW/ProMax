@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:promax/core/config/app_message_actions_style.dart';
@@ -16,6 +17,11 @@ Future<MessageActionsController> _openMenu(
   Future<List<MessageReader>> Function()? loadReadBy,
   VoidCallback? onReply,
   MessageActionsInteraction interaction = MessageActionsInteraction.click,
+  MessageActionsStyle style = MessageActionsStyle.list,
+  Rect originRect = const Rect.fromLTWH(120, 160, 200, 40),
+  Offset tapPoint = const Offset(160, 180),
+  double bottomReservedSpace = 0,
+  double textScale = 1,
 }) async {
   final controller = MessageActionsController();
   addTearDown(controller.dispose);
@@ -23,6 +29,12 @@ Future<MessageActionsController> _openMenu(
   await tester.pumpWidget(
     MaterialApp(
       locale: const Locale('ru'),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
@@ -30,13 +42,14 @@ Future<MessageActionsController> _openMenu(
           builder: (context) => TextButton(
             onPressed: () => showMessageActions(
               context: context,
-              originRect: const Rect.fromLTWH(120, 160, 200, 40),
-              tapPoint: const Offset(160, 180),
+              originRect: originRect,
+              tapPoint: tapPoint,
+              bottomReservedSpace: bottomReservedSpace,
               isMe: true,
               messageText: 'синтетика',
               copyText: 'синтетика',
               controller: controller,
-              style: MessageActionsStyle.list,
+              style: style,
               interaction: interaction,
               readSummary: readSummary,
               readRevision: readRevision,
@@ -233,5 +246,121 @@ void main() {
 
     expect(find.text(_ru.msgActionsReadByEmpty), findsOneWidget);
     expect(find.byIcon(Symbols.done), findsOneWidget);
+  });
+
+  testWidgets('the read line appears once the data arrives', (tester) async {
+    final revision = ValueNotifier(0);
+    addTearDown(revision.dispose);
+    await _openMenu(
+      tester,
+      readRevision: revision,
+      readSummary: () => revision.value == 0
+          ? null
+          : MessageReadSummary.status(_ru.readReceiptReadUnknown, read: true),
+      onReply: () {},
+    );
+    final replyBefore = tester.getCenter(find.text(_ru.msgActionsReply)).dy;
+    expect(find.text(_ru.readReceiptReadUnknown), findsNothing);
+
+    revision.value++;
+    await tester.pumpAndSettle();
+
+    expect(find.text(_ru.readReceiptReadUnknown), findsOneWidget);
+    expect(
+      tester.getCenter(find.text(_ru.msgActionsReply)).dy,
+      greaterThan(replyBefore),
+    );
+  });
+
+  testWidgets('a deleted message leaves no empty read strip', (tester) async {
+    final revision = ValueNotifier(0);
+    addTearDown(revision.dispose);
+    await _openMenu(
+      tester,
+      readRevision: revision,
+      readSummary: () => revision.value == 0
+          ? MessageReadSummary.status(_ru.readReceiptReadUnknown, read: true)
+          : null,
+      onReply: () {},
+    );
+    final replyBefore = tester.getCenter(find.text(_ru.msgActionsReply)).dy;
+    expect(find.byType(Divider), findsOneWidget);
+
+    revision.value++;
+    await tester.pumpAndSettle();
+
+    expect(find.text(_ru.readReceiptReadUnknown), findsNothing);
+    expect(find.byType(Divider), findsNothing);
+    expect(
+      tester.getCenter(find.text(_ru.msgActionsReply)).dy,
+      lessThanOrEqualTo(replyBefore - 40),
+    );
+  });
+
+  testWidgets('large text keeps the whole read line and the hit targets', (
+    tester,
+  ) async {
+    final text = _ru.readReceiptReadAtMost('12 окт 2025 в 14:32');
+    var replied = 0;
+    final controller = await _openMenu(
+      tester,
+      textScale: 2,
+      interaction: MessageActionsInteraction.dragAndRelease,
+      readSummary: () => MessageReadSummary.status(text, read: true),
+      onReply: () => replied++,
+    );
+
+    final line = find.text(text);
+    expect(line, findsOneWidget);
+    final paragraph = tester.renderObject<RenderParagraph>(line);
+    expect(
+      paragraph.size.height,
+      greaterThanOrEqualTo(
+        paragraph.getMinIntrinsicHeight(paragraph.size.width),
+      ),
+    );
+    expect(
+      tester.getBottomLeft(line).dy,
+      lessThanOrEqualTo(tester.getTopLeft(find.byType(Divider)).dy),
+    );
+
+    controller.initialPointer = const Offset(160, 180);
+    controller.updatePointer(tester.getCenter(find.text(_ru.msgActionsReply)));
+    await tester.pump();
+    controller.commit();
+    await tester.pumpAndSettle();
+
+    expect(replied, 1);
+  });
+
+  testWidgets('the radial menu shows the read line clear of the buttons', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final text = _ru.readReceiptReadAt('сегодня в 14:32');
+    final controller = await _openMenu(
+      tester,
+      style: MessageActionsStyle.radial,
+      interaction: MessageActionsInteraction.dragAndRelease,
+      originRect: const Rect.fromLTWH(150, 650, 230, 48),
+      tapPoint: const Offset(300, 674),
+      bottomReservedSpace: 60,
+      readSummary: () => MessageReadSummary.status(text, read: true),
+      onReply: () {},
+    );
+
+    final line = tester.getRect(find.text(text));
+    for (final icon in [Symbols.reply, Symbols.content_copy]) {
+      expect(tester.getRect(find.byIcon(icon)).overlaps(line), isFalse);
+    }
+
+    controller.initialPointer = const Offset(300, 674);
+    controller.updatePointer(tester.getCenter(find.byIcon(Symbols.reply)));
+    await tester.pumpAndSettle();
+
+    expect(find.text(_ru.msgActionsReply), findsOneWidget);
+    expect(find.text(text), findsNothing);
   });
 }

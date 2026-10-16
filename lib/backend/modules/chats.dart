@@ -21,6 +21,7 @@ import '../../core/storage/chat_members_store.dart';
 import '../../core/security/double_bottom.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
+import '../../core/utils/server_clock.dart';
 import '../../core/utils/text_format.dart';
 import '../../models/attachment.dart' show ForwardedMessageAttachment;
 import '../../models/chat_call.dart';
@@ -1045,11 +1046,21 @@ class ChatsModule {
   StreamSubscription<Packet>? _globalPushSub;
   StreamSubscription<SessionState>? _globalStateSub;
   Future<void> _pushQueue = Future.value();
+  final ReadBaselines _readBaselines = ReadBaselines();
 
   final Set<int> _historyFetched = {};
 
   bool wasHistoryFetched(int chatId) => _historyFetched.contains(chatId);
   void markHistoryFetched(int chatId) => _historyFetched.add(chatId);
+
+  void beginReadSession(int serverTime) => _readBaselines.begin(serverTime);
+
+  void _confirmReadMarks(int accountId, Map<dynamic, dynamic> chat) {
+    final chatId = chat['id'];
+    final raw = chat['participants'];
+    if (chatId is! int || raw is! Map) return;
+    _readBaselines.confirmAll(accountId, chatId, parseParticipants(raw));
+  }
 
   // #***! подписка на пуши и состояние сессии
   void attachGlobalPushHandlers(Api api) {
@@ -1086,6 +1097,7 @@ class ChatsModule {
       PresenceFetch.clear();
       ChatInfoFetch.clear();
       _historyFetched.clear();
+      _readBaselines.end();
     }
   }
 
@@ -1093,6 +1105,7 @@ class ChatsModule {
   void resetForAccountSwitch() {
     E2eeService.instance.lock();
     _historyFetched.clear();
+    _readBaselines.end();
     ContactInfoFetch.clear();
     PresenceFetch.clear();
     ChatInfoFetch.clear();
@@ -1113,20 +1126,21 @@ class ChatsModule {
 
   // #***! пуши строго по одному, иначе гонки при записи в базу
   void _enqueueGlobalPush(Packet packet) {
-    _pushQueue = _pushQueue.then((_) => _handleGlobalPush(packet)).catchError((
-      Object e,
-    ) {
-      logger.w('Ошибка обработки пуша: $e');
-    });
+    final receivedAt = ServerClock.now();
+    _pushQueue = _pushQueue
+        .then((_) => _handleGlobalPush(packet, receivedAt))
+        .catchError((Object e) {
+          logger.w('Ошибка обработки пуша: $e');
+        });
   }
 
   // #***! роутер пушей по опкодам
-  Future<void> _handleGlobalPush(Packet packet) async {
+  Future<void> _handleGlobalPush(Packet packet, int receivedAt) async {
     switch (packet.opcode) {
       case Opcode.notifMessage:
         await _handleNotifMessage(packet);
       case Opcode.notifMark:
-        await _handleNotifMark(packet);
+        await _handleNotifMark(packet, receivedAt);
       case Opcode.notifMsgReactionsChanged:
         await _handleNotifMsgReactionsChanged(packet);
       case Opcode.notifMsgDelete:
@@ -1684,7 +1698,7 @@ class ChatsModule {
   }
 
   // #***! пуш про прочтение с другого устройства
-  Future<void> _handleNotifMark(Packet packet) async {
+  Future<void> _handleNotifMark(Packet packet, int receivedAt) async {
     final payload = packet.payload;
     if (payload is! Map) return;
     final chatId = payload['chatId'];
@@ -1702,8 +1716,19 @@ class ChatsModule {
     if (rows.isEmpty) return;
     final cached = CachedChat.fromDbRow(rows.first);
     final ownRead = userId == accountId;
+    final previousMark = cached.participants[userId];
+    final storedMark = !ownRead && previousMark != null
+        ? math.max(previousMark, mark)
+        : mark;
     if (!ownRead) {
-      await _recordPeerRead(accountId, chatId, userId, cached, mark);
+      await _recordPeerRead(
+        accountId,
+        chatId,
+        userId,
+        cached,
+        storedMark,
+        receivedAt,
+      );
     }
     final serverUnread = payload['unread'];
     final lastTime = cached.lastMsgTime;
@@ -1714,12 +1739,13 @@ class ChatsModule {
         : lastTime != null && mark >= lastTime
         ? 0
         : cached.unreadCount;
-    if (cached.participants[userId] == mark && unread == cached.unreadCount) {
+    if (previousMark == storedMark && unread == cached.unreadCount) {
       return;
     }
     final updated = cached.copyWith(
       unreadCount: unread,
-      participants: Map<int, int>.from(cached.participants)..[userId] = mark,
+      participants: Map<int, int>.from(cached.participants)
+        ..[userId] = storedMark,
     );
     final row = updated.toDbRow();
     if (ownRead) {
@@ -1737,22 +1763,29 @@ class ChatsModule {
     int userId,
     CachedChat cached,
     int mark,
+    int receivedAt,
   ) async {
-    final knownMarks = [
-      ?cached.participants[userId],
-      ?ReadReceipts.instance.latestMark(accountId, chatId, userId),
-    ];
-    if (knownMarks.isEmpty) return;
-    final prevMark = knownMarks.reduce(math.max);
-    if (mark <= prevMark) return;
-    await ReadReceipts.instance.record(
+    final receipts = ReadReceipts.instance;
+    await receipts.preload(accountId, chatId);
+    final base = _readBaselines.baseFor(
+      accountId,
+      chatId,
+      userId,
+      knownMarks: [
+        ?cached.participants[userId],
+        ?receipts.latestMark(accountId, chatId, userId),
+      ],
+    );
+    _readBaselines.confirm(accountId, chatId, userId, mark);
+    if (base == null || mark <= base) return;
+    await receipts.record(
       accountId,
       chatId,
       ReadReceipt(
         userId: userId,
-        prevMark: prevMark,
+        prevMark: base,
         mark: mark,
-        readAt: DateTime.now().millisecondsSinceEpoch,
+        readAt: receivedAt,
       ),
     );
   }
@@ -1841,6 +1874,7 @@ class ChatsModule {
     final cachedAt = DateTime.now().millisecondsSinceEpoch;
     final id = chat['id'];
     ChatMembersStore.instance.applyChatPayload(chat);
+    _confirmReadMarks(accountId, chat);
     Map<int, CachedChat> existing = const {};
     int? previousListState;
     if (preloadedExisting != null) {
@@ -1953,6 +1987,7 @@ class ChatsModule {
     for (final c in chats.whereType<Map>()) {
       final map = c.cast<dynamic, dynamic>();
       ChatMembersStore.instance.applyChatPayload(map);
+      _confirmReadMarks(accountId, map);
       final parsed = parseChatRow(
         map,
         accountId,

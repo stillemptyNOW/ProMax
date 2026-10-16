@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/read_receipt.dart';
 import '../../core/utils/logger.dart';
+import 'messages.dart' show CachedMessage;
 
 enum MessageReadKind { exact, atMost, unknown, unread, hidden }
 
@@ -144,9 +145,91 @@ class ReadReceipts extends ChangeNotifier {
     return MessageReadState.unknown;
   }
 
+  static String? stampTargetId(
+    List<CachedMessage> messages, {
+    required int mark,
+    required int myId,
+  }) {
+    for (var i = messages.length - 1; i >= 0; i--) {
+      final m = messages[i];
+      if (m.time > mark || m.senderId != myId) continue;
+      if (m.isControl || m.deleted || int.tryParse(m.id) == null) continue;
+      return m.id;
+    }
+    return null;
+  }
+
+  static Map<int, int> firstMessageTimesAfter(
+    Iterable<CachedMessage> messages,
+    int time,
+  ) {
+    final firsts = <int, int>{};
+    for (final m in messages) {
+      if (m.time <= time || m.isControl) continue;
+      final known = firsts[m.senderId];
+      if (known == null || m.time < known) firsts[m.senderId] = m.time;
+    }
+    return firsts;
+  }
+
+  static int readerCount(
+    Map<int, int> participants, {
+    required int myId,
+    required int messageTime,
+  }) => participants.entries
+      .where((e) => e.key != myId && e.value >= messageTime)
+      .length;
+
   @visibleForTesting
   void resetForTest() {
     _byChat.clear();
     _loading.clear();
+  }
+}
+
+class ReadBaselines {
+  int? _since;
+  final Map<(int, int, int), int> _confirmed = {};
+
+  bool get active => _since != null;
+
+  void begin(int serverTime) {
+    _since = serverTime;
+    _confirmed.clear();
+  }
+
+  void end() {
+    _since = null;
+    _confirmed.clear();
+  }
+
+  void confirm(int accountId, int chatId, int userId, int mark) {
+    if (_since == null) return;
+    final key = (accountId, chatId, userId);
+    final known = _confirmed[key];
+    if (known == null || mark > known) _confirmed[key] = mark;
+  }
+
+  void confirmAll(int accountId, int chatId, Map<int, int> participants) {
+    for (final entry in participants.entries) {
+      confirm(accountId, chatId, entry.key, entry.value);
+    }
+  }
+
+  int? baseFor(
+    int accountId,
+    int chatId,
+    int userId, {
+    Iterable<int> knownMarks = const [],
+  }) {
+    final since = _since;
+    if (since == null) return null;
+    final known = knownMarks.fold<int?>(
+      null,
+      (a, b) => a == null ? b : math.max(a, b),
+    );
+    final confirmed = _confirmed[(accountId, chatId, userId)];
+    if (confirmed != null) return math.max(confirmed, known ?? confirmed);
+    return math.max(since, known ?? since);
   }
 }

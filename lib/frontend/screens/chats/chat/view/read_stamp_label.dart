@@ -74,13 +74,18 @@ class _ReadStampPill extends StatelessWidget {
               children: [
                 Icon(Symbols.done_all, size: 13, color: cs.primary),
                 const SizedBox(width: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: cs.onSurfaceVariant,
-                    fontSize: 11,
-                    height: 1.2,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: 11,
+                      height: 1.2,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],

@@ -16,6 +16,7 @@ import '../../core/storage/profile_deletion_store.dart';
 import '../../core/storage/spoofing_service.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
+import '../../core/utils/server_clock.dart';
 import '../../models/login_info.dart';
 import 'banners.dart';
 import 'chats.dart';
@@ -889,8 +890,10 @@ class AccountModule {
     Map<dynamic, dynamic> data,
     int accountId,
   ) async {
-    final serverTime =
-        (data['time'] as int?) ?? DateTime.now().millisecondsSinceEpoch;
+    final reportedTime = data['time'];
+    if (reportedTime is int) ServerClock.sync(reportedTime);
+    final serverTime = reportedTime is int ? reportedTime : ServerClock.now();
+    chats.beginReadSession(serverTime);
 
     final updatedToken = data['token'] as String?;
     if (updatedToken != null) {

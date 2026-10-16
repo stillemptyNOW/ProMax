@@ -6,12 +6,14 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:promax/backend/api.dart';
 import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/backend/modules/messages.dart' show CachedMessage;
 import 'package:promax/backend/modules/read_receipts.dart';
 import 'package:promax/core/protocol/opcode_map.dart';
 import 'package:promax/core/protocol/packet.dart';
 import 'package:promax/core/storage/app_database.dart';
 import 'package:promax/core/storage/read_receipt.dart';
 import 'package:promax/core/storage/token_storage.dart';
+import 'package:promax/core/utils/server_clock.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -40,6 +42,23 @@ const int _me = 1;
 const int _chatId = 900801;
 const int _peer = 900901;
 const int _stranger = 900902;
+const int _sessionStart = 500;
+
+CachedMessage _message(
+  String id,
+  int time, {
+  int sender = _me,
+  bool deleted = false,
+  bool control = false,
+}) => CachedMessage(
+  id: id,
+  accountId: _me,
+  chatId: _chatId,
+  senderId: sender,
+  time: time,
+  isControl: control,
+  deleted: deleted,
+);
 
 Map<String, Object> _chat({int peerMark = 0, bool withPeer = true}) => {
   'id': _chatId,
@@ -84,10 +103,13 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     ReadReceipts.instance.resetForTest();
+    ServerClock.resetForTest();
+    chats.beginReadSession(_sessionStart);
     directory = Directory.systemTemp.createTempSync('synthetic_read_receipts');
     PathProviderPlatform.instance = _SyntheticPathProvider(directory.path);
     addTearDown(() async {
       ReadReceipts.instance.resetForTest();
+      ServerClock.resetForTest();
       await AppDatabase.close();
       if (directory.existsSync()) directory.deleteSync(recursive: true);
     });
@@ -102,15 +124,19 @@ void main() {
     await chats.pushesHandled;
   }
 
-  MessageReadState stateOf(int time, {int? mark, int? replyTime}) =>
-      ReadReceipts.instance.stateFor(
-        accountId: _me,
-        chatId: _chatId,
-        userId: _peer,
-        mark: mark,
-        messageTime: time,
-        replyTime: replyTime,
-      );
+  MessageReadState stateOf(
+    int time, {
+    int? mark,
+    int? replyTime,
+    int userId = _peer,
+  }) => ReadReceipts.instance.stateFor(
+    accountId: _me,
+    chatId: _chatId,
+    userId: userId,
+    mark: mark,
+    messageTime: time,
+    replyTime: replyTime,
+  );
 
   Future<int?> storedPeerMark() async {
     final rows = await chats.getChat(_me, _chatId);
@@ -269,6 +295,7 @@ void main() {
   test('receipts survive a restart through the database', () async {
     await seed();
     await deliver(_mark(_peer, 3000));
+    ReadReceipts.instance.resetForTest();
     expect(ReadReceipts.instance.isLoaded(_me, _chatId), isFalse);
 
     await ReadReceipts.instance.preload(_me, _chatId);
@@ -286,11 +313,173 @@ void main() {
     expect(stateOf(3000, mark: 0), MessageReadState.unread);
   });
 
-  test('a reader unknown to the chat gets no invented time', () async {
+  test('a reader unknown to the chat is timed only after the login', () async {
     await seed(withPeer: false);
+    chats.beginReadSession(2000);
     await deliver(_mark(_stranger, 3000));
 
+    expect(
+      stateOf(1500, mark: 3000, userId: _stranger),
+      MessageReadState.unknown,
+    );
+    expect(
+      stateOf(2500, mark: 3000, userId: _stranger).kind,
+      MessageReadKind.exact,
+    );
+  });
+
+  test('reads made while offline get no invented time', () async {
+    api.states.add(SessionState.disconnected);
+    await Future<void>.delayed(Duration.zero);
+    await seed(peerMark: 1000);
+    chats.beginReadSession(4000);
+    await deliver(_mark(_peer, 6000));
+
+    expect(stateOf(2000, mark: 6000), MessageReadState.unknown);
+    expect(stateOf(3500, mark: 6000), MessageReadState.unknown);
+    expect(stateOf(5000, mark: 6000).kind, MessageReadKind.exact);
+  });
+
+  test('a fresh chat after the login confirms the previous mark', () async {
+    api.states.add(SessionState.disconnected);
+    await Future<void>.delayed(Duration.zero);
+    await seed(peerMark: 1000);
+    chats.beginReadSession(4000);
+    await chats.cacheServerChat(_chat(peerMark: 3000), _me);
+    await deliver(_mark(_peer, 6000));
+
+    expect(stateOf(2000, mark: 6000), MessageReadState.unknown);
+    expect(stateOf(3500, mark: 6000).kind, MessageReadKind.exact);
+  });
+
+  test('a push while disconnected moves the mark without a time', () async {
+    await seed();
+    api.states.add(SessionState.disconnected);
+    await Future<void>.delayed(Duration.zero);
+    await deliver(_mark(_peer, 3000));
+
+    expect(await storedPeerMark(), 3000);
     expect(await AppDatabase.loadReadReceipts(_me, _chatId), isEmpty);
+  });
+
+  test('a stale lower mark does not move the base back', () async {
+    await seed();
+    await ReadReceipts.instance.preload(_me, _chatId);
+    await deliver(_mark(_peer, 3000));
+    final first = stateOf(2500, mark: 3000);
+    await deliver(_mark(_peer, 2000));
+
+    expect(await storedPeerMark(), 3000);
+
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    await deliver(_mark(_peer, 6000));
+
+    expect(stateOf(2500, mark: 6000), first);
+    expect(await AppDatabase.loadReadReceipts(_me, _chatId), hasLength(2));
+  });
+
+  test('the read time follows the server clock', () async {
+    const ahead = 3600000;
+    ServerClock.sync(DateTime.now().millisecondsSinceEpoch + ahead);
+    await seed();
+    await ReadReceipts.instance.preload(_me, _chatId);
+    final before = DateTime.now().millisecondsSinceEpoch + ahead;
+    await deliver(_mark(_peer, 3000));
+    final after = DateTime.now().millisecondsSinceEpoch + ahead;
+
+    expect(stateOf(2000, mark: 3000).at, inInclusiveRange(before, after));
+  });
+
+  group('stampTargetId', () {
+    test('picks the last own sent message the peer reached', () {
+      final messages = [
+        _message('100', 1000),
+        _message('200', 2000),
+        _message('250', 2500, sender: _peer),
+        _message('300', 3000),
+      ];
+
+      expect(
+        ReadReceipts.stampTargetId(messages, mark: 2600, myId: _me),
+        '200',
+      );
+      expect(
+        ReadReceipts.stampTargetId(messages, mark: 3000, myId: _me),
+        '300',
+      );
+      expect(ReadReceipts.stampTargetId(messages, mark: 900, myId: _me), null);
+    });
+
+    test('skips deleted, control and unsent messages', () {
+      final messages = [
+        _message('100', 1000),
+        _message('200', 2000, control: true),
+        _message('local_1', 2100),
+        _message('300', 2200, deleted: true),
+      ];
+
+      expect(
+        ReadReceipts.stampTargetId(messages, mark: 3000, myId: _me),
+        '100',
+      );
+    });
+  });
+
+  test('a reply bound comes from the first later message per sender', () {
+    final messages = [
+      _message('100', 1000),
+      _message('150', 1500, sender: _peer),
+      _message('170', 1700, sender: _peer),
+      _message('180', 1800, sender: _stranger, control: true),
+      _message('200', 2000, sender: _stranger),
+    ];
+
+    expect(ReadReceipts.firstMessageTimesAfter(messages, 1000), {
+      _peer: 1500,
+      _stranger: 2000,
+    });
+  });
+
+  test('group readers count everyone but me who reached the message', () {
+    expect(
+      ReadReceipts.readerCount(
+        {_me: 9000, _peer: 3000, _stranger: 1000},
+        myId: _me,
+        messageTime: 2000,
+      ),
+      1,
+    );
+  });
+
+  group('ReadBaselines', () {
+    test('gives no base outside a session', () {
+      final baselines = ReadBaselines();
+
+      expect(baselines.baseFor(_me, _chatId, _peer, knownMarks: [10]), null);
+    });
+
+    test('floors an unconfirmed mark at the session start', () {
+      final baselines = ReadBaselines()..begin(4000);
+
+      expect(baselines.baseFor(_me, _chatId, _peer, knownMarks: [1000]), 4000);
+      expect(baselines.baseFor(_me, _chatId, _peer), 4000);
+      expect(baselines.baseFor(_me, _chatId, _peer, knownMarks: [5000]), 5000);
+    });
+
+    test('trusts a confirmed mark and forgets it on end', () {
+      final baselines = ReadBaselines()
+        ..begin(4000)
+        ..confirm(_me, _chatId, _peer, 3000)
+        ..confirm(_me, _chatId, _peer, 2000);
+
+      expect(baselines.baseFor(_me, _chatId, _peer, knownMarks: [1000]), 3000);
+
+      baselines
+        ..end()
+        ..begin(4000);
+
+      expect(baselines.baseFor(_me, _chatId, _peer, knownMarks: [1000]), 4000);
+    });
   });
 
   test('the store keeps only the newest receipts of a chat', () async {

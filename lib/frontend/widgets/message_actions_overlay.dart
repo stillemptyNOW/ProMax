@@ -337,7 +337,11 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
   static const double _btnSize = 52.0;
   static const double _hitRadius = 40.0;
   static const double _hMargin = 8.0;
-  static const double _readHeaderHeight = 40.0;
+  static const double _readHeaderMinHeight = 40.0;
+  static const double _readSlotMinHeight = 36.0;
+  static const double _readTextSize = 12.5;
+  static const double _readTextLineHeight = 1.2;
+  static const double _labelBannerGap = 36.0;
 
   late List<_Action> _actions;
   late MessageActionsStyle _effectiveStyle;
@@ -347,6 +351,8 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
   List<Rect> _buttonHitRects = const [];
   Rect _menuRect = Rect.zero;
   Rect _readHeaderRect = Rect.zero;
+  double _readHeaderHeight = _readHeaderMinHeight;
+  MessageReadSummary? _readSummary;
   bool _hasReadHeader = false;
   bool _readHeaderListsReaders = false;
   bool _readHeaderHovered = false;
@@ -416,22 +422,15 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     super.didChangeDependencies();
     if (_initialized) return;
     _initialized = true;
-    final summary = widget.readSummary?.call();
-    _hasReadHeader = summary != null;
-    _readHeaderListsReaders =
-        summary != null && summary.listsReaders && widget.loadReadBy != null;
+    _applyReadSummary(widget.readSummary?.call());
     _actions = _buildActions();
     _effectiveStyle =
         widget.interaction == MessageActionsInteraction.click ||
             !IosRelease.messageActionsStyleChoice
         ? MessageActionsStyle.list
         : widget.style;
-    final screenSize = MediaQuery.sizeOf(context);
-    if (_effectiveStyle == MessageActionsStyle.radial) {
-      _computeRadialGeometry(screenSize);
-    } else {
-      _computeListGeometry(screenSize);
-    }
+    _computeGeometry();
+    widget.readRevision?.addListener(_onReadRevision);
     if (widget.interaction == MessageActionsInteraction.dragAndRelease) {
       widget.controller.addListener(_onControllerUpdate);
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -440,17 +439,67 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     }
   }
 
+  bool _applyReadSummary(MessageReadSummary? summary) {
+    final hasHeader = summary != null;
+    final listsReaders =
+        summary != null && summary.listsReaders && widget.loadReadBy != null;
+    final layoutChanged =
+        hasHeader != _hasReadHeader || listsReaders != _readHeaderListsReaders;
+    _readSummary = summary;
+    _hasReadHeader = hasHeader;
+    _readHeaderListsReaders = listsReaders;
+    return layoutChanged;
+  }
+
+  void _onReadRevision() {
+    if (!mounted || _closing) return;
+    setState(() {
+      if (!_applyReadSummary(widget.readSummary?.call())) return;
+      _hoveredIndex = -1;
+      _readHeaderHovered = false;
+      _actions = _buildActions();
+      _computeGeometry();
+    });
+  }
+
+  void _computeGeometry() {
+    final screenSize = MediaQuery.sizeOf(context);
+    if (_effectiveStyle == MessageActionsStyle.radial) {
+      _computeRadialGeometry(screenSize);
+    } else {
+      _computeListGeometry(screenSize);
+    }
+  }
+
+  double _twoReadLines() =>
+      MediaQuery.textScalerOf(context).scale(_readTextSize) *
+      _readTextLineHeight *
+      2;
+
+  double get _readSlotHeight =>
+      math.max(_readSlotMinHeight, _twoReadLines() + 12);
+
+  double get _labelBannerBottom =>
+      math.max(
+        MediaQuery.paddingOf(context).bottom,
+        MediaQuery.viewInsetsOf(context).bottom,
+      ) +
+      _labelBannerGap;
+
   void _computeRadialGeometry(Size screenSize) {
     final n = _actions.length;
     const reach = _radius + _btnSize / 2;
     final padding = MediaQuery.paddingOf(context);
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final topMargin = padding.top + _hMargin;
+    final reservedBottom = math.max(
+      padding.bottom,
+      math.max(keyboardInset, widget.bottomReservedSpace),
+    );
     final bottomMargin =
-        math.max(
-          padding.bottom,
-          math.max(keyboardInset, widget.bottomReservedSpace),
-        ) +
+        (_hasReadHeader
+            ? math.max(reservedBottom, _labelBannerBottom + _readSlotHeight)
+            : reservedBottom) +
         _hMargin;
     final rect = widget.originRect;
 
@@ -551,6 +600,7 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     const menuWidth = 220.0;
     const itemHeight = 42.0;
     const vPad = 6.0;
+    _readHeaderHeight = math.max(_readHeaderMinHeight, _twoReadLines() + 10);
     final headerHeight = _hasReadHeader ? _readHeaderHeight + 1 : 0.0;
     final menuHeight = headerHeight + n * itemHeight + vPad * 2;
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
@@ -602,6 +652,7 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     _animController.dispose();
     _expandController.dispose();
     widget.controller.removeListener(_onControllerUpdate);
+    widget.readRevision?.removeListener(_onReadRevision);
     widget.snapshot?.dispose();
     super.dispose();
   }
@@ -852,7 +903,6 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
     final isClick = widget.interaction == MessageActionsInteraction.click;
     final showReactions = _reactionsEnabled && !isClick;
     return AnimatedBuilder(
@@ -905,8 +955,7 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
                       children: [
                         if (_effectiveStyle == MessageActionsStyle.radial) ...[
                           ..._buildButtons(t),
-                          _buildLabelBanner(size, t),
-                          if (_hasReadHeader) _buildReadBanner(size, t),
+                          _buildLabelBanner(t),
                         ] else
                           _buildListMenu(t),
                       ],
@@ -1587,17 +1636,6 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     _showReadByView();
   }
 
-  Widget _listenReadRevision(WidgetBuilder builder) {
-    final revision = widget.readRevision;
-    if (revision == null) return Builder(builder: builder);
-    return ListenableBuilder(
-      listenable: revision,
-      builder: (ctx, _) {
-        return builder(ctx);
-      },
-    );
-  }
-
   Widget _readSummaryContent(
     ColorScheme cs,
     MessageReadSummary summary, {
@@ -1645,8 +1683,8 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: foreground,
-                fontSize: 12.5,
-                height: 1.2,
+                fontSize: _readTextSize,
+                height: _readTextLineHeight,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1661,85 +1699,51 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
   }
 
   Widget _buildReadHeader(ColorScheme cs) {
-    return _listenReadRevision((context) {
-      final summary = widget.readSummary?.call();
-      if (summary == null) return const SizedBox.shrink();
-      final tappable = _readHeaderListsReaders;
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: tappable ? _openReadersFromHeader : null,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 140),
-            color: _readHeaderHovered
-                ? cs.onSurface.withValues(alpha: 0.07)
-                : Colors.transparent,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            alignment: AlignmentDirectional.centerStart,
+    final summary = _readSummary;
+    if (summary == null) return const SizedBox.shrink();
+    final tappable = _readHeaderListsReaders;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: tappable ? _openReadersFromHeader : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          color: _readHeaderHovered
+              ? cs.onSurface.withValues(alpha: 0.07)
+              : Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          alignment: AlignmentDirectional.centerStart,
+          child: _readSummaryContent(
+            cs,
+            summary,
+            foreground: cs.onSurfaceVariant,
+            chevron: tappable,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadSlot(ColorScheme cs, MessageReadSummary summary) {
+    final tappable = _readHeaderListsReaders;
+    return Material(
+      color: cs.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(_readSlotMinHeight / 2),
+      clipBehavior: Clip.antiAlias,
+      elevation: 6,
+      shadowColor: Colors.black.withValues(alpha: 0.35),
+      child: InkWell(
+        onTap: tappable ? _openReadersFromHeader : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: _readSlotMinHeight),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             child: _readSummaryContent(
               cs,
               summary,
-              foreground: cs.onSurfaceVariant,
+              foreground: cs.onSurface,
               chevron: tappable,
             ),
-          ),
-        ),
-      );
-    });
-  }
-
-  Widget _buildReadBanner(Size size, double t) {
-    final cs = Theme.of(context).colorScheme;
-    final padding = MediaQuery.paddingOf(context);
-    const bannerHeight = 36.0;
-    const gap = 8.0;
-    final rect = widget.originRect;
-    final above = _showBelow;
-    final rawTop = above ? rect.top - gap - bannerHeight : rect.bottom + gap;
-    final top = rawTop
-        .clamp(
-          padding.top + gap,
-          math.max(padding.top + gap, size.height - bannerHeight - gap),
-        )
-        .toDouble();
-    final eased = Curves.easeOutCubic.transform(t);
-    final tappable = _readHeaderListsReaders;
-    return Positioned(
-      left: 16,
-      right: 16,
-      top: top,
-      height: bannerHeight,
-      child: Align(
-        alignment: widget.isMe
-            ? AlignmentDirectional.centerEnd
-            : AlignmentDirectional.centerStart,
-        child: Opacity(
-          opacity: eased,
-          child: Transform.translate(
-            offset: Offset(0, (above ? 6 : -6) * (1 - eased)),
-            child: _listenReadRevision((context) {
-              final summary = widget.readSummary?.call();
-              if (summary == null) return const SizedBox.shrink();
-              return Material(
-                color: cs.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(bannerHeight / 2),
-                clipBehavior: Clip.antiAlias,
-                elevation: 6,
-                shadowColor: Colors.black.withValues(alpha: 0.35),
-                child: InkWell(
-                  onTap: tappable ? _openReadersFromHeader : null,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: _readSummaryContent(
-                      cs,
-                      summary,
-                      foreground: cs.onSurface,
-                      chevron: tappable,
-                    ),
-                  ),
-                ),
-              );
-            }),
           ),
         ),
       ),
@@ -1942,17 +1946,44 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     ];
   }
 
-  Widget _buildLabelBanner(Size size, double t) {
+  Widget _buildLabelBanner(double t) {
+    final cs = Theme.of(context).colorScheme;
     final label = _hoveredIndex == -1 ? null : _actions[_hoveredIndex].label;
-    final bottomInset = math.max(
-      MediaQuery.paddingOf(context).bottom,
-      MediaQuery.viewInsetsOf(context).bottom,
-    );
+    final summary = label == null ? _readSummary : null;
+    final eased = Curves.easeOutCubic.transform(t);
+    final Widget child;
+    if (label != null) {
+      child = Container(
+        key: ValueKey('label_$label'),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.72 * t),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    } else if (summary != null) {
+      child = Opacity(
+        key: const ValueKey('read_summary'),
+        opacity: eased,
+        child: _buildReadSlot(cs, summary),
+      );
+    } else {
+      child = const SizedBox(key: ValueKey('empty'), height: 0);
+    }
     return Positioned(
-      left: 0,
-      right: 0,
-      bottom: bottomInset + 36,
+      left: 16,
+      right: 16,
+      bottom: _labelBannerBottom,
       child: IgnorePointer(
+        ignoring: summary == null || !_readHeaderListsReaders,
         child: Center(
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 140),
@@ -1963,27 +1994,7 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
                 child: child,
               ),
             ),
-            child: label == null
-                ? const SizedBox(key: ValueKey('empty'), height: 0)
-                : Container(
-                    key: ValueKey('label_$label'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 9,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.72 * t),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+            child: child,
           ),
         ),
       ),
