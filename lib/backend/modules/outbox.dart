@@ -97,6 +97,11 @@ class OutboxService {
             tempId: pending.id,
             realId: actualId,
           )) {
+            await AppDatabase.deleteMessage(
+              accountId,
+              pending.chatId,
+              pending.id,
+            );
             continue;
           }
           // #***! отправилось, сервер дал настоящий id а временный удаляем

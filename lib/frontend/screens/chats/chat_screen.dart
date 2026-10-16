@@ -2810,6 +2810,19 @@ class _ChatScreenState extends State<ChatScreen>
     for (final m in messages) {
       _startDeleteAnimation(m.id);
     }
+    unawaited(_forgetCancelledSending(messages.map((m) => m.id).toList()));
+  }
+
+  Future<void> _forgetCancelledSending(List<String> tempIds) async {
+    final accountId = _myId;
+    final chatId = widget.chatId;
+    try {
+      await AppDatabase.deleteMessages(accountId, chatId, tempIds);
+      MessageSessionCache.removeMessages(accountId, chatId, tempIds);
+      await chats.reconcileLastMessage(accountId, chatId);
+    } catch (e) {
+      logger.w('Отменённые исходящие не убраны: $e');
+    }
   }
 
   void _replySelected() {
