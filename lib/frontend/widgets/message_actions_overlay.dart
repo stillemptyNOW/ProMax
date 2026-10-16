@@ -113,6 +113,7 @@ void showMessageActions({
   void Function(int userId)? onReaderTap,
   Future<List<({int id, String title})>> Function()? loadReportReasons,
   Future<bool> Function(int reasonId)? onReport,
+  VoidCallback? onRetrySend,
   VoidCallback? onDelete,
   bool allowDelete = true,
   bool allowCopy = true,
@@ -165,6 +166,7 @@ void showMessageActions({
       onReaderTap: onReaderTap,
       loadReportReasons: loadReportReasons,
       onReport: onReport,
+      onRetrySend: onRetrySend,
       onDelete: onDelete,
       allowDelete: allowDelete,
       allowCopy: allowCopy,
@@ -230,6 +232,7 @@ class _MessageActionsLayer extends StatefulWidget {
   final void Function(int userId)? onReaderTap;
   final Future<List<({int id, String title})>> Function()? loadReportReasons;
   final Future<bool> Function(int reasonId)? onReport;
+  final VoidCallback? onRetrySend;
   final VoidCallback? onDelete;
   final bool allowDelete;
   final bool allowCopy;
@@ -268,6 +271,7 @@ class _MessageActionsLayer extends StatefulWidget {
     this.onReaderTap,
     this.loadReportReasons,
     this.onReport,
+    this.onRetrySend,
     this.onDelete,
     this.allowDelete = true,
     this.allowCopy = true,
@@ -568,6 +572,8 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     final copyText = widget.copyText;
     final canCopy = widget.allowCopy && copyText != null && copyText.isNotEmpty;
     return <_Action>[
+      if (widget.onRetrySend != null)
+        _Action(Symbols.refresh, l10n.msgActionsRetrySend, _retrySend),
       if (widget.onReply != null)
         _Action(Symbols.reply, l10n.msgActionsReply, _reply),
       if (widget.onForward != null)
@@ -760,6 +766,12 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     final onReply = widget.onReply;
     await _close();
     onReply?.call();
+  }
+
+  Future<void> _retrySend() async {
+    final onRetrySend = widget.onRetrySend;
+    await _close();
+    onRetrySend?.call();
   }
 
   Future<void> _forward() async {

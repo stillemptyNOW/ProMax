@@ -12,11 +12,12 @@ import '../../widgets/small_spinner.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../backend/modules/account/account_models.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 String _passwordErrorText(Object error, AppLocalizations l10n) =>
     error is WrongPasswordException
     ? l10n.passwordEntryWrongPassword
-    : l10n.devicesGenericError('$error');
+    : l10n.devicesGenericError(userFacingError(error, l10n));
 
 class PasswordEntryScreen extends StatefulWidget {
   const PasswordEntryScreen({super.key});
@@ -137,7 +138,9 @@ class _PasswordEntryScreenState extends State<PasswordEntryScreen> {
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.contactProfileLoadError(e.toString()),
+          AppLocalizations.of(
+            context,
+          )!.contactProfileLoadError(userFacingError(e)),
         );
         setState(() => _isLoading = false);
       }

@@ -12,6 +12,7 @@ import '../../widgets/attachment/avatar_editor.dart';
 import '../../widgets/hint_bubble.dart';
 import '../../widgets/promax_avatar.dart';
 import '../../widgets/small_spinner.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -95,7 +96,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!mounted) return;
       showCustomNotification(
         context,
-        AppLocalizations.of(context)!.devicesGenericError('$e'),
+        AppLocalizations.of(context)!.devicesGenericError(userFacingError(e)),
       );
       setState(() => _isSaving = false);
     }
@@ -158,7 +159,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!mounted) return;
       showCustomNotification(
         context,
-        AppLocalizations.of(context)!.devicesGenericError('$e'),
+        AppLocalizations.of(context)!.devicesGenericError(userFacingError(e)),
       );
       setState(() => _isSaving = false);
     }
@@ -184,7 +185,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!mounted) return;
       showCustomNotification(
         context,
-        AppLocalizations.of(context)!.devicesGenericError('$e'),
+        AppLocalizations.of(context)!.devicesGenericError(userFacingError(e)),
       );
       setState(() => _isSaving = false);
     }

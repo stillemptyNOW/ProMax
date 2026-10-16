@@ -190,13 +190,17 @@ class _ScheduledMessagesScreenState extends State<ScheduledMessagesScreen>
       return;
     }
 
-    final ok = await messagesModule.editScheduledMessage(
-      widget.chatId,
-      msg.id,
-      text: controller.text.trim(),
-      timeToFire: when.millisecondsSinceEpoch,
-    );
-    controller.dispose();
+    final bool ok;
+    try {
+      ok = await messagesModule.editScheduledMessage(
+        widget.chatId,
+        msg.id,
+        text: controller.text.trim(),
+        timeToFire: when.millisecondsSinceEpoch,
+      );
+    } finally {
+      controller.dispose();
+    }
     if (!mounted) return;
     if (ok) {
       Haptics.send();

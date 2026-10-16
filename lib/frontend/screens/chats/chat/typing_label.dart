@@ -6,6 +6,10 @@ extension ChatActivityLabel on ChatActivity {
   String label(AppLocalizations l10n) => switch (this) {
     ChatActivity.typing => l10n.chatActivityTyping,
     ChatActivity.sticker => l10n.chatActivityChoosingSticker,
+    ChatActivity.recordingVoice => l10n.chatActivityRecordingVoice,
+    ChatActivity.recordingVideoNote => l10n.chatActivityRecordingVideoNote,
+    ChatActivity.sendingPhoto => l10n.chatActivitySendingPhoto,
+    ChatActivity.sendingFile => l10n.chatActivitySendingFile,
   };
 }
 
@@ -36,6 +40,22 @@ String chatActivityLabel(
       2 => l10n.chatActivityStickerTwo(names[0], names[1]),
       _ => l10n.chatActivityStickerMany(names[0], names.length - 1),
     },
+    ChatActivity.recordingVoice =>
+      names.length == 1
+          ? l10n.chatActivityRecordingVoiceOne(names[0])
+          : l10n.chatActivityRecordingVoiceMany(names[0], names.length - 1),
+    ChatActivity.recordingVideoNote =>
+      names.length == 1
+          ? l10n.chatActivityRecordingVideoNoteOne(names[0])
+          : l10n.chatActivityRecordingVideoNoteMany(names[0], names.length - 1),
+    ChatActivity.sendingPhoto =>
+      names.length == 1
+          ? l10n.chatActivitySendingPhotoOne(names[0])
+          : l10n.chatActivitySendingPhotoMany(names[0], names.length - 1),
+    ChatActivity.sendingFile =>
+      names.length == 1
+          ? l10n.chatActivitySendingFileOne(names[0])
+          : l10n.chatActivitySendingFileMany(names[0], names.length - 1),
   };
 }
 

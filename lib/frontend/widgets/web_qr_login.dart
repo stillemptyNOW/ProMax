@@ -6,6 +6,7 @@ import 'custom_notification.dart';
 import 'sheet_helpers.dart';
 import 'small_spinner.dart';
 import '../../core/config/app_fonts.dart';
+import '../../core/utils/user_facing_error.dart';
 
 Future<bool> showWebQrLoginConfirmSheet(BuildContext context) async {
   final agreed = await showModalBottomSheet<bool>(
@@ -114,7 +115,7 @@ Future<bool> confirmAndAuthorizeWebQrLogin(
       Navigator.of(context, rootNavigator: true).pop();
       showCustomNotification(
         context,
-        AppLocalizations.of(context)!.webQrLoginFailed('$e'),
+        AppLocalizations.of(context)!.webQrLoginFailed(userFacingError(e)),
       );
     }
     return false;

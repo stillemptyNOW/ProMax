@@ -64,6 +64,7 @@ import 'core/config/app_theme_schedule.dart';
 import 'core/config/app_digital_id_mode.dart';
 import 'backend/modules/account.dart';
 import 'backend/modules/chat_admin.dart';
+import 'backend/modules/bot_callback_answers.dart';
 import 'backend/modules/chats.dart';
 import 'backend/modules/comments.dart';
 import 'backend/modules/contacts.dart';
@@ -74,6 +75,7 @@ import 'backend/modules/messages.dart';
 import 'backend/modules/outbox.dart';
 import 'backend/modules/pending_deletions.dart';
 import 'backend/modules/polls.dart';
+import 'backend/modules/read_mark_queue.dart';
 import 'backend/modules/stickers.dart';
 import 'backend/modules/animoji.dart';
 import 'backend/modules/stories.dart';
@@ -100,6 +102,7 @@ import 'core/push/push_service.dart';
 import 'core/storage/app_database.dart';
 import 'core/transport/tls_config.dart';
 import 'core/transport/traffic_monitor.dart';
+import 'core/transport/network_watch.dart';
 import 'core/transport/vpn_bypass.dart';
 import 'core/storage/token_storage.dart';
 import 'core/utils/haptics.dart';
@@ -257,10 +260,13 @@ void main(List<String> args) async {
   unawaited(
     PendingDeletions.instance.start(ApiDeletionGateway(api, messagesModule)),
   );
+  unawaited(OutboxService.instance.recoverInterruptedSends());
   unawaited(FkmController.instance.init(api));
   if (DesktopWindow.instance.isDesktop) Api.keepAliveInBackground = true;
   FoldersModule.attachGlobalPushHandlers(api);
   TranscriptionPushHandler.attach(api);
+  BotCallbackAnswers.instance.attach(api);
+  ReadMarkQueue.instance.attach(api);
   commentsModule.attachPushHandlers(api);
   storiesModule.attach();
   unawaited(storiesModule.loadCache());
@@ -484,6 +490,8 @@ class ProMaxAppState extends State<ProMaxApp>
   StreamSubscription<AccountNotice>? _accountNoticeSub;
   StreamSubscription<PendingDeletionReport>? _deletionReportsSub;
   StreamSubscription<void>? _undoWindowsClosedSub;
+  StreamSubscription<String>? _botAnswersSub;
+  final NetworkWatch _networkWatch = NetworkWatch();
   late final AppLifecycleListener _exitListener;
   Timer? _scheduleTimer;
   String? _lastVpnNotice;
@@ -521,6 +529,11 @@ class ProMaxAppState extends State<ProMaxApp>
     _undoWindowsClosedSub = PendingDeletions.instance.undoWindowsClosed.listen(
       (_) => PendingUndo.commitPending(),
     );
+    _networkWatch.start(api.wakeUp);
+    _botAnswersSub = BotCallbackAnswers.instance.unclaimed.listen((text) {
+      final overlay = ProMaxApp.navigatorKey.currentState?.overlay;
+      if (overlay != null) showCustomNotificationOnOverlay(overlay, text);
+    });
     HardwareKeyboard.instance.addHandler(_noteKeyInteraction);
     AudioPlaybackController.error.addListener(_onAudioPlaybackError);
     AppThemeModeConfig.current.addListener(_onThemeModeChanged);
@@ -776,6 +789,8 @@ class ProMaxAppState extends State<ProMaxApp>
     _accountNoticeSub?.cancel();
     _deletionReportsSub?.cancel();
     _undoWindowsClosedSub?.cancel();
+    _botAnswersSub?.cancel();
+    _networkWatch.stop();
     _exitListener.dispose();
     _scheduleTimer?.cancel();
     _resizeMarkTimer?.cancel();

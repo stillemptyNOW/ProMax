@@ -11,6 +11,7 @@ import '../../core/cache/info_cache.dart';
 import '../../core/cache/message_session_cache.dart';
 import 'shared_content.dart';
 import '../../core/crypto/e2ee_service.dart';
+import '../../core/crypto/message_decryption_cache.dart';
 import '../../core/media/deleted_media_keeper.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/local_read_state.dart';
@@ -25,11 +26,14 @@ import '../../models/chat_call.dart';
 import '../../models/chat_preview_media.dart';
 import '../../models/contact_info.dart';
 import '../api.dart';
+import 'account/privacy_module.dart';
 import 'chat_parsing.dart';
 import 'chat_preview.dart';
+import 'contacts.dart' show ContactsModule;
 import 'folders.dart';
-import 'messages.dart' show ContactCache, CachedMessage;
+import 'messages.dart' show ContactCache, CachedMessage, MessagesModule;
 import 'pending_deletions.dart';
+import 'read_mark_queue.dart';
 import 'server_outcome.dart';
 
 // #***! участники картой id -> время прочтения, в базе строкой
@@ -576,14 +580,15 @@ class ChatsModule {
 
     final msgIdNum = int.tryParse(messageId);
     if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
-      try {
-        await api.sendRequest(Opcode.chatMark, {
-          'type': 'READ_MESSAGE',
-          'chatId': chatId,
-          'messageId': msgIdNum,
-          'mark': mark,
-        }, silent: true);
-      } catch (_) {}
+      await ReadMarkQueue.instance.submit(
+        api,
+        ReadMark(
+          accountId: accountId,
+          chatId: chatId,
+          messageId: msgIdNum,
+          mark: mark,
+        ),
+      );
     }
 
     final fresh = await AppDatabase.loadChat(accountId, chatId);
@@ -654,14 +659,15 @@ class ChatsModule {
   }) async {
     final msgIdNum = int.tryParse(messageId);
     if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
-      try {
-        await api.sendRequest(Opcode.chatMark, {
-          'type': 'READ_MESSAGE',
-          'chatId': chatId,
-          'messageId': msgIdNum,
-          'mark': mark,
-        }, silent: true);
-      } catch (_) {}
+      await ReadMarkQueue.instance.submit(
+        api,
+        ReadMark(
+          accountId: accountId,
+          chatId: chatId,
+          messageId: msgIdNum,
+          mark: mark,
+        ),
+      );
     }
 
     final rows = await AppDatabase.loadChat(accountId, chatId);
@@ -1134,7 +1140,105 @@ class ChatsModule {
         _handlePresence(packet);
       case Opcode.notifChat:
         await _handleNotifChat(packet);
+      case Opcode.notifContact:
+        await _handleNotifContact(packet);
+      case Opcode.notifConfig:
+        await _handleNotifConfig(packet);
+      case Opcode.notifMsgYouReacted:
+        await _handleNotifMsgYouReacted(packet);
     }
+  }
+
+  Future<void> _handleNotifContact(Packet packet) async {
+    final payload = packet.payload;
+    if (payload is! Map) return;
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) return;
+    await ContactsModule.applyContactPush(payload, accountId);
+    _bump();
+  }
+
+  Future<void> _handleNotifConfig(Packet packet) async {
+    final payload = packet.payload;
+    if (payload is! Map) return;
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) return;
+    await PrivacyModule.applyConfigPush(accountId, payload);
+  }
+
+  Future<void> _handleNotifMsgYouReacted(Packet packet) async {
+    final payload = packet.payload;
+    if (payload is! Map) return;
+    final chatId = payload['chatId'];
+    final messageId = payload['messageId']?.toString();
+    if (chatId is! int || messageId == null || messageId.isEmpty) return;
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) return;
+    final existing = await AppDatabase.loadMessage(
+      accountId,
+      chatId,
+      messageId,
+    );
+    if (existing == null) return;
+    final payloadMap =
+        _decodePayload(existing['payload']) ?? <String, dynamic>{};
+    final previous = payloadMap['reactionInfo'];
+    final reactionInfo = previous is Map
+        ? Map<String, dynamic>.from(previous)
+        : <String, dynamic>{};
+    final pushedInfo = payload['reactionInfo'];
+    if (pushedInfo is Map) {
+      reactionInfo.addAll(Map<String, dynamic>.from(pushedInfo));
+    }
+    final counters = payload['counters'];
+    final totalCount = payload['totalCount'];
+    if (counters is List) reactionInfo['counters'] = counters;
+    if (totalCount is int) reactionInfo['totalCount'] = totalCount;
+    final reaction = ownReactionOf(payload);
+    if (reaction != null) {
+      reactionInfo['yourReaction'] = reaction;
+    } else if (_declaresOwnReaction(payload)) {
+      reactionInfo.remove('yourReaction');
+    }
+    final hasCounters =
+        reactionInfo['counters'] is List &&
+        (reactionInfo['counters'] as List).isNotEmpty;
+    if (hasCounters || reactionInfo['yourReaction'] != null) {
+      payloadMap['reactionInfo'] = reactionInfo;
+    } else {
+      payloadMap.remove('reactionInfo');
+    }
+    final newRow = Map<String, dynamic>.from(existing);
+    newRow['payload'] = jsonEncode(payloadMap);
+    await AppDatabase.saveMessages([newRow]);
+    _messageEventsController.add(
+      MessageReactionsChangedEvent(
+        chatId,
+        messageId,
+        payloadMap['reactionInfo'] as Map<String, dynamic>?,
+      ),
+    );
+  }
+
+  static bool _declaresOwnReaction(Map<dynamic, dynamic> payload) {
+    final info = payload['reactionInfo'];
+    return payload.containsKey('yourReaction') ||
+        payload.containsKey('reaction') ||
+        (info is Map && info.containsKey('yourReaction'));
+  }
+
+  @visibleForTesting
+  static String? ownReactionOf(Map<dynamic, dynamic> payload) {
+    final info = payload['reactionInfo'];
+    for (final raw in [
+      payload['yourReaction'],
+      payload['reaction'],
+      if (info is Map) info['yourReaction'],
+    ]) {
+      final value = raw is Map ? raw['reaction'] ?? raw['id'] : raw;
+      if (value is String && value.isNotEmpty) return value;
+    }
+    return null;
   }
 
   Future<void> _handleNotifChat(Packet packet) async {
@@ -1414,7 +1518,10 @@ class ChatsModule {
       _messageEventsController.add(
         MessageEditedEvent(chatId, CachedMessage.fromDbRow(newRow)),
       );
-    } else if (msgIdStr != null && existing == null) {
+    } else if (msgIdStr != null &&
+        existing == null &&
+        !(senderId == accountId &&
+            await _adoptSentEcho(accountId, chatId, msg))) {
       final cached = await E2eeService.instance.inspect(
         CachedMessage.fromPushPayload(
           accountId,
@@ -1475,6 +1582,28 @@ class ChatsModule {
     }
 
     await _commitChatContent([(rows.first, newRow)]);
+  }
+
+  Future<bool> _adoptSentEcho(int accountId, int chatId, Map msg) async {
+    final cid = MessagesModule.clientIdOf({'cid': msg['cid']});
+    if (cid == null) return false;
+    final unsent = await AppDatabase.loadUnsentOwnMessages(accountId, chatId);
+    for (final row in unsent) {
+      final temp = CachedMessage.fromDbRow(row);
+      if (MessagesModule.clientIdOf(temp.payload) != cid) continue;
+      final sent = CachedMessage.fromPushPayload(
+        accountId,
+        chatId,
+        msg,
+      ).copyWith(status: 'sent', sealedText: temp.sealedText, e2ee: temp.e2ee);
+      await AppDatabase.saveMessages([sent.toDbRow()]);
+      await AppDatabase.deleteMessage(accountId, chatId, temp.id);
+      MessageDecryptionCache.instance.adopt(temp.id, sent.id);
+      MessageSessionCache.replace(accountId, chatId, temp.id, (_) => sent);
+      emitMessageSent(chatId, temp.id, sent);
+      return true;
+    }
+    return false;
   }
 
   ({int? id, String? text, int? time, bool isPreview})? _extractPinnedMessage(

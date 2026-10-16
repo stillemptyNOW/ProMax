@@ -28,6 +28,7 @@ import '../../widgets/small_spinner.dart';
 import '../../widgets/webview_permission_prompt.dart';
 import 'mini_app_privacy.dart';
 import 'web_app_bridge.dart';
+import '../../../core/utils/user_facing_error.dart';
 import 'web_app_downloads.dart';
 import 'web_app_origin_policy.dart';
 
@@ -129,7 +130,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _loadError = e.toString());
+      setState(() => _loadError = userFacingError(e));
     }
   }
 
@@ -264,7 +265,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
           urlRequest: URLRequest(url: WebUri(launch.url)),
         );
       } catch (e) {
-        if (mounted) setState(() => _loadError = e.toString());
+        if (mounted) setState(() => _loadError = userFacingError(e));
       }
       return NavigationActionPolicy.CANCEL;
     }

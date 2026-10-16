@@ -52,15 +52,19 @@ class ProMaxSettingsScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
             _ProMaxHero(onGhostChanged: _setGhostMode),
-            const ProMaxSectionTitle('Внешний вид'),
+            ProMaxSectionTitle(
+              AppLocalizations.of(context)!.proMaxSectionAppearance,
+            ),
             SettingsCard(
               children: [
                 ValueListenableBuilder<String?>(
                   valueListenable: ProMaxThemePresets.selected,
                   builder: (context, id, _) => SettingsNavTile(
                     icon: Symbols.palette,
-                    label: 'Темы и стекло',
-                    value: ProMaxThemePresets.byId(id)?.title ?? 'Своя',
+                    label: AppLocalizations.of(context)!.proMaxThemesAndGlass,
+                    value:
+                        ProMaxThemePresets.byId(id)?.title ??
+                        AppLocalizations.of(context)!.proMaxThemeCustom,
                     onTap: () => _open(context, const ProMaxDesignScreen()),
                   ),
                 ),
@@ -72,14 +76,16 @@ class ProMaxSettingsScreen extends StatelessWidget {
                           ? AtmosphereEffect.snow
                           : effect,
                     ),
-                    label: 'Атмосфера',
+                    label: AppLocalizations.of(context)!.proMaxAtmosphere,
                     value: effect.title,
                     onTap: () => _open(context, const AtmosphereScreen()),
                   ),
                 ),
               ],
             ),
-            const ProMaxSectionTitle('Призрак и приватность'),
+            ProMaxSectionTitle(
+              AppLocalizations.of(context)!.proMaxSectionGhost,
+            ),
             SettingsCard(
               children: [
                 SettingsNavTile(
@@ -111,8 +117,8 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   valueListenable: ProMaxSettings.noTyping,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.edit_off,
-                    label: 'Не отправлять «печатает»',
-                    subtitle: 'Собеседник не увидит, что вы набираете текст',
+                    label: AppLocalizations.of(context)!.proMaxNoTyping,
+                    subtitle: AppLocalizations.of(context)!.proMaxNoTypingHint,
                     value: value,
                     onChanged: ProMaxSettings.setNoTyping,
                   ),
@@ -121,8 +127,10 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   valueListenable: ProMaxSettings.hideStoryViews,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.auto_stories,
-                    label: 'Не отмечать просмотры историй',
-                    subtitle: 'Автор истории не узнает, что вы её смотрели',
+                    label: AppLocalizations.of(context)!.proMaxHideStoryViews,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    )!.proMaxHideStoryViewsHint,
                     value: value,
                     onChanged: ProMaxSettings.setHideStoryViews,
                   ),
@@ -131,9 +139,10 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   valueListenable: ProMaxSettings.streamerMode,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.cast,
-                    label: 'Режим стримера',
-                    subtitle:
-                        'Размывает номера, ID и превью сообщений, прячет текст уведомлений',
+                    label: AppLocalizations.of(context)!.proMaxStreamerMode,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    )!.proMaxStreamerModeHint,
                     value: value,
                     onChanged: ProMaxSettings.setStreamerMode,
                   ),
@@ -142,9 +151,10 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   valueListenable: ProMaxSettings.switcherBlur,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.blur_on,
-                    label: 'Размытие в переключателе',
-                    subtitle:
-                        'В списке открытых приложений iOS не видно содержимое',
+                    label: AppLocalizations.of(context)!.proMaxSwitcherBlur,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    )!.proMaxSwitcherBlurHint,
                     value: value,
                     onChanged: ProMaxSettings.setSwitcherBlur,
                   ),
@@ -161,7 +171,9 @@ class ProMaxSettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const ProMaxSectionTitle('Сообщения'),
+            ProMaxSectionTitle(
+              AppLocalizations.of(context)!.proMaxSectionMessages,
+            ),
             SettingsCard(
               children: [
                 if (BuildProfile.hiddenContentViewers) ...[
@@ -227,14 +239,16 @@ class ProMaxSettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const ProMaxSectionTitle('Инструменты'),
+            ProMaxSectionTitle(
+              AppLocalizations.of(context)!.proMaxSectionTools,
+            ),
             SettingsCard(
               children: [
                 ValueListenableBuilder<List<MessageBookmark>>(
                   valueListenable: BookmarksStore.instance.items,
                   builder: (context, items, _) => SettingsNavTile(
                     icon: Symbols.bookmarks,
-                    label: 'Закладки',
+                    label: AppLocalizations.of(context)!.proMaxBookmarks,
                     value: items.isEmpty ? null : '${items.length}',
                     onTap: () => _open(context, const BookmarksScreen()),
                   ),
@@ -243,7 +257,7 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   valueListenable: MessageReminders.instance.items,
                   builder: (context, items, _) => SettingsNavTile(
                     icon: Symbols.alarm,
-                    label: 'Напоминания',
+                    label: AppLocalizations.of(context)!.proMaxReminders,
                     value: items.isEmpty ? null : '${items.length}',
                     onTap: () => _open(context, const RemindersScreen()),
                   ),
@@ -252,14 +266,14 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   valueListenable: QuickRepliesStore.instance.items,
                   builder: (context, items, _) => SettingsNavTile(
                     icon: Symbols.quickreply,
-                    label: 'Шаблоны ответов',
+                    label: AppLocalizations.of(context)!.proMaxQuickReplies,
                     value: items.isEmpty ? null : '${items.length}',
                     onTap: () => _open(context, const QuickRepliesScreen()),
                   ),
                 ),
                 SettingsNavTile(
                   icon: Symbols.lock_open,
-                  label: 'Открыть экспорт .pmxchat',
+                  label: AppLocalizations.of(context)!.proMaxOpenChatExport,
                   onTap: () => _open(context, const ExportReaderScreen()),
                 ),
                 if (BuildProfile.plugins)
@@ -270,7 +284,9 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   ),
               ],
             ),
-            const ProMaxSectionTitle('Чаты и папки'),
+            ProMaxSectionTitle(
+              AppLocalizations.of(context)!.proMaxSectionChats,
+            ),
             SettingsCard(
               children: [
                 ValueListenableBuilder<bool>(
@@ -305,13 +321,15 @@ class ProMaxSettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const ProMaxSectionTitle('Диагностика'),
+            ProMaxSectionTitle(
+              AppLocalizations.of(context)!.proMaxSectionDiagnostics,
+            ),
             SettingsCard(
               children: [
                 if (BuildProfile.digitalId)
                   SettingsNavTile(
                     icon: Symbols.badge,
-                    label: 'Цифровой ID: нативный режим и отчёт',
+                    label: AppLocalizations.of(context)!.proMaxDigitalIdNative,
                     onTap: () => _open(context, const DigitalIdScreen()),
                   ),
                 ValueListenableBuilder<bool>(
@@ -331,7 +349,7 @@ class ProMaxSettingsScreen extends StatelessWidget {
             const SizedBox(height: 18),
             Center(
               child: Text(
-                'ProMax основан на открытом клиенте Komet · GPLv3',
+                AppLocalizations.of(context)!.proMaxBasedOnKomet,
                 style: TextStyle(color: cs.outline, fontSize: 12),
               ),
             ),
@@ -412,8 +430,18 @@ class _ProMaxHero extends StatelessWidget {
                           future: PackageInfo.fromPlatform(),
                           builder: (context, snapshot) => Text(
                             snapshot.hasData
-                                ? 'Версия ${snapshot.data!.version} · ${preset?.title ?? 'своя тема'}'
-                                : 'Твой MAX — по-своему',
+                                ? AppLocalizations.of(
+                                    context,
+                                  )!.proMaxHeroVersion(
+                                    snapshot.data!.version,
+                                    preset?.title ??
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.proMaxHeroCustomTheme,
+                                  )
+                                : AppLocalizations.of(
+                                    context,
+                                  )!.proMaxHeroTagline,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.72),
                               fontSize: 13,
@@ -438,7 +466,7 @@ class _ProMaxHero extends StatelessWidget {
                     valueListenable: ProMaxSettings.ghostMode,
                     builder: (context, on, _) => _ControlTile(
                       icon: Symbols.visibility_off,
-                      label: 'Призрак',
+                      label: AppLocalizations.of(context)!.proMaxGhost,
                       on: on,
                       onTap: () => onGhostChanged(!on),
                     ),
@@ -447,7 +475,7 @@ class _ProMaxHero extends StatelessWidget {
                     valueListenable: ProMaxSettings.antiRead,
                     builder: (context, on, _) => _ControlTile(
                       icon: Symbols.mark_chat_read,
-                      label: 'Не читать',
+                      label: AppLocalizations.of(context)!.proMaxAntiRead,
                       on: on,
                       onTap: () => ProMaxSettings.setAntiRead(!on),
                     ),
@@ -456,7 +484,7 @@ class _ProMaxHero extends StatelessWidget {
                     valueListenable: ProMaxSettings.streamerMode,
                     builder: (context, on, _) => _ControlTile(
                       icon: Symbols.cast,
-                      label: 'Стример',
+                      label: AppLocalizations.of(context)!.proMaxStreamer,
                       on: on,
                       onTap: () => ProMaxSettings.setStreamerMode(!on),
                     ),
@@ -469,9 +497,9 @@ class _ProMaxHero extends StatelessWidget {
                             ? AtmosphereEffect.snow
                             : effect,
                       ),
-                      label: 'Атмосфера',
+                      label: AppLocalizations.of(context)!.proMaxAtmosphere,
                       status: effect == AtmosphereEffect.none
-                          ? 'Выкл'
+                          ? AppLocalizations.of(context)!.proMaxOff
                           : effect.title,
                       on: effect != AtmosphereEffect.none,
                       onTap: () => Navigator.push(
@@ -560,7 +588,10 @@ class _ControlTile extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    status ?? (on ? 'Вкл' : 'Выкл'),
+                    status ??
+                        (on
+                            ? AppLocalizations.of(context)!.proMaxOn
+                            : AppLocalizations.of(context)!.proMaxOff),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -642,7 +673,7 @@ class ProMaxBannerCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Призрак, темы, атмосфера и все фишки',
+                            AppLocalizations.of(context)!.proMaxEntryHint,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

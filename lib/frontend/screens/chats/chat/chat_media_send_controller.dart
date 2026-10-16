@@ -27,6 +27,7 @@ import '../../../../models/sticker.dart';
 import '../../../widgets/sending_clock_icon.dart';
 import 'chat_controller.dart';
 import 'upload_status.dart';
+import '../../../../core/utils/user_facing_error.dart';
 
 // #***! отправка вложений (фото/видео/голос/файл/стикер/контакт/локация) +
 // отслеживание статуса загрузки; текстовые сообщения остаются в chat_screen.dart
@@ -228,7 +229,7 @@ class ChatMediaSendController {
     } catch (e) {
       if (!isMounted()) return;
       updateFileMessageStatus(tempId, 'error');
-      notify(_l10n.devicesGenericError('$e'));
+      notify(_l10n.devicesGenericError(userFacingError(e)));
     }
   }
 
@@ -412,7 +413,7 @@ class ChatMediaSendController {
       return ok;
     } catch (e) {
       updateFileMessageStatus(tempId, 'error');
-      if (isMounted()) notify(_l10n.devicesGenericError('$e'));
+      if (isMounted()) notify(_l10n.devicesGenericError(userFacingError(e)));
       return false;
     }
   }

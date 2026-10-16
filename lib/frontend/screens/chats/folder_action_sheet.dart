@@ -12,8 +12,9 @@ import '../../widgets/confirm_dialog.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/sheet_helpers.dart';
 import 'folder_edit_sheet.dart';
+import 'folder_reorder_sheet.dart';
 
-enum _FolderAction { edit, create, delete }
+enum _FolderAction { edit, create, reorder, delete }
 
 Future<void> showFolderActionSheet(
   BuildContext context, {
@@ -59,6 +60,11 @@ Future<void> showFolderActionSheet(
             label: l10n.folderActionNewFolder,
             onTap: () => Navigator.pop(ctx, _FolderAction.create),
           ),
+          _ActionRow(
+            icon: Symbols.reorder,
+            label: l10n.folderActionReorder,
+            onTap: () => Navigator.pop(ctx, _FolderAction.reorder),
+          ),
           if (canDelete)
             _ActionRow(
               icon: Symbols.delete,
@@ -79,6 +85,8 @@ Future<void> showFolderActionSheet(
       await showFolderEditSheet(context, folder: folder);
     case _FolderAction.create:
       await showFolderEditSheet(context);
+    case _FolderAction.reorder:
+      await showFolderReorderSheet(context);
     case _FolderAction.delete:
       await _confirmDelete(context, folder);
   }

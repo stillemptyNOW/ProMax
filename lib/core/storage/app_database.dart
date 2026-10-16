@@ -1842,4 +1842,75 @@ class AppDatabase {
       orderBy: 'time ASC',
     );
   }
+
+  static Future<List<Map<String, dynamic>>> loadInterruptedSends() async {
+    final db = await _instance;
+    return db.query(
+      'messages',
+      where: "status = 'sending' AND deleted = 0",
+      orderBy: 'time ASC',
+    );
+  }
+
+  static Future<bool> settleInterruptedSend(
+    int accountId,
+    String messageId,
+    String status,
+  ) async {
+    final db = await _instance;
+    final changed = await db.update(
+      'messages',
+      {'status': status},
+      where: "account_id = ? AND id = ? AND status = 'sending'",
+      whereArgs: [accountId, messageId],
+    );
+    return changed != 0;
+  }
+
+  static Future<bool> updateMessagePayload(
+    int accountId,
+    int chatId,
+    String messageId,
+    Map<String, dynamic> payload,
+  ) async {
+    final db = await _instance;
+    final changed = await db.update(
+      'messages',
+      {'payload': jsonEncode(payload)},
+      where: 'account_id = ? AND chat_id = ? AND id = ?',
+      whereArgs: [accountId, chatId, messageId],
+    );
+    return changed != 0;
+  }
+
+  static Future<bool> requeueUnsentMessage(
+    int accountId,
+    int chatId,
+    String messageId,
+  ) async {
+    final db = await _instance;
+    final changed = await db.update(
+      'messages',
+      {'status': 'pending'},
+      where:
+          'account_id = ? AND chat_id = ? AND id = ? AND deleted = 0 '
+          "AND status IN ('pending', 'error')",
+      whereArgs: [accountId, chatId, messageId],
+    );
+    return changed != 0;
+  }
+
+  static Future<List<Map<String, dynamic>>> loadUnsentOwnMessages(
+    int accountId,
+    int chatId,
+  ) async {
+    final db = await _instance;
+    return db.query(
+      'messages',
+      where:
+          "account_id = ? AND chat_id = ? AND id LIKE 'temp\\_%' ESCAPE '\\' "
+          "AND status IN ('pending', 'sending', 'error') AND deleted = 0",
+      whereArgs: [accountId, chatId],
+    );
+  }
 }

@@ -13,6 +13,7 @@ import '../../../main.dart';
 import '../../../models/contact_info.dart';
 import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 typedef FoundUser = ({int userId, int chatId, String name, String avatarUrl});
 
@@ -108,7 +109,9 @@ class _FindUserSheetState extends State<_FindUserSheet> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = AppLocalizations.of(context)!.devicesGenericError('$e');
+          _error = AppLocalizations.of(
+            context,
+          )!.devicesGenericError(userFacingError(e));
         });
       }
     }
@@ -158,7 +161,9 @@ class _FindUserSheetState extends State<_FindUserSheet> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = AppLocalizations.of(context)!.devicesGenericError('$e');
+          _error = AppLocalizations.of(
+            context,
+          )!.devicesGenericError(userFacingError(e));
         });
       }
     }

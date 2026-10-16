@@ -96,8 +96,7 @@ class ContactPhotos {
 
   static const empty = ContactPhotos(urls: [], total: 0);
 
-  int? idAt(int index) =>
-      index >= 0 && index < ids.length ? ids[index] : null;
+  int? idAt(int index) => index >= 0 && index < ids.length ? ids[index] : null;
 }
 
 // #***! итог добавления, добавили не нашли или ошибка
@@ -146,7 +145,9 @@ class ContactsModule {
         : int.tryParse(normalized.substring(1)) ?? 0;
     ContactCache.putPhone(id, resolvedPhone);
 
-    final name = ContactInfo.fromMap(Map<String, dynamic>.from(contact)).fullName;
+    final name = ContactInfo.fromMap(
+      Map<String, dynamic>.from(contact),
+    ).fullName;
 
     return PhoneLookupResult(
       id: id,
@@ -367,8 +368,9 @@ class ContactsModule {
 
   static Future<void> ensureBlockedLoaded(Api api) {
     if (_blockedLoaded) return Future.value();
-    return _blockedLoading ??= _loadBlockedIds(api)
-        .whenComplete(() => _blockedLoading = null);
+    return _blockedLoading ??= _loadBlockedIds(
+      api,
+    ).whenComplete(() => _blockedLoading = null);
   }
 
   // #***! по 100, максимум 20 страниц дальше нужен свой экран
@@ -432,6 +434,33 @@ class ContactsModule {
     ContactInfoFetch.invalidate(contactId);
     revision.value++;
     return true;
+  }
+
+  static Future<void> applyContactPush(
+    Map<dynamic, dynamic> payload,
+    int accountId,
+  ) async {
+    final single = payload['contact'];
+    final many = payload['contacts'];
+    final contacts = [
+      if (single is Map) single,
+      if (many is List) ...many.whereType<Map>(),
+    ];
+    if (contacts.isEmpty) return;
+    final known = (await AppDatabase.loadContactIds(accountId)).toSet();
+    final rows = <Map<String, dynamic>>[];
+    for (final raw in contacts) {
+      final contact = raw.cast<dynamic, dynamic>();
+      final id = contact['id'];
+      if (id is! int) continue;
+      primeContactCache(contact);
+      ContactInfoFetch.invalidate(id);
+      if (!known.contains(id) || contact['status'] == 'REMOVED') continue;
+      final row = _parseContact(contact, accountId);
+      if (row != null) rows.add(row);
+    }
+    if (rows.isNotEmpty) await AppDatabase.saveContacts(rows);
+    revision.value++;
   }
 
   // #***! контакты приходят в login, кладём пачкой в базу
@@ -710,7 +739,10 @@ class ContactsModule {
     if (names is List && names.isNotEmpty) {
       final nameRaw = _preferredNameEntry(names);
       if (nameRaw == null) return null;
-      firstName = (nameRaw['firstName'] as String?) ?? (nameRaw['name'] as String?) ?? '';
+      firstName =
+          (nameRaw['firstName'] as String?) ??
+          (nameRaw['name'] as String?) ??
+          '';
       lastName = nameRaw['lastName'] as String?;
     }
 

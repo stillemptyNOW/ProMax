@@ -13,6 +13,7 @@ import '../../widgets/connection_status.dart';
 import '../../widgets/promax_ui.dart';
 import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
+import '../../../l10n/app_localizations.dart';
 
 class ChatStatsScreen extends StatefulWidget {
   const ChatStatsScreen({
@@ -91,10 +92,13 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final stats = _stats;
+    final l10n = AppLocalizations.of(context)!;
+    final weekdays = l10n.chatStatsWeekdaysShort.split(',');
+    final weekdaysFull = l10n.chatStatsWeekdaysFull.split(',');
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: ConnectionTitleBar(
-        titleText: 'Статистика',
+        titleText: l10n.chatStatsTitle,
         backgroundColor: cs.surface,
       ),
       body: SafeArea(
@@ -117,7 +121,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _range(stats),
+                    _range(l10n, stats),
                     style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
                   ),
                   const SizedBox(height: 14),
@@ -130,10 +134,10 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                   ),
                   if (stats.total > 0) ...[
                     if (stats.bySender.length > 1) ...[
-                      const ProMaxSectionTitle('Кто пишет больше'),
+                      ProMaxSectionTitle(l10n.chatStatsTopSenders),
                       SettingsPanel(child: _Senders(stats: stats)),
                     ],
-                    const ProMaxSectionTitle('Активность по часам'),
+                    ProMaxSectionTitle(l10n.chatStatsByHour),
                     SettingsPanel(
                       child: _Bars(
                         values: stats.byHour,
@@ -142,20 +146,20 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                         describe: (i, v) => '$i:00–$i:59 · $v',
                       ),
                     ),
-                    const ProMaxSectionTitle('По дням недели'),
+                    ProMaxSectionTitle(l10n.chatStatsByWeekday),
                     SettingsPanel(
                       child: _Bars(
                         values: stats.byWeekday,
-                        labels: _weekdays,
+                        labels: weekdays,
                         labelEvery: 1,
-                        describe: (i, v) => '${_weekdaysFull[i]} · $v',
+                        describe: (i, v) => '${weekdaysFull[i]} · $v',
                       ),
                     ),
                     if (stats.media.isNotEmpty) ...[
-                      const ProMaxSectionTitle('Медиа и вложения'),
+                      ProMaxSectionTitle(l10n.chatStatsMedia),
                       SettingsCard(
                         children: [
-                          for (final entry in _mediaRows(stats))
+                          for (final entry in _mediaRows(l10n, stats))
                             _ValueRow(
                               icon: entry.$1,
                               label: entry.$2,
@@ -165,7 +169,7 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
                       ),
                     ],
                     if (stats.topWords.isNotEmpty) ...[
-                      const ProMaxSectionTitle('Частые слова'),
+                      ProMaxSectionTitle(l10n.chatStatsTopWords),
                       SettingsPanel(
                         child: Wrap(
                           spacing: 8,
@@ -187,38 +191,33 @@ class _ChatStatsScreenState extends State<ChatStatsScreen> {
     );
   }
 
-  static const _weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  static const _weekdaysFull = [
-    'Понедельник',
-    'Вторник',
-    'Среда',
-    'Четверг',
-    'Пятница',
-    'Суббота',
-    'Воскресенье',
-  ];
-
   static String _date(DateTime value) =>
       '${value.day.toString().padLeft(2, '0')}.${value.month.toString().padLeft(2, '0')}.${value.year}';
 
-  static String _range(ChatStats stats) {
+  static String _range(AppLocalizations l10n, ChatStats stats) {
     final first = stats.first;
     final last = stats.last;
-    if (first == null || last == null) return 'В памяти телефона нет сообщений';
-    return 'С ${_date(first)} по ${_date(last)} · по сообщениям в памяти телефона';
+    if (first == null || last == null) return l10n.chatStatsNoLocalMessages;
+    return l10n.chatStatsRange(_date(first), _date(last));
   }
 
-  static List<(IconData, String, int)> _mediaRows(ChatStats stats) {
-    const names = {
-      AttachmentType.photo: (Symbols.image, 'Фото'),
-      AttachmentType.video: (Symbols.movie, 'Видео и кружки'),
-      AttachmentType.audio: (Symbols.mic, 'Голосовые'),
-      AttachmentType.file: (Symbols.description, 'Файлы'),
-      AttachmentType.sticker: (Symbols.sentiment_satisfied, 'Стикеры'),
-      AttachmentType.contact: (Symbols.contact_page, 'Контакты'),
-      AttachmentType.location: (Symbols.location_on, 'Геопозиции'),
-      AttachmentType.poll: (Symbols.ballot, 'Опросы'),
-      AttachmentType.call: (Symbols.call, 'Звонки'),
+  static List<(IconData, String, int)> _mediaRows(
+    AppLocalizations l10n,
+    ChatStats stats,
+  ) {
+    final names = {
+      AttachmentType.photo: (Symbols.image, l10n.chatStatsPhotos),
+      AttachmentType.video: (Symbols.movie, l10n.chatStatsVideos),
+      AttachmentType.audio: (Symbols.mic, l10n.chatStatsVoice),
+      AttachmentType.file: (Symbols.description, l10n.chatStatsFiles),
+      AttachmentType.sticker: (
+        Symbols.sentiment_satisfied,
+        l10n.chatStatsStickers,
+      ),
+      AttachmentType.contact: (Symbols.contact_page, l10n.chatStatsContacts),
+      AttachmentType.location: (Symbols.location_on, l10n.chatStatsLocations),
+      AttachmentType.poll: (Symbols.ballot, l10n.chatStatsPolls),
+      AttachmentType.call: (Symbols.call, l10n.chatStatsCalls),
     };
     final rows = <(IconData, String, int)>[];
     for (final entry in names.entries) {
@@ -238,12 +237,16 @@ class _Tiles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final busiest = stats.busiestDay;
+    final l10n = AppLocalizations.of(context)!;
     final tiles = [
-      ('Сообщений', '${stats.total}'),
-      ('Слов', '${stats.words}'),
-      ('В день', stats.perDay.toStringAsFixed(stats.perDay < 10 ? 1 : 0)),
+      (l10n.chatStatsMessages, '${stats.total}'),
+      (l10n.chatStatsWords, '${stats.words}'),
       (
-        'Рекорд за день',
+        l10n.chatStatsPerDay,
+        stats.perDay.toStringAsFixed(stats.perDay < 10 ? 1 : 0),
+      ),
+      (
+        l10n.chatStatsBusiestDay,
         busiest == null
             ? '—'
             : '${stats.busiestDayCount} · ${busiest.day.toString().padLeft(2, '0')}.${busiest.month.toString().padLeft(2, '0')}',
@@ -323,8 +326,8 @@ class _SyncCard extends StatelessWidget {
       SettingsNavTile(
         icon: syncing ? Symbols.sync : Symbols.cloud_download,
         label: syncing
-            ? 'Загружено сообщений: $synced'
-            : 'Загрузить всю историю с сервера',
+            ? AppLocalizations.of(context)!.chatStatsSynced(synced)
+            : AppLocalizations.of(context)!.chatStatsSyncAll,
         onTap: syncing ? null : onSync,
       ),
     ],

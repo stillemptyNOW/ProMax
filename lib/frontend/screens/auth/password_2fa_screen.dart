@@ -10,6 +10,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/login_success_screen.dart';
 import '../../widgets/small_spinner.dart';
 import 'session_stale_recovery.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class Password2FAScreen extends StatefulWidget {
   final String trackId;
@@ -136,7 +137,10 @@ class _Password2FAScreenState extends State<Password2FAScreen>
       } else if (e is WrongPasswordException) {
         showCustomNotification(context, l10n.passwordEntryWrongPassword);
       } else {
-        showCustomNotification(context, l10n.devicesGenericError('$e'));
+        showCustomNotification(
+          context,
+          l10n.devicesGenericError(userFacingError(e)),
+        );
       }
     }
   }

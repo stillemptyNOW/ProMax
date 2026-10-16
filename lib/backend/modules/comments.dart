@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../core/protocol/opcode_map.dart';
-import '../../core/config/promax_settings.dart';
 import '../../core/protocol/packet.dart';
 import '../../core/utils/channel_comments.dart';
 import '../../core/utils/logger.dart';
 import '../api.dart';
+import '../../core/storage/chat_activity_store.dart';
+import 'chat_activity_sender.dart';
 import 'messages.dart' show CachedMessage;
 
 // #***! счётчик комментов под постом
@@ -15,11 +16,7 @@ class CommentsInfo {
   final String postId;
   final int? totalCount;
   final int? updatedAt;
-  const CommentsInfo({
-    required this.postId,
-    this.totalCount,
-    this.updatedAt,
-  });
+  const CommentsInfo({required this.postId, this.totalCount, this.updatedAt});
 
   factory CommentsInfo.fromPayload(String postId, Map payload) {
     final raw = payload['totalCount'];
@@ -107,7 +104,8 @@ class CommentsModule {
 
     final link = msg['link'];
     final postId =
-        (payload['postId'] ?? (link is Map ? link['postId'] : null) ??
+        (payload['postId'] ??
+                (link is Map ? link['postId'] : null) ??
                 msg['postId'])
             ?.toString();
     if (postId == null || postId.isEmpty) return;
@@ -298,15 +296,15 @@ class CommentsModule {
   }
 
   // #***! печатает в комментах, ошибки не важны
-  void sendTyping(int chatId, String postId, String type) {
-    if (ProMaxSettings.noTyping.value) return;
+  void sendTyping(int chatId, String postId, ChatActivity activity) {
+    if (!chatActivityBroadcastAllowed) return;
     unawaited(() async {
       try {
         await _api.sendRequest(Opcode.msgTyping, {
           'chatId': chatId,
           'postId': int.tryParse(postId) ?? postId,
-          'type': type,
-        });
+          'type': activity.wireType,
+        }, silent: true);
       } catch (_) {}
     }());
   }

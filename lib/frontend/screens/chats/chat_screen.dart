@@ -13,6 +13,7 @@ import 'package:promax/backend/modules/chat_preview.dart';
 import 'package:promax/backend/modules/chats.dart';
 import 'package:promax/backend/modules/comments.dart';
 import 'package:promax/backend/modules/upload_service.dart';
+import '../../../backend/modules/outbox.dart';
 import 'package:promax/backend/modules/webapp.dart';
 import 'package:promax/frontend/screens/webapp/open_mini_app.dart';
 import 'package:promax/core/media/clipboard/clipboard_media.dart';
@@ -46,6 +47,7 @@ import '../../../core/protocol/packet.dart';
 import '../../../core/push/notification_bridge.dart';
 import '../../../core/push/push_service.dart';
 import '../../../core/storage/app_database.dart';
+import '../../../backend/modules/chat_activity_sender.dart';
 import '../../../core/storage/chat_activity_store.dart';
 import '../../../core/storage/chat_members_store.dart';
 import '../../../core/crypto/chat_crypto_service.dart';
@@ -64,6 +66,7 @@ import '../../../core/utils/emoji_keyword_index.dart';
 import '../../../models/admin_rights.dart';
 import '../../../models/chat_reaction_settings.dart';
 import '../../../core/utils/logger.dart';
+import '../../../core/utils/user_facing_error.dart';
 import '../../../core/utils/route_settle.dart';
 import '../../../core/config/app_cache_extent.dart';
 import '../../../core/config/app_swipe_back_desktop.dart';
@@ -311,6 +314,11 @@ class _ChatScreenState extends State<ChatScreen>
   );
 
   StreamSubscription<UploadJobEvent>? _uploadEventSub;
+
+  late final ChatActivitySender _activitySender = ChatActivitySender(
+    _broadcastActivity,
+  );
+  String _typedText = '';
 
   ValueListenable<List<double>>? _photoProgressFor(CachedMessage m) =>
       UploadService.instance.progressFor(m.id);
@@ -726,8 +734,10 @@ class _ChatScreenState extends State<ChatScreen>
     );
     _stickers = StickerPanelController(
       vsync: this,
-      onSendTyping: () => messagesModule.sendTyping(widget.chatId, 'STICKER'),
+      onSendTyping: () => _broadcastActivity(ChatActivity.sticker),
     );
+    _voiceRec.isRecording.addListener(_onVoiceRecordingChanged);
+    _note.isRecording.addListener(_onVideoNoteRecordingChanged);
     _showAttachmentPanel.addListener(_onAttachPanelToggle);
     _commandPanel = CommandPanelController(
       vsync: this,
@@ -2204,19 +2214,34 @@ class _ChatScreenState extends State<ChatScreen>
 
   Future<void> _loadCommentsHistory() async {
     final post = widget.postMessage;
-    final loaded = await commentsModule.fetchHistory(
-      _myId,
-      widget.chatId,
-      widget.commentPostId!,
-      fromTime: post?.time ?? DateTime.now().millisecondsSinceEpoch,
-      forward: 30,
-      backward: 0,
-    );
+    List<CachedMessage> loaded;
+    Object? failure;
+    try {
+      loaded = await commentsModule.fetchHistory(
+        _myId,
+        widget.chatId,
+        widget.commentPostId!,
+        fromTime: post?.time ?? DateTime.now().millisecondsSinceEpoch,
+        forward: 30,
+        backward: 0,
+      );
+    } catch (e) {
+      logger.w('Комментарии ${widget.commentPostId} не загрузились: $e');
+      loaded = const [];
+      failure = e;
+    }
     if (!mounted) return;
+    if (failure != null) {
+      final l10n = AppLocalizations.of(context)!;
+      showCustomNotification(
+        context,
+        l10n.chatCommentsLoadFailed(userFacingError(failure, l10n)),
+      );
+    }
     final comments = [...loaded]..sort((a, b) => a.time.compareTo(b.time));
     _messages = post != null ? [post, ...comments] : comments;
     _deferredIds.clear();
-    _commentsHasMore = comments.isNotEmpty;
+    _commentsHasMore = failure != null || comments.isNotEmpty;
     _syncReactionNotifiersFromMessages();
     unawaited(_resolveCommentNames(comments));
     _bumpMessages();
@@ -2251,6 +2276,8 @@ class _ChatScreenState extends State<ChatScreen>
         unawaited(_resolveCommentNames(fresh));
         _bumpMessages();
       }
+    } catch (e) {
+      logger.w('Следующие комментарии не загрузились: $e');
     } finally {
       _commentsLoadingMore = false;
     }
@@ -2380,6 +2407,9 @@ class _ChatScreenState extends State<ChatScreen>
     _commentsInfoSub?.cancel();
     _commentSub?.cancel();
     _connSub?.cancel();
+    _voiceRec.isRecording.removeListener(_onVoiceRecordingChanged);
+    _note.isRecording.removeListener(_onVideoNoteRecordingChanged);
+    _activitySender.dispose();
     _voiceRec.dispose();
     _note.dispose();
     debugForceOffline.removeListener(_recomputeHeaderStatus);
@@ -2437,12 +2467,45 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   void _onTextChanged() {
-    final newHasText = _messageController.text.trim().isNotEmpty;
+    final text = _messageController.text;
+    final newHasText = text.trim().isNotEmpty;
     if (newHasText != _hasText.value) {
       _hasText.value = newHasText;
     }
+    if (text != _typedText) {
+      _typedText = text;
+      if (newHasText) {
+        _activitySender.pulse(ChatActivity.typing);
+      } else {
+        _activitySender.reset();
+      }
+    }
     _commandPanel.update();
     _mentionPanel.update();
+  }
+
+  void _broadcastActivity(ChatActivity activity) {
+    if (widget.preview) return;
+    final postId = widget.commentPostId;
+    if (postId != null) {
+      commentsModule.sendTyping(widget.chatId, postId, activity);
+    } else {
+      messagesModule.sendTyping(widget.chatId, activity);
+    }
+  }
+
+  void _onVoiceRecordingChanged() =>
+      _trackRecording(_voiceRec.isRecording.value, ChatActivity.recordingVoice);
+
+  void _onVideoNoteRecordingChanged() =>
+      _trackRecording(_note.isRecording.value, ChatActivity.recordingVideoNote);
+
+  void _trackRecording(bool recording, ChatActivity activity) {
+    if (recording) {
+      _activitySender.hold(activity);
+    } else {
+      _activitySender.release(activity);
+    }
   }
 
   bool _mentionsAvailable() =>
@@ -2813,6 +2876,19 @@ class _ChatScreenState extends State<ChatScreen>
     for (final m in messages) {
       _startDeleteAnimation(m.id);
     }
+    unawaited(_forgetCancelledSending(messages.map((m) => m.id).toList()));
+  }
+
+  Future<void> _forgetCancelledSending(List<String> tempIds) async {
+    final accountId = _myId;
+    final chatId = widget.chatId;
+    try {
+      await AppDatabase.deleteMessages(accountId, chatId, tempIds);
+      MessageSessionCache.removeMessages(accountId, chatId, tempIds);
+      await chats.reconcileLastMessage(accountId, chatId);
+    } catch (e) {
+      logger.w('Отменённые исходящие не убраны: $e');
+    }
   }
 
   void _replySelected() {
@@ -3091,6 +3167,49 @@ class _ChatScreenState extends State<ChatScreen>
       unawaited(_chatController.persistOutgoing(edited));
     }
     Haptics.send();
+  }
+
+  bool _canRetrySend(CachedMessage message) {
+    if (message.senderId != _myId || !message.id.startsWith('temp_')) {
+      return false;
+    }
+    final status = message.status;
+    if (status != 'error' && status != 'pending') return false;
+    if (UploadService.instance.canRetry(message.id)) return true;
+    return !_commentsMode &&
+        (message.attachments?.isEmpty ?? true) &&
+        (message.text?.isNotEmpty ?? false);
+  }
+
+  Future<void> _retrySend(CachedMessage message) async {
+    final l10n = AppLocalizations.of(context)!;
+    final idx = _chatController.indexOfId(message.id);
+    if (UploadService.instance.retry(message.id)) {
+      if (idx != -1) {
+        _chatController.setMessageAt(idx, message.copyWith(status: 'sending'));
+        _bumpMessages();
+      }
+      return;
+    }
+    final requeued = await OutboxService.instance.retry(
+      _myId,
+      widget.chatId,
+      message.id,
+    );
+    if (!mounted) return;
+    if (!requeued) {
+      showCustomNotification(context, l10n.msgRetrySendUnavailable);
+      return;
+    }
+    final current = _chatController.indexOfId(message.id);
+    if (current != -1) {
+      _chatController.setMessageAt(
+        current,
+        _messages[current].copyWith(status: 'pending'),
+      );
+      _bumpMessages();
+    }
+    unawaited(chats.reconcileLastMessage(_myId, widget.chatId));
   }
 
   Future<void> _confirmDeleteMessage(String messageId) async {
@@ -3413,6 +3532,7 @@ class _ChatScreenState extends State<ChatScreen>
     final note = ChatNotesStore.instance.noteFor(widget.chatId);
     final templates = QuickRepliesStore.instance.items.value.length;
     final secret = DoubleBottom.isSecret(widget.chatId);
+    final l10n = AppLocalizations.of(context)!;
     void then(VoidCallback action) {
       Navigator.of(context).pop();
       action();
@@ -3428,14 +3548,14 @@ class _ChatScreenState extends State<ChatScreen>
         final tiles = <ChatToolTile>[
           ChatToolTile(
             icon: Symbols.ac_unit,
-            label: 'Атмосфера',
-            value: atmosphere?.title ?? 'Как везде',
+            label: l10n.chatToolsAtmosphere,
+            value: atmosphere?.title ?? l10n.chatToolsAtmosphereDefault,
             onTap: () =>
                 then(() => showChatAtmosphereSheet(context, widget.chatId)),
           ),
           ChatToolTile(
             icon: Symbols.bar_chart,
-            label: 'Статистика',
+            label: l10n.chatToolsStats,
             onTap: () => then(
               () => Navigator.push(
                 context,
@@ -3451,22 +3571,24 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           ChatToolTile(
             icon: Symbols.timer,
-            label: 'Исчезающие',
-            value: timer > 0 ? DisappearingMessages.label(timer) : 'Выкл',
+            label: l10n.chatToolsDisappearing,
+            value: timer > 0
+                ? DisappearingMessages.label(timer)
+                : l10n.chatToolsOff,
             onTap: () =>
                 then(() => showDisappearingSheet(context, widget.chatId)),
           ),
           ChatToolTile(
             icon: Symbols.bedtime,
-            label: 'Тихие часы',
-            value: quiet?.label ?? 'Выкл',
+            label: l10n.chatToolsQuietHours,
+            value: quiet?.label ?? l10n.chatToolsOff,
             onTap: () =>
                 then(() => showQuietHoursSheet(context, widget.chatId)),
           ),
           ChatToolTile(
             icon: Symbols.sticky_note_2,
-            label: 'Заметка',
-            value: note == null ? 'Нет' : note.split('\n').first,
+            label: l10n.chatToolsNote,
+            value: note == null ? l10n.chatToolsNone : note.split('\n').first,
             onTap: () => then(
               () => showChatNoteSheet(
                 context,
@@ -3477,13 +3599,13 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           ChatToolTile(
             icon: Symbols.quickreply,
-            label: 'Шаблоны',
-            value: templates == 0 ? 'Нет' : '$templates',
+            label: l10n.chatToolsTemplates,
+            value: templates == 0 ? l10n.chatToolsNone : '$templates',
             onTap: () => then(_insertQuickReply),
           ),
           ChatToolTile(
             icon: Symbols.ios_share,
-            label: 'Экспорт',
+            label: l10n.chatToolsExport,
             onTap: () => then(
               () => showChatExportSheet(
                 context,
@@ -3496,15 +3618,15 @@ class _ChatScreenState extends State<ChatScreen>
           if (canHide)
             ChatToolTile(
               icon: secret ? Symbols.layers_clear : Symbols.layers,
-              label: secret ? 'Из двойного дна' : 'В двойное дно',
+              label: secret
+                  ? l10n.chatToolsLeaveSecret
+                  : l10n.chatToolsMakeSecret,
               onTap: () => then(() async {
                 await DoubleBottom.setSecret(widget.chatId, !secret);
                 if (!mounted) return;
                 showCustomNotification(
                   context,
-                  !secret
-                      ? 'Чат спрятан: его не будет видно по второму коду'
-                      : 'Чат снова виден по любому коду',
+                  !secret ? l10n.chatToolsHidden : l10n.chatToolsShown,
                 );
               }),
             ),
@@ -5251,6 +5373,9 @@ class _ChatScreenState extends State<ChatScreen>
                           onDragTextSelection: (pos) =>
                               _textSelectionDrag.value = pos,
                           onDelete: () => _confirmDeleteMessage(message.id),
+                          onRetrySend: _canRetrySend(message)
+                              ? () => _retrySend(message)
+                              : null,
                           allowDelete:
                               !message.isControl &&
                               (isMe || !_isChannel || _canDeleteOthers),

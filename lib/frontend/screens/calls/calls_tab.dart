@@ -23,6 +23,8 @@ import '../../../l10n/app_localizations.dart';
 import 'call_link_sheet.dart';
 import 'call_screen.dart';
 import '../../../core/config/app_fonts.dart';
+import '../../../core/utils/haptics.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class CallsTab extends StatefulWidget {
   const CallsTab({super.key});
@@ -45,7 +47,10 @@ Future<void> createGroupCallFromContext(BuildContext context) async {
     created = await controller.createConference();
   } catch (e) {
     if (context.mounted) {
-      showCustomNotification(context, '${l10n.callLinkCreateFailed}: $e');
+      showCustomNotification(
+        context,
+        '${l10n.callLinkCreateFailed}: ${userFacingError(e)}',
+      );
     }
     return;
   }
@@ -66,7 +71,10 @@ Future<void> createGroupCallFromContext(BuildContext context) async {
     );
   } catch (e) {
     if (context.mounted) {
-      showCustomNotification(context, l10n.callsTabStartFailed('$e'));
+      showCustomNotification(
+        context,
+        l10n.callsTabStartFailed(userFacingError(e)),
+      );
     }
   }
 }
@@ -122,30 +130,7 @@ class _CallsTabState extends State<CallsTab>
       return;
     }
 
-    final List<CallLogEntry> grouped = [];
-    for (final call in calls) {
-      if (grouped.isNotEmpty &&
-          grouped.last.peerId == call.peerId &&
-          grouped.last.status == call.status &&
-          _isSameDay(grouped.last.time, call.time)) {
-        final last = grouped.removeLast();
-        grouped.add(
-          CallLogEntry(
-            id: last.id,
-            accountId: last.accountId,
-            peerId: last.peerId,
-            name: last.name,
-            avatarUrl: last.avatarUrl,
-            status: last.status,
-            time: last.time,
-            count: last.count + 1,
-            isGroup: last.isGroup,
-          ),
-        );
-      } else {
-        grouped.add(call);
-      }
-    }
+    final grouped = groupCallLog(calls);
 
     if (mounted) {
       setState(() {
@@ -153,13 +138,6 @@ class _CallsTabState extends State<CallsTab>
         _isLoading = false;
       });
     }
-  }
-
-  bool _isSameDay(int time1, int time2) {
-    if (time1 == 0 || time2 == 0) return false;
-    final d1 = DateTime.fromMillisecondsSinceEpoch(time1);
-    final d2 = DateTime.fromMillisecondsSinceEpoch(time2);
-    return d1.year == d2.year && d1.month == d2.month && d1.day == d2.day;
   }
 
   String _formatDate(AppLocalizations l10n, int timestamp) {
@@ -323,13 +301,23 @@ class _CallsTabState extends State<CallsTab>
     );
   }
 
-  void _deleteCall(CallLogEntry call) {
+  Future<void> _deleteCall(CallLogEntry call) async {
     if (_removing.contains(call.id)) return;
+    final l10n = AppLocalizations.of(context)!;
+    final position = _calls.indexWhere((c) => c.id == call.id);
     setState(() => _removing.add(call.id));
-    final historyId = int.tryParse(call.id);
-    if (historyId != null) {
-      unawaited(CallsModule(api).deleteHistory([historyId]));
-    }
+    final historyIds = [for (final id in call.historyIds) ?int.tryParse(id)];
+    final deleted =
+        historyIds.isEmpty || await CallsModule(api).deleteHistory(historyIds);
+    if (deleted || !mounted) return;
+    Haptics.error();
+    setState(() {
+      _removing.remove(call.id);
+      if (!_calls.any((c) => c.id == call.id)) {
+        _calls.insert(position.clamp(0, _calls.length).toInt(), call);
+      }
+    });
+    showCustomNotification(context, l10n.callsTabDeleteFailed);
   }
 
   void _onRemovalComplete(String id) {
@@ -399,7 +387,10 @@ class _CallsTabState extends State<CallsTab>
       created = await controller.createConference();
     } catch (e) {
       if (mounted) {
-        showCustomNotification(context, '${l10n.callLinkCreateFailed}: $e');
+        showCustomNotification(
+          context,
+          '${l10n.callLinkCreateFailed}: ${userFacingError(e)}',
+        );
       }
       return;
     }
@@ -421,7 +412,10 @@ class _CallsTabState extends State<CallsTab>
       );
     } catch (e) {
       if (!mounted) return;
-      showCustomNotification(context, l10n.callsTabStartFailed('$e'));
+      showCustomNotification(
+        context,
+        l10n.callsTabStartFailed(userFacingError(e)),
+      );
     }
   }
 
@@ -644,6 +638,7 @@ class _RemovableCallEntryState extends State<_RemovableCallEntry>
   void didUpdateWidget(covariant _RemovableCallEntry oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.removing && !oldWidget.removing) _controller.reverse();
+    if (!widget.removing && oldWidget.removing) _controller.forward();
   }
 
   @override

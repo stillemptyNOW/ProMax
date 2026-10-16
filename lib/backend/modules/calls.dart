@@ -74,6 +74,7 @@ class CallLogEntry {
   final int time;
   final int count;
   final bool isGroup;
+  final List<String> mergedIds;
 
   const CallLogEntry({
     required this.id,
@@ -85,7 +86,48 @@ class CallLogEntry {
     required this.time,
     this.count = 1,
     this.isGroup = false,
+    this.mergedIds = const [],
   });
+
+  List<String> get historyIds => [id, ...mergedIds];
+
+  CallLogEntry absorbing(CallLogEntry other) => CallLogEntry(
+    id: id,
+    accountId: accountId,
+    peerId: peerId,
+    name: name,
+    avatarUrl: avatarUrl,
+    status: status,
+    time: time,
+    count: count + other.count,
+    isGroup: isGroup,
+    mergedIds: [...mergedIds, ...other.historyIds],
+  );
+}
+
+List<CallLogEntry> groupCallLog(List<CallLogEntry> calls) {
+  bool sameDay(int a, int b) {
+    if (a == 0 || b == 0) return false;
+    final first = DateTime.fromMillisecondsSinceEpoch(a);
+    final second = DateTime.fromMillisecondsSinceEpoch(b);
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
+  }
+
+  final grouped = <CallLogEntry>[];
+  for (final call in calls) {
+    final last = grouped.isEmpty ? null : grouped.last;
+    if (last != null &&
+        last.peerId == call.peerId &&
+        last.status == call.status &&
+        sameDay(last.time, call.time)) {
+      grouped[grouped.length - 1] = last.absorbing(call);
+    } else {
+      grouped.add(call);
+    }
+  }
+  return grouped;
 }
 
 class _CallerEndpointMissingException implements Exception {

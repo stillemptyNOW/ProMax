@@ -64,6 +64,7 @@ import 'privacy_sandbox_screen.dart';
 import '../../widgets/media_playback_pill.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../core/config/app_shape.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -400,7 +401,9 @@ class _SettingsTabState extends State<SettingsTab>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.settingsTabPhotoDeleteFailed('$e'),
+          AppLocalizations.of(
+            context,
+          )!.settingsTabPhotoDeleteFailed(userFacingError(e)),
         );
       }
     }
@@ -522,7 +525,9 @@ class _SettingsTabState extends State<SettingsTab>
       if (mounted) {
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.settingsTabLogoutFailed('$e'),
+          AppLocalizations.of(
+            context,
+          )!.settingsTabLogoutFailed(userFacingError(e)),
         );
       }
       return;

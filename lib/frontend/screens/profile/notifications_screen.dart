@@ -22,6 +22,7 @@ import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
 import '../chats/quiet_hours_sheet.dart';
 import 'web_push_screen.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -82,7 +83,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         setState(() => assign(!value));
         showCustomNotification(
           context,
-          AppLocalizations.of(context)!.notificationsSaveFailed(e.toString()),
+          AppLocalizations.of(
+            context,
+          )!.notificationsSaveFailed(userFacingError(e)),
         );
       }
     } finally {

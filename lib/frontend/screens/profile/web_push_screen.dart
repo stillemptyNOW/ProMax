@@ -15,6 +15,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
+import '../../../core/utils/user_facing_error.dart';
 
 enum _Stage { loading, intro, waiting, password, ready }
 
@@ -108,7 +109,7 @@ class _WebPushScreenState extends State<WebPushScreen> {
     } on MaxWebException catch (e) {
       if (mounted) showCustomNotification(context, e.message);
     } catch (e) {
-      if (mounted) showCustomNotification(context, '$e');
+      if (mounted) showCustomNotification(context, userFacingError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
