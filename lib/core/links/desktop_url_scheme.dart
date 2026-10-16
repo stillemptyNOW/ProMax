@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import '../utils/logger.dart';
+import '../utils/windows_registry.dart';
 
 // #***! схемы которые вешаем на себя
 const List<String> _schemes = ['promax', 'max'];
@@ -19,23 +20,28 @@ abstract class DesktopUrlScheme {
     }
   }
 
-  // #***! на винде пишем реестр текущего юзера
   static Future<void> _registerWindows() async {
-    final exe = Platform.resolvedExecutable;
+    final registry = WindowsRegistry.currentUser;
+    if (registry == null) return;
+    final command = '"${Platform.resolvedExecutable}" "%1"';
     for (final scheme in _schemes) {
       final capitalized = '${scheme[0].toUpperCase()}${scheme.substring(1)}';
-      final base = 'HKCU\\Software\\Classes\\$scheme';
+      final base = 'Software\\Classes\\$scheme';
+      _ensure(registry, base, null, 'URL:$capitalized');
+      _ensure(registry, base, 'URL Protocol', '');
+      _ensure(registry, '$base\\shell\\open\\command', null, command);
+    }
+  }
 
-      await _run('reg', ['add', base, '/ve', '/d', 'URL:$capitalized', '/f']);
-      await _run('reg', ['add', base, '/v', 'URL Protocol', '/d', '', '/f']);
-      await _run('reg', [
-        'add',
-        '$base\\shell\\open\\command',
-        '/ve',
-        '/d',
-        '"$exe" "%1"',
-        '/f',
-      ]);
+  static void _ensure(
+    WindowsRegistry registry,
+    String key,
+    String? valueName,
+    String value,
+  ) {
+    if (registry.readString(key, valueName) == value) return;
+    if (!registry.writeString(key, valueName, value)) {
+      logger.w('DesktopUrlScheme: не записал $key');
     }
   }
 

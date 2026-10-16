@@ -147,6 +147,58 @@ void main() {
     });
   });
 
+  test('signs bridge calls with a per-page secret', () {
+    final first = buildBridge().userScript;
+    final second = buildBridge().userScript;
+
+    expect(first.source, isNot(contains('__PROMAX_BRIDGE_NONCE__')));
+    expect(first.source, isNot(second.source));
+    expect(first.forMainFrameOnly, isTrue);
+  });
+
+  test('refuses downloads that are not plain web links', () async {
+    final bridge = buildBridge();
+    bridge.registerGesture();
+
+    for (final url in [
+      'file:///etc/passwd',
+      'data:text/plain,x',
+      'javascript:alert(1)',
+    ]) {
+      await bridge.handleEvent(
+        'WebAppDownloadFile',
+        jsonEncode({'requestId': 'd', 'url': url, 'file_name': 'x.txt'}),
+        false,
+      );
+    }
+
+    expect(sent, hasLength(3));
+    for (final event in sent) {
+      expect(event.$2['error'], {
+        'code': 'client.download_file.invalid_request',
+      });
+    }
+  });
+
+  test('never downloads without someone to ask', () async {
+    final bridge = buildBridge();
+    bridge.registerGesture();
+
+    await bridge.handleEvent(
+      'WebAppDownloadFile',
+      jsonEncode({
+        'requestId': 'd2',
+        'url': 'https://files.example.org/x.exe',
+        'file_name': '../../x.exe',
+      }),
+      false,
+    );
+
+    expect(sent.single.$2['error'], {
+      'code': 'client.download_file.request_error',
+    });
+  });
+
   test('ignores private-channel events when the channel is off', () async {
     final bridge = buildBridge();
 

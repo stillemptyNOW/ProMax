@@ -23,6 +23,7 @@ import '../../../../models/attachment.dart';
 import '../../custom_notification.dart';
 import '../../decrypted_photo.dart';
 import '../../photo_viewer.dart';
+import '../../sandbox_prompts.dart';
 import '../../share_unopenable_file.dart';
 import '../../upload_progress_ring.dart';
 import 'bubble_context.dart';
@@ -247,8 +248,9 @@ class FileBubble extends StatelessWidget {
       name.toLowerCase().endsWith('.png') ||
       name.toLowerCase().endsWith('.kce');
 
-  Uint8List? get _sealedTicket =>
-      ctx.message.e2ee == CachedMessage.e2eeFile ? ctx.message.sealedText : null;
+  Uint8List? get _sealedTicket => ctx.message.e2ee == CachedMessage.e2eeFile
+      ? ctx.message.sealedText
+      : null;
 
   static bool _hasCover(String name) {
     final dot = name.lastIndexOf('.');
@@ -516,6 +518,8 @@ class FileBubble extends StatelessWidget {
         chatId: ctx.message.chatId,
         fileId: fileId,
       ),
+      confirmOpen: (path) =>
+          confirmOpenReceivedFile(context, name: name, path: path),
       onProgress: (p) => MediaDownloadProgress.set(cacheName, p),
       onReady: () {
         if (!cached) MediaDownloadProgress.set(cacheName, null);
@@ -532,7 +536,7 @@ class FileBubble extends StatelessWidget {
         messageTime: ctx.message.time,
       ),
     );
-    if (!context.mounted) return;
+    if (!context.mounted || result.declined) return;
     final path = result.path;
     if (result.noAppToOpen && path != null) {
       await shareUnopenableFile(context, path);
@@ -542,9 +546,7 @@ class FileBubble extends StatelessWidget {
       final l10n = AppLocalizations.of(context)!;
       showCustomNotification(
         context,
-        l10n.securityLoadError(
-          result.error ?? l10n.fileBubbleOpenFailedReason,
-        ),
+        l10n.securityLoadError(result.error ?? l10n.fileBubbleOpenFailedReason),
       );
     }
   }
@@ -640,7 +642,8 @@ class _AudioFilePlaybackControl extends StatelessWidget {
     return ValueListenableBuilder<AudioFileTrack?>(
       valueListenable: MediaPlayback.instance.audioFile,
       builder: (context, track, _) =>
-          track?.cacheName != cacheName || !AudioPlaybackController.isInitialized
+          track?.cacheName != cacheName ||
+              !AudioPlaybackController.isInitialized
           ? const SizedBox.shrink()
           : _AudioFileScrubber(color: color, textColor: textColor),
     );
@@ -669,7 +672,10 @@ class _AudioFileScrubberState extends State<_AudioFileScrubber> {
         final total = audio.duration.value.inMilliseconds;
         final elapsed = _dragMilliseconds != null
             ? _dragMilliseconds!.round()
-            : audio.position.value.inMilliseconds.clamp(0, total > 0 ? total : 0);
+            : audio.position.value.inMilliseconds.clamp(
+                0,
+                total > 0 ? total : 0,
+              );
         return Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Row(

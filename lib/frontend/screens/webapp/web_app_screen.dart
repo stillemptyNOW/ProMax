@@ -1,11 +1,17 @@
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:path/path.dart' as p;
 
 import '../../../backend/modules/webapp.dart';
+import '../../../core/security/file_name_policy.dart';
+import '../../../core/security/url_policy.dart';
+import '../../../core/security/webview_sandbox.dart';
 import '../../../core/storage/spoofing_service.dart';
+import '../../../core/utils/file_names.dart';
 import '../../../core/utils/link_opener.dart';
 import '../../../core/utils/logger.dart';
 import '../../../l10n/app_localizations.dart';
@@ -13,9 +19,12 @@ import '../../../main.dart' show api;
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/error_view.dart';
+import '../../widgets/sandbox_prompts.dart';
 import '../../widgets/small_spinner.dart';
 import '../../widgets/webview_permission_prompt.dart';
 import 'web_app_bridge.dart';
+import 'web_app_downloads.dart';
+import 'web_app_origin_policy.dart';
 
 class WebAppScreen extends StatefulWidget {
   final String title;
@@ -69,6 +78,9 @@ class _WebAppScreenState extends State<WebAppScreen> {
   InAppWebViewController? _controller;
   WebAppBridge? _bridge;
   WebAppLaunch? _launch;
+  WebAppOriginPolicy? _origins;
+  WebViewEnvironment? _environment;
+  bool _initialLoadDone = false;
   String? _loadError;
   String _userAgent = '';
   double _progress = 0;
@@ -111,11 +123,15 @@ class _WebAppScreenState extends State<WebAppScreen> {
             await SpoofingService.getWebViewUserAgent() ??
             '';
       }
+      _environment = await WebViewSandbox.environment();
       final launch = await widget.loader();
       if (!mounted) return;
+      final origins = WebAppOriginPolicy(Uri.parse(launch.url));
       setState(() {
         _launch = launch;
-        _bridge = _createBridge(launch.botId);
+        _origins = origins;
+        _initialLoadDone = false;
+        _bridge = _createBridge(launch.botId, origins);
       });
     } catch (e) {
       if (!mounted) return;
@@ -123,15 +139,18 @@ class _WebAppScreenState extends State<WebAppScreen> {
     }
   }
 
-  WebAppBridge _createBridge(int botId) => WebAppBridge(
-    botId: botId,
-    entryPoint: widget.entryPoint,
-    privateChannel: widget.privateChannel,
-    mobileIdVerifier: widget.mobileIdVerifier,
-    contextResolver: () => mounted ? context : null,
-    viewportResolver: () => _viewport,
-    onClose: _closeFromWebApp,
-  );
+  WebAppBridge _createBridge(int botId, WebAppOriginPolicy origins) =>
+      WebAppBridge(
+        botId: botId,
+        entryPoint: widget.entryPoint,
+        privateChannel: widget.privateChannel,
+        mobileIdVerifier: widget.mobileIdVerifier,
+        origins: origins,
+        appTitle: widget.title,
+        contextResolver: () => mounted ? context : null,
+        viewportResolver: () => _viewport,
+        onClose: _closeFromWebApp,
+      );
 
   Future<void> _closeFromWebApp() async {
     if (_recovering) return;
@@ -210,6 +229,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
           Navigator.of(context).pop(launch);
           return NavigationActionPolicy.CANCEL;
         }
+        _origins?.trust(Uri.parse(launch.url));
         setState(() {
           _launch = launch;
           _loadError = null;
@@ -224,12 +244,93 @@ class _WebAppScreenState extends State<WebAppScreen> {
     }
     final handler = widget.shouldOverrideUrlLoading;
     if (handler != null) return handler(controller, action, _launch?.url);
+    if (uri == null) return NavigationActionPolicy.ALLOW;
+    return _guardNavigation(uri, action.isForMainFrame);
+  }
 
-    if (uri != null && leavesWebView(uri.scheme)) {
-      if (mounted) await openExternalUrl(context, uri.toString());
-      return NavigationActionPolicy.CANCEL;
+  Future<NavigationActionPolicy> _guardNavigation(
+    Uri uri,
+    bool mainFrame,
+  ) async {
+    final scheme = uri.scheme.toLowerCase();
+    if (scheme == 'javascript') return NavigationActionPolicy.ALLOW;
+    if (scheme == 'http' || scheme == 'https') {
+      return _guardWebNavigation(uri, mainFrame);
     }
-    return NavigationActionPolicy.ALLOW;
+    if (!leavesWebView(scheme)) {
+      final blocked = mainFrame && scheme == 'data';
+      return blocked
+          ? NavigationActionPolicy.CANCEL
+          : NavigationActionPolicy.ALLOW;
+    }
+    if (mounted) await openExternalUrl(context, uri.toString());
+    return NavigationActionPolicy.CANCEL;
+  }
+
+  Future<NavigationActionPolicy> _guardWebNavigation(
+    Uri uri,
+    bool mainFrame,
+  ) async {
+    final origins = _origins;
+    if (!mainFrame || origins == null || origins.mayNavigate(uri)) {
+      return NavigationActionPolicy.ALLOW;
+    }
+    if (!_initialLoadDone) {
+      origins.trust(uri);
+      return NavigationActionPolicy.ALLOW;
+    }
+    if (!mounted) return NavigationActionPolicy.CANCEL;
+    final choice = await askExternalNavigation(
+      context,
+      target: uri,
+      allowInPlace: true,
+    );
+    switch (choice) {
+      case ExternalNavigationChoice.here:
+        origins.allowVisit(uri);
+        return NavigationActionPolicy.ALLOW;
+      case ExternalNavigationChoice.browser:
+        if (mounted) await openExternalUrl(context, uri.toString());
+        return NavigationActionPolicy.CANCEL;
+      case ExternalNavigationChoice.cancel:
+        return NavigationActionPolicy.CANCEL;
+    }
+  }
+
+  Future<void> _openNewWindow(Uri? target) async {
+    if (target == null || !mounted) return;
+    final url = target.toString();
+    if (isWebUri(target) && !(_origins?.trusts(target) ?? false)) {
+      final choice = await askExternalNavigation(context, target: target);
+      if (choice != ExternalNavigationChoice.browser || !mounted) return;
+    }
+    await openExternalUrl(context, url);
+  }
+
+  Future<void> _handleWebDownload(DownloadStartRequest request) async {
+    final uri = request.url;
+    if (!isWebUri(uri) || !mounted) return;
+    final suggested = repairFileName(request.suggestedFilename ?? '');
+    final name = sanitizeFileName(
+      suggested,
+      fallback: sanitizeFileName(p.basename(uri.path), fallback: 'download'),
+    );
+    final choice = await askMiniAppDownload(
+      context,
+      appTitle: widget.title,
+      fileName: name,
+      host: uri.host,
+    );
+    if (choice == MiniAppDownloadChoice.cancel || !mounted) return;
+    final saved = await saveMiniAppDownload(
+      choice: choice,
+      url: uri.toString(),
+      fileName: name,
+      botId: _launch?.botId ?? 0,
+      sourceName: widget.title,
+      dialogTitle: AppLocalizations.of(context)!.photoViewerSaveAs,
+    );
+    reportMiniAppDownload(mounted ? context : null, choice, saved);
   }
 
   @override
@@ -296,6 +397,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
   Widget _buildWebView(WebAppLaunch launch, WebAppBridge bridge) {
     return InAppWebView(
       key: ObjectKey(bridge),
+      webViewEnvironment: _environment,
       initialUrlRequest: URLRequest(url: WebUri(launch.url)),
       initialUserScripts: UnmodifiableListView<UserScript>([
         bridge.userScript,
@@ -314,6 +416,10 @@ class _WebAppScreenState extends State<WebAppScreen> {
         useHybridComposition: true,
         supportMultipleWindows: true,
         allowFileAccess: false,
+        allowFileAccessFromFileURLs: false,
+        allowUniversalAccessFromFileURLs: false,
+        allowContentAccess: false,
+        isInspectable: kDebugMode,
         useShouldOverrideUrlLoading: true,
         userAgent: _userAgent,
       ),
@@ -325,14 +431,14 @@ class _WebAppScreenState extends State<WebAppScreen> {
       onPermissionRequest: (controller, request) =>
           askWebViewPermission(context, request),
       onCreateWindow: (controller, action) async {
-        final url = action.request.url?.toString();
-        if (url != null && url.isNotEmpty && mounted) {
-          await openExternalUrl(context, url);
-        }
+        await _openNewWindow(action.request.url);
         return false;
       },
+      onDownloadStartRequest: (controller, request) =>
+          _handleWebDownload(request),
       onConsoleMessage: widget.onConsoleMessage,
       onLoadStart: widget.onLoadStart,
+      onLoadStop: (controller, url) => _initialLoadDone = true,
       shouldOverrideUrlLoading: _handleNavigation,
       onProgressChanged: (controller, progress) {
         if (!mounted) return;

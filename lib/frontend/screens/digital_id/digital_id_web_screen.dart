@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../../backend/modules/webapp.dart' show WebAppLaunch;
+import '../../../core/security/webview_sandbox.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/utils/link_opener.dart';
 import '../../../l10n/app_localizations.dart';
@@ -10,7 +11,9 @@ import '../../../main.dart' show digitalIdModule, webAppModule;
 import '../webapp/web_app_screen.dart';
 
 Future<void> resetDigitalIdWebData() async {
-  await CookieManager.instance().deleteAllCookies();
+  await CookieManager.instance(
+    webViewEnvironment: await WebViewSandbox.environment(),
+  ).deleteAllCookies();
   try {
     await WebStorageManager.instance().deleteAllData();
   } catch (_) {}

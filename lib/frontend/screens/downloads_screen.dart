@@ -3,19 +3,20 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
 
 import '../../core/utils/download_history.dart';
 import '../../core/media/audio_file_track.dart';
 import '../../core/media/media_playback.dart';
 import '../../core/utils/format.dart';
+import '../../core/utils/local_file_opener.dart';
 import '../../core/utils/media_saver.dart';
 import '../../core/utils/save_file_as.dart';
 import '../../l10n/app_localizations.dart';
 import '../widgets/chat_menu_overlay.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/custom_notification.dart';
+import '../widgets/sandbox_prompts.dart';
 import '../widgets/small_spinner.dart';
 import '../widgets/sheet_helpers.dart';
 import '../widgets/share_unopenable_file.dart';
@@ -88,9 +89,15 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       }
       return;
     }
-    final result = await OpenFilex.open(file.path);
-    if (!mounted || result.type == ResultType.done) return;
-    if (result.type == ResultType.noAppToOpen) {
+    final allowed = await confirmOpenReceivedFile(
+      context,
+      name: record.name,
+      path: file.path,
+    );
+    if (!allowed || !mounted) return;
+    final result = await openLocalFile(file.path);
+    if (!mounted || result.opened) return;
+    if (result.status == LocalFileOpenStatus.noApp) {
       await shareUnopenableFile(context, file.path);
       return;
     }

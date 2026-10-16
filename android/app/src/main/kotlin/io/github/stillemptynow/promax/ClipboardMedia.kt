@@ -79,11 +79,7 @@ object ClipboardMedia {
         val uris = ArrayList<Uri>(clip.itemCount)
         for (index in 0 until minOf(clip.itemCount, MAX_ITEMS)) {
             val uri = clip.getItemAt(index).uri ?: continue
-            if (uri.scheme != ContentResolver.SCHEME_CONTENT &&
-                uri.scheme != ContentResolver.SCHEME_FILE
-            ) {
-                continue
-            }
+            if (!IncomingUris.isAcceptable(context, uri)) continue
             uris.add(uri)
         }
         if (uris.isEmpty()) {
