@@ -12103,6 +12103,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This message can no longer be resent'**
   String get msgRetrySendUnavailable;
+
+  /// No description provided for @callsTabDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the call from history'**
+  String get callsTabDeleteFailed;
+
+  /// No description provided for @chatCommentsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load comments: {error}'**
+  String chatCommentsLoadFailed(String error);
 }
 
 class _AppLocalizationsDelegate

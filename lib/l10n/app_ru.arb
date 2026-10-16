@@ -2184,5 +2184,7 @@
   "chatActivitySendingFileMany": "{name} и ещё {count} отправляют файлы...",
   "newChatAvatarNotSet": "Аватар не установлен",
   "msgActionsRetrySend": "Повторить отправку",
-  "msgRetrySendUnavailable": "Это сообщение уже нельзя отправить повторно"
+  "msgRetrySendUnavailable": "Это сообщение уже нельзя отправить повторно",
+  "callsTabDeleteFailed": "Не удалось удалить звонок из истории",
+  "chatCommentsLoadFailed": "Не удалось загрузить комментарии: {error}"
 }

@@ -6874,4 +6874,12 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get msgRetrySendUnavailable =>
       'Это сообщение уже нельзя отправить повторно';
+
+  @override
+  String get callsTabDeleteFailed => 'Не удалось удалить звонок из истории';
+
+  @override
+  String chatCommentsLoadFailed(String error) {
+    return 'Не удалось загрузить комментарии: $error';
+  }
 }

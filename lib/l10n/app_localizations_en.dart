@@ -6831,4 +6831,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get msgRetrySendUnavailable => 'This message can no longer be resent';
+
+  @override
+  String get callsTabDeleteFailed => 'Couldn\'t delete the call from history';
+
+  @override
+  String chatCommentsLoadFailed(String error) {
+    return 'Couldn\'t load comments: $error';
+  }
 }
