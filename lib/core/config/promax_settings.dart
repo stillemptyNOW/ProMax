@@ -10,6 +10,7 @@ class ProMaxSettings {
   static const _kFullTimestamp = 'promax_full_timestamp';
   static const _kShowForward = 'promax_show_forward';
   static const _kShowTypingTime = 'promax_show_typing_time';
+  static const _kShowReadStamp = 'promax_show_read_stamp';
   static const _kGhostMode = 'promax_ghost_mode';
   static const _kAntiRead = 'promax_anti_read';
   static const _kSelfOnlineCheck = 'promax_self_online_check';
@@ -29,6 +30,7 @@ class ProMaxSettings {
   static final ValueNotifier<bool> fullTimestamp = ValueNotifier(false);
   static final ValueNotifier<bool> showForward = ValueNotifier(false);
   static final ValueNotifier<bool> showTypingTime = ValueNotifier(false);
+  static final ValueNotifier<bool> showReadStamp = ValueNotifier(true);
   static final ValueNotifier<bool> ghostMode = ValueNotifier(false);
   static final ValueNotifier<bool> streamerMode = ValueNotifier(false);
   static final ValueNotifier<bool> switcherBlur = ValueNotifier(false);
@@ -55,6 +57,7 @@ class ProMaxSettings {
     fullTimestamp.value = prefs.getBool(_kFullTimestamp) ?? false;
     showForward.value = prefs.getBool(_kShowForward) ?? false;
     showTypingTime.value = prefs.getBool(_kShowTypingTime) ?? false;
+    showReadStamp.value = prefs.getBool(_kShowReadStamp) ?? true;
     ghostMode.value = prefs.getBool(_kGhostMode) ?? false;
     antiRead.value = prefs.getBool(_kAntiRead) ?? false;
     quickReaction.value = prefs.getString(_kQuickReaction) ?? '❤️';
@@ -110,6 +113,12 @@ class ProMaxSettings {
     showTypingTime.value = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kShowTypingTime, value);
+  }
+
+  static Future<void> setShowReadStamp(bool value) async {
+    showReadStamp.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kShowReadStamp, value);
   }
 
   // #***! невидимка влияет на пинг, с interactive false сервер не считает нас онлайн

@@ -31,13 +31,35 @@ class MessageReader {
   final String name;
   final String? avatarUrl;
   final ReactionEmoji? reaction;
+  final int? readAt;
+  final bool readAtMost;
 
   const MessageReader({
     required this.id,
     required this.name,
     this.avatarUrl,
     this.reaction,
+    this.readAt,
+    this.readAtMost = false,
   });
+}
+
+class MessageReadSummary {
+  final String? text;
+  final bool _read;
+  final int? readerCount;
+
+  const MessageReadSummary.status(String this.text, {required bool read})
+    : _read = read,
+      readerCount = null;
+
+  const MessageReadSummary.readers(int this.readerCount)
+    : text = null,
+      _read = false;
+
+  bool get listsReaders => readerCount != null;
+
+  bool get read => listsReaders ? readerCount! > 0 : _read;
 }
 
 enum MessageActionsInteraction { dragAndRelease, click, tap }
@@ -111,6 +133,8 @@ void showMessageActions({
   List<({String label, String value})>? infoRows,
   Future<List<MessageReader>> Function()? loadReadBy,
   void Function(int userId)? onReaderTap,
+  MessageReadSummary? Function()? readSummary,
+  Listenable? readRevision,
   Future<List<({int id, String title})>> Function()? loadReportReasons,
   Future<bool> Function(int reasonId)? onReport,
   VoidCallback? onRetrySend,
@@ -164,6 +188,8 @@ void showMessageActions({
       infoRows: infoRows,
       loadReadBy: loadReadBy,
       onReaderTap: onReaderTap,
+      readSummary: readSummary,
+      readRevision: readRevision,
       loadReportReasons: loadReportReasons,
       onReport: onReport,
       onRetrySend: onRetrySend,
@@ -230,6 +256,8 @@ class _MessageActionsLayer extends StatefulWidget {
   final List<({String label, String value})>? infoRows;
   final Future<List<MessageReader>> Function()? loadReadBy;
   final void Function(int userId)? onReaderTap;
+  final MessageReadSummary? Function()? readSummary;
+  final Listenable? readRevision;
   final Future<List<({int id, String title})>> Function()? loadReportReasons;
   final Future<bool> Function(int reasonId)? onReport;
   final VoidCallback? onRetrySend;
@@ -269,6 +297,8 @@ class _MessageActionsLayer extends StatefulWidget {
     this.infoRows,
     this.loadReadBy,
     this.onReaderTap,
+    this.readSummary,
+    this.readRevision,
     this.loadReportReasons,
     this.onReport,
     this.onRetrySend,
@@ -311,6 +341,11 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
   static const double _btnSize = 52.0;
   static const double _hitRadius = 40.0;
   static const double _hMargin = 8.0;
+  static const double _readHeaderMinHeight = 40.0;
+  static const double _readSlotMinHeight = 36.0;
+  static const double _readTextSize = 12.5;
+  static const double _readTextLineHeight = 1.2;
+  static const double _labelBannerGap = 36.0;
 
   late List<_Action> _actions;
   late MessageActionsStyle _effectiveStyle;
@@ -319,6 +354,12 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
   List<Offset> _buttonCenters = const [];
   List<Rect> _buttonHitRects = const [];
   Rect _menuRect = Rect.zero;
+  Rect _readHeaderRect = Rect.zero;
+  double _readHeaderHeight = _readHeaderMinHeight;
+  MessageReadSummary? _readSummary;
+  bool _hasReadHeader = false;
+  bool _readHeaderListsReaders = false;
+  bool _readHeaderHovered = false;
   bool _initialized = false;
 
   int _hoveredIndex = -1;
@@ -385,18 +426,15 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     super.didChangeDependencies();
     if (_initialized) return;
     _initialized = true;
+    _applyReadSummary(widget.readSummary?.call());
     _actions = _buildActions();
     _effectiveStyle =
         widget.interaction == MessageActionsInteraction.click ||
             !IosRelease.messageActionsStyleChoice
         ? MessageActionsStyle.list
         : widget.style;
-    final screenSize = MediaQuery.sizeOf(context);
-    if (_effectiveStyle == MessageActionsStyle.radial) {
-      _computeRadialGeometry(screenSize);
-    } else {
-      _computeListGeometry(screenSize);
-    }
+    _computeGeometry();
+    widget.readRevision?.addListener(_onReadRevision);
     if (widget.interaction == MessageActionsInteraction.dragAndRelease) {
       widget.controller.addListener(_onControllerUpdate);
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -405,17 +443,67 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     }
   }
 
+  bool _applyReadSummary(MessageReadSummary? summary) {
+    final hasHeader = summary != null;
+    final listsReaders =
+        summary != null && summary.listsReaders && widget.loadReadBy != null;
+    final layoutChanged =
+        hasHeader != _hasReadHeader || listsReaders != _readHeaderListsReaders;
+    _readSummary = summary;
+    _hasReadHeader = hasHeader;
+    _readHeaderListsReaders = listsReaders;
+    return layoutChanged;
+  }
+
+  void _onReadRevision() {
+    if (!mounted || _closing) return;
+    setState(() {
+      if (!_applyReadSummary(widget.readSummary?.call())) return;
+      _hoveredIndex = -1;
+      _readHeaderHovered = false;
+      _actions = _buildActions();
+      _computeGeometry();
+    });
+  }
+
+  void _computeGeometry() {
+    final screenSize = MediaQuery.sizeOf(context);
+    if (_effectiveStyle == MessageActionsStyle.radial) {
+      _computeRadialGeometry(screenSize);
+    } else {
+      _computeListGeometry(screenSize);
+    }
+  }
+
+  double _twoReadLines() =>
+      MediaQuery.textScalerOf(context).scale(_readTextSize) *
+      _readTextLineHeight *
+      2;
+
+  double get _readSlotHeight =>
+      math.max(_readSlotMinHeight, _twoReadLines() + 12);
+
+  double get _labelBannerBottom =>
+      math.max(
+        MediaQuery.paddingOf(context).bottom,
+        MediaQuery.viewInsetsOf(context).bottom,
+      ) +
+      _labelBannerGap;
+
   void _computeRadialGeometry(Size screenSize) {
     final n = _actions.length;
     const reach = _radius + _btnSize / 2;
     final padding = MediaQuery.paddingOf(context);
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final topMargin = padding.top + _hMargin;
+    final reservedBottom = math.max(
+      padding.bottom,
+      math.max(keyboardInset, widget.bottomReservedSpace),
+    );
     final bottomMargin =
-        math.max(
-          padding.bottom,
-          math.max(keyboardInset, widget.bottomReservedSpace),
-        ) +
+        (_hasReadHeader
+            ? math.max(reservedBottom, _labelBannerBottom + _readSlotHeight)
+            : reservedBottom) +
         _hMargin;
     final rect = widget.originRect;
 
@@ -516,7 +604,9 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     const menuWidth = 220.0;
     const itemHeight = 42.0;
     const vPad = 6.0;
-    final menuHeight = n * itemHeight + vPad * 2;
+    _readHeaderHeight = math.max(_readHeaderMinHeight, _twoReadLines() + 10);
+    final headerHeight = _hasReadHeader ? _readHeaderHeight + 1 : 0.0;
+    final menuHeight = headerHeight + n * itemHeight + vPad * 2;
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final bottomLimit =
         screenSize.height - math.max(keyboardInset, widget.bottomReservedSpace);
@@ -547,11 +637,14 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
       menuX = rawX.clamp(8.0, screenSize.width - menuWidth - 8.0).toDouble();
     }
     _menuRect = Rect.fromLTWH(menuX, menuY, menuWidth, menuHeight);
+    _readHeaderRect = _hasReadHeader
+        ? Rect.fromLTWH(menuX, menuY, menuWidth, _readHeaderHeight)
+        : Rect.zero;
     _buttonHitRects = [
       for (int i = 0; i < n; i++)
         Rect.fromLTWH(
           menuX,
-          menuY + vPad + i * itemHeight,
+          menuY + headerHeight + vPad + i * itemHeight,
           menuWidth,
           itemHeight,
         ),
@@ -563,6 +656,7 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     _animController.dispose();
     _expandController.dispose();
     widget.controller.removeListener(_onControllerUpdate);
+    widget.readRevision?.removeListener(_onReadRevision);
     widget.snapshot?.dispose();
     super.dispose();
   }
@@ -609,7 +703,7 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
         ),
       if (widget.editHistory != null && widget.editHistory!.isNotEmpty)
         _Action(Symbols.history, l10n.msgActionsEditHistory, _showHistoryView),
-      if (widget.loadReadBy != null)
+      if (widget.loadReadBy != null && !_readHeaderListsReaders)
         _Action(Symbols.visibility, l10n.msgActionsReadBy, _showReadByView),
       if (widget.infoRows != null && widget.infoRows!.isNotEmpty)
         _Action(Symbols.info, l10n.msgActionsInfo, _showInfoView),
@@ -703,6 +797,12 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
         if (newHovered != -1) Haptics.selection();
         setState(() => _hoveredIndex = newHovered);
       }
+      final headerHovered =
+          _readHeaderListsReaders && _readHeaderRect.contains(p);
+      if (headerHovered != _readHeaderHovered) {
+        if (headerHovered) Haptics.selection();
+        setState(() => _readHeaderHovered = headerHovered);
+      }
     }
 
     if (widget.controller.committed && !_committedFired) {
@@ -722,6 +822,9 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     if (_hoveredIndex != -1 && widget.controller.movedSignificantly) {
       Haptics.medium();
       _actions[_hoveredIndex].onTap();
+    } else if (_readHeaderHovered && widget.controller.movedSignificantly) {
+      Haptics.medium();
+      _showReadByView();
     } else if (widget.controller.movedSignificantly) {
       _close();
     }
@@ -812,7 +915,6 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
     final isClick = widget.interaction == MessageActionsInteraction.click;
     final showReactions = _reactionsEnabled && !isClick;
     return AnimatedBuilder(
@@ -865,7 +967,7 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
                       children: [
                         if (_effectiveStyle == MessageActionsStyle.radial) ...[
                           ..._buildButtons(t),
-                          _buildLabelBanner(size, t),
+                          _buildLabelBanner(t),
                         ] else
                           _buildListMenu(t),
                       ],
@@ -1452,7 +1554,7 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     return _buildAnchoredPanel(
       title: l10n.msgActionsReadBy,
       body: body,
-      width: 250,
+      width: 300,
     );
   }
 
@@ -1494,7 +1596,166 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
                 const SizedBox(width: 8),
                 _ReactionGlyph(reaction: reaction, size: 20),
               ],
+              const SizedBox(width: 10),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 132),
+                child: Text(
+                  _readerTimeLabel(AppLocalizations.of(context)!, reader),
+                  maxLines: 2,
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: 11.5,
+                    height: 1.2,
+                    fontFeatures: const [ui.FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _readerTimeLabel(AppLocalizations l10n, MessageReader reader) {
+    final at = reader.readAt;
+    if (at == null) return l10n.readReceiptTimeUnknown;
+    final stamp = formatReadStamp(
+      l10n,
+      DateTime.fromMillisecondsSinceEpoch(at),
+    );
+    return reader.readAtMost ? l10n.readReceiptTimeAtMost(stamp) : stamp;
+  }
+
+  String _readSummaryText(AppLocalizations l10n, MessageReadSummary summary) {
+    final count = summary.readerCount;
+    if (count == null) return summary.text ?? '';
+    final effective = _readers?.length ?? count;
+    return effective == 0
+        ? l10n.msgActionsReadByEmpty
+        : l10n.readReceiptReadCount(effective);
+  }
+
+  bool _readSummaryRead(MessageReadSummary summary) {
+    if (!summary.listsReaders) return summary.read;
+    return (_readers?.length ?? summary.readerCount!) > 0;
+  }
+
+  void _openReadersFromHeader() {
+    Haptics.tap();
+    _showReadByView();
+  }
+
+  Widget _readSummaryContent(
+    ColorScheme cs,
+    MessageReadSummary summary, {
+    required Color foreground,
+    required bool chevron,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+    final text = _readSummaryText(l10n, summary);
+    final read = _readSummaryRead(summary);
+    const fade = Duration(milliseconds: 220);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 20,
+          child: AnimatedSwitcher(
+            duration: fade,
+            transitionBuilder: (child, anim) => FadeTransition(
+              opacity: anim,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.6, end: 1.0).animate(anim),
+                child: child,
+              ),
+            ),
+            child: Icon(
+              read ? Symbols.done_all : Symbols.done,
+              key: ValueKey(read),
+              size: 17,
+              color: read ? cs.primary : foreground,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: AnimatedSwitcher(
+            duration: fade,
+            layoutBuilder: (current, previous) => Stack(
+              alignment: AlignmentDirectional.centerStart,
+              children: [...previous, ?current],
+            ),
+            child: Text(
+              text,
+              key: ValueKey(text),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: foreground,
+                fontSize: _readTextSize,
+                height: _readTextLineHeight,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+        if (chevron) ...[
+          const SizedBox(width: 6),
+          Icon(Symbols.chevron_right, size: 18, color: foreground),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildReadHeader(ColorScheme cs) {
+    final summary = _readSummary;
+    if (summary == null) return const SizedBox.shrink();
+    final tappable = _readHeaderListsReaders;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: tappable ? _openReadersFromHeader : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          color: _readHeaderHovered
+              ? cs.onSurface.withValues(alpha: 0.07)
+              : Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          alignment: AlignmentDirectional.centerStart,
+          child: _readSummaryContent(
+            cs,
+            summary,
+            foreground: cs.onSurfaceVariant,
+            chevron: tappable,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadSlot(ColorScheme cs, MessageReadSummary summary) {
+    final tappable = _readHeaderListsReaders;
+    return Material(
+      color: cs.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(_readSlotMinHeight / 2),
+      clipBehavior: Clip.antiAlias,
+      elevation: 6,
+      shadowColor: Colors.black.withValues(alpha: 0.35),
+      child: InkWell(
+        onTap: tappable ? _openReadersFromHeader : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: _readSlotMinHeight),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            child: _readSummaryContent(
+              cs,
+              summary,
+              foreground: cs.onSurface,
+              chevron: tappable,
+            ),
           ),
         ),
       ),
@@ -1619,6 +1880,17 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (_hasReadHeader) ...[
+                  SizedBox(
+                    height: _readHeaderHeight,
+                    child: _buildReadHeader(cs),
+                  ),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: cs.outlineVariant.withValues(alpha: 0.35),
+                  ),
+                ],
                 const SizedBox(height: 6),
                 for (int i = 0; i < _actions.length; i++)
                   _ListMenuItem(
@@ -1686,17 +1958,44 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     ];
   }
 
-  Widget _buildLabelBanner(Size size, double t) {
+  Widget _buildLabelBanner(double t) {
+    final cs = Theme.of(context).colorScheme;
     final label = _hoveredIndex == -1 ? null : _actions[_hoveredIndex].label;
-    final bottomInset = math.max(
-      MediaQuery.paddingOf(context).bottom,
-      MediaQuery.viewInsetsOf(context).bottom,
-    );
+    final summary = label == null ? _readSummary : null;
+    final eased = Curves.easeOutCubic.transform(t);
+    final Widget child;
+    if (label != null) {
+      child = Container(
+        key: ValueKey('label_$label'),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.72 * t),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    } else if (summary != null) {
+      child = Opacity(
+        key: const ValueKey('read_summary'),
+        opacity: eased,
+        child: _buildReadSlot(cs, summary),
+      );
+    } else {
+      child = const SizedBox(key: ValueKey('empty'), height: 0);
+    }
     return Positioned(
-      left: 0,
-      right: 0,
-      bottom: bottomInset + 36,
+      left: 16,
+      right: 16,
+      bottom: _labelBannerBottom,
       child: IgnorePointer(
+        ignoring: summary == null || !_readHeaderListsReaders,
         child: Center(
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 140),
@@ -1707,27 +2006,7 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
                 child: child,
               ),
             ),
-            child: label == null
-                ? const SizedBox(key: ValueKey('empty'), height: 0)
-                : Container(
-                    key: ValueKey('label_$label'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 9,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.72 * t),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+            child: child,
           ),
         ),
       ),

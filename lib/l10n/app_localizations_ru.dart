@@ -668,6 +668,65 @@ class AppLocalizationsRu extends AppLocalizations {
   String get msgActionsReadByUnknownUser => 'Пользователь';
 
   @override
+  String readStampToday(String time) {
+    return 'сегодня в $time';
+  }
+
+  @override
+  String readStampYesterday(String time) {
+    return 'вчера в $time';
+  }
+
+  @override
+  String readStampDate(String date, String time) {
+    return '$date в $time';
+  }
+
+  @override
+  String readReceiptReadAt(String stamp) {
+    return 'Прочитано $stamp';
+  }
+
+  @override
+  String readReceiptReadAtMost(String stamp) {
+    return 'Прочитано не позже: $stamp';
+  }
+
+  @override
+  String get readReceiptReadUnknown => 'Прочитано, время неизвестно';
+
+  @override
+  String get readReceiptNotRead => 'Не прочитано';
+
+  @override
+  String readReceiptReadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Прочитали $count участника',
+      many: 'Прочитали $count участников',
+      few: 'Прочитали $count участника',
+      one: 'Прочитал $count участник',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String readReceiptTimeAtMost(String stamp) {
+    return 'не позже: $stamp';
+  }
+
+  @override
+  String get readReceiptTimeUnknown => 'время неизвестно';
+
+  @override
+  String get proMaxSettingsReadStamp => 'Время прочтения под сообщением';
+
+  @override
+  String get proMaxSettingsReadStampSubtitle =>
+      'В диалоге под последним прочитанным сообщением видно, когда его прочитали';
+
+  @override
   String get msgActionsReport => 'Пожаловаться';
 
   @override

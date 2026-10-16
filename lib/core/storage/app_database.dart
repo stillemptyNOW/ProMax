@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:promax/core/storage/app_instance.dart';
 import 'package:promax/core/storage/message_ranges.dart';
+import 'package:promax/core/storage/read_receipt.dart';
 import 'package:promax/core/utils/logger.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -292,7 +293,7 @@ class AppDatabase {
     final opened = await openDatabase(
       target,
       // #***! каждый if oldVersion < N это шаг миграции, идут по порядку
-      version: 29,
+      version: 30,
       onOpen: (db) => db.execute('PRAGMA foreign_keys = ON'),
       onCreate: (db, _) => _createTables(db),
       onUpgrade: (db, oldVersion, newVersion) async {
@@ -457,6 +458,9 @@ class AppDatabase {
         if (oldVersion < 29) {
           await _addColumnIfMissing(db, 'messages', 'typing_ms', 'INTEGER');
         }
+        if (oldVersion < 30) {
+          await db.execute(_readReceiptsSchema);
+        }
       },
     );
     await _dropLegacyExposedDb();
@@ -491,6 +495,7 @@ class AppDatabase {
     await db.execute(_webAppBiometrySchema);
     await db.execute(_e2eeSessionsSchema);
     await db.execute(_messageRangesSchema);
+    await db.execute(_readReceiptsSchema);
     await _createIndexes(db);
     await _createChatParticipantsIndex(db);
   }
@@ -672,6 +677,19 @@ class AppDatabase {
       start_time INTEGER NOT NULL,
       end_time   INTEGER NOT NULL,
       PRIMARY KEY (account_id, chat_id, start_time),
+      FOREIGN KEY (chat_id, account_id) REFERENCES chats_cache (id, account_id) ON DELETE CASCADE
+    )
+  ''';
+
+  static const _readReceiptsSchema = '''
+    CREATE TABLE IF NOT EXISTS read_receipts (
+      account_id INTEGER NOT NULL,
+      chat_id    INTEGER NOT NULL,
+      user_id    INTEGER NOT NULL,
+      prev_mark  INTEGER NOT NULL,
+      mark       INTEGER NOT NULL,
+      read_at    INTEGER NOT NULL,
+      PRIMARY KEY (account_id, chat_id, user_id, mark),
       FOREIGN KEY (chat_id, account_id) REFERENCES chats_cache (id, account_id) ON DELETE CASCADE
     )
   ''';
@@ -1699,6 +1717,56 @@ class AppDatabase {
       }
       await batch.commit(noResult: true);
     });
+  }
+
+  static const readReceiptsPerChat = 500;
+
+  static Future<void> insertReadReceipt(
+    int accountId,
+    int chatId,
+    ReadReceipt receipt,
+  ) async {
+    final db = await _instance;
+    await db.transaction((txn) async {
+      await txn.insert('read_receipts', {
+        'account_id': accountId,
+        'chat_id': chatId,
+        'user_id': receipt.userId,
+        'prev_mark': receipt.prevMark,
+        'mark': receipt.mark,
+        'read_at': receipt.readAt,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      await txn.rawDelete(
+        'DELETE FROM read_receipts WHERE account_id = ? AND chat_id = ? '
+        'AND rowid NOT IN (SELECT rowid FROM read_receipts '
+        'WHERE account_id = ? AND chat_id = ? '
+        'ORDER BY mark DESC, read_at DESC LIMIT ?)',
+        [accountId, chatId, accountId, chatId, readReceiptsPerChat],
+      );
+    });
+  }
+
+  static Future<List<ReadReceipt>> loadReadReceipts(
+    int accountId,
+    int chatId,
+  ) async {
+    final db = await _instance;
+    final rows = await db.query(
+      'read_receipts',
+      columns: ['user_id', 'prev_mark', 'mark', 'read_at'],
+      where: 'account_id = ? AND chat_id = ?',
+      whereArgs: [accountId, chatId],
+      orderBy: 'mark ASC',
+    );
+    return [
+      for (final row in rows)
+        ReadReceipt(
+          userId: row['user_id'] as int,
+          prevMark: row['prev_mark'] as int,
+          mark: row['mark'] as int,
+          readAt: row['read_at'] as int,
+        ),
+    ];
   }
 
   static Future<void> extendMessageRange(

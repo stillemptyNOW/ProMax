@@ -237,6 +237,16 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     onChanged: ProMaxSettings.setShowTypingTime,
                   ),
                 ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxSettings.showReadStamp,
+                  builder: (context, value, _) => SettingsToggleTile(
+                    icon: Symbols.done_all,
+                    label: l10n.proMaxSettingsReadStamp,
+                    subtitle: l10n.proMaxSettingsReadStampSubtitle,
+                    value: value,
+                    onChanged: ProMaxSettings.setShowReadStamp,
+                  ),
+                ),
               ],
             ),
             ProMaxSectionTitle(

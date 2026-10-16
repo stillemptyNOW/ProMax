@@ -665,6 +665,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get msgActionsReadByUnknownUser => 'User';
 
   @override
+  String readStampToday(String time) {
+    return 'today at $time';
+  }
+
+  @override
+  String readStampYesterday(String time) {
+    return 'yesterday at $time';
+  }
+
+  @override
+  String readStampDate(String date, String time) {
+    return '$date at $time';
+  }
+
+  @override
+  String readReceiptReadAt(String stamp) {
+    return 'Read $stamp';
+  }
+
+  @override
+  String readReceiptReadAtMost(String stamp) {
+    return 'Read no later than $stamp';
+  }
+
+  @override
+  String get readReceiptReadUnknown => 'Read, time unknown';
+
+  @override
+  String get readReceiptNotRead => 'Not read yet';
+
+  @override
+  String readReceiptReadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Read by $count members',
+      one: 'Read by $count member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String readReceiptTimeAtMost(String stamp) {
+    return 'by $stamp';
+  }
+
+  @override
+  String get readReceiptTimeUnknown => 'time unknown';
+
+  @override
+  String get proMaxSettingsReadStamp => 'Read time under messages';
+
+  @override
+  String get proMaxSettingsReadStampSubtitle =>
+      'In a dialog, your latest read message shows when it was read';
+
+  @override
   String get msgActionsReport => 'Report';
 
   @override

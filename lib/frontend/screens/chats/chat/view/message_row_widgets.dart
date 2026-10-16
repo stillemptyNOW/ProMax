@@ -24,6 +24,7 @@ import 'package:promax/frontend/widgets/message_actions_overlay.dart'
     show
         MessageActionsController,
         MessageActionsInteraction,
+        MessageReadSummary,
         MessageReader,
         ReactionEmoji,
         showMessageActions;
@@ -365,6 +366,8 @@ class SelectableMessageRow extends StatefulWidget {
   final bool Function() isPinned;
   final Future<List<MessageReader>> Function()? loadReadBy;
   final void Function(int userId)? onReaderTap;
+  final MessageReadSummary? Function()? readSummary;
+  final Listenable? readRevision;
   final Future<List<({int id, String title})>> Function()? loadReportReasons;
   final Future<bool> Function(int reasonId)? onReport;
   final void Function(String emoji)? onReact;
@@ -401,6 +404,8 @@ class SelectableMessageRow extends StatefulWidget {
     required this.isPinned,
     this.loadReadBy,
     this.onReaderTap,
+    this.readSummary,
+    this.readRevision,
     this.loadReportReasons,
     this.onReport,
     this.onReact,
@@ -466,6 +471,8 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       infoRows: _infoRows(),
       loadReadBy: widget.loadReadBy,
       onReaderTap: widget.onReaderTap,
+      readSummary: widget.readSummary,
+      readRevision: widget.readRevision,
       loadReportReasons: widget.loadReportReasons,
       onReport: widget.onReport,
       onRetrySend: widget.onRetrySend,
@@ -586,6 +593,8 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       infoRows: _infoRows(),
       loadReadBy: widget.loadReadBy,
       onReaderTap: widget.onReaderTap,
+      readSummary: widget.readSummary,
+      readRevision: widget.readRevision,
       loadReportReasons: widget.loadReportReasons,
       onReport: widget.onReport,
       onRetrySend: widget.onRetrySend,
