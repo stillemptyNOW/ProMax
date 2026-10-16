@@ -31,6 +31,7 @@ import 'core/config/app_spectrum_background.dart';
 import 'core/config/app_bubble_behavior.dart';
 import 'core/config/app_camera.dart';
 import 'core/config/promax_settings.dart';
+import 'core/config/privacy_settings.dart';
 import 'core/security/app_lock.dart';
 import 'core/config/call_no_mute.dart';
 import 'core/config/debug_test.dart';
@@ -341,6 +342,7 @@ void main(List<String> args) async {
   await ChatEncryptionStore.instance.load();
   E2eeService.instance.attach(messagesModule);
   await ProMaxSettings.load();
+  await PrivacySettings.load();
   await AppLock.instance.load();
   if (BuildProfile.plugins) await PluginStore.instance.load();
   CommandRegistry.instance.initialize();

@@ -1,3 +1,4 @@
+import '../../../core/config/promax_settings.dart';
 import '../../../core/protocol/opcode_map.dart';
 import 'account_base.dart';
 import 'account_models.dart';
@@ -35,7 +36,9 @@ class SessionsModule extends AccountApiBase {
     }
 
     // #***! пинг и сессии перед подтверждением, сервер ждёт именно так иначе отклонит
-    await api.sendRequest(Opcode.ping, {'interactive': true});
+    await api.sendRequest(Opcode.ping, {
+      'interactive': !ProMaxSettings.ghostMode.value,
+    });
     await api.sendRequest(Opcode.sessionsInfo, {});
     await Future<void>.delayed(const Duration(milliseconds: 300));
     final packet = await api.sendRequest(Opcode.authQrApprove, {

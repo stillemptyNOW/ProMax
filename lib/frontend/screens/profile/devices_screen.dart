@@ -8,10 +8,13 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/utils/format.dart';
 import '../../../core/config/app_colors.dart';
 import '../../../core/config/build_profile.dart';
+import '../../../core/config/privacy_settings.dart';
+import '../../../core/privacy/ip_geo_lookup.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart' show accountModule;
 import '../../../backend/modules/account.dart' show SessionInfo;
 import '../../widgets/custom_notification.dart';
+import '../../widgets/confirm_dialog.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../widgets/glossy_pill.dart';
@@ -136,36 +139,29 @@ class _DevicesScreenState extends State<DevicesScreen>
       return;
     }
 
-    final reg = RegExp(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b');
-    final match = reg.firstMatch(location);
-    if (match == null) return;
-    final ip = match.group(0)!;
+    final ip = IpGeoLookup.extractIpv4(location);
+    if (ip == null) return;
+    if (!await _allowIpLookup() || !mounted) return;
 
-    if (mounted) {
-      setState(() => _loadingIps.add(id));
-    }
+    setState(() => _loadingIps.add(id));
 
     HttpClient? client;
     try {
       client = HttpClient();
       client.connectionTimeout = const Duration(seconds: 5);
-      const fields = BuildProfile.sessionCityLookup
-          ? 'status,message,country,city,isp,as,mobile,proxy,timezone'
-          : 'status,message,country,isp,as,mobile,proxy,timezone';
-      final request = await client.getUrl(
-        Uri.parse('http://ip-api.com/json/$ip?fields=$fields'),
-      );
+      final request = await client.getUrl(IpGeoLookup.uriFor(ip));
       final response = await request.close();
-      if (response.statusCode == 200) {
-        final body = await response.transform(utf8.decoder).join();
-        final data = jsonDecode(body);
-        if (mounted) {
-          setState(() {
-            _ipDetails[id] = data;
-            _expandedSessions.add(id);
-            _loadingIps.remove(id);
-          });
-        }
+      final body = await response.transform(utf8.decoder).join();
+      final data = response.statusCode == 200
+          ? IpGeoLookup.parse(jsonDecode(body))
+          : null;
+      if (data == null) throw HttpException('HTTP ${response.statusCode}');
+      if (mounted) {
+        setState(() {
+          _ipDetails[id] = data;
+          _expandedSessions.add(id);
+          _loadingIps.remove(id);
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -178,6 +174,22 @@ class _DevicesScreenState extends State<DevicesScreen>
     } finally {
       client?.close();
     }
+  }
+
+  Future<bool> _allowIpLookup() async {
+    if (PrivacySettings.sessionIpLookup.current.value) return true;
+    final l10n = AppLocalizations.of(context)!;
+    final allowed = await showConfirmDialog(
+      context,
+      title: l10n.privacySessionIpLookupConfirmTitle,
+      message: l10n.privacySessionIpLookupConfirmMessage(
+        IpGeoLookup.serviceHost,
+      ),
+      confirmLabel: l10n.privacySessionIpLookupConfirmAction,
+    );
+    if (!allowed) return false;
+    await PrivacySettings.sessionIpLookup.save(true);
+    return true;
   }
 
   String _formatPlace(Map<String, dynamic> details) {

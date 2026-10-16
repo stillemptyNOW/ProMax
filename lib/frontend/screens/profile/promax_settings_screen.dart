@@ -23,6 +23,7 @@ import '../../../core/storage/quick_replies_store.dart';
 import '../../../core/reminders/message_reminders.dart';
 import 'export_reader_screen.dart';
 import 'plugins_screen.dart';
+import 'privacy_sandbox_screen.dart';
 import 'promax_design_screen.dart';
 import 'promax_transfer_card.dart';
 import 'quick_reaction_screen.dart';
@@ -81,6 +82,11 @@ class ProMaxSettingsScreen extends StatelessWidget {
             const ProMaxSectionTitle('Призрак и приватность'),
             SettingsCard(
               children: [
+                SettingsNavTile(
+                  icon: Symbols.privacy_tip,
+                  label: l10n.privacySandboxTitle,
+                  onTap: () => _open(context, const PrivacySandboxScreen()),
+                ),
                 ValueListenableBuilder<bool>(
                   valueListenable: ProMaxSettings.ghostMode,
                   builder: (context, value, _) => SettingsToggleTile(
@@ -337,7 +343,7 @@ class ProMaxSettingsScreen extends StatelessWidget {
 
   Future<void> _setGhostMode(bool value) async {
     await ProMaxSettings.setGhostMode(value);
-    api.sendPing(interactive: !value);
+    api.refreshPresence();
   }
 }
 

@@ -8,6 +8,9 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 
 import 'package:device_info_plus/device_info_plus.dart';
 
+import '../../core/config/privacy_settings.dart';
+import '../../core/privacy/host_policy.dart';
+import '../../core/privacy/neutral_user_agent.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/spoofing_service.dart';
 import '../../core/storage/token_storage.dart';
@@ -165,21 +168,16 @@ class DigitalIdModule {
   Future<String> _generateDeviceId() async {
     final rnd = Random.secure();
     final bytes = List<int>.generate(16, (_) => rnd.nextInt(256));
-    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-    try {
-      final info = DeviceInfoPlugin();
-      if (Platform.isAndroid) {
-        final android = await info.androidInfo;
-        return '${android.id}_$hex';
-      }
-    } catch (_) {}
-    return hex;
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 
   // #***! представляемся тем же браузером что и вебвью
   Future<String> _resolveUserAgent() async {
     final spoofed = await SpoofingService.getWebViewUserAgent();
     if (spoofed != null && spoofed.isNotEmpty) return spoofed;
+    if (PrivacySettings.neutralWebUserAgent.current.value && !Platform.isIOS) {
+      return NeutralUserAgent.mobileWeb;
+    }
     return _realUserAgent ??= await _buildRealUserAgent();
   }
 
@@ -559,29 +557,47 @@ class DigitalIdModule {
 
   // #***! качаем страницу проверки из QR, разбирает вызывающий
   Future<Map<String, dynamic>?> fetchMobileIdVerification(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null || uri.scheme != 'https') return null;
+    final parsed = Uri.tryParse(url);
+    if (parsed == null) return null;
+    var uri = parsed;
     try {
-      final request = await _http.getUrl(uri);
-      request.followRedirects = true;
-      final response = await request.close();
-      final builder = BytesBuilder(copy: false);
-      await for (final chunk in response) {
-        builder.add(chunk);
+      for (var hop = 0; hop <= _mobileIdMaxRedirects; hop++) {
+        if (!HostPolicy.allowsMobileIdFetch(uri)) {
+          logger.w('[DID] mobile id: хост ${uri.host} вне белого списка');
+          return null;
+        }
+        final request = await _http.getUrl(uri);
+        request.followRedirects = false;
+        final response = await request.close();
+        final location = response.headers.value(HttpHeaders.locationHeader);
+        if (response.isRedirect && location != null) {
+          await response.drain<void>();
+          uri = uri.resolve(location);
+          continue;
+        }
+        final builder = BytesBuilder(copy: false);
+        await for (final chunk in response) {
+          builder.add(chunk);
+          if (builder.length > _mobileIdMaxBytes) return null;
+        }
+        final headers = <String, String>{};
+        response.headers.forEach((name, values) {
+          headers[name] = values.join(',');
+        });
+        return {
+          'statusCode': response.statusCode,
+          'headers': headers,
+          'data': base64Encode(builder.takeBytes()),
+        };
       }
-      final headers = <String, String>{};
-      response.headers.forEach((name, values) {
-        headers[name] = values.join(',');
-      });
-      return {
-        'statusCode': response.statusCode,
-        'headers': headers,
-        'data': base64Encode(builder.takeBytes()),
-      };
+      return null;
     } catch (_) {
       return null;
     }
   }
+
+  static const int _mobileIdMaxRedirects = 5;
+  static const int _mobileIdMaxBytes = 4 * 1024 * 1024;
 
   // #***! сброс при смене аккаунта
   void reset() {

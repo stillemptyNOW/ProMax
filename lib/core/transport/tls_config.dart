@@ -1,13 +1,10 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:kolibri/kolibri.dart' show setTrustMincifryCa;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/build_profile.dart';
 import '../config/config.dart';
-import 'mincifry_ca.dart';
+import 'promax_http_overrides.dart';
 
 // #***! TLS, доверие к CA минцифры и dev режим
 abstract class TlsConfig {
@@ -24,7 +21,7 @@ abstract class TlsConfig {
   static void setMincifryTrust(bool enabled) {
     setTrustMincifryCa(enabled: enabled);
     if (kIsWeb) return;
-    HttpOverrides.global = enabled ? _MincifryHttpOverrides() : null;
+    ProMaxHttpOverrides.install(trustMincifryForMaxHosts: enabled);
   }
 
   // #***! только в dev сборке, в релизе false
@@ -39,14 +36,4 @@ abstract class TlsConfig {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(prefKey, value);
   }
-}
-
-class _MincifryHttpOverrides extends HttpOverrides {
-  static final SecurityContext _context = SecurityContext(
-    withTrustedRoots: true,
-  )..setTrustedCertificatesBytes(utf8.encode(mincifryCaPem));
-
-  @override
-  HttpClient createHttpClient(SecurityContext? context) =>
-      super.createHttpClient(context ?? _context);
 }

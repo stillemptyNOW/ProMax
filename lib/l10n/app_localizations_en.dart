@@ -6758,4 +6758,127 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proMaxArchiveTitle => 'ProMax file · .promax';
+
+  @override
+  String get privacySandboxTitle => 'Privacy & sandbox';
+
+  @override
+  String get privacySandboxIntro =>
+      'ProMax has no analytics or crash reporting and sends no telemetry to MAX. These options limit what MAX, mini-apps and third-party services learn about your device and network.';
+
+  @override
+  String get privacySectionDevice => 'Device';
+
+  @override
+  String get privacyHideDeviceLabel => 'Hide device details';
+
+  @override
+  String get privacyHideDeviceSubtitle =>
+      'New sign-ins appear as a typical Android phone with random identifiers, without your model, OS build, time zone or language';
+
+  @override
+  String get privacyAccountRealDevice =>
+      'This account was signed in earlier and still sends the real device details';
+
+  @override
+  String get privacyAccountHiddenDevice =>
+      'This account uses a substitute device profile';
+
+  @override
+  String get privacyApplyToAccountLabel => 'Hide device for this account';
+
+  @override
+  String get privacyApplyToAccountMessage =>
+      'Model, OS, time zone and language will be replaced with a typical profile. The device identifier stays the same, so the session is kept. The app will reconnect.';
+
+  @override
+  String get privacyApplyToAccountConfirm => 'Apply';
+
+  @override
+  String get privacyApplyToAccountDone =>
+      'Device details are hidden for this account';
+
+  @override
+  String privacyApplyToAccountFailed(String error) {
+    return 'Could not apply: $error';
+  }
+
+  @override
+  String get privacySectionMiniApps => 'Mini-apps';
+
+  @override
+  String get privacyNeutralAgentLabel => 'Neutral User-Agent';
+
+  @override
+  String get privacyNeutralAgentSubtitle =>
+      'Mini-apps and Digital ID do not see your phone model and OS build';
+
+  @override
+  String get privacyIsolateMiniAppsLabel => 'Isolate mini-apps';
+
+  @override
+  String get privacyIsolateMiniAppsSubtitle =>
+      'Cookies and site data of each launch are erased when it closes. Digital ID and Gosuslugi keep their sign-in';
+
+  @override
+  String get privacyBlockTrackersLabel => 'Block trackers';
+
+  @override
+  String get privacyBlockTrackersSubtitle =>
+      'Top@Mail.ru, Yandex Metrica, Google Analytics and other counters inside mini-apps';
+
+  @override
+  String get privacySectionCalls => 'Calls';
+
+  @override
+  String get privacyHideLocalAddressesLabel => 'Hide local addresses';
+
+  @override
+  String get privacyHideLocalAddressesSubtitle =>
+      'Addresses of your home or office network are not sent to the other party or the server';
+
+  @override
+  String get privacyRelayCallsLabel => 'Hide my IP in calls';
+
+  @override
+  String get privacyRelayCallsSubtitle =>
+      'Calls go only through MAX relay servers. Calls may connect slower';
+
+  @override
+  String get privacySectionNetwork => 'Network';
+
+  @override
+  String get privacySessionIpLookupLabel => 'Look up session locations';
+
+  @override
+  String privacySessionIpLookupSubtitle(String host) {
+    return 'In Devices, the IP of the session you tap is sent over HTTPS to $host';
+  }
+
+  @override
+  String get privacySessionIpLookupConfirmTitle =>
+      'Send the IP to a third party?';
+
+  @override
+  String privacySessionIpLookupConfirmMessage(String host) {
+    return 'To show the location, the session IP is sent over HTTPS to $host. You can turn this off in Privacy & sandbox.';
+  }
+
+  @override
+  String get privacySessionIpLookupConfirmAction => 'Send';
+
+  @override
+  String get privacyAutoUpdateLabel => 'Check for updates automatically';
+
+  @override
+  String get privacyAutoUpdateSubtitle =>
+      'At most every 6 hours a request goes to GitHub. The manual check stays in settings';
+
+  @override
+  String get privacyNoticeTls =>
+      'The Russian Ministry of Digital Development root certificate is trusted only for MAX and Gosuslugi servers.';
+
+  @override
+  String get privacyNoticeFirebase =>
+      'This build receives notifications through Firebase: the push token is known to Google and MAX.';
 }

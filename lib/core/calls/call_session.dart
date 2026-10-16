@@ -10,6 +10,7 @@ import '../config/app_camera.dart';
 import '../config/app_microphone.dart';
 import '../config/app_pulse_source.dart';
 import '../config/call_no_mute.dart';
+import '../config/privacy_settings.dart';
 import '../utils/logger.dart';
 import '../utils/parse.dart';
 import 'audio_devices.dart';
@@ -18,6 +19,7 @@ import 'call_admin.dart';
 import 'call_bridge.dart';
 import 'call_info.dart';
 import 'conversation_params.dart';
+import 'ice_privacy.dart';
 import 'pulse_audio.dart';
 import 'sfu_data_channel.dart';
 import 'ws2_signaling.dart';
@@ -901,8 +903,14 @@ class CallSession {
 
   // #***! создание RTCPeerConnection с ICE серверами
   Future<RTCPeerConnection> _createPc(List ice) async {
+    final relayRequested = PrivacySettings.relayCalls.current.value;
+    final relayOnly = IcePrivacy.useRelayOnly(ice, requested: relayRequested);
+    if (relayRequested && !relayOnly) {
+      logger.w('[call] relay-only requested but no TURN server offered');
+    }
     final pc = await createPeerConnection({
       'iceServers': ice,
+      if (relayOnly) 'iceTransportPolicy': 'relay',
       'sdpSemantics': 'unified-plan',
       'bundlePolicy': 'max-bundle',
       'rtcpMuxPolicy': 'require',
@@ -1619,7 +1627,7 @@ class CallSession {
     try {
       logger.i('[call][sfu] accept-producer ssrcs=$ssrcs');
       final reply = await _signaling?.acceptProducer(
-        description: _labelLocalTracks(answerSdp),
+        description: _labelLocalTracks(_shareableSdp(answerSdp)),
         ssrcs: ssrcs,
         sessionId: _sfuSessionId,
       );
@@ -1644,6 +1652,11 @@ class CallSession {
     unawaited(_collectReceivers());
     unawaited(_publishDisplayLayout(force: true));
   }
+
+  String _shareableSdp(String sdp) =>
+      PrivacySettings.hideLocalAddresses.current.value
+      ? IcePrivacy.stripHostCandidates(sdp)
+      : sdp;
 
   // #***! дальше разбор SDP ради отладочной сводки
   int _countCandidates(String sdp) =>
@@ -2032,7 +2045,7 @@ class CallSession {
       participantType: _peerType,
       deviceIdx: _peerDeviceIdx,
       type: offer.type!,
-      sdp: _labelLocalTracks(sdp),
+      sdp: _labelLocalTracks(_shareableSdp(sdp)),
     );
   }
 
@@ -2109,7 +2122,7 @@ class CallSession {
             participantType: _peerType,
             deviceIdx: _peerDeviceIdx,
             type: answer.type!,
-            sdp: _labelLocalTracks(answer.sdp!),
+            sdp: _labelLocalTracks(_shareableSdp(answer.sdp!)),
           );
         }
         if (_current == CallSessionState.connecting) {
@@ -2182,6 +2195,10 @@ class CallSession {
     if (_topology == 'SERVER') return;
     final peerId = _peerId;
     if (peerId == null || candidate.candidate == null) return;
+    if (PrivacySettings.hideLocalAddresses.current.value &&
+        IcePrivacy.isHostCandidate(line)) {
+      return;
+    }
     _signaling?.transmitCandidate(
       participantId: peerId,
       participantType: _peerType,

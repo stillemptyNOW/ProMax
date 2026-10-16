@@ -4,7 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import '../api.dart';
 import '../../core/config/debug_test.dart';
-import '../../core/config/promax_settings.dart';
+import '../../core/config/privacy_settings.dart';
 import '../../core/protocol/chat_cache_fingerprint.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
@@ -359,6 +359,7 @@ class AccountModule {
     final existing = await AppDatabase.loadAllProfiles();
     await SpoofingService.prepareNewAccountSpoof(
       existing.map((p) => p.id).toList(growable: false),
+      generic: PrivacySettings.hideDevice.current.value,
     );
     await PendingDeletions.instance.settleBeforeAccountChange();
 
@@ -844,7 +845,7 @@ class AccountModule {
   }) {
     final payload = <dynamic, dynamic>{
       'token': token,
-      'interactive': interactive ?? !ProMaxSettings.ghostMode.value,
+      'interactive': interactive ?? _api.presenceInteractive,
       // #***! exp это экспериментальные фичи которые просим
       'exp': {
         'chatsCountGroups': Uint8List.fromList([0x0b, 0x32]),
