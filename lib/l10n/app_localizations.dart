@@ -6236,11 +6236,41 @@ abstract class AppLocalizations {
   /// **'Couldn\'t get the link'**
   String get linkQrUnavailable;
 
-  /// No description provided for @notificationsDesktopNote.
+  /// No description provided for @notificationsDesktopSectionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Notifications aren\'t shown on the computer yet. The settings below are your account\'s push settings for phones.'**
-  String get notificationsDesktopNote;
+  /// **'Window'**
+  String get notificationsDesktopSectionTitle;
+
+  /// No description provided for @notificationsDesktopTrayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize to tray on close'**
+  String get notificationsDesktopTrayLabel;
+
+  /// No description provided for @notificationsDesktopTraySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The close button hides ProMax in the tray: the connection stays up and notifications keep coming. Quit from the tray icon menu'**
+  String get notificationsDesktopTraySubtitle;
+
+  /// No description provided for @notificationsDesktopAutostartLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with Windows'**
+  String get notificationsDesktopAutostartLabel;
+
+  /// No description provided for @notificationsDesktopAutostartSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax starts minimized to the tray and shows notifications right away'**
+  String get notificationsDesktopAutostartSubtitle;
+
+  /// No description provided for @notificationsDesktopAutostartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change autostart'**
+  String get notificationsDesktopAutostartFailed;
 
   /// No description provided for @fileNoAppToOpen.
   ///

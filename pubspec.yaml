@@ -172,6 +172,7 @@ flutter:
     - assets/icons/
     - assets/emoji_keywords.json
     - assets/lottie/
+    - assets/sounds/
     - assets/wallpapers/patterns/
     - assets/debug/
     - assets/plugins/nekos/

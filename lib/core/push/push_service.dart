@@ -12,6 +12,7 @@ import '../../backend/api.dart';
 import '../../backend/modules/account.dart';
 import '../../backend/modules/messages.dart';
 import '../calls/conversation_params.dart';
+import '../desktop/desktop_identity.dart';
 import '../calls/ws2_signaling.dart';
 import '../protocol/opcode_map.dart';
 import '../storage/app_instance.dart';
@@ -28,12 +29,20 @@ const _prefsTokenKey = 'fcm_push_token';
 // #***! фоновые обработчики, отдельный изолят без доступа к состоянию приложения
 // #***! нажали кнопку в уведомлении, ответить или отклонить
 final List<bool Function(String payload)> _tapHandlers = [];
+final List<bool Function(NotificationResponse response)> _responseHandlers = [];
 
 void addLocalNotificationTapHandler(bool Function(String payload) handler) =>
     _tapHandlers.add(handler);
 
+void addLocalNotificationResponseHandler(
+  bool Function(NotificationResponse response) handler,
+) => _responseHandlers.add(handler);
+
 @pragma('vm:entry-point')
 void _onNotificationResponse(NotificationResponse response) {
+  for (final handler in _responseHandlers) {
+    if (handler(response)) return;
+  }
   if (response.notificationResponseType ==
       NotificationResponseType.selectedNotification) {
     final payload = response.payload;
@@ -177,8 +186,10 @@ Future<void> initLocalNotificationActions() async {
   _localActionsReady = true;
   final plugin = FlutterLocalNotificationsPlugin();
   await plugin.initialize(
-    settings: const InitializationSettings(
-      android: AndroidInitializationSettings('ic_notification'),
+    settings: InitializationSettings(
+      android: const AndroidInitializationSettings('ic_notification'),
+      linux: DesktopIdentity.linuxNotificationSettings,
+      windows: DesktopIdentity.windowsNotificationSettings,
     ),
     onDidReceiveNotificationResponse: _onNotificationResponse,
     onDidReceiveBackgroundNotificationResponse: _onNotificationResponse,

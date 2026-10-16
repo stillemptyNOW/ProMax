@@ -3364,8 +3364,25 @@ class AppLocalizationsRu extends AppLocalizations {
   String get linkQrUnavailable => 'Не удалось получить ссылку';
 
   @override
-  String get notificationsDesktopNote =>
-      'На компьютере уведомления пока не показываются. Ниже — push-настройки аккаунта для телефонов.';
+  String get notificationsDesktopSectionTitle => 'Окно';
+
+  @override
+  String get notificationsDesktopTrayLabel => 'Сворачивать в трей при закрытии';
+
+  @override
+  String get notificationsDesktopTraySubtitle =>
+      'Крестик прячет ProMax в трей: связь не рвётся и уведомления продолжают приходить. Выйти можно из меню значка в трее';
+
+  @override
+  String get notificationsDesktopAutostartLabel => 'Запускать вместе с Windows';
+
+  @override
+  String get notificationsDesktopAutostartSubtitle =>
+      'ProMax стартует свёрнутым в трей и сразу показывает уведомления';
+
+  @override
+  String get notificationsDesktopAutostartFailed =>
+      'Не удалось изменить автозапуск';
 
   @override
   String get fileNoAppToOpen =>

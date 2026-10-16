@@ -126,6 +126,7 @@ class CallSession {
   ProMaxMask _faceMask = ProMaxMask.none;
   bool _localScreen = false;
   MediaStream? _cameraStream;
+  String? _cameraDeviceId;
   MediaStream? _screenStream;
   // #***! отправители аудио камеры и экрана, треки подменяем на лету
   RTCRtpSender? _audioSender;
@@ -2285,6 +2286,7 @@ class CallSession {
 
     await _disposeStream(_cameraStream);
     _cameraStream = stream;
+    _cameraDeviceId = AppCamera.deviceId;
 
     final tracks = stream.getVideoTracks();
     final track = tracks.isEmpty ? null : tracks.first;
@@ -2326,10 +2328,46 @@ class CallSession {
   Future<bool> switchCamera() async {
     final tracks = _cameraStream?.getVideoTracks();
     if (!_localVideo || tracks == null || tracks.isEmpty) return false;
+    if (_isDesktop) {
+      await _switchDesktopCamera();
+      return _frontCamera;
+    }
     final front = await Helper.switchCamera(tracks.first);
     _frontCamera = front;
     _notifyInfo();
     return front;
+  }
+
+  Future<void> _switchDesktopCamera() async {
+    final pc = _pc;
+    if (pc == null) return;
+    final cameras = await CameraDevices.cameras();
+    final nextId = CameraDevices.nextId([
+      for (final camera in cameras) camera.id,
+    ], _cameraDeviceId);
+    if (nextId == null) return;
+    final stream = await navigator.mediaDevices.getUserMedia(<String, dynamic>{
+      'video': CameraDevices.constraints(nextId),
+      'audio': false,
+    });
+    final tracks = stream.getVideoTracks();
+    if (_pc != pc || tracks.isEmpty || !_localVideo) {
+      await _disposeStream(stream);
+      if (tracks.isEmpty) {
+        throw StateError('Camera did not return a video track');
+      }
+      return;
+    }
+    final previous = _cameraStream;
+    if (_videoSender == null) {
+      _videoSender = await pc.addTrack(tracks.first, stream);
+    } else {
+      await _videoSender!.replaceTrack(tracks.first);
+    }
+    _cameraStream = stream;
+    _cameraDeviceId = nextId;
+    await _disposeStream(previous);
+    _notifyInfo();
   }
 
   Future<void> setCameraTorch(bool enabled) async {

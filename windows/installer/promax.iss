@@ -60,6 +60,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "autostart"; Description: "{cm:AutoStartProgram,ProMax}"; GroupDescription: "{cm:AutoStartProgramGroupDescription}"; Flags: unchecked
 
 [Files]
 Source: "{#BundleDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -68,8 +69,13 @@ Source: "{#BundleDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 Type: filesandordirs; Name: "{app}\data"
 
 [Icons]
-Name: "{autoprograms}\ProMax"; Filename: "{app}\ProMax.exe"
-Name: "{autodesktop}\ProMax"; Filename: "{app}\ProMax.exe"; Tasks: desktopicon
+Name: "{autoprograms}\ProMax"; Filename: "{app}\ProMax.exe"; AppUserModelID: "io.github.stillemptynow.promax"
+Name: "{autodesktop}\ProMax"; Filename: "{app}\ProMax.exe"; AppUserModelID: "io.github.stillemptynow.promax"; Tasks: desktopicon
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "ProMax"; ValueData: """{app}\ProMax.exe"" --minimized"; Flags: uninsdeletevalue; Tasks: autostart
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "ProMax"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\ProMax"; Flags: uninsdeletekey
 
 [Run]
 Filename: "{app}\ProMax.exe"; Description: "{cm:LaunchProgram,ProMax}"; Flags: nowait postinstall skipifsilent

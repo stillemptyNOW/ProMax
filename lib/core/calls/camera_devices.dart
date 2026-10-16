@@ -57,6 +57,12 @@ class CameraDevices {
     return CameraFacing.external;
   }
 
+  static String? nextId(List<String> ids, String? current) {
+    if (ids.length < 2) return null;
+    final index = current == null ? 0 : ids.indexOf(current);
+    return ids[(index < 0 ? 0 : index + 1) % ids.length];
+  }
+
   static Object constraints(String? deviceId) {
     if (deviceId == null || deviceId.isEmpty) return true;
     if (kIsWeb) return <String, dynamic>{'deviceId': deviceId};

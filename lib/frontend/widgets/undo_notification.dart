@@ -97,6 +97,13 @@ class PendingUndo {
     onOrphaned: _commitOrphaned,
   );
 
+  static Future<void> commitCurrent() async {
+    final pending = _current;
+    if (pending == null || !pending._settle()) return;
+    await Future.sync(pending.onCommit);
+    unawaited(pending._dismiss(animate: false));
+  }
+
   void commit({bool animate = true}) {
     if (!_settle()) return;
     _runCommit();

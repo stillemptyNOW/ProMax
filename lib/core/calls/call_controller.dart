@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../../backend/api.dart';
 import '../../backend/modules/calls.dart';
 import '../protocol/opcode_map.dart';
@@ -79,6 +81,13 @@ class AnsweredCall {
   final CallSession session;
 }
 
+class IncomingDecision {
+  const IncomingDecision({required this.call, required this.accept});
+
+  final IncomingCall call;
+  final bool accept;
+}
+
 // #***! управление звонками поверх сессии
 class CallController {
   CallController._();
@@ -93,6 +102,17 @@ class CallController {
   final _ended = StreamController<void>.broadcast();
   final _canceled = StreamController<void>.broadcast();
   final _answered = StreamController<AnsweredCall>.broadcast();
+  final _decisions = StreamController<IncomingDecision>.broadcast();
+
+  static const ringTimeout = Duration(seconds: 60);
+  Timer? _ringTimer;
+
+  bool get _desktop {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+  }
 
   // #***! приложение в фоне, звонок показывает натив а не мы
   bool appResumed = false;
@@ -104,6 +124,8 @@ class CallController {
   Stream<void> get incomingCanceled => _canceled.stream;
 
   Stream<AnsweredCall> get answeredCalls => _answered.stream;
+
+  Stream<IncomingDecision> get incomingDecisions => _decisions.stream;
 
   CallSession? _active;
   StreamSubscription<CallSessionState>? _activeSub;
@@ -145,7 +167,7 @@ class CallController {
 
     // Приложение свёрнуто — звонок показывает FKM отдельным уведомлением,
     // приём оттуда вернётся через injectFromNative.
-    if (!appResumed) {
+    if (!appResumed && !_desktop) {
       unawaited(FkmController.instance.showIncomingCall(payload));
       return;
     }
@@ -168,7 +190,6 @@ class CallController {
   }
 
   void _onCallRecord(Object? payload) {
-    if (!CallKitBridge.instance.isSupported) return;
     final record = FinishedCallRecord.fromPush(payload);
     if (record == null) return;
     CallKitBridge.instance.finishRinging(record);
@@ -204,12 +225,31 @@ class CallController {
     if (isBusy) return;
     if (_pending?.conversationId == incoming.conversationId) return;
     _pending = incoming;
+    _ringTimer?.cancel();
+    if (_desktop) {
+      _ringTimer = Timer(ringTimeout, () {
+        if (identical(_pending, incoming)) dismissIncoming();
+      });
+    }
     _incoming.add(incoming);
   }
 
   void dismissIncoming() {
     if (_pending == null) return;
     _pending = null;
+    _ringTimer?.cancel();
+    _canceled.add(null);
+  }
+
+  void decideIncoming(String conversationId, {required bool accept}) {
+    final call = _pending;
+    if (call == null || call.conversationId != conversationId) return;
+    if (_decisions.hasListener) {
+      _decisions.add(IncomingDecision(call: call, accept: accept));
+      return;
+    }
+    if (accept) return;
+    unawaited(rejectIncoming(call));
     _canceled.add(null);
   }
 
@@ -273,6 +313,7 @@ class CallController {
 
   CallSession _calleeSession(IncomingCall call) {
     _pending = null;
+    _ringTimer?.cancel();
     CallBridge.instance.cancelIncoming();
     final config = Ws2Config.fromVcp(
       call.params,
@@ -301,6 +342,7 @@ class CallController {
   // #***! отклонение
   Future<void> rejectIncoming(IncomingCall call) async {
     _pending = null;
+    _ringTimer?.cancel();
     CallBridge.instance.notifyEnded();
     final config = Ws2Config.fromVcp(
       call.params,
@@ -375,8 +417,10 @@ class CallController {
   }
 
   void dispose() {
+    _ringTimer?.cancel();
     _activeSub?.cancel();
     _pushSub?.cancel();
+    _decisions.close();
     _incoming.close();
     _ended.close();
     _canceled.close();

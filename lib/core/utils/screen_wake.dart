@@ -16,7 +16,7 @@ class ScreenWake {
 
   bool get _supported {
     try {
-      return Platform.isAndroid || Platform.isIOS;
+      return Platform.isAndroid || Platform.isIOS || Platform.isWindows;
     } catch (_) {
       return false;
     }

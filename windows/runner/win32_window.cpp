@@ -16,7 +16,13 @@ namespace {
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
 
-constexpr const wchar_t kWindowClassName[] = L"FLUTTER_RUNNER_WIN32_WINDOW";
+constexpr const wchar_t* kWindowClassName = kRunnerWindowClassName;
+
+constexpr const wchar_t kPlacementRegKey[] = L"Software\\ProMax\\Window";
+constexpr const wchar_t kPlacementRegValue[] = L"Placement";
+
+constexpr int kMinWindowWidth = 380;
+constexpr int kMinWindowHeight = 600;
 
 /// Registry key for app theme preference.
 ///
@@ -145,12 +151,66 @@ bool Win32Window::Create(const std::wstring& title,
   }
 
   UpdateTheme(window);
+  RestorePlacement(window);
 
   return OnCreate();
 }
 
 bool Win32Window::Show() {
-  return ShowWindow(window_handle_, SW_SHOWNORMAL);
+  if (shown_) {
+    return ShowWindow(window_handle_, SW_SHOW);
+  }
+  shown_ = true;
+  return ShowWindow(window_handle_, first_show_command_);
+}
+
+void Win32Window::RestorePlacement(HWND window) {
+  WINDOWPLACEMENT placement{};
+  DWORD size = static_cast<DWORD>(sizeof(placement));
+  LSTATUS result = RegGetValueW(HKEY_CURRENT_USER, kPlacementRegKey,
+                                kPlacementRegValue, RRF_RT_REG_BINARY, nullptr,
+                                &placement, &size);
+  if (result != ERROR_SUCCESS || size != sizeof(placement) ||
+      placement.length != sizeof(placement)) {
+    return;
+  }
+  if (MonitorFromRect(&placement.rcNormalPosition, MONITOR_DEFAULTTONULL) ==
+      nullptr) {
+    return;
+  }
+  const bool maximized = (placement.flags & WPF_RESTORETOMAXIMIZED) != 0 ||
+                         placement.showCmd ==
+                             static_cast<UINT>(SW_SHOWMAXIMIZED);
+  placement.flags = 0;
+  placement.showCmd = SW_HIDE;
+  if (SetWindowPlacement(window, &placement)) {
+    first_show_command_ = maximized ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL;
+  }
+}
+
+void Win32Window::SavePlacement(HWND window) {
+  if (window == nullptr) {
+    return;
+  }
+  WINDOWPLACEMENT placement{};
+  placement.length = static_cast<UINT>(sizeof(placement));
+  if (!GetWindowPlacement(window, &placement)) {
+    return;
+  }
+  if (IsZoomed(window) ||
+      (!shown_ && first_show_command_ == SW_SHOWMAXIMIZED)) {
+    placement.flags |= WPF_RESTORETOMAXIMIZED;
+  }
+  HKEY key = nullptr;
+  if (RegCreateKeyExW(HKEY_CURRENT_USER, kPlacementRegKey, 0, nullptr,
+                      REG_OPTION_NON_VOLATILE, KEY_SET_VALUE, nullptr, &key,
+                      nullptr) != ERROR_SUCCESS) {
+    return;
+  }
+  RegSetValueExW(key, kPlacementRegValue, 0, REG_BINARY,
+                 reinterpret_cast<const BYTE*>(&placement),
+                 static_cast<DWORD>(sizeof(placement)));
+  RegCloseKey(key);
 }
 
 // static
@@ -180,6 +240,7 @@ Win32Window::MessageHandler(HWND hwnd,
                             LPARAM const lparam) noexcept {
   switch (message) {
     case WM_DESTROY:
+      SavePlacement(hwnd);
       window_handle_ = nullptr;
       Destroy();
       if (quit_on_close_) {
@@ -216,6 +277,14 @@ Win32Window::MessageHandler(HWND hwnd,
     case WM_DWMCOLORIZATIONCOLORCHANGED:
       UpdateTheme(hwnd);
       return 0;
+
+    case WM_GETMINMAXINFO: {
+      auto info = reinterpret_cast<MINMAXINFO*>(lparam);
+      const int dpi = static_cast<int>(FlutterDesktopGetDpiForHWND(hwnd));
+      info->ptMinTrackSize.x = MulDiv(kMinWindowWidth, dpi, 96);
+      info->ptMinTrackSize.y = MulDiv(kMinWindowHeight, dpi, 96);
+      return 0;
+    }
   }
 
   return DefWindowProc(window_handle_, message, wparam, lparam);

@@ -58,6 +58,7 @@ import '../../../core/storage/archived_chats_store.dart';
 import '../../../core/cache/info_cache.dart';
 import '../../../core/links/message_link_token.dart';
 import '../../../core/cache/message_session_cache.dart';
+import '../../../core/utils/app_exit_hooks.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/utils/emoji_keyword_index.dart';
 import '../../../models/admin_rights.dart';
@@ -688,6 +689,7 @@ class _ChatScreenState extends State<ChatScreen>
     if (!_commentsMode && !widget.preview) {
       unawaited(NotificationBridge.instance.pushActiveChat(widget.chatId));
     }
+    AppExitHooks.add(_saveDraft);
     unawaited(
       animojiModule
           .ensureLoaded()
@@ -2331,6 +2333,7 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   void dispose() {
     ChatScreen._open.remove(this);
+    AppExitHooks.remove(_saveDraft);
     if (!_commentsMode && !widget.preview) {
       unawaited(NotificationBridge.instance.popActiveChat(widget.chatId));
     }
