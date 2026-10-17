@@ -4304,6 +4304,26 @@ class AppLocalizationsRu extends AppLocalizations {
   String get serverUnreachable => 'Нет связи с сервером';
 
   @override
+  String get deletionStillPending =>
+      'Удаление пока не дошло до сервера, ProMax повторит попытку';
+
+  @override
+  String deleteChatErasedOnly(String reason) {
+    return 'Переписка стёрта у обоих, но чат не убран: $reason';
+  }
+
+  @override
+  String get deleteChatTypeUnknown =>
+      'Чат не удалён для всех: не удалось узнать, личный это чат или группа. Попробуйте ещё раз';
+
+  @override
+  String get chatActionProfileUnavailable =>
+      'Профиль ещё не загрузился, попробуйте через пару секунд';
+
+  @override
+  String get chatDeleteAlsoForPeer => 'Стереть переписку и у собеседника';
+
+  @override
   String get wipeForBothAction => 'Удалить у обоих';
 
   @override
@@ -4311,7 +4331,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get wipeForBothMessage =>
-      'ProMax удалит все сообщения этого диалога для вас и собеседника, затем удалит сам чат. Отменить это нельзя.';
+      'ProMax удалит все сообщения этого диалога для вас и собеседника, затем уберёт чат из вашего списка. У собеседника останется пустой диалог. Отменить это нельзя.';
 
   @override
   String get wipeCollecting => 'Собираю историю…';

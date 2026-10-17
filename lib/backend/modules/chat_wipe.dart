@@ -59,7 +59,7 @@ class ChatWipe {
     required WipeHistoryPage fetchPage,
     required WipeDeleteBatch deleteBatch,
     required WipeChatAction clearForAll,
-    required WipeChatAction deleteChatForAll,
+    required WipeChatAction removeChat,
     void Function(int scanned, int deleted)? onProgress,
   }) async {
     final wipe = _Wipe(deleteBatch, onProgress);
@@ -83,7 +83,7 @@ class ChatWipe {
       }
     }
     if (!wipe.unreachable) {
-      switch (await _guard(() => deleteChatForAll(scan.newest))) {
+      switch (await _guard(() => removeChat(scan.newest))) {
         case ServerDone():
           chatRemoved = true;
         case ServerRejected(:final message):

@@ -380,7 +380,8 @@ void main() {
 
   test('the read time follows the server clock', () async {
     const ahead = 3600000;
-    ServerClock.sync(DateTime.now().millisecondsSinceEpoch + ahead);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    ServerClock.sync(now + ahead, localNow: now);
     await seed();
     await ReadReceipts.instance.preload(_me, _chatId);
     final before = DateTime.now().millisecondsSinceEpoch + ahead;

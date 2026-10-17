@@ -61,6 +61,42 @@ class MessageRanges {
     return [...kept, merged]..sort((a, b) => a.start.compareTo(b.start));
   }
 
+  static const Duration inFlightSlack = Duration(seconds: 10);
+
+  static MessageRange? reconcileWindow({
+    required int? fromTime,
+    required int requestedAt,
+    required int forward,
+    required int backward,
+    required List<int> times,
+    bool emptyConfirmed = false,
+  }) {
+    if (times.isEmpty && !emptyConfirmed) return null;
+    final oldest = times.isEmpty ? null : times.reduce(math.min);
+    final newest = times.isEmpty ? null : times.reduce(math.max);
+    final olderExhausted =
+        backward > 0 &&
+        times.where((t) => fromTime == null || t <= fromTime).length < backward;
+    final newerExhausted =
+        fromTime == null ||
+        (forward > 0 && times.where((t) => t >= fromTime).length < forward);
+
+    int? start = olderExhausted ? 0 : oldest;
+    if (fromTime != null && backward <= 0 && forward > 0) {
+      start = math.min(oldest ?? fromTime + 1, fromTime + 1);
+    }
+
+    int? end = newest;
+    if (newerExhausted) {
+      end = math.max(newest ?? 0, requestedAt - inFlightSlack.inMilliseconds);
+    } else if (forward <= 0 && backward > 0) {
+      end = math.max(newest ?? 0, fromTime - 1);
+    }
+
+    if (start == null || end == null || start > end) return null;
+    return MessageRange(start, end);
+  }
+
   static MessageRange? coverageOfFetch({
     required int? fromTime,
     required int forward,

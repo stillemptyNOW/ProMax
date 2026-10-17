@@ -2,6 +2,7 @@ import '../../core/cache/message_session_cache.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/token_storage.dart';
 import '../api.dart';
+import 'chat_deletion_plan.dart';
 import 'chats.dart';
 import 'messages.dart';
 import 'pending_deletions.dart';
@@ -34,15 +35,17 @@ class ApiDeletionGateway implements PendingDeletionGateway {
   }) => _messages.deleteMessages(chatId, messageIds, forEveryone: forEveryone);
 
   @override
-  Future<ServerOutcome> deleteChat(
+  Future<ChatDeletionResult> deleteChat(
     int accountId,
     int chatId, {
     required bool forAll,
+    required bool historyErased,
   }) => chats.deleteChat(
     _api,
     chatId: chatId,
     forAll: forAll,
     accountId: accountId,
+    historyErased: historyErased,
   );
 
   @override

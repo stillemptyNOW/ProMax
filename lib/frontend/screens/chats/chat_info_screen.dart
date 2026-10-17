@@ -132,6 +132,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   ChatAdminState? _chatAdmin;
 
   int _mediaChatId = 0;
+  final Completer<void> _identityKnown = Completer();
   String? _anchorMsgId;
 
   int _dontDisturbUntil = 0;
@@ -294,6 +295,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
 
     _mediaChatId = (info?.raw['id'] as int?) ?? widget.chatId;
     _syncChatAdmin(info);
+    if (!_identityKnown.isCompleted) _identityKnown.complete();
 
     if (_isGroupOrChannel) {
       _notMember = !await AppDatabase.isChatInList(_myId, _mediaChatId);
@@ -1806,7 +1808,18 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
       ? _mediaChatId != 0
       : _isGroupOrChannel && _iAmAdmin;
 
+  bool get _canDeleteDialogForAll => _mediaChatId != 0;
+
+  Future<bool> _profileReady() async {
+    await _identityKnown.future;
+    if (!mounted) return false;
+    if (_myId != 0) return true;
+    showCustomNotification(context, l10n.chatActionProfileUnavailable);
+    return false;
+  }
+
   Future<void> _clearHistory() async {
+    if (!await _profileReady() || !mounted) return;
     final canClearForAll = _canActForAll;
     final choice = await showBlurredConfirm(
       context,
@@ -1833,7 +1846,8 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   }
 
   Future<void> _deleteChat() async {
-    final canDeleteForAll = _canActForAll;
+    if (!await _profileReady() || !mounted) return;
+    final canDeleteForAll = _canDeleteDialogForAll;
     final choice = await showBlurredConfirm(
       context,
       title: l10n.chatInfoDeleteChatTitle,
@@ -1841,7 +1855,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
       confirmLabel: l10n.chatInfoDeleteChatConfirm,
       cancelLabel: l10n.chatInfoActionCancel,
       destructive: true,
-      checkboxLabel: canDeleteForAll ? l10n.chatInfoClearHistoryForAll : null,
+      checkboxLabel: canDeleteForAll ? l10n.chatDeleteAlsoForPeer : null,
     );
     if (!mounted || !choice.confirmed) return;
 

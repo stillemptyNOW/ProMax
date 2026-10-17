@@ -13,12 +13,23 @@ import '../../core/storage/chat_activity_store.dart';
 import '../../core/storage/message_ranges.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
+import '../../core/utils/server_clock.dart';
 import '../../core/utils/text_format.dart';
 import '../../models/attachment.dart';
 import 'chat_activity_sender.dart';
 import 'chats.dart' show chats;
 import 'message_copy.dart';
 import 'server_outcome.dart';
+
+class HistoryPage {
+  const HistoryPage(this.messages, {this.serverIds = const {}, this.window});
+
+  static const unknown = HistoryPage([]);
+
+  final List<CachedMessage> messages;
+  final Set<String> serverIds;
+  final MessageRange? window;
+}
 
 // #***! быстрый кэш id -> имя аватарка телефон, из него подписи в пузырях
 class ContactCache {
@@ -782,6 +793,8 @@ class MessagesModule {
 
   MessagesModule(this._api);
 
+  static const int _latestHistoryLead = Duration.millisecondsPerDay;
+
   static int _lastCid = 0;
 
   static int _nextCid() {
@@ -806,30 +819,66 @@ class MessagesModule {
     int count = 50,
     int forward = 0,
     int? backward,
+  }) async => (await fetchHistoryPage(
+    accountId,
+    chatId,
+    fromTime: fromTime,
+    count: count,
+    forward: forward,
+    backward: backward,
+  )).messages;
+
+  Future<HistoryPage> fetchHistoryPage(
+    int accountId,
+    int chatId, {
+    int? fromTime,
+    int count = 50,
+    int forward = 0,
+    int? backward,
   }) async {
+    final requestedAt = ServerClock.now();
+    final backwardCount = backward ?? count;
     final payload = {
       'chatId': chatId,
-      'from': fromTime ?? (DateTime.now().millisecondsSinceEpoch + 86400000),
+      'from': fromTime ?? requestedAt + _latestHistoryLead,
       'forward': forward,
-      'backward': backward ?? count,
+      'backward': backwardCount,
       'getMessages': true,
     };
 
-    final response = await _api.sendRequest(Opcode.chatHistory, payload);
+    var messagesData = await _requestHistory(payload);
+    if (messagesData == null) return HistoryPage.unknown;
 
-    if (!response.isOk) return [];
-
-    final data = response.payload;
-    if (data is! Map) return [];
-
-    final messagesData = data['messages'];
-    if (messagesData is! List) return [];
+    var emptyConfirmed = false;
+    if (messagesData.isEmpty) {
+      final claimed = MessageRanges.reconcileWindow(
+        fromTime: fromTime,
+        requestedAt: requestedAt,
+        forward: forward,
+        backward: backwardCount,
+        times: const [],
+        emptyConfirmed: true,
+      );
+      if (claimed != null &&
+          await _hasCachedBetween(accountId, chatId, claimed)) {
+        final again = await _requestHistory(payload);
+        if (again == null) return HistoryPage.unknown;
+        messagesData = again;
+        emptyConfirmed = again.isEmpty;
+      }
+    }
 
     final List<CachedMessage> results = [];
+    final serverIds = <String>{};
+    final times = <int>[];
 
     for (var i = 0; i < messagesData.length; i++) {
       final m = messagesData[i];
       if (m is! Map) continue;
+      final id = m['id']?.toString();
+      if (id != null && id.isNotEmpty) serverIds.add(id);
+      final time = m['time'];
+      if (time is int) times.add(time);
 
       final msg = _parseMessage(m.cast<dynamic, dynamic>(), accountId, chatId);
       if (msg != null) {
@@ -840,6 +889,15 @@ class MessagesModule {
         await Future.delayed(Duration.zero);
       }
     }
+
+    final window = MessageRanges.reconcileWindow(
+      fromTime: fromTime,
+      requestedAt: requestedAt,
+      forward: forward,
+      backward: backwardCount,
+      times: times,
+      emptyConfirmed: emptyConfirmed,
+    );
 
     final merged = results.isNotEmpty
         ? await _mergeLocalFields(accountId, chatId, results)
@@ -855,7 +913,7 @@ class MessagesModule {
         await AppDatabase.saveMessages(toSave.map((m) => m.toDbRow()).toList());
       } catch (e) {
         logger.e('saveMessages error: $e');
-        return toSave;
+        return HistoryPage(toSave, serverIds: serverIds, window: window);
       }
     }
 
@@ -864,11 +922,31 @@ class MessagesModule {
       chatId,
       fromTime: fromTime,
       forward: forward,
-      backward: backward ?? count,
+      backward: backwardCount,
       messagesData: messagesData,
     );
-    return toSave;
+    return HistoryPage(toSave, serverIds: serverIds, window: window);
   }
+
+  Future<List<dynamic>?> _requestHistory(Map<String, Object> payload) async {
+    final response = await _api.sendRequest(Opcode.chatHistory, payload);
+    if (!response.isOk) return null;
+    final data = response.payload;
+    if (data is! Map) return null;
+    final messages = data['messages'];
+    return messages is List ? messages : null;
+  }
+
+  static Future<bool> _hasCachedBetween(
+    int accountId,
+    int chatId,
+    MessageRange window,
+  ) async => (await AppDatabase.loadServerMessageIdsBetween(
+    accountId,
+    chatId,
+    fromTime: window.start,
+    toTime: window.end,
+  )).isNotEmpty;
 
   Future<void> _recordCoverage(
     int accountId,

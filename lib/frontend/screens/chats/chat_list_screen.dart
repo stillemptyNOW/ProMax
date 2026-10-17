@@ -62,6 +62,7 @@ import '../../widgets/local_avatar_builder.dart';
 import '../../widgets/lost_account_dialog.dart';
 import 'chat/view/chat_list_shimmer.dart';
 import 'chat/view/chat_list_tile.dart';
+import 'chat_list_deletion.dart';
 import 'chat/view/chat_preview_line.dart';
 import '../../widgets/connection_status.dart';
 import '../../../backend/api.dart';
@@ -238,8 +239,6 @@ class ChatListScreen extends StatefulWidget {
   @override
   State<ChatListScreen> createState() => _ChatListScreenState();
 }
-
-enum _DeleteKind { personalLike, ownerGroup, blocked }
 
 class _ChatListScreenState extends State<ChatListScreen>
     with TickerProviderStateMixin, RouteAware, SpectrumSurface {
@@ -643,19 +642,13 @@ class _ChatListScreenState extends State<ChatListScreen>
     return _chats.where((c) => ids.contains(c.id)).toList();
   }
 
-  _DeleteKind _categorizeChat(CachedChat c, int myId) {
-    if (c.type == 'DIALOG') return _DeleteKind.personalLike;
-    if (c.iAmAdmin(myId)) return _DeleteKind.ownerGroup;
-    return _DeleteKind.blocked;
-  }
-
-  _DeleteKind? _selectionDeleteCategoryFor(List<CachedChat> selected) {
+  ChatListDeleteKind? _selectionDeleteCategoryFor(List<CachedChat> selected) {
     if (_sessionState != SessionState.online) return null;
     final myId = _profile?.id;
     if (myId == null) return null;
     if (selected.isEmpty) return null;
-    final cats = selected.map((c) => _categorizeChat(c, myId)).toSet();
-    if (cats.contains(_DeleteKind.blocked)) return null;
+    final cats = selected.map((c) => chatListDeleteKind(c, myId)).toSet();
+    if (cats.contains(ChatListDeleteKind.unavailable)) return null;
     if (cats.length > 1) return null;
     return cats.single;
   }
@@ -749,8 +742,8 @@ class _ChatListScreenState extends State<ChatListScreen>
 
     final selectedAfter = _selectedChatObjects();
     if (selectedAfter.isEmpty) return;
-    final cats = selectedAfter.map((c) => _categorizeChat(c, myId)).toSet();
-    if (cats.contains(_DeleteKind.blocked) || cats.length > 1) {
+    final cats = selectedAfter.map((c) => chatListDeleteKind(c, myId)).toSet();
+    if (cats.contains(ChatListDeleteKind.unavailable) || cats.length > 1) {
       showCustomNotification(
         context,
         AppLocalizations.of(context)!.chatListDeleteStatusChanged,
@@ -773,8 +766,11 @@ class _ChatListScreenState extends State<ChatListScreen>
         for (final c in selectedAfter)
           (
             chatId: c.id,
-            forAll:
-                kind == _DeleteKind.ownerGroup || (choice.forAll && c.id != 0),
+            forAll: chatListDeletesForAll(
+              kind,
+              c,
+              erasePeerChosen: choice.forAll,
+            ),
           ),
       ],
     );
@@ -782,7 +778,7 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   Future<({bool forAll})?> _showDeleteConfirmDialog(
     List<CachedChat> selected,
-    _DeleteKind kind,
+    ChatListDeleteKind kind,
   ) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
@@ -793,7 +789,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     String body;
     String primaryLabel;
     switch (kind) {
-      case _DeleteKind.personalLike:
+      case ChatListDeleteKind.personal:
         title = single != null
             ? l10n.chatListDeleteChatWith(single.title ?? '')
             : l10n.chatListDeleteChatsCount(count);
@@ -801,7 +797,7 @@ class _ChatListScreenState extends State<ChatListScreen>
         primaryLabel = count == 1
             ? l10n.chatInfoDeleteChatTitle
             : l10n.chatInfoDeleteChatConfirm;
-      case _DeleteKind.ownerGroup:
+      case ChatListDeleteKind.ownedGroup:
         title = single != null
             ? l10n.chatListDeleteOwnedChat(single.title ?? '')
             : l10n.chatListDeleteGroupsForAll(count);
@@ -811,12 +807,12 @@ class _ChatListScreenState extends State<ChatListScreen>
         primaryLabel = count == 1
             ? l10n.chatListDeleteChatForAll
             : l10n.chatListDeleteForAll;
-      case _DeleteKind.blocked:
+      case ChatListDeleteKind.unavailable:
         return Future.value(null);
     }
 
     final offerForAll =
-        kind == _DeleteKind.personalLike && selected.any((c) => c.id != 0);
+        kind == ChatListDeleteKind.personal && selected.any((c) => c.id != 0);
     var forAll = false;
     return showModalBottomSheet<({bool forAll})>(
       context: context,
@@ -855,16 +851,19 @@ class _ChatListScreenState extends State<ChatListScreen>
                           onChanged: (v) =>
                               setSheetState(() => forAll = v ?? false),
                         ),
-                        Text(
-                          l10n.chatInfoClearHistoryForAll,
-                          style: TextStyle(color: cs.onSurface, fontSize: 15),
+                        Expanded(
+                          child: Text(
+                            l10n.chatDeleteAlsoForPeer,
+                            style: TextStyle(color: cs.onSurface, fontSize: 15),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ],
                 const SizedBox(height: 20),
-                if (kind == _DeleteKind.ownerGroup && single != null) ...[
+                if (kind == ChatListDeleteKind.ownedGroup &&
+                    single != null) ...[
                   Container(
                     height: 44,
                     alignment: Alignment.center,

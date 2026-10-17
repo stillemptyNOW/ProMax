@@ -7772,6 +7772,36 @@ abstract class AppLocalizations {
   /// **'No connection to the server'**
   String get serverUnreachable;
 
+  /// No description provided for @deletionStillPending.
+  ///
+  /// In en, this message translates to:
+  /// **'The deletion hasn\'t reached the server yet, ProMax will retry'**
+  String get deletionStillPending;
+
+  /// No description provided for @deleteChatErasedOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'The history was erased for both of you, but the chat wasn\'t removed: {reason}'**
+  String deleteChatErasedOnly(String reason);
+
+  /// No description provided for @deleteChatTypeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again'**
+  String get deleteChatTypeUnknown;
+
+  /// No description provided for @chatActionProfileUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile hasn\'t loaded yet, try again in a moment'**
+  String get chatActionProfileUnavailable;
+
+  /// No description provided for @chatDeleteAlsoForPeer.
+  ///
+  /// In en, this message translates to:
+  /// **'Also erase the history for the other person'**
+  String get chatDeleteAlsoForPeer;
+
   /// No description provided for @wipeForBothAction.
   ///
   /// In en, this message translates to:
@@ -7787,7 +7817,7 @@ abstract class AppLocalizations {
   /// No description provided for @wipeForBothMessage.
   ///
   /// In en, this message translates to:
-  /// **'ProMax will delete every message in this chat for you and the other person, then delete the chat itself. This can\'t be undone.'**
+  /// **'ProMax will delete every message in this chat for you and the other person, then remove the chat from your list. The other person keeps an empty chat. This can\'t be undone.'**
   String get wipeForBothMessage;
 
   /// No description provided for @wipeCollecting.

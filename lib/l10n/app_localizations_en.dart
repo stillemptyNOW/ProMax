@@ -4269,6 +4269,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serverUnreachable => 'No connection to the server';
 
   @override
+  String get deletionStillPending =>
+      'The deletion hasn\'t reached the server yet, ProMax will retry';
+
+  @override
+  String deleteChatErasedOnly(String reason) {
+    return 'The history was erased for both of you, but the chat wasn\'t removed: $reason';
+  }
+
+  @override
+  String get deleteChatTypeUnknown =>
+      'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again';
+
+  @override
+  String get chatActionProfileUnavailable =>
+      'Your profile hasn\'t loaded yet, try again in a moment';
+
+  @override
+  String get chatDeleteAlsoForPeer =>
+      'Also erase the history for the other person';
+
+  @override
   String get wipeForBothAction => 'Delete for both';
 
   @override
@@ -4276,7 +4297,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wipeForBothMessage =>
-      'ProMax will delete every message in this chat for you and the other person, then delete the chat itself. This can\'t be undone.';
+      'ProMax will delete every message in this chat for you and the other person, then remove the chat from your list. The other person keeps an empty chat. This can\'t be undone.';
 
   @override
   String get wipeCollecting => 'Collecting the history…';

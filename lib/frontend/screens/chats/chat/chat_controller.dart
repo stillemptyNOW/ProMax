@@ -214,7 +214,7 @@ class ChatController extends ChangeNotifier {
     int count = historyPageSize,
   }) async {
     try {
-      final fetched = await messagesModule.fetchHistory(
+      final page = await messagesModule.fetchHistoryPage(
         myId,
         chatId,
         fromTime: fromTime,
@@ -222,7 +222,7 @@ class ChatController extends ChangeNotifier {
         backward: backward,
         count: count,
       );
-      await chats.reconcileDeletedFromFetch(myId, chatId, fetched);
+      await chats.reconcileDeletedFromFetch(myId, chatId, page);
     } catch (e) {
       logger.w('Error fetching history page: $e');
     }
@@ -546,9 +546,9 @@ class ChatController extends ChangeNotifier {
     }
 
     try {
-      final serverMessages = await messagesModule.fetchHistory(myId, chatId);
+      final page = await messagesModule.fetchHistoryPage(myId, chatId);
       chats.markHistoryFetched(chatId);
-      await chats.reconcileDeletedFromFetch(myId, chatId, serverMessages);
+      await chats.reconcileDeletedFromFetch(myId, chatId, page);
       final updatedDecoded = await loadInitialFromDb(onlyVisible: onlyVisible);
       final ranges = await AppDatabase.loadMessageRanges(myId, chatId);
       if (isMounted()) {
