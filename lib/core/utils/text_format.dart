@@ -146,6 +146,66 @@ List<String>? animojiOnlyLottieUrls(
   return [for (final r in animoji) r.animojiUrl!];
 }
 
+const List<(int, int)> _emojiRuneRanges = [
+  (0x0023, 0x0023),
+  (0x002A, 0x002A),
+  (0x0030, 0x0039),
+  (0x00A9, 0x00A9),
+  (0x00AE, 0x00AE),
+  (0x200D, 0x200D),
+  (0x203C, 0x203C),
+  (0x2049, 0x2049),
+  (0x20E3, 0x20E3),
+  (0x2122, 0x2122),
+  (0x2139, 0x2139),
+  (0x2190, 0x21FF),
+  (0x2300, 0x23FF),
+  (0x24C2, 0x24C2),
+  (0x25AA, 0x25FE),
+  (0x2600, 0x27BF),
+  (0x2934, 0x2935),
+  (0x2B00, 0x2BFF),
+  (0x3030, 0x3030),
+  (0x303D, 0x303D),
+  (0x3297, 0x3297),
+  (0x3299, 0x3299),
+  (0xFE0F, 0xFE0F),
+  (0x1F000, 0x1FAFF),
+  (0xE0020, 0xE007F),
+];
+
+bool _isEmojiRune(int rune) {
+  for (final (low, high) in _emojiRuneRanges) {
+    if (rune >= low && rune <= high) return true;
+  }
+  return false;
+}
+
+bool isEmojiGlyph(String glyph) {
+  var presented = false;
+  for (final rune in glyph.runes) {
+    if (!_isEmojiRune(rune)) return false;
+    if (rune >= 0x1F000 || rune == 0xFE0F || rune == 0x20E3) presented = true;
+  }
+  return presented;
+}
+
+List<String>? emojiOnlyGlyphs(
+  String? text,
+  List<FormatRange> ranges, {
+  int limit = 3,
+}) {
+  if (text == null || ranges.isNotEmpty) return null;
+  final glyphs = <String>[];
+  for (final glyph in text.characters) {
+    if (glyph.trim().isEmpty) continue;
+    if (!isEmojiGlyph(glyph)) return null;
+    glyphs.add(glyph);
+    if (glyphs.length > limit) return null;
+  }
+  return glyphs.isEmpty ? null : glyphs;
+}
+
 int _asInt(dynamic value) {
   if (value is int) return value;
   if (value is String) return int.tryParse(value) ?? 0;
