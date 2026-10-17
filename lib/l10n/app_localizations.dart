@@ -5111,7 +5111,7 @@ abstract class AppLocalizations {
   /// No description provided for @profilePhoneRegenFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t regenerate your phone number. Please sign in again and report the issue to the developers'**
+  /// **'Phone number has not loaded yet'**
   String get profilePhoneRegenFailed;
 
   /// No description provided for @addContactTitle.

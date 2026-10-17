@@ -2707,8 +2707,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Упс! Сервер не прислал profile. Попробую регенерировать…';
 
   @override
-  String get profilePhoneRegenFailed =>
-      'Не удалось регенерировать данные об номере. Перезайдите и сообщите об проблеме разработчикам';
+  String get profilePhoneRegenFailed => 'Номер ещё не загрузился';
 
   @override
   String get addContactTitle => 'Новый контакт';

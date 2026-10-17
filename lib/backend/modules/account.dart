@@ -915,6 +915,16 @@ class AccountModule {
     }
     await AppDatabase.saveProfile(profile, isActive: true);
     await AppDatabase.setActiveAccount(profile.id);
+    if (profile.phone == 0) {
+      unawaited(
+        ContactsModule.recoverSelfPhone(_api, profile.id).catchError((
+          Object e,
+        ) {
+          logger.w('login: номер профиля не восстановлен: $e');
+          return null;
+        }),
+      );
+    }
 
     await _saveSyncState(data, serverTime, profile.id);
     await ContactsModule.syncFromLoginPayload(data, profile.id);

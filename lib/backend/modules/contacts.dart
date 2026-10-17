@@ -545,6 +545,14 @@ class ContactsModule {
     return null;
   }
 
+  static Future<int?> recoverSelfPhone(Api api, int accountId) async {
+    final fetched = await fetchSelfProfile(api, accountId);
+    final phone = fetched?.phone ?? 0;
+    if (phone <= 0) return null;
+    await AppDatabase.setProfilePhone(accountId, phone);
+    return phone;
+  }
+
   // #***! греем кэши имя телефон аватарка
   static void primeContactCache(Map<dynamic, dynamic> contact) {
     final id = contact['id'];

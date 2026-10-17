@@ -51,6 +51,16 @@ class ProfileData {
     updateTime: 0,
   );
 
+  static int parsePhone(Object? raw) {
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw is String) {
+      final digits = raw.replaceAll(RegExp(r'[\s()+-]'), '');
+      if (RegExp(r'^\d{5,15}$').hasMatch(digits)) return int.parse(digits);
+    }
+    return 0;
+  }
+
   factory ProfileData.fromServerProfile(Map<dynamic, dynamic> profile) {
     final contact = profile['contact'];
     if (contact is! Map) {
@@ -85,7 +95,7 @@ class ProfileData {
       id: contact['id'] as int,
       firstName: firstName,
       lastName: lastName,
-      phone: (contact['phone'] as int?) ?? 0,
+      phone: parsePhone(contact['phone']),
       photoId: contact['photoId'] as int?,
       baseUrl: contact['baseUrl'] as String?,
       baseRawUrl: contact['baseRawUrl'] as String?,
@@ -741,12 +751,28 @@ class AppDatabase {
     final placeholders = List.filled(cols.length, '?').join(', ');
     final updates = cols
         .where((c) => c != 'id')
-        .map((c) => '$c = excluded.$c')
+        .map(
+          (c) => c == 'phone'
+              ? 'phone = CASE WHEN excluded.phone > 0 '
+                    'THEN excluded.phone ELSE profile.phone END'
+              : '$c = excluded.$c',
+        )
         .join(', ');
     await db.rawInsert(
       'INSERT INTO profile (${cols.join(', ')}) VALUES ($placeholders) '
       'ON CONFLICT(id) DO UPDATE SET $updates',
       cols.map((c) => row[c]).toList(),
+    );
+  }
+
+  static Future<void> setProfilePhone(int accountId, int phone) async {
+    if (phone <= 0) return;
+    final db = await _instance;
+    await db.update(
+      'profile',
+      {'phone': phone},
+      where: 'id = ?',
+      whereArgs: [accountId],
     );
   }
 

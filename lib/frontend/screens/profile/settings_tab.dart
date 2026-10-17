@@ -255,7 +255,21 @@ class _SettingsTabState extends State<SettingsTab>
       _profile = p;
       _rebuildAvatarPhotos();
     });
+    if (p != null && p.phone == 0) unawaited(_recoverPhone(p.id));
     await _loadAvatars();
+  }
+
+  bool _phoneRecoveryTried = false;
+
+  Future<void> _recoverPhone(int accountId) async {
+    if (_phoneRecoveryTried) return;
+    _phoneRecoveryTried = true;
+    try {
+      final phone = await ContactsModule.recoverSelfPhone(api, accountId);
+      if (phone != null && mounted) await _loadProfile();
+    } catch (e) {
+      logger.w('settings: номер профиля не восстановлен: $e');
+    }
   }
 
   // #***! список фото нужен вместе с id, а кэшу модуля можно верить:
