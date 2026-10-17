@@ -205,15 +205,14 @@ class _CloudStorageScreenState extends State<CloudStorageScreen>
   }
 
   void _deleteOrLeave(int accountId, CachedChat chat) async {
-    final isAdmin = chat.owner == accountId || chat.admins.contains(accountId);
-    final outcome = isAdmin
-        ? await chats.deleteChat(
+    final outcome = chat.owner == accountId
+        ? (await chats.deleteChat(
             api,
             chatId: chat.id,
             forAll: true,
             seenEventTime: chat.lastEventTime,
             accountId: accountId,
-          )
+          )).outcome
         : await chats.leaveChat(api, chatId: chat.id, accountId: accountId);
     if (!outcome.ok) {
       logger.w('Облако: лишняя группа ${chat.id} не убрана');

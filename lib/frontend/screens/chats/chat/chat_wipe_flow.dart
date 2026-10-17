@@ -78,13 +78,13 @@ Future<bool> wipeDialogForBoth(
         forAll: true,
         seenEventTime: seen,
       ),
-      removeChat: (seen) => chats.deleteChat(
+      removeChat: (seen) async => (await chats.deleteChat(
         api,
         chatId: chatId,
         forAll: false,
         seenEventTime: seen,
         accountId: myId,
-      ),
+      )).outcome,
       onProgress: (total, deleted) => progress.value = deleted == 0
           ? l10n.wipeFound(total)
           : l10n.wipeDeleting(deleted, total),

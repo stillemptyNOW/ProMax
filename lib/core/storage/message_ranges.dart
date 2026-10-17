@@ -69,7 +69,9 @@ class MessageRanges {
     required int forward,
     required int backward,
     required List<int> times,
+    bool emptyConfirmed = false,
   }) {
+    if (times.isEmpty && !emptyConfirmed) return null;
     final oldest = times.isEmpty ? null : times.reduce(math.min);
     final newest = times.isEmpty ? null : times.reduce(math.max);
     final olderExhausted =

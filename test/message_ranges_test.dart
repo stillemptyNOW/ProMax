@@ -118,16 +118,24 @@ void main() {
       int forward = 0,
       int backward = 30,
       List<int> times = const [],
+      bool emptyConfirmed = false,
     }) => MessageRanges.reconcileWindow(
       fromTime: fromTime,
       requestedAt: now,
       forward: forward,
       backward: backward,
       times: times,
+      emptyConfirmed: emptyConfirmed,
     );
 
-    test('an empty latest history covers the whole chat', () {
-      expect(window(), _r(0, settled));
+    test('a single empty answer proves nothing', () {
+      expect(window(), isNull);
+      expect(window(fromTime: 5000, backward: 2), isNull);
+      expect(window(fromTime: 5000, forward: 2, backward: 0), isNull);
+    });
+
+    test('a confirmed empty latest history covers the whole chat', () {
+      expect(window(emptyConfirmed: true), _r(0, settled));
     });
 
     test('a short latest history reaches back to the start', () {
@@ -147,7 +155,10 @@ void main() {
         window(fromTime: 5000, backward: 2, times: [3000, 4000]),
         _r(3000, 4999),
       );
-      expect(window(fromTime: 5000, backward: 2), _r(0, 4999));
+      expect(
+        window(fromTime: 5000, backward: 2, emptyConfirmed: true),
+        _r(0, 4999),
+      );
     });
 
     test('a newer page starts just after its edge', () {
@@ -169,7 +180,10 @@ void main() {
     });
 
     test('an empty newer page with no backward side proves nothing', () {
-      expect(window(fromTime: 5000, forward: 0, backward: 0), isNull);
+      expect(
+        window(fromTime: 5000, forward: 0, backward: 0, emptyConfirmed: true),
+        isNull,
+      );
     });
   });
 

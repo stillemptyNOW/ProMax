@@ -4274,6 +4274,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String deleteChatErasedOnly(String reason) {
+    return 'The history was erased for both of you, but the chat wasn\'t removed: $reason';
+  }
+
+  @override
+  String get deleteChatTypeUnknown =>
+      'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again';
+
+  @override
+  String get chatActionProfileUnavailable =>
+      'Your profile hasn\'t loaded yet, try again in a moment';
+
+  @override
   String get chatDeleteAlsoForPeer =>
       'Also erase the history for the other person';
 

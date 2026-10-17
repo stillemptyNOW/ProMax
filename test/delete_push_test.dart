@@ -276,7 +276,8 @@ void main() {
         accountId: _me,
       );
 
-      expect(outcome, isA<ServerDone>());
+      expect(outcome.outcome, isA<ServerDone>());
+      expect(outcome.historyErased, isTrue);
       expect(api.requests.map((r) => r.$1), [
         Opcode.chatClear,
         Opcode.chatDelete,
@@ -308,11 +309,113 @@ void main() {
         accountId: _me,
       );
 
-      expect(outcome, isA<ServerRejected>());
-      expect((outcome as ServerRejected).message, 'синтетический отказ');
+      expect(outcome.historyErased, isFalse);
+      expect(
+        (outcome.outcome as ServerRejected).message,
+        'синтетический отказ',
+      );
       expect(api.requests.map((r) => r.$1), [Opcode.chatClear]);
       expect(await AppDatabase.loadChat(_me, _chatId), isNotEmpty);
       expect(await storedIds(), hasLength(6));
+    });
+
+    test('an erased history with a refused removal keeps the chat', () async {
+      api.reply = (opcode) => opcode == Opcode.chatDelete
+          ? Packet(
+              cmd: CmdType.error,
+              opcode: opcode,
+              payload: {'localizedMessage': 'синтетический отказ'},
+            )
+          : null;
+
+      final result = await chats.deleteChat(
+        api,
+        chatId: _chatId,
+        forAll: true,
+        accountId: _me,
+      );
+
+      expect(result.outcome, isA<ServerRejected>());
+      expect(result.historyErased, isTrue);
+      expect(await AppDatabase.loadChat(_me, _chatId), isNotEmpty);
+      expect(await storedIds(), isNot(contains('811')));
+    });
+
+    test('a retry after the erase sends only the removal', () async {
+      final result = await chats.deleteChat(
+        api,
+        chatId: _chatId,
+        forAll: true,
+        accountId: _me,
+        historyErased: true,
+      );
+
+      expect(result.ok, isTrue);
+      expect(api.requests.single.$1, Opcode.chatDelete);
+      expect(api.requests.single.$2['forAll'], isFalse);
+    });
+
+    const unknownChat = 900602;
+
+    Object? chatInfoReply(int opcode, List<Map<String, Object>> found) =>
+        opcode == Opcode.chatInfo ? {'chats': found} : null;
+
+    test(
+      'a chat missing locally is a dialog only if the server says so',
+      () async {
+        api.reply = (opcode) => chatInfoReply(opcode, [
+          {'id': unknownChat, 'type': 'DIALOG', 'status': 'ACTIVE'},
+        ]);
+
+        final result = await chats.deleteChat(
+          api,
+          chatId: unknownChat,
+          forAll: true,
+          accountId: _me,
+        );
+
+        expect(result.ok, isTrue);
+        expect(api.requests.map((r) => r.$1), [
+          Opcode.chatInfo,
+          Opcode.chatClear,
+          Opcode.chatDelete,
+        ]);
+        expect(api.requests.last.$2['forAll'], isFalse);
+      },
+    );
+
+    test('a group missing locally is removed for its members', () async {
+      api.reply = (opcode) => chatInfoReply(opcode, [
+        {'id': unknownChat, 'type': 'CHAT', 'status': 'ACTIVE'},
+      ]);
+
+      await chats.deleteChat(
+        api,
+        chatId: unknownChat,
+        forAll: true,
+        accountId: _me,
+      );
+
+      expect(api.requests.map((r) => r.$1), [
+        Opcode.chatInfo,
+        Opcode.chatDelete,
+      ]);
+      expect(api.requests.last.$2['forAll'], isTrue);
+    });
+
+    test('a chat of unknown type is never deleted for everyone', () async {
+      api.reply = (opcode) => chatInfoReply(opcode, []);
+
+      final result = await chats.deleteChat(
+        api,
+        chatId: unknownChat,
+        forAll: true,
+        accountId: _me,
+      );
+
+      expect(result.typeUnknown, isTrue);
+      expect(result.ok, isFalse);
+      expect(api.requests.map((r) => r.$1), [Opcode.chatInfo]);
     });
 
     test('only for me sends a single deletion', () async {
@@ -336,12 +439,18 @@ void main() {
       'text': 'синтетика $id',
     };
 
+    int historyRequests() =>
+        api.requests.where((r) => r.$1 == Opcode.chatHistory).length;
+
     Future<List<String>> fetchAndReconcile(
       List<Map<String, Object>> messages, {
       int count = 50,
+      List<Map<String, Object>>? second,
     }) async {
-      api.reply = (opcode) =>
-          opcode == Opcode.chatHistory ? {'messages': messages} : null;
+      var answered = 0;
+      api.reply = (opcode) => opcode == Opcode.chatHistory
+          ? {'messages': answered++ == 0 ? messages : (second ?? messages)}
+          : null;
       final page = await MessagesModule(
         api,
       ).fetchHistoryPage(_me, _chatId, count: count);
@@ -351,8 +460,29 @@ void main() {
     test('an empty history clears every cached message', () async {
       final removed = await fetchAndReconcile([]);
 
+      expect(historyRequests(), 2);
       expect(removed.toSet(), {'811', '812', '813', '814', '815'});
       expect(await storedIds(), {'temp_1_1'});
+    });
+
+    test('an empty answer the next one contradicts deletes nothing', () async {
+      final removed = await fetchAndReconcile(
+        [],
+        count: 2,
+        second: [serverMessage(814, 4000), serverMessage(815, 5000)],
+      );
+
+      expect(historyRequests(), 2);
+      expect(removed, isEmpty);
+      expect(await storedIds(), hasLength(6));
+    });
+
+    test('an empty answer for an empty cache is not asked twice', () async {
+      await AppDatabase.clearMessages(_me, _chatId);
+      api.requests.clear();
+
+      expect(await fetchAndReconcile([]), isEmpty);
+      expect(historyRequests(), 1);
     });
 
     test(

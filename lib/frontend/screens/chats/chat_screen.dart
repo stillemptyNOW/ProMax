@@ -4056,6 +4056,12 @@ class _ChatScreenState extends State<ChatScreen>
     return (type == 'CHAT' || type == 'CHANNEL') && _canDeleteOthers;
   }
 
+  bool get _canDeleteForAll {
+    final type = chat?.type ?? widget.chatType;
+    if (type == 'DIALOG') return widget.chatId != 0;
+    return (type == 'CHAT' || type == 'CHANNEL') && chat?.owner == _myId;
+  }
+
   int _newestKnownTime(CachedChat? current) {
     var newest = current?.lastEventTime ?? 0;
     for (final message in _chatController.messages.reversed) {
@@ -4107,9 +4113,12 @@ class _ChatScreenState extends State<ChatScreen>
       if (!mounted) return;
       _myId = profile?.id ?? 0;
     }
-    if (_myId == 0) return;
-    final canDeleteForAll = _canActForAll;
     final l10n = AppLocalizations.of(context)!;
+    if (_myId == 0) {
+      showCustomNotification(context, l10n.chatActionProfileUnavailable);
+      return;
+    }
+    final canDeleteForAll = _canDeleteForAll;
     final choice = await showBlurredConfirm(
       context,
       title: l10n.chatInfoDeleteChatTitle,

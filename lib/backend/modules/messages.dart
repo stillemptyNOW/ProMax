@@ -844,15 +844,27 @@ class MessagesModule {
       'getMessages': true,
     };
 
-    final response = await _api.sendRequest(Opcode.chatHistory, payload);
+    var messagesData = await _requestHistory(payload);
+    if (messagesData == null) return HistoryPage.unknown;
 
-    if (!response.isOk) return HistoryPage.unknown;
-
-    final data = response.payload;
-    if (data is! Map) return HistoryPage.unknown;
-
-    final messagesData = data['messages'];
-    if (messagesData is! List) return HistoryPage.unknown;
+    var emptyConfirmed = false;
+    if (messagesData.isEmpty) {
+      final claimed = MessageRanges.reconcileWindow(
+        fromTime: fromTime,
+        requestedAt: requestedAt,
+        forward: forward,
+        backward: backwardCount,
+        times: const [],
+        emptyConfirmed: true,
+      );
+      if (claimed != null &&
+          await _hasCachedBetween(accountId, chatId, claimed)) {
+        final again = await _requestHistory(payload);
+        if (again == null) return HistoryPage.unknown;
+        messagesData = again;
+        emptyConfirmed = again.isEmpty;
+      }
+    }
 
     final List<CachedMessage> results = [];
     final serverIds = <String>{};
@@ -882,6 +894,7 @@ class MessagesModule {
       forward: forward,
       backward: backwardCount,
       times: times,
+      emptyConfirmed: emptyConfirmed,
     );
 
     final merged = results.isNotEmpty
@@ -912,6 +925,26 @@ class MessagesModule {
     );
     return HistoryPage(toSave, serverIds: serverIds, window: window);
   }
+
+  Future<List<dynamic>?> _requestHistory(Map<String, Object> payload) async {
+    final response = await _api.sendRequest(Opcode.chatHistory, payload);
+    if (!response.isOk) return null;
+    final data = response.payload;
+    if (data is! Map) return null;
+    final messages = data['messages'];
+    return messages is List ? messages : null;
+  }
+
+  static Future<bool> _hasCachedBetween(
+    int accountId,
+    int chatId,
+    MessageRange window,
+  ) async => (await AppDatabase.loadServerMessageIdsBetween(
+    accountId,
+    chatId,
+    fromTime: window.start,
+    toTime: window.end,
+  )).isNotEmpty;
 
   Future<void> _recordCoverage(
     int accountId,

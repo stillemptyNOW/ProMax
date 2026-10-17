@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/utils/logger.dart';
+import 'chat_deletion_plan.dart';
 import 'messages.dart';
 import 'server_outcome.dart';
 
@@ -32,6 +33,7 @@ class PendingDeletion {
     this.messageIds = const [],
     this.forEveryone = false,
     this.fallbackToSelf = false,
+    this.historyErased = false,
     this.attempts = 0,
   });
 
@@ -42,6 +44,7 @@ class PendingDeletion {
   final List<String> messageIds;
   final bool forEveryone;
   final bool fallbackToSelf;
+  final bool historyErased;
   final int attempts;
 
   bool get isChat => kind != PendingDeletionKind.messages;
@@ -51,7 +54,7 @@ class PendingDeletion {
       if (int.tryParse(id) != null) id,
   ];
 
-  PendingDeletion retried() => PendingDeletion(
+  PendingDeletion retried({bool historyErased = false}) => PendingDeletion(
     key: key,
     accountId: accountId,
     chatId: chatId,
@@ -59,6 +62,7 @@ class PendingDeletion {
     messageIds: messageIds,
     forEveryone: forEveryone,
     fallbackToSelf: fallbackToSelf,
+    historyErased: this.historyErased || historyErased,
     attempts: attempts + 1,
   );
 
@@ -70,6 +74,7 @@ class PendingDeletion {
     'm': messageIds,
     'e': forEveryone,
     'f': fallbackToSelf,
+    'h': historyErased,
     'n': attempts,
   };
 
@@ -100,6 +105,7 @@ class PendingDeletion {
       messageIds: messageIds,
       forEveryone: raw['e'] == true,
       fallbackToSelf: raw['f'] == true,
+      historyErased: raw['h'] == true,
       attempts: attempts is int ? attempts : 0,
     );
   }
@@ -115,6 +121,16 @@ final class PendingDeletionFailed extends PendingDeletionReport {
   final PendingDeletionKind kind;
   final int count;
   final String message;
+}
+
+final class PendingDeletionErasedOnly extends PendingDeletionReport {
+  const PendingDeletionErasedOnly(this.message);
+
+  final String message;
+}
+
+final class PendingDeletionChatTypeUnknown extends PendingDeletionReport {
+  const PendingDeletionChatTypeUnknown();
 }
 
 final class PendingDeletionStalled extends PendingDeletionReport {
@@ -140,10 +156,11 @@ abstract interface class PendingDeletionGateway {
     List<String> messageIds, {
     required bool forEveryone,
   });
-  Future<ServerOutcome> deleteChat(
+  Future<ChatDeletionResult> deleteChat(
     int accountId,
     int chatId, {
     required bool forAll,
+    required bool historyErased,
   });
   Future<ServerOutcome> leaveChat(int accountId, int chatId);
   Future<void> forgetMessages(int accountId, int chatId, List<String> ids);
@@ -153,6 +170,13 @@ abstract interface class PendingDeletionGateway {
     List<String> ids,
   );
 }
+
+typedef _Sent = ({
+  ServerOutcome outcome,
+  int keptForPeer,
+  bool historyErased,
+  bool typeUnknown,
+});
 
 class PendingDeletions {
   PendingDeletions._();
@@ -188,6 +212,7 @@ class PendingDeletions {
   StreamSubscription<void>? _onlineSub;
   Timer? _retryTimer;
   int _retryRound = 0;
+  bool _stallReported = false;
   Future<void> _saving = Future.value();
   int _keySeq = 0;
 
@@ -225,6 +250,7 @@ class PendingDeletions {
     _snapshots.clear();
     _sendingCancelled.clear();
     _retryRound = 0;
+    _stallReported = false;
     _reindex();
   }
 
@@ -452,38 +478,73 @@ class PendingDeletions {
                   entry.attempts > 0):
         await _complete(gateway, entry, keptForPeer: sent.keptForPeer);
       case ServerRejected(:final message):
-        await _reject(gateway, entry, message);
+        await _reject(gateway, entry, _refusalReport(entry, sent, message));
       case ServerUnreachable(:final reason):
-        final retried = entry.retried();
+        final retried = entry.retried(historyErased: sent.historyErased);
         _entries[key] = retried;
         _save();
         _scheduleRetry();
-        if (retried.attempts == stallReportAttempt) {
-          _reports.add(PendingDeletionStalled(entry.kind, reason));
-        }
+        _reportStall(retried, reason);
     }
   }
 
-  Future<({ServerOutcome outcome, int keptForPeer})> _send(
+  static PendingDeletionReport _refusalReport(
+    PendingDeletion entry,
+    _Sent sent,
+    String message,
+  ) {
+    if (sent.typeUnknown) return const PendingDeletionChatTypeUnknown();
+    if (sent.historyErased || entry.historyErased) {
+      return PendingDeletionErasedOnly(message);
+    }
+    return PendingDeletionFailed(
+      entry.kind,
+      entry.kind == PendingDeletionKind.messages
+          ? entry.serverMessageIds.length
+          : 1,
+      message,
+    );
+  }
+
+  void _reportStall(PendingDeletion entry, String reason) {
+    if (entry.attempts != stallReportAttempt || _stallReported) return;
+    _stallReported = true;
+    _reports.add(PendingDeletionStalled(entry.kind, reason));
+  }
+
+  Future<_Sent> _send(
     PendingDeletionGateway gateway,
     PendingDeletion entry,
   ) async => switch (entry.kind) {
     PendingDeletionKind.messages => await _sendMessages(gateway, entry),
-    PendingDeletionKind.deleteChat => (
-      outcome: await gateway.deleteChat(
+    PendingDeletionKind.deleteChat => _sentChatDeletion(
+      await gateway.deleteChat(
         entry.accountId,
         entry.chatId,
         forAll: entry.forEveryone,
+        historyErased: entry.historyErased,
       ),
-      keptForPeer: 0,
     ),
-    PendingDeletionKind.leaveChat => (
-      outcome: await gateway.leaveChat(entry.accountId, entry.chatId),
-      keptForPeer: 0,
+    PendingDeletionKind.leaveChat => _sent(
+      await gateway.leaveChat(entry.accountId, entry.chatId),
     ),
   };
 
-  Future<({ServerOutcome outcome, int keptForPeer})> _sendMessages(
+  static _Sent _sent(ServerOutcome outcome, {int keptForPeer = 0}) => (
+    outcome: outcome,
+    keptForPeer: keptForPeer,
+    historyErased: false,
+    typeUnknown: false,
+  );
+
+  static _Sent _sentChatDeletion(ChatDeletionResult result) => (
+    outcome: result.outcome,
+    keptForPeer: 0,
+    historyErased: result.historyErased,
+    typeUnknown: result.typeUnknown,
+  );
+
+  Future<_Sent> _sendMessages(
     PendingDeletionGateway gateway,
     PendingDeletion entry,
   ) async {
@@ -496,7 +557,7 @@ class PendingDeletions {
         outcome.notFound ||
         !entry.forEveryone ||
         !entry.fallbackToSelf) {
-      return (outcome: outcome, keptForPeer: 0);
+      return _sent(outcome);
     }
     final refused = <String>[];
     for (final id in entry.serverMessageIds) {
@@ -510,16 +571,16 @@ class PendingDeletions {
         case ServerRejected():
           refused.add(id);
         case ServerUnreachable():
-          return (outcome: single, keptForPeer: 0);
+          return _sent(single);
       }
     }
-    if (refused.isEmpty) return (outcome: const ServerDone(), keptForPeer: 0);
+    if (refused.isEmpty) return _sent(const ServerDone());
     final mine = await gateway.deleteMessages(
       entry.chatId,
       refused,
       forEveryone: false,
     );
-    return (outcome: mine, keptForPeer: mine.ok ? refused.length : 0);
+    return _sent(mine, keptForPeer: mine.ok ? refused.length : 0);
   }
 
   Future<void> _complete(
@@ -539,6 +600,7 @@ class PendingDeletions {
     _entries.remove(entry.key);
     _snapshots.remove(entry.key);
     _retryRound = 0;
+    _stallReported = false;
     _changed();
     if (keptForPeer > 0) _reports.add(PendingDeletionKeptForPeer(keptForPeer));
   }
@@ -546,9 +608,10 @@ class PendingDeletions {
   Future<void> _reject(
     PendingDeletionGateway gateway,
     PendingDeletion entry,
-    String message,
+    PendingDeletionReport report,
   ) async {
     _entries.remove(entry.key);
+    _stallReported = false;
     final snapshot = _snapshots.remove(entry.key);
     var restored = snapshot?.values.toList() ?? const <CachedMessage>[];
     if (entry.kind == PendingDeletionKind.messages && restored.isEmpty) {
@@ -568,15 +631,7 @@ class PendingDeletions {
         messages: restored,
       ));
     }
-    _reports.add(
-      PendingDeletionFailed(
-        entry.kind,
-        entry.kind == PendingDeletionKind.messages
-            ? entry.serverMessageIds.length
-            : 1,
-        message,
-      ),
-    );
+    _reports.add(report);
   }
 
   void _scheduleRetry() {

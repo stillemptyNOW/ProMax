@@ -7778,6 +7778,24 @@ abstract class AppLocalizations {
   /// **'The deletion hasn\'t reached the server yet, ProMax will retry: {reason}'**
   String deletionStillPending(String reason);
 
+  /// No description provided for @deleteChatErasedOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'The history was erased for both of you, but the chat wasn\'t removed: {reason}'**
+  String deleteChatErasedOnly(String reason);
+
+  /// No description provided for @deleteChatTypeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again'**
+  String get deleteChatTypeUnknown;
+
+  /// No description provided for @chatActionProfileUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile hasn\'t loaded yet, try again in a moment'**
+  String get chatActionProfileUnavailable;
+
   /// No description provided for @chatDeleteAlsoForPeer.
   ///
   /// In en, this message translates to:

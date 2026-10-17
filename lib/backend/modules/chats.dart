@@ -2706,20 +2706,49 @@ class ChatsModule {
     return rows.isEmpty ? null : CachedChat.fromDbRow(rows.first).type;
   }
 
+  Future<({String? type, ServerOutcome? failure})> _resolveChatType(
+    Api api,
+    int? accountId,
+    int chatId,
+  ) async {
+    final known = await _chatTypeOf(accountId, chatId);
+    if (known != null) return (type: known, failure: null);
+    try {
+      final type = (await getChatInfo(api, chatId))?['type'];
+      return (type: type is String ? type : null, failure: null);
+    } catch (e) {
+      return (type: null, failure: outcomeOfError(e));
+    }
+  }
+
   // #***! удаление чата
-  Future<ServerOutcome> deleteChat(
+  Future<ChatDeletionResult> deleteChat(
     Api api, {
     required int chatId,
     required bool forAll,
     int seenEventTime = 0,
     int? accountId,
+    bool historyErased = false,
   }) async {
     final owner = accountId ?? await TokenStorage.getActiveAccountId();
-    final plan = ChatDeletionPlan.of(
-      chatType: await _chatTypeOf(owner, chatId),
-      forAll: forAll && chatId != 0,
-    );
-    final outcome = await plan.run(
+    final wantsAll = forAll && chatId != 0;
+    String? chatType;
+    if (wantsAll) {
+      final resolved = await _resolveChatType(api, owner, chatId);
+      final failure = resolved.failure;
+      if (failure != null) {
+        _logRefusal('deleteChat', chatId, failure);
+        return ChatDeletionResult(failure);
+      }
+      chatType = resolved.type;
+    }
+    final plan = ChatDeletionPlan.of(chatType: chatType, forAll: wantsAll);
+    if (plan == null) {
+      logger.w('deleteChat $chatId: тип чата неизвестен, для всех не удаляем');
+      return const ChatDeletionResult.typeUnknown();
+    }
+    final result = await plan.run(
+      historyErased: historyErased,
       clearHistoryForAll: () => _clearOnServer(
         api,
         chatId: chatId,
@@ -2735,8 +2764,8 @@ class ChatsModule {
         }),
       ),
     );
-    _logRefusal('deleteChat', chatId, outcome);
-    if (outcome is! ServerDone) return outcome;
+    _logRefusal('deleteChat', chatId, result.outcome);
+    if (!result.ok) return result;
     if (owner != null) {
       await AppDatabase.deleteChat(chatId, owner);
       MessageSessionCache.remove(owner, chatId);
@@ -2745,7 +2774,7 @@ class ChatsModule {
       _removeChatFromMemory(chatId);
     }
     _departedChatsController.add(chatId);
-    return outcome;
+    return result;
   }
 
   // #***! очистка истории

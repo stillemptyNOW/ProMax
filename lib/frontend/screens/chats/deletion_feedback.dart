@@ -19,6 +19,10 @@ String pendingDeletionReportText(
     l10n.deleteChatFailedWithReason(message),
   PendingDeletionFailed(kind: PendingDeletionKind.leaveChat, :final message) =>
     l10n.leaveChatFailedWithReason(message),
+  PendingDeletionErasedOnly(:final message) => l10n.deleteChatErasedOnly(
+    message,
+  ),
+  PendingDeletionChatTypeUnknown() => l10n.deleteChatTypeUnknown,
   PendingDeletionStalled(:final reason) => l10n.deletionStillPending(reason),
   PendingDeletionKeptForPeer(:final count) => l10n.deleteMessagesKeptForPeer(
     count,

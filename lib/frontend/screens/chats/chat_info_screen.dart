@@ -132,7 +132,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   ChatAdminState? _chatAdmin;
 
   int _mediaChatId = 0;
-  Future<void> _loading = Future.value();
+  final Completer<void> _identityKnown = Completer();
   String? _anchorMsgId;
 
   int _dontDisturbUntil = 0;
@@ -182,7 +182,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     ChatMembersStore.instance
         .listenable(widget.chatId)
         .addListener(_onMemberCountChanged);
-    _loading = _load();
+    _load();
   }
 
   @override
@@ -280,9 +280,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   }
 
   @override
-  void reloadAfterReconnect() {
-    _loading = _load();
-  }
+  void reloadAfterReconnect() => _load();
 
   Future<void> _load() async {
     final results = await Future.wait([
@@ -297,6 +295,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
 
     _mediaChatId = (info?.raw['id'] as int?) ?? widget.chatId;
     _syncChatAdmin(info);
+    if (!_identityKnown.isCompleted) _identityKnown.complete();
 
     if (_isGroupOrChannel) {
       _notMember = !await AppDatabase.isChatInList(_myId, _mediaChatId);
@@ -1809,9 +1808,20 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
       ? _mediaChatId != 0
       : _isGroupOrChannel && _iAmAdmin;
 
+  bool get _canDeleteForAll => widget.chatType == 'DIALOG'
+      ? _mediaChatId != 0
+      : _isGroupOrChannel && (_chatInfo?.isOwner(_myId) ?? false);
+
+  Future<bool> _profileReady() async {
+    await _identityKnown.future;
+    if (!mounted) return false;
+    if (_myId != 0) return true;
+    showCustomNotification(context, l10n.chatActionProfileUnavailable);
+    return false;
+  }
+
   Future<void> _clearHistory() async {
-    await _loading;
-    if (!mounted || _myId == 0) return;
+    if (!await _profileReady() || !mounted) return;
     final canClearForAll = _canActForAll;
     final choice = await showBlurredConfirm(
       context,
@@ -1838,9 +1848,8 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   }
 
   Future<void> _deleteChat() async {
-    await _loading;
-    if (!mounted || _myId == 0) return;
-    final canDeleteForAll = _canActForAll;
+    if (!await _profileReady() || !mounted) return;
+    final canDeleteForAll = _canDeleteForAll;
     final choice = await showBlurredConfirm(
       context,
       title: l10n.chatInfoDeleteChatTitle,
