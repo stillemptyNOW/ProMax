@@ -59,6 +59,7 @@ final Expando<MessageType> _contentTypeCache = Expando<MessageType>();
 final Expando<List<MessageAttachment>> _contentAttachmentsCache =
     Expando<List<MessageAttachment>>();
 final Expando<List<String>> _jumboAnimojiUrlsCache = Expando<List<String>>();
+final Expando<List<String>> _jumboEmojiCache = Expando<List<String>>();
 
 class ReactionAnimationEvent {
   final String messageId;
@@ -881,6 +882,24 @@ class MessageBubble extends StatelessWidget {
     return computed;
   }
 
+  static const int _jumboEmojiLimit = 3;
+
+  List<String>? get _jumboEmoji {
+    if (message.attachments?.isNotEmpty ?? false) return null;
+    if (_jumboAnimojiUrls != null) return null;
+    final cached = _jumboEmojiCache[message];
+    if (cached != null) return cached;
+    final computed = emojiOnlyGlyphs(
+      message.text,
+      message.formatRanges,
+      limit: _jumboEmojiLimit,
+    );
+    if (computed != null) _jumboEmojiCache[message] = computed;
+    return computed;
+  }
+
+  bool get _isJumbo => _jumboAnimojiUrls != null || _jumboEmoji != null;
+
   MessageType get _contentType {
     if (_hasShareAttachment) return _computeContentType();
     return _contentTypeCache[message] ??= _computeContentType();
@@ -1188,16 +1207,14 @@ class MessageBubble extends StatelessWidget {
             hasReactions &&
             !_isSticker &&
             !_isVideoNote &&
-            _jumboAnimojiUrls == null);
+            !_isJumbo);
     final hasMultiPhotos = _computeHasMultiplePhotosNoCaption();
     final textColor = bubbleTextColor(context);
 
     final topMargin = _topMarginFor(contentType, shape);
     final bottomMargin = _bottomMarginFor(contentType, shape);
-    final jumboAnimoji = _jumboAnimojiUrls;
-    final padding = jumboAnimoji != null
-        ? EdgeInsets.zero
-        : _paddingFor(contentType, shape);
+    final jumbo = _isJumbo;
+    final padding = jumbo ? EdgeInsets.zero : _paddingFor(contentType, shape);
 
     final showAvatarSlot = !isMe;
     final showAvatar =
@@ -1212,8 +1229,7 @@ class MessageBubble extends StatelessWidget {
     final maxBubbleWidth = isVideoNote
         ? math.min(screenWidth - 24, 560.0)
         : math.min(screenWidth * 0.75, 760.0);
-    final noBubbleBackground =
-        isVideoNote || _isSticker || jumboAnimoji != null;
+    final noBubbleBackground = isVideoNote || _isSticker || jumbo;
     final bubbleColor = noBubbleBackground
         ? Colors.transparent
         : (isMe ? cs.primaryContainer : cs.incomingBubble);
@@ -1290,9 +1306,7 @@ class MessageBubble extends StatelessWidget {
           );
 
     final Widget innerContent =
-        contentType == MessageType.text &&
-            jumboAnimoji == null &&
-            _stretchesTextRow
+        contentType == MessageType.text && !jumbo && _stretchesTextRow
         ? IntrinsicWidth(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1777,6 +1791,8 @@ class MessageBubble extends StatelessWidget {
   Widget _buildContent(BubbleContext ctx) {
     final jumbo = _jumboAnimojiUrls;
     if (jumbo != null) return _buildJumboAnimojiContent(ctx, jumbo);
+    final emoji = _jumboEmoji;
+    if (emoji != null) return _buildJumboEmojiContent(ctx, emoji);
     switch (ctx.contentType) {
       case MessageType.control:
         return _buildControlContent(ctx.cs);
@@ -1833,6 +1849,36 @@ class MessageBubble extends StatelessWidget {
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [animations, _buildReactionsBarFor(ctx.cs, ctx.reactionInfo)],
+    );
+  }
+
+  Widget _buildJumboEmojiContent(BubbleContext ctx, List<String> glyphs) {
+    final fontSize = switch (glyphs.length) {
+      1 => 72.0,
+      2 => 58.0,
+      _ => 48.0,
+    };
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: ctx.isMe
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Text(
+                glyphs.join(),
+                textScaler: TextScaler.noScaling,
+                style: TextStyle(fontSize: fontSize, height: 1.15),
+              ),
+            ),
+            Positioned(bottom: 0, right: 0, child: _buildJumboAnimojiMeta(ctx)),
+          ],
+        ),
+        _buildReactionsBarFor(ctx.cs, ctx.reactionInfo),
+      ],
     );
   }
 

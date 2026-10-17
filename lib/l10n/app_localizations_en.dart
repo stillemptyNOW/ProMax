@@ -2693,8 +2693,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Oops! The server didn\'t send your profile. Trying to regenerate…';
 
   @override
-  String get profilePhoneRegenFailed =>
-      'Couldn\'t regenerate your phone number. Please sign in again and report the issue to the developers';
+  String get profilePhoneRegenFailed => 'Phone number has not loaded yet';
 
   @override
   String get addContactTitle => 'Add contact';
