@@ -132,6 +132,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   ChatAdminState? _chatAdmin;
 
   int _mediaChatId = 0;
+  Future<void> _loading = Future.value();
   String? _anchorMsgId;
 
   int _dontDisturbUntil = 0;
@@ -181,7 +182,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     ChatMembersStore.instance
         .listenable(widget.chatId)
         .addListener(_onMemberCountChanged);
-    _load();
+    _loading = _load();
   }
 
   @override
@@ -279,7 +280,9 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   }
 
   @override
-  void reloadAfterReconnect() => _load();
+  void reloadAfterReconnect() {
+    _loading = _load();
+  }
 
   Future<void> _load() async {
     final results = await Future.wait([
@@ -1807,6 +1810,8 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
       : _isGroupOrChannel && _iAmAdmin;
 
   Future<void> _clearHistory() async {
+    await _loading;
+    if (!mounted || _myId == 0) return;
     final canClearForAll = _canActForAll;
     final choice = await showBlurredConfirm(
       context,
@@ -1833,6 +1838,8 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   }
 
   Future<void> _deleteChat() async {
+    await _loading;
+    if (!mounted || _myId == 0) return;
     final canDeleteForAll = _canActForAll;
     final choice = await showBlurredConfirm(
       context,
@@ -1841,7 +1848,11 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
       confirmLabel: l10n.chatInfoDeleteChatConfirm,
       cancelLabel: l10n.chatInfoActionCancel,
       destructive: true,
-      checkboxLabel: canDeleteForAll ? l10n.chatInfoClearHistoryForAll : null,
+      checkboxLabel: canDeleteForAll
+          ? (widget.chatType == 'DIALOG'
+                ? l10n.chatDeleteAlsoForPeer
+                : l10n.chatInfoClearHistoryForAll)
+          : null,
     );
     if (!mounted || !choice.confirmed) return;
 

@@ -109,6 +109,70 @@ void main() {
     });
   });
 
+  group('what a history answer proves deleted', () {
+    const now = 1000000;
+    const settled = now - 10000;
+
+    MessageRange? window({
+      int? fromTime,
+      int forward = 0,
+      int backward = 30,
+      List<int> times = const [],
+    }) => MessageRanges.reconcileWindow(
+      fromTime: fromTime,
+      requestedAt: now,
+      forward: forward,
+      backward: backward,
+      times: times,
+    );
+
+    test('an empty latest history covers the whole chat', () {
+      expect(window(), _r(0, settled));
+    });
+
+    test('a short latest history reaches back to the start', () {
+      expect(window(times: [900000]), _r(0, settled));
+    });
+
+    test('a full latest page covers only back to its oldest message', () {
+      expect(window(backward: 2, times: [800000, 900000]), _r(800000, settled));
+    });
+
+    test('messages sent while the request was in flight are spared', () {
+      expect(window(times: [995000]), _r(0, 995000));
+    });
+
+    test('an older page stops just before the edge it was asked from', () {
+      expect(
+        window(fromTime: 5000, backward: 2, times: [3000, 4000]),
+        _r(3000, 4999),
+      );
+      expect(window(fromTime: 5000, backward: 2), _r(0, 4999));
+    });
+
+    test('a newer page starts just after its edge', () {
+      expect(
+        window(fromTime: 5000, forward: 2, backward: 0, times: [6000, 7000]),
+        _r(5001, 7000),
+      );
+      expect(
+        window(fromTime: 5000, forward: 2, backward: 0, times: [6000]),
+        _r(5001, settled),
+      );
+    });
+
+    test('a full page around a message proves nothing outside it', () {
+      expect(
+        window(fromTime: 5000, forward: 1, backward: 1, times: [4000, 6000]),
+        _r(4000, 6000),
+      );
+    });
+
+    test('an empty newer page with no backward side proves nothing', () {
+      expect(window(fromTime: 5000, forward: 0, backward: 0), isNull);
+    });
+  });
+
   group('merging ranges', () {
     test('touching ranges fuse, distant ones stay apart', () {
       final merged = MessageRanges.merge([

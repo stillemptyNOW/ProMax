@@ -30,11 +30,13 @@ import '../../models/chat_preview_media.dart';
 import '../../models/contact_info.dart';
 import '../api.dart';
 import 'account/privacy_module.dart';
+import 'chat_deletion_plan.dart';
 import 'chat_parsing.dart';
 import 'chat_preview.dart';
 import 'contacts.dart' show ContactsModule;
 import 'folders.dart';
-import 'messages.dart' show ContactCache, CachedMessage, MessagesModule;
+import 'messages.dart'
+    show ContactCache, CachedMessage, HistoryPage, MessagesModule;
 import 'pending_deletions.dart';
 import 'read_mark_queue.dart';
 import 'read_receipts.dart';
@@ -1267,10 +1269,13 @@ class ChatsModule {
     if (chatId is! int) return;
     final accountId = await TokenStorage.getActiveAccountId();
     if (accountId == null) return;
-    if (_isCompleteChatPayload(chat) &&
-        (await AppDatabase.loadChat(accountId, chatId)).isNotEmpty) {
+    final rows = await AppDatabase.loadChat(accountId, chatId);
+    if (_isCompleteChatPayload(chat) && rows.isNotEmpty) {
       await cacheServerChat(chat.cast<dynamic, dynamic>(), accountId);
       return;
+    }
+    if (chat['status'] is String && rows.isNotEmpty) {
+      await _applyPartialStatus(accountId, chat, rows.first);
     }
     final activeCallData = ChatCall.fromServer(
       chat['videoConversation'],
@@ -1283,6 +1288,50 @@ class ChatsModule {
           : cached.copyWith(activeCallData: activeCallData),
     );
   }
+
+  Future<void> _applyPartialStatus(
+    int accountId,
+    Map<dynamic, dynamic> chat,
+    Map<String, dynamic> row,
+  ) async {
+    final chatId = row['id'] as int;
+    final previous = row['in_list'] as int?;
+    final listState = chatListStateForStatus(
+      chat['status'],
+      previous: previous,
+    );
+    if (listState == previous || previous == ChatListState.notInList) return;
+    final cached = CachedChat.fromDbRow(row);
+    if (previous == ChatListState.visible &&
+        _isRemovedDialog(chat, knownType: cached.type)) {
+      await _purgeRemovedDialog(accountId, chatId);
+    }
+    await AppDatabase.setChatListState(accountId, chatId, listState);
+    await _notifyChatFromDb(accountId, chatId);
+  }
+
+  static bool _isRemovedDialog(
+    Map<dynamic, dynamic> chat, {
+    String? knownType,
+  }) {
+    if (chat['status'] != 'REMOVED') return false;
+    final type = chat['type'];
+    return (type is String ? type : knownType) == 'DIALOG';
+  }
+
+  Future<void> _purgeRemovedDialog(int accountId, int chatId) async {
+    final ids = await AppDatabase.loadServerMessageIdsBetween(
+      accountId,
+      chatId,
+      fromTime: 0,
+      toTime: _endOfTime,
+    );
+    await _applyServerDeletion(accountId, chatId, ids);
+    _historyFetched.remove(chatId);
+    _departedChatsController.add(chatId);
+  }
+
+  static const int _endOfTime = 8640000000000000;
 
   static bool _isCompleteChatPayload(Map<dynamic, dynamic> chat) =>
       chat['type'] is String &&
@@ -1453,13 +1502,7 @@ class ChatsModule {
     }
 
     if (status == 'REMOVED' && msgIdStr != null) {
-      final keepDeleted = ProMaxSettings.viewDeleted.value;
-      if (keepDeleted) {
-        await AppDatabase.markMessageDeleted(accountId, chatId, msgIdStr);
-        unawaited(keepDeletedMedia(accountId, chatId, [msgIdStr]));
-      } else {
-        await AppDatabase.deleteMessage(accountId, chatId, msgIdStr);
-      }
+      await _applyServerDeletion(accountId, chatId, [msgIdStr]);
       final cachedChat = CachedChat.fromDbRow(rows.first);
       if (cachedChat.lastMsgId == msgIdInt) {
         await _reconcileLastMessage(
@@ -1474,11 +1517,6 @@ class ChatsModule {
         await _applyLocalReadState(newRow);
         await _commitChatContent([(rows.first, newRow)]);
       }
-      _messageEventsController.add(
-        keepDeleted
-            ? MessageMarkedDeletedEvent(chatId, msgIdStr)
-            : MessageRemovedEvent(chatId, msgIdStr),
-      );
       final freshRows = await AppDatabase.loadChat(accountId, chatId);
       if (freshRows.isNotEmpty) {
         _applyChatToMemory(
@@ -1736,46 +1774,23 @@ class ChatsModule {
   Future<List<String>> reconcileDeletedFromFetch(
     int accountId,
     int chatId,
-    List<CachedMessage> serverMessages,
+    HistoryPage page,
   ) async {
-    if (serverMessages.isEmpty) return const [];
-
-    final serverIds = <String>{};
-    var minTime = serverMessages.first.time;
-    var maxTime = serverMessages.first.time;
-    for (final m in serverMessages) {
-      serverIds.add(m.id);
-      if (m.time < minTime) minTime = m.time;
-      if (m.time > maxTime) maxTime = m.time;
-    }
-
-    final cached = await AppDatabase.loadMessages(
+    final window = page.window;
+    if (window == null) return const [];
+    final local = await AppDatabase.loadServerMessageIdsBetween(
       accountId,
       chatId,
-      limit: 300,
-      onlyVisible: true,
+      fromTime: window.start,
+      toTime: window.end,
     );
-
-    final vanished = <String>[];
-    for (final row in cached) {
-      final id = row['id']?.toString();
-      if (id == null || id.isEmpty || id.startsWith('temp_')) continue;
-      if (serverIds.contains(id)) continue;
-
-      final status = row['status']?.toString();
-      if (status == 'pending' || status == 'sending' || status == 'error') {
-        continue;
-      }
-
-      final time = row['time'] is int
-          ? row['time'] as int
-          : int.tryParse(row['time']?.toString() ?? '') ?? 0;
-      if (time < minTime || time > maxTime) continue;
-
-      vanished.add(id);
-    }
-
+    final vanished = [
+      for (final id in local)
+        if (!page.serverIds.contains(id)) id,
+    ];
+    if (vanished.isEmpty) return const [];
     await _applyServerDeletion(accountId, chatId, vanished);
+    await reconcileLastMessage(accountId, chatId);
     return vanished;
   }
 
@@ -2035,6 +2050,10 @@ class ChatsModule {
     final listState = !inList
         ? ChatListState.notInList
         : chatListStateForStatus(chat['status'], previous: previousListState);
+    if (previousListState == ChatListState.visible &&
+        _isRemovedDialog(chat, knownType: ex?.type)) {
+      await _purgeRemovedDialog(accountId, parsed.id);
+    }
     final membershipUnchanged =
         previousListState == null || previousListState == listState;
     if (ex != null && sameChatContent(ex, parsed) && membershipUnchanged) {
@@ -2113,6 +2132,7 @@ class ChatsModule {
     };
 
     final rows = <Map<String, dynamic>>[];
+    final removedDialogs = <int>[];
     for (final c in chats.whereType<Map>()) {
       final map = c.cast<dynamic, dynamic>();
       ChatMembersStore.instance.applyChatPayload(map);
@@ -2134,9 +2154,16 @@ class ChatsModule {
         map['status'],
         previous: existingListState[parsed.id],
       );
+      if (existingListState[parsed.id] == ChatListState.visible &&
+          _isRemovedDialog(map, knownType: existing[parsed.id]?.type)) {
+        removedDialogs.add(parsed.id);
+      }
       rows.add(row);
     }
 
+    for (final chatId in removedDialogs) {
+      await _purgeRemovedDialog(accountId, chatId);
+    }
     if (rows.isNotEmpty) {
       await AppDatabase.saveChats(rows);
       for (final row in rows) {
@@ -2649,7 +2676,7 @@ class ChatsModule {
 
   int freshLastEventTime(int chatId, {int seen = 0}) {
     final cached = _chatsById[chatId];
-    var latest = DateTime.now().millisecondsSinceEpoch;
+    var latest = ServerClock.now();
     for (final time in [
       seen,
       cached?.lastEventTime ?? 0,
@@ -2671,6 +2698,14 @@ class ChatsModule {
     }
   }
 
+  Future<String?> _chatTypeOf(int? accountId, int chatId) async {
+    final cached = _chatsById[chatId];
+    if (cached != null) return cached.type;
+    if (accountId == null) return null;
+    final rows = await AppDatabase.loadChat(accountId, chatId);
+    return rows.isEmpty ? null : CachedChat.fromDbRow(rows.first).type;
+  }
+
   // #***! удаление чата
   Future<ServerOutcome> deleteChat(
     Api api, {
@@ -2680,12 +2715,25 @@ class ChatsModule {
     int? accountId,
   }) async {
     final owner = accountId ?? await TokenStorage.getActiveAccountId();
-    final outcome = await runServerAction(
-      () => api.sendRequest(Opcode.chatDelete, {
-        'chatId': chatId,
-        'lastEventTime': freshLastEventTime(chatId, seen: seenEventTime),
-        'forAll': forAll,
-      }),
+    final plan = ChatDeletionPlan.of(
+      chatType: await _chatTypeOf(owner, chatId),
+      forAll: forAll && chatId != 0,
+    );
+    final outcome = await plan.run(
+      clearHistoryForAll: () => _clearOnServer(
+        api,
+        chatId: chatId,
+        forAll: true,
+        seenEventTime: seenEventTime,
+        accountId: owner,
+      ),
+      deleteChat: ({required bool forAll}) => runServerAction(
+        () => api.sendRequest(Opcode.chatDelete, {
+          'chatId': chatId,
+          'lastEventTime': freshLastEventTime(chatId, seen: seenEventTime),
+          'forAll': forAll,
+        }),
+      ),
     );
     _logRefusal('deleteChat', chatId, outcome);
     if (outcome is! ServerDone) return outcome;
@@ -2706,8 +2754,21 @@ class ChatsModule {
     required int chatId,
     bool forAll = false,
     int seenEventTime = 0,
+  }) async => _clearOnServer(
+    api,
+    chatId: chatId,
+    forAll: forAll,
+    seenEventTime: seenEventTime,
+    accountId: await TokenStorage.getActiveAccountId(),
+  );
+
+  Future<ServerOutcome> _clearOnServer(
+    Api api, {
+    required int chatId,
+    required bool forAll,
+    required int seenEventTime,
+    required int? accountId,
   }) async {
-    final accountId = await TokenStorage.getActiveAccountId();
     final outcome = await runServerAction(
       () => api.sendRequest(Opcode.chatClear, {
         'chatId': chatId,

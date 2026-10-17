@@ -855,9 +855,11 @@ class _ChatListScreenState extends State<ChatListScreen>
                           onChanged: (v) =>
                               setSheetState(() => forAll = v ?? false),
                         ),
-                        Text(
-                          l10n.chatInfoClearHistoryForAll,
-                          style: TextStyle(color: cs.onSurface, fontSize: 15),
+                        Expanded(
+                          child: Text(
+                            l10n.chatDeleteAlsoForPeer,
+                            style: TextStyle(color: cs.onSurface, fontSize: 15),
+                          ),
                         ),
                       ],
                     ),

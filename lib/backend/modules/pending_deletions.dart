@@ -117,6 +117,13 @@ final class PendingDeletionFailed extends PendingDeletionReport {
   final String message;
 }
 
+final class PendingDeletionStalled extends PendingDeletionReport {
+  const PendingDeletionStalled(this.kind, this.reason);
+
+  final PendingDeletionKind kind;
+  final String reason;
+}
+
 final class PendingDeletionKeptForPeer extends PendingDeletionReport {
   const PendingDeletionKeptForPeer(this.count);
 
@@ -159,6 +166,7 @@ class PendingDeletions {
     Duration(seconds: 30),
     Duration(seconds: 60),
   ];
+  static const int stallReportAttempt = 2;
 
   final ValueNotifier<int> chatHolds = ValueNotifier(0);
   final Map<String, PendingDeletion> _entries = {};
@@ -445,10 +453,14 @@ class PendingDeletions {
         await _complete(gateway, entry, keptForPeer: sent.keptForPeer);
       case ServerRejected(:final message):
         await _reject(gateway, entry, message);
-      case ServerUnreachable():
-        _entries[key] = entry.retried();
+      case ServerUnreachable(:final reason):
+        final retried = entry.retried();
+        _entries[key] = retried;
         _save();
         _scheduleRetry();
+        if (retried.attempts == stallReportAttempt) {
+          _reports.add(PendingDeletionStalled(entry.kind, reason));
+        }
     }
   }
 

@@ -7,6 +7,8 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:promax/backend/api.dart';
 import 'package:promax/backend/modules/chats.dart';
 import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/backend/modules/server_outcome.dart';
+import 'package:promax/core/cache/message_session_cache.dart';
 import 'package:promax/core/config/promax_settings.dart';
 import 'package:promax/core/protocol/opcode_map.dart';
 import 'package:promax/core/protocol/packet.dart';
@@ -27,12 +29,32 @@ class _SyntheticPathProvider extends PathProviderPlatform
 class _PushOnlyApi extends Api {
   final pushes = StreamController<Packet>.broadcast();
   final states = StreamController<SessionState>.broadcast();
+  final requests = <(int, Map<dynamic, dynamic>)>[];
+  Object? Function(int opcode) reply = (_) => null;
 
   @override
   Stream<Packet> get pushStream => pushes.stream;
 
   @override
   Stream<SessionState> get stateStream => states.stream;
+
+  @override
+  Future<Packet> sendRequest(
+    int opcode,
+    Map<dynamic, dynamic> payload, {
+    bool silent = false,
+    void Function()? beforeSend,
+  }) async {
+    beforeSend?.call();
+    requests.add((opcode, payload));
+    final answer = reply(opcode);
+    if (answer is Packet) return answer;
+    return Packet(
+      cmd: CmdType.ok,
+      opcode: opcode,
+      payload: answer ?? <String, Object>{},
+    );
+  }
 }
 
 const int _me = 1;
@@ -70,6 +92,9 @@ void main() {
   });
 
   setUp(() async {
+    api.requests.clear();
+    api.reply = (_) => null;
+    MessageSessionCache.clearAll();
     SharedPreferences.setMockInitialValues({});
     final directory = Directory.systemTemp.createTempSync(
       'synthetic_delete_push_test',
@@ -158,24 +183,207 @@ void main() {
     expect(await storedIds(), {'812', '813', '814', 'temp_1_1'});
   });
 
-  test('a chat the server marks removed leaves the visible list', () async {
-    api.pushes.add(
-      Packet(
-        cmd: CmdType.push,
-        opcode: Opcode.notifChat,
-        payload: {
-          'chat': {..._chat(), 'status': 'REMOVED'},
-        },
-      ),
+  Packet chatPush(Map<String, Object> chat) => Packet(
+    cmd: CmdType.push,
+    opcode: Opcode.notifChat,
+    payload: {'chat': chat},
+  );
+
+  test('a dialog removed on the server leaves with its history', () async {
+    final departed = chats.departedChats.first;
+    final events = await deliver(
+      chatPush({..._chat(), 'status': 'REMOVED'}),
+      5,
     );
+
+    expect(events, everyElement(isA<MessageRemovedEvent>()));
+    expect(await departed.timeout(const Duration(seconds: 5)), _chatId);
+    final rows = await AppDatabase.loadChat(_me, _chatId);
+    expect(rows.single['in_list'], 2);
+    expect(await storedIds(), {'temp_1_1'});
+    expect(
+      chats.chatsSnapshot().map((chat) => chat.id),
+      isNot(contains(_chatId)),
+    );
+  });
+
+  test('a short removal push is not ignored', () async {
+    await deliver(chatPush({'id': _chatId, 'status': 'REMOVED'}), 5);
+
+    final rows = await AppDatabase.loadChat(_me, _chatId);
+    expect(rows.single['in_list'], 2);
+    expect(await storedIds(), {'temp_1_1'});
+  });
+
+  test('with "show deleted" a removed dialog keeps marked messages', () async {
+    ProMaxSettings.viewDeleted.value = true;
+    final events = await deliver(
+      chatPush({..._chat(), 'status': 'REMOVED'}),
+      5,
+    );
+
+    expect(events, everyElement(isA<MessageMarkedDeletedEvent>()));
+    expect(await storedIds(), hasLength(6));
+    expect(await storedIds(onlyVisible: true), {'temp_1_1'});
+  });
+
+  test('a group the server marks removed keeps its history', () async {
+    api.pushes.add(chatPush({..._chat(), 'type': 'CHAT', 'status': 'REMOVED'}));
     await Future<void>.delayed(Duration.zero);
     await chats.pushesHandled;
 
     final rows = await AppDatabase.loadChat(_me, _chatId);
     expect(rows.single['in_list'], 2);
-    expect(
-      chats.chatsSnapshot().map((chat) => chat.id),
-      isNot(contains(_chatId)),
+    expect(await storedIds(), hasLength(6));
+  });
+
+  test('a removed message also leaves the open chat cache', () async {
+    MessageSessionCache.save(_me, _chatId, [
+      for (var i = 1; i <= 5; i++) _stored('81$i', i * 1000),
+    ], reachedStart: true);
+
+    final events = await deliver(
+      Packet(
+        cmd: CmdType.push,
+        opcode: Opcode.notifMessage,
+        payload: {
+          'chatId': _chatId,
+          'message': {
+            'id': 815,
+            'sender': _peer,
+            'time': 5000,
+            'status': 'REMOVED',
+          },
+        },
+      ),
+      1,
     );
+
+    expect(events.single, isA<MessageRemovedEvent>());
+    expect(await storedIds(), isNot(contains('815')));
+    expect(
+      MessageSessionCache.get(_me, _chatId)!.messages.map((m) => m.id),
+      isNot(contains('815')),
+    );
+  });
+
+  group('deleting a dialog for both', () {
+    test('erases the history for both, then removes it only for me', () async {
+      final outcome = await chats.deleteChat(
+        api,
+        chatId: _chatId,
+        forAll: true,
+        accountId: _me,
+      );
+
+      expect(outcome, isA<ServerDone>());
+      expect(api.requests.map((r) => r.$1), [
+        Opcode.chatClear,
+        Opcode.chatDelete,
+      ]);
+      final (_, clear) = api.requests.first;
+      final (_, delete) = api.requests.last;
+      expect(clear['chatId'], _chatId);
+      expect(clear['forAll'], isTrue);
+      expect(clear['lastEventTime'], greaterThanOrEqualTo(6000));
+      expect(delete['chatId'], _chatId);
+      expect(delete['forAll'], isFalse);
+      expect(await AppDatabase.loadChat(_me, _chatId), isEmpty);
+      expect(await storedIds(), isEmpty);
+    });
+
+    test('keeps the chat and says why when the server refuses', () async {
+      api.reply = (opcode) => opcode == Opcode.chatClear
+          ? Packet(
+              cmd: CmdType.error,
+              opcode: opcode,
+              payload: {'localizedMessage': 'синтетический отказ'},
+            )
+          : null;
+
+      final outcome = await chats.deleteChat(
+        api,
+        chatId: _chatId,
+        forAll: true,
+        accountId: _me,
+      );
+
+      expect(outcome, isA<ServerRejected>());
+      expect((outcome as ServerRejected).message, 'синтетический отказ');
+      expect(api.requests.map((r) => r.$1), [Opcode.chatClear]);
+      expect(await AppDatabase.loadChat(_me, _chatId), isNotEmpty);
+      expect(await storedIds(), hasLength(6));
+    });
+
+    test('only for me sends a single deletion', () async {
+      await chats.deleteChat(
+        api,
+        chatId: _chatId,
+        forAll: false,
+        accountId: _me,
+      );
+
+      expect(api.requests.single.$1, Opcode.chatDelete);
+      expect(api.requests.single.$2['forAll'], isFalse);
+    });
+  });
+
+  group('history the peer erased', () {
+    Map<String, Object> serverMessage(int id, int time) => {
+      'id': id,
+      'sender': _peer,
+      'time': time,
+      'text': 'синтетика $id',
+    };
+
+    Future<List<String>> fetchAndReconcile(
+      List<Map<String, Object>> messages, {
+      int count = 50,
+    }) async {
+      api.reply = (opcode) =>
+          opcode == Opcode.chatHistory ? {'messages': messages} : null;
+      final page = await MessagesModule(
+        api,
+      ).fetchHistoryPage(_me, _chatId, count: count);
+      return chats.reconcileDeletedFromFetch(_me, _chatId, page);
+    }
+
+    test('an empty history clears every cached message', () async {
+      final removed = await fetchAndReconcile([]);
+
+      expect(removed.toSet(), {'811', '812', '813', '814', '815'});
+      expect(await storedIds(), {'temp_1_1'});
+    });
+
+    test(
+      'a new message after the erase does not revive the old ones',
+      () async {
+        final removed = await fetchAndReconcile([serverMessage(900, 9000)]);
+
+        expect(removed, hasLength(5));
+        expect(await storedIds(), {'900', 'temp_1_1'});
+      },
+    );
+
+    test('a full page leaves older cached messages alone', () async {
+      final removed = await fetchAndReconcile([
+        serverMessage(814, 4000),
+        serverMessage(815, 5000),
+      ], count: 2);
+
+      expect(removed, isEmpty);
+      expect(await storedIds(), hasLength(6));
+    });
+
+    test('a refused history request deletes nothing', () async {
+      api.reply = (opcode) => Packet(cmd: CmdType.notFound, opcode: opcode);
+      final page = await MessagesModule(api).fetchHistoryPage(_me, _chatId);
+
+      expect(
+        await chats.reconcileDeletedFromFetch(_me, _chatId, page),
+        isEmpty,
+      );
+      expect(await storedIds(), hasLength(6));
+    });
   });
 }

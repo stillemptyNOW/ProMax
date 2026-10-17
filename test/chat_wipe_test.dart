@@ -52,7 +52,7 @@ void main() {
         seenByClear = seen;
         return const ServerDone();
       },
-      deleteChatForAll: (seen) async {
+      removeChat: (seen) async {
         seenByDelete = seen;
         return const ServerDone();
       },
@@ -88,7 +88,7 @@ void main() {
           return const ServerDone();
         },
         clearForAll: _done,
-        deleteChatForAll: _done,
+        removeChat: _done,
       );
       expect(result.found, 12);
       expect(result.ownForBoth, 6);
@@ -113,7 +113,7 @@ void main() {
       fetchPage: _pagesOf(history),
       deleteBatch: (ids, {required forEveryone}) async => const ServerDone(),
       clearForAll: _done,
-      deleteChatForAll: _done,
+      removeChat: _done,
     );
     expect(result.ownForBoth, 2);
     expect(result.peerForBoth, 4);
@@ -134,7 +134,7 @@ void main() {
         return const ServerDone();
       },
       clearForAll: _done,
-      deleteChatForAll: _done,
+      removeChat: _done,
     );
     expect(result.ownForBoth, 230);
     expect(result.complete, isTrue);
@@ -154,7 +154,7 @@ void main() {
         finished = true;
         return const ServerDone();
       },
-      deleteChatForAll: (seen) async {
+      removeChat: (seen) async {
         finished = true;
         return const ServerDone();
       },
@@ -177,7 +177,7 @@ void main() {
       },
       deleteBatch: (ids, {required forEveryone}) async => const ServerDone(),
       clearForAll: _done,
-      deleteChatForAll: _done,
+      removeChat: _done,
     );
     expect(result.found, 100);
     expect(result.historyIncomplete, isTrue);
@@ -192,7 +192,7 @@ void main() {
       deleteBatch: (ids, {required forEveryone}) async => const ServerDone(),
       clearForAll: (seen) async =>
           const ServerRejected('чат не найден', notFound: true),
-      deleteChatForAll: (seen) async => const ServerRejected('нет доступа'),
+      removeChat: (seen) async => const ServerRejected('нет доступа'),
     );
     expect(result.found, 0);
     expect(result.clearError, 'чат не найден');

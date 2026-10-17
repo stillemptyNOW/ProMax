@@ -78,10 +78,10 @@ Future<bool> wipeDialogForBoth(
         forAll: true,
         seenEventTime: seen,
       ),
-      deleteChatForAll: (seen) => chats.deleteChat(
+      removeChat: (seen) => chats.deleteChat(
         api,
         chatId: chatId,
-        forAll: true,
+        forAll: false,
         seenEventTime: seen,
         accountId: myId,
       ),

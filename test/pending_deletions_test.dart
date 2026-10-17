@@ -314,4 +314,30 @@ void main() {
     final failure = reports.single as PendingDeletionFailed;
     expect(failure.kind, PendingDeletionKind.deleteChat);
   });
+
+  test('a chat removal stuck offline tells the user once', () async {
+    gateway.chatOutcome = const ServerUnreachable('таймаут');
+    final keys = [
+      pending.holdChat(
+        accountId: _me,
+        chatId: _chat,
+        kind: PendingDeletionKind.deleteChat,
+        forAll: true,
+      ),
+    ];
+    pending.commit(keys);
+    await settle();
+    expect(reports, isEmpty);
+
+    await pending.flush();
+    await pending.flush();
+    await settle();
+
+    expect(pending.isChatHeld(_chat), isTrue);
+    expect(gateway.chatDeletes, hasLength(3));
+    expect(gateway.chatDeletes.map((d) => d.forAll), everyElement(isTrue));
+    final stalled = reports.single as PendingDeletionStalled;
+    expect(stalled.kind, PendingDeletionKind.deleteChat);
+    expect(stalled.reason, 'таймаут');
+  });
 }

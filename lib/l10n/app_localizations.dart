@@ -7772,6 +7772,18 @@ abstract class AppLocalizations {
   /// **'No connection to the server'**
   String get serverUnreachable;
 
+  /// No description provided for @deletionStillPending.
+  ///
+  /// In en, this message translates to:
+  /// **'The deletion hasn\'t reached the server yet, ProMax will retry: {reason}'**
+  String deletionStillPending(String reason);
+
+  /// No description provided for @chatDeleteAlsoForPeer.
+  ///
+  /// In en, this message translates to:
+  /// **'Also erase the history for the other person'**
+  String get chatDeleteAlsoForPeer;
+
   /// No description provided for @wipeForBothAction.
   ///
   /// In en, this message translates to:
@@ -7787,7 +7799,7 @@ abstract class AppLocalizations {
   /// No description provided for @wipeForBothMessage.
   ///
   /// In en, this message translates to:
-  /// **'ProMax will delete every message in this chat for you and the other person, then delete the chat itself. This can\'t be undone.'**
+  /// **'ProMax will delete every message in this chat for you and the other person, then remove the chat from your list. The other person keeps an empty chat. This can\'t be undone.'**
   String get wipeForBothMessage;
 
   /// No description provided for @wipeCollecting.

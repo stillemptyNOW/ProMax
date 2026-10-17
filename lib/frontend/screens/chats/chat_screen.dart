@@ -4102,6 +4102,12 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Future<void> _deleteChat() async {
+    if (_myId == 0) {
+      final profile = await AppDatabase.loadActiveProfile();
+      if (!mounted) return;
+      _myId = profile?.id ?? 0;
+    }
+    if (_myId == 0) return;
     final canDeleteForAll = _canActForAll;
     final l10n = AppLocalizations.of(context)!;
     final choice = await showBlurredConfirm(
@@ -4111,7 +4117,11 @@ class _ChatScreenState extends State<ChatScreen>
       confirmLabel: l10n.chatInfoDeleteChatConfirm,
       cancelLabel: l10n.chatInfoActionCancel,
       destructive: true,
-      checkboxLabel: canDeleteForAll ? l10n.chatInfoClearHistoryForAll : null,
+      checkboxLabel: canDeleteForAll
+          ? ((chat?.type ?? widget.chatType) == 'DIALOG'
+                ? l10n.chatDeleteAlsoForPeer
+                : l10n.chatInfoClearHistoryForAll)
+          : null,
     );
     if (!mounted || !choice.confirmed) return;
     removeChatsWithUndo(
@@ -4183,15 +4193,8 @@ class _ChatScreenState extends State<ChatScreen>
     await Future.delayed(const Duration(milliseconds: 700));
     if (!mounted || _myId == 0) return;
     try {
-      final serverMessages = await messagesModule.fetchHistory(
-        _myId,
-        widget.chatId,
-      );
-      await chats.reconcileDeletedFromFetch(
-        _myId,
-        widget.chatId,
-        serverMessages,
-      );
+      final page = await messagesModule.fetchHistoryPage(_myId, widget.chatId);
+      await chats.reconcileDeletedFromFetch(_myId, widget.chatId, page);
       final rows = await AppDatabase.loadMessages(
         _myId,
         widget.chatId,

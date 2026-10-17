@@ -13,6 +13,7 @@ import '../../core/storage/chat_activity_store.dart';
 import '../../core/storage/message_ranges.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
+import '../../core/utils/server_clock.dart';
 import '../../core/utils/text_format.dart';
 import '../../models/attachment.dart';
 import 'chat_activity_sender.dart';
@@ -21,6 +22,16 @@ import 'message_copy.dart';
 import 'server_outcome.dart';
 
 // #***! быстрый кэш id -> имя аватарка телефон, из него подписи в пузырях
+class HistoryPage {
+  const HistoryPage(this.messages, {this.serverIds = const {}, this.window});
+
+  static const unknown = HistoryPage([]);
+
+  final List<CachedMessage> messages;
+  final Set<String> serverIds;
+  final MessageRange? window;
+}
+
 class ContactCache {
   static final Map<int, String> _nameCache = {};
   static final Map<int, String> _avatarCache = {};
@@ -806,30 +817,54 @@ class MessagesModule {
     int count = 50,
     int forward = 0,
     int? backward,
+  }) async => (await fetchHistoryPage(
+    accountId,
+    chatId,
+    fromTime: fromTime,
+    count: count,
+    forward: forward,
+    backward: backward,
+  )).messages;
+
+  Future<HistoryPage> fetchHistoryPage(
+    int accountId,
+    int chatId, {
+    int? fromTime,
+    int count = 50,
+    int forward = 0,
+    int? backward,
   }) async {
+    final requestedAt = ServerClock.now();
+    final backwardCount = backward ?? count;
     final payload = {
       'chatId': chatId,
       'from': fromTime ?? (DateTime.now().millisecondsSinceEpoch + 86400000),
       'forward': forward,
-      'backward': backward ?? count,
+      'backward': backwardCount,
       'getMessages': true,
     };
 
     final response = await _api.sendRequest(Opcode.chatHistory, payload);
 
-    if (!response.isOk) return [];
+    if (!response.isOk) return HistoryPage.unknown;
 
     final data = response.payload;
-    if (data is! Map) return [];
+    if (data is! Map) return HistoryPage.unknown;
 
     final messagesData = data['messages'];
-    if (messagesData is! List) return [];
+    if (messagesData is! List) return HistoryPage.unknown;
 
     final List<CachedMessage> results = [];
+    final serverIds = <String>{};
+    final times = <int>[];
 
     for (var i = 0; i < messagesData.length; i++) {
       final m = messagesData[i];
       if (m is! Map) continue;
+      final id = m['id']?.toString();
+      if (id != null && id.isNotEmpty) serverIds.add(id);
+      final time = m['time'];
+      if (time is int) times.add(time);
 
       final msg = _parseMessage(m.cast<dynamic, dynamic>(), accountId, chatId);
       if (msg != null) {
@@ -840,6 +875,14 @@ class MessagesModule {
         await Future.delayed(Duration.zero);
       }
     }
+
+    final window = MessageRanges.reconcileWindow(
+      fromTime: fromTime,
+      requestedAt: requestedAt,
+      forward: forward,
+      backward: backwardCount,
+      times: times,
+    );
 
     final merged = results.isNotEmpty
         ? await _mergeLocalFields(accountId, chatId, results)
@@ -855,7 +898,7 @@ class MessagesModule {
         await AppDatabase.saveMessages(toSave.map((m) => m.toDbRow()).toList());
       } catch (e) {
         logger.e('saveMessages error: $e');
-        return toSave;
+        return HistoryPage(toSave, serverIds: serverIds, window: window);
       }
     }
 
@@ -864,10 +907,10 @@ class MessagesModule {
       chatId,
       fromTime: fromTime,
       forward: forward,
-      backward: backward ?? count,
+      backward: backwardCount,
       messagesData: messagesData,
     );
-    return toSave;
+    return HistoryPage(toSave, serverIds: serverIds, window: window);
   }
 
   Future<void> _recordCoverage(
