@@ -23,7 +23,7 @@ String pendingDeletionReportText(
     message,
   ),
   PendingDeletionChatTypeUnknown() => l10n.deleteChatTypeUnknown,
-  PendingDeletionStalled(:final reason) => l10n.deletionStillPending(reason),
+  PendingDeletionStalled() => l10n.deletionStillPending,
   PendingDeletionKeptForPeer(:final count) => l10n.deleteMessagesKeptForPeer(
     count,
   ),

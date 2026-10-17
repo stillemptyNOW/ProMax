@@ -4304,9 +4304,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get serverUnreachable => 'Нет связи с сервером';
 
   @override
-  String deletionStillPending(String reason) {
-    return 'Удаление пока не дошло до сервера, ProMax повторит попытку: $reason';
-  }
+  String get deletionStillPending =>
+      'Удаление пока не дошло до сервера, ProMax повторит попытку';
 
   @override
   String deleteChatErasedOnly(String reason) {

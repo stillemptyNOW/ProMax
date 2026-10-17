@@ -21,7 +21,6 @@ import 'chats.dart' show chats;
 import 'message_copy.dart';
 import 'server_outcome.dart';
 
-// #***! быстрый кэш id -> имя аватарка телефон, из него подписи в пузырях
 class HistoryPage {
   const HistoryPage(this.messages, {this.serverIds = const {}, this.window});
 
@@ -32,6 +31,7 @@ class HistoryPage {
   final MessageRange? window;
 }
 
+// #***! быстрый кэш id -> имя аватарка телефон, из него подписи в пузырях
 class ContactCache {
   static final Map<int, String> _nameCache = {};
   static final Map<int, String> _avatarCache = {};
@@ -793,6 +793,8 @@ class MessagesModule {
 
   MessagesModule(this._api);
 
+  static const int _latestHistoryLead = Duration.millisecondsPerDay;
+
   static int _lastCid = 0;
 
   static int _nextCid() {
@@ -838,7 +840,7 @@ class MessagesModule {
     final backwardCount = backward ?? count;
     final payload = {
       'chatId': chatId,
-      'from': fromTime ?? (DateTime.now().millisecondsSinceEpoch + 86400000),
+      'from': fromTime ?? requestedAt + _latestHistoryLead,
       'forward': forward,
       'backward': backwardCount,
       'getMessages': true,

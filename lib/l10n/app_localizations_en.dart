@@ -4269,9 +4269,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serverUnreachable => 'No connection to the server';
 
   @override
-  String deletionStillPending(String reason) {
-    return 'The deletion hasn\'t reached the server yet, ProMax will retry: $reason';
-  }
+  String get deletionStillPending =>
+      'The deletion hasn\'t reached the server yet, ProMax will retry';
 
   @override
   String deleteChatErasedOnly(String reason) {

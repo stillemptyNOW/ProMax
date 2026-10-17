@@ -1456,7 +1456,7 @@
   "deleteChatFailedWithReason": "Не удалось удалить чат: {reason}",
   "leaveChatFailedWithReason": "Не удалось выйти из чата: {reason}",
   "serverUnreachable": "Нет связи с сервером",
-  "deletionStillPending": "Удаление пока не дошло до сервера, ProMax повторит попытку: {reason}",
+  "deletionStillPending": "Удаление пока не дошло до сервера, ProMax повторит попытку",
   "deleteChatErasedOnly": "Переписка стёрта у обоих, но чат не убран: {reason}",
   "deleteChatTypeUnknown": "Чат не удалён для всех: не удалось узнать, личный это чат или группа. Попробуйте ещё раз",
   "chatActionProfileUnavailable": "Профиль ещё не загрузился, попробуйте через пару секунд",

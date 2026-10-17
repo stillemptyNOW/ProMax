@@ -14,6 +14,7 @@ import 'package:promax/core/protocol/opcode_map.dart';
 import 'package:promax/core/protocol/packet.dart';
 import 'package:promax/core/storage/app_database.dart';
 import 'package:promax/core/storage/token_storage.dart';
+import 'package:promax/core/utils/server_clock.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _SyntheticPathProvider extends PathProviderPlatform
@@ -31,6 +32,10 @@ class _PushOnlyApi extends Api {
   final states = StreamController<SessionState>.broadcast();
   final requests = <(int, Map<dynamic, dynamic>)>[];
   Object? Function(int opcode) reply = (_) => null;
+  int epoch = 0;
+
+  @override
+  int get sessionEpoch => epoch;
 
   @override
   Stream<Packet> get pushStream => pushes.stream;
@@ -101,6 +106,7 @@ void main() {
     );
     PathProviderPlatform.instance = _SyntheticPathProvider(directory.path);
     addTearDown(() async {
+      ServerClock.resetForTest();
       ProMaxSettings.viewDeleted.value = false;
       await AppDatabase.close();
       if (directory.existsSync()) directory.deleteSync(recursive: true);
@@ -355,6 +361,41 @@ void main() {
       expect(api.requests.single.$2['forAll'], isFalse);
     });
 
+    test('a session change after the erase defers the removal', () async {
+      api.reply = (opcode) {
+        if (opcode == Opcode.chatClear) api.epoch++;
+        return null;
+      };
+
+      final result = await chats.deleteChat(
+        api,
+        chatId: _chatId,
+        forAll: true,
+        accountId: _me,
+      );
+
+      expect(result.outcome, isA<ServerUnreachable>());
+      expect(result.historyErased, isTrue);
+      expect(api.requests.map((r) => r.$1), [Opcode.chatClear]);
+      expect(await AppDatabase.loadChat(_me, _chatId), isNotEmpty);
+    });
+
+    test('another active account gets no request at all', () async {
+      await TokenStorage.setActiveAccount(_me + 1);
+      addTearDown(() => TokenStorage.setActiveAccount(_me));
+
+      final result = await chats.deleteChat(
+        api,
+        chatId: _chatId,
+        forAll: true,
+        accountId: _me,
+      );
+
+      expect(result.outcome, isA<ServerUnreachable>());
+      expect(result.historyErased, isFalse);
+      expect(api.requests, isEmpty);
+    });
+
     const unknownChat = 900602;
 
     Object? chatInfoReply(int opcode, List<Map<String, Object>> found) =>
@@ -503,6 +544,29 @@ void main() {
 
       expect(removed, isEmpty);
       expect(await storedIds(), hasLength(6));
+    });
+
+    test('a device clock days behind does not claim newer history', () async {
+      const behind = 3 * Duration.millisecondsPerDay;
+      final now = DateTime.now().millisecondsSinceEpoch;
+      ServerClock.sync(now + behind, localNow: now);
+      final recent = now + behind - 3600000;
+      await AppDatabase.saveMessages([_stored('816', recent).toDbRow()]);
+      api.reply = (opcode) {
+        if (opcode != Opcode.chatHistory) return null;
+        final from = api.requests.last.$2['from'] as int;
+        return {
+          'messages': [if (recent <= from) serverMessage(816, recent)],
+        };
+      };
+
+      final page = await MessagesModule(api).fetchHistoryPage(_me, _chatId);
+      final removed = await chats.reconcileDeletedFromFetch(_me, _chatId, page);
+
+      expect(api.requests.last.$2['from'], greaterThan(recent));
+      expect(page.window!.end, lessThan(api.requests.last.$2['from'] as int));
+      expect(removed, isNot(contains('816')));
+      expect(await storedIds(), contains('816'));
     });
 
     test('a refused history request deletes nothing', () async {

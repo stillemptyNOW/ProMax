@@ -2730,7 +2730,18 @@ class ChatsModule {
     int? accountId,
     bool historyErased = false,
   }) async {
+    final epoch = api.sessionEpoch;
     final owner = accountId ?? await TokenStorage.getActiveAccountId();
+    Future<ServerOutcome> inSameSession(
+      Future<ServerOutcome> Function() step,
+    ) async {
+      final active = await TokenStorage.getActiveAccountId();
+      if (api.sessionEpoch != epoch || (owner != null && active != owner)) {
+        return const ServerUnreachable('сессия сменилась');
+      }
+      return step();
+    }
+
     final wantsAll = forAll && chatId != 0;
     String? chatType;
     if (wantsAll) {
@@ -2749,19 +2760,23 @@ class ChatsModule {
     }
     final result = await plan.run(
       historyErased: historyErased,
-      clearHistoryForAll: () => _clearOnServer(
-        api,
-        chatId: chatId,
-        forAll: true,
-        seenEventTime: seenEventTime,
-        accountId: owner,
+      clearHistoryForAll: () => inSameSession(
+        () => _clearOnServer(
+          api,
+          chatId: chatId,
+          forAll: true,
+          seenEventTime: seenEventTime,
+          accountId: owner,
+        ),
       ),
-      deleteChat: ({required bool forAll}) => runServerAction(
-        () => api.sendRequest(Opcode.chatDelete, {
-          'chatId': chatId,
-          'lastEventTime': freshLastEventTime(chatId, seen: seenEventTime),
-          'forAll': forAll,
-        }),
+      deleteChat: ({required bool forAll}) => inSameSession(
+        () => runServerAction(
+          () => api.sendRequest(Opcode.chatDelete, {
+            'chatId': chatId,
+            'lastEventTime': freshLastEventTime(chatId, seen: seenEventTime),
+            'forAll': forAll,
+          }),
+        ),
       ),
     );
     _logRefusal('deleteChat', chatId, result.outcome);

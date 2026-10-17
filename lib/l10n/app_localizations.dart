@@ -7775,8 +7775,8 @@ abstract class AppLocalizations {
   /// No description provided for @deletionStillPending.
   ///
   /// In en, this message translates to:
-  /// **'The deletion hasn\'t reached the server yet, ProMax will retry: {reason}'**
-  String deletionStillPending(String reason);
+  /// **'The deletion hasn\'t reached the server yet, ProMax will retry'**
+  String get deletionStillPending;
 
   /// No description provided for @deleteChatErasedOnly.
   ///

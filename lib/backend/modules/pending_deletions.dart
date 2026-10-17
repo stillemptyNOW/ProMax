@@ -134,10 +134,9 @@ final class PendingDeletionChatTypeUnknown extends PendingDeletionReport {
 }
 
 final class PendingDeletionStalled extends PendingDeletionReport {
-  const PendingDeletionStalled(this.kind, this.reason);
+  const PendingDeletionStalled(this.kind);
 
   final PendingDeletionKind kind;
-  final String reason;
 }
 
 final class PendingDeletionKeptForPeer extends PendingDeletionReport {
@@ -480,11 +479,12 @@ class PendingDeletions {
       case ServerRejected(:final message):
         await _reject(gateway, entry, _refusalReport(entry, sent, message));
       case ServerUnreachable(:final reason):
+        logger.w('PendingDeletions: $key не дошло: $reason');
         final retried = entry.retried(historyErased: sent.historyErased);
         _entries[key] = retried;
         _save();
         _scheduleRetry();
-        _reportStall(retried, reason);
+        _reportStall(retried);
     }
   }
 
@@ -506,10 +506,10 @@ class PendingDeletions {
     );
   }
 
-  void _reportStall(PendingDeletion entry, String reason) {
+  void _reportStall(PendingDeletion entry) {
     if (entry.attempts != stallReportAttempt || _stallReported) return;
     _stallReported = true;
-    _reports.add(PendingDeletionStalled(entry.kind, reason));
+    _reports.add(PendingDeletionStalled(entry.kind));
   }
 
   Future<_Sent> _send(

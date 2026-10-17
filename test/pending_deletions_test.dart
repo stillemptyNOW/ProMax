@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'dart:convert';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/backend/modules/chat_deletion_plan.dart';
 import 'package:promax/backend/modules/messages.dart';
 import 'package:promax/backend/modules/pending_deletions.dart';
 import 'package:promax/backend/modules/server_outcome.dart';
+import 'package:promax/frontend/screens/chats/deletion_feedback.dart';
+import 'package:promax/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _me = 7;
@@ -350,7 +353,13 @@ void main() {
     expect(gateway.chatDeletes.map((d) => d.forAll), everyElement(isTrue));
     final stalled = reports.single as PendingDeletionStalled;
     expect(stalled.kind, PendingDeletionKind.deleteChat);
-    expect(stalled.reason, 'таймаут');
+    expect(
+      pendingDeletionReportText(
+        stalled,
+        lookupAppLocalizations(const Locale('ru')),
+      ),
+      'Удаление пока не дошло до сервера, ProMax повторит попытку',
+    );
   });
 
   String holdChatForAll([int chatId = _chat]) => pending.holdChat(
