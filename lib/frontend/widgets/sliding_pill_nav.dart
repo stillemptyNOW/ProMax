@@ -134,36 +134,39 @@ class SlidingPillNav extends StatelessWidget {
   }) {
     final cs = Theme.of(context).colorScheme;
     final visualSel = position.round().clamp(0, items.length - 1);
-    final translucent = backgroundColor != null && backgroundColor!.a < 1;
-    final base = liquid
-        ? (translucent ? backgroundColor! : AppLiquidGlass.navTint(cs))
-        : (backgroundColor ??
-              (frost ? AppFrost.glassTint(cs) : cs.surfaceContainerHigh));
+    final base =
+        backgroundColor ??
+        (frost ? AppFrost.glassTint(cs) : cs.surfaceContainerHigh);
     final useGradient = glossy && gradient && !liquid;
     final frosted = frost && !liquid && base.a < 1;
+    final lensInset = liquid ? 4.0 : 8.0;
+    final selectedForeground = liquid ? cs.primary : cs.onPrimary;
+    final unselectedForeground = cs.onSurface;
 
-    return Container(
+    final nav = Container(
       height: height,
       padding: const EdgeInsets.symmetric(horizontal: 2),
-      decoration: BoxDecoration(
-        color: useGradient || liquid ? null : base,
-        gradient: useGradient ? GlossyDecor.fillGradient(base) : null,
-        borderRadius: BorderRadius.circular(34),
-        border: glossy
-            ? GlossyDecor.rimBorder(base)
-            : (borderColor != null
-                  ? Border.all(color: borderColor!, width: 0.5)
-                  : null),
-        boxShadow: frosted || liquid
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-      ),
+      decoration: liquid
+          ? null
+          : BoxDecoration(
+              color: useGradient ? null : base,
+              gradient: useGradient ? GlossyDecor.fillGradient(base) : null,
+              borderRadius: BorderRadius.circular(34),
+              border: glossy
+                  ? GlossyDecor.rimBorder(base)
+                  : (borderColor != null
+                        ? Border.all(color: borderColor!, width: 0.5)
+                        : null),
+              boxShadow: frosted
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+            ),
       child: Stack(
         clipBehavior: liquid ? Clip.none : Clip.hardEdge,
         children: [
@@ -171,9 +174,9 @@ class SlidingPillNav extends StatelessWidget {
             Positioned.fill(
               child: IgnorePointer(
                 child: LiquidGlassSurface(
-                  borderRadius: BorderRadius.circular(34),
-                  tint: base,
-                  shadow: cs.brightness == Brightness.dark ? 0.34 : 0.14,
+                  borderRadius: _shape,
+                  role: GlassRole.bar,
+                  backdropKey: backdropKey,
                 ),
               ),
             ),
@@ -211,13 +214,13 @@ class SlidingPillNav extends StatelessWidget {
               duration: animationDuration,
               curve: Curves.easeOutCubic,
               left: position * geometry.inactiveWidth + 4,
-              top: 8,
-              bottom: 8,
+              top: lensInset,
+              bottom: lensInset,
               width: geometry.activeWidth - 8,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: cs.primary,
-                  borderRadius: BorderRadius.circular(26),
+                  color: liquid ? AppLiquidGlass.lensColor(cs) : cs.primary,
+                  borderRadius: BorderRadius.circular(height / 2 - lensInset),
                 ),
               ),
             ),
@@ -231,26 +234,33 @@ class SlidingPillNav extends StatelessWidget {
                       AnimatedPositioned(
                         duration: animationDuration,
                         curve: Curves.easeOutCubic,
-                        left: position * cellW + 5,
-                        top: 6,
-                        bottom: 6,
-                        width: cellW - 10,
+                        left: position * cellW + (liquid ? 2 : 5),
+                        top: liquid ? 4 : 6,
+                        bottom: liquid ? 4 : 6,
+                        width: cellW - (liquid ? 4 : 10),
                         child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                cs.primary.withValues(alpha: 0.22),
-                                cs.primary.withValues(alpha: 0.12),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(26),
-                            border: Border.all(
-                              color: cs.primary.withValues(alpha: 0.25),
-                              width: 0.6,
-                            ),
-                          ),
+                          decoration: liquid
+                              ? BoxDecoration(
+                                  color: AppLiquidGlass.lensColor(cs),
+                                  borderRadius: BorderRadius.circular(
+                                    height / 2 - 4,
+                                  ),
+                                )
+                              : BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      cs.primary.withValues(alpha: 0.22),
+                                      cs.primary.withValues(alpha: 0.12),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(26),
+                                  border: Border.all(
+                                    color: cs.primary.withValues(alpha: 0.25),
+                                    width: 0.6,
+                                  ),
+                                ),
                         ),
                       ),
                       Row(
@@ -258,6 +268,8 @@ class SlidingPillNav extends StatelessWidget {
                           final selected = i == visualSel;
                           final color = selected
                               ? cs.primary
+                              : liquid
+                              ? cs.onSurface
                               : cs.onSurfaceVariant;
                           final asset = items[i].animationAsset;
                           return Expanded(
@@ -325,7 +337,8 @@ class SlidingPillNav extends StatelessWidget {
                       child: _PillNavCell(
                         item: items[i],
                         selected: i == visualSel,
-                        cs: cs,
+                        selectedColor: selectedForeground,
+                        unselectedColor: unselectedForeground,
                         animationDuration: animationDuration,
                         iconSize: iconSize,
                         labelGap: labelGap,
@@ -344,13 +357,20 @@ class SlidingPillNav extends StatelessWidget {
         ],
       ),
     );
+    if (!liquid) return nav;
+    return RepaintBoundary(
+      child: GlassPressEffect(borderRadius: _shape, child: nav),
+    );
   }
+
+  static const BorderRadius _shape = BorderRadius.all(Radius.circular(34));
 }
 
 class _PillNavCell extends StatelessWidget {
   final PillNavItem item;
   final bool selected;
-  final ColorScheme cs;
+  final Color selectedColor;
+  final Color unselectedColor;
   final Duration animationDuration;
   final double iconSize;
   final double labelGap;
@@ -361,7 +381,8 @@ class _PillNavCell extends StatelessWidget {
   const _PillNavCell({
     required this.item,
     required this.selected,
-    required this.cs,
+    required this.selectedColor,
+    required this.unselectedColor,
     required this.animationDuration,
     required this.iconSize,
     required this.labelGap,
@@ -371,7 +392,7 @@ class _PillNavCell extends StatelessWidget {
   });
 
   Widget _buildIcon() {
-    final color = selected ? cs.onPrimary : cs.onSurface;
+    final color = selected ? selectedColor : unselectedColor;
     final asset = item.animationAsset;
     if (asset != null) {
       return AnimatedLottieIcon(
@@ -419,7 +440,7 @@ class _PillNavCell extends StatelessWidget {
                             Text(
                               item.label,
                               style: TextStyle(
-                                color: cs.onPrimary,
+                                color: selectedColor,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),

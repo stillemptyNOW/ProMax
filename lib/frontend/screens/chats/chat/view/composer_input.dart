@@ -437,6 +437,9 @@ class ComposerInputBar extends StatelessWidget {
                                                 : _frost
                                                 ? AppFrost.glassTint(cs)
                                                 : cs.surfaceContainerHighest,
+                                            glassTint: recording
+                                                ? cs.error
+                                                : cs.error.withValues(alpha: 0),
                                             onTap:
                                                 (hasText ||
                                                     hasForward ||
@@ -598,6 +601,7 @@ class ComposerInputBar extends StatelessWidget {
 
   Widget _actionSurface({
     required Color color,
+    required Color glassTint,
     required Widget child,
     VoidCallback? onTap,
     VoidCallback? onLongPress,
@@ -606,17 +610,24 @@ class ComposerInputBar extends StatelessWidget {
       tween: ColorTween(end: color),
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOut,
-      builder: (context, tinted, _) => _actionSurfaceOf(
-        color: tinted ?? color,
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: child,
+      builder: (context, tinted, _) => TweenAnimationBuilder<Color?>(
+        tween: ColorTween(end: glassTint),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        builder: (context, glass, _) => _actionSurfaceOf(
+          color: tinted ?? color,
+          glassTint: glass ?? glassTint,
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: child,
+        ),
       ),
     );
   }
 
   Widget _actionSurfaceOf({
     required Color color,
+    required Color glassTint,
     required Widget child,
     VoidCallback? onTap,
     VoidCallback? onLongPress,
@@ -635,6 +646,7 @@ class ComposerInputBar extends StatelessWidget {
       liquid: _liquid,
       backdropKey: backdropKey,
       borderRadius: BorderRadius.circular(_controlSize / 2),
+      glassTint: glassTint,
       onTap: onTap,
       onLongPress: onLongPress,
       keepInkLayer: true,
