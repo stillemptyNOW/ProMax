@@ -8438,6 +8438,42 @@ abstract class AppLocalizations {
   /// **'Screen sharing didn\'t start: {error}'**
   String callScreenShareFailed(String error);
 
+  /// No description provided for @callScreenShareAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen'**
+  String get callScreenShareAction;
+
+  /// No description provided for @callScreenShareStopAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing'**
+  String get callScreenShareStopAction;
+
+  /// No description provided for @callScreenShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your screen to the other side instead of the camera'**
+  String get callScreenShareHint;
+
+  /// No description provided for @callScreenShareStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'The other side now sees your screen instead of the camera'**
+  String get callScreenShareStarted;
+
+  /// No description provided for @callScreenShareDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen sharing wasn\'t allowed'**
+  String get callScreenShareDenied;
+
+  /// No description provided for @callScreenShareServiceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Android didn\'t allow screen sharing during the call'**
+  String get callScreenShareServiceFailed;
+
   /// No description provided for @themeSettingsCustomizeAction.
   ///
   /// In en, this message translates to:

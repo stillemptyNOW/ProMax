@@ -4684,6 +4684,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get callScreenShareAction => 'Screen';
+
+  @override
+  String get callScreenShareStopAction => 'Stop sharing';
+
+  @override
+  String get callScreenShareHint =>
+      'Show your screen to the other side instead of the camera';
+
+  @override
+  String get callScreenShareStarted =>
+      'The other side now sees your screen instead of the camera';
+
+  @override
+  String get callScreenShareDenied => 'Screen sharing wasn\'t allowed';
+
+  @override
+  String get callScreenShareServiceFailed =>
+      'Android didn\'t allow screen sharing during the call';
+
+  @override
   String get themeSettingsCustomizeAction => 'Customize';
 
   @override

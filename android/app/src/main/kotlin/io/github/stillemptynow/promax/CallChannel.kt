@@ -35,9 +35,10 @@ object CallChannel {
                 }
                 "setScreenShare" -> {
                     val enabled = call.argument<Boolean>("enabled") ?: false
-                    val caller = call.argument<String>("caller") ?: DEFAULT_CALLER
-                    CallForegroundService.setScreenShare(app, enabled, caller)
-                    result.success(null)
+                    val caller = call.argument<String>("caller")
+                    CallForegroundService.setScreenShare(app, enabled, caller) { ok ->
+                        result.success(ok)
+                    }
                 }
                 "dropOngoing" -> {
                     CallForegroundService.stop(app)

@@ -4723,6 +4723,26 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get callScreenShareAction => 'Экран';
+
+  @override
+  String get callScreenShareStopAction => 'Остановить показ';
+
+  @override
+  String get callScreenShareHint => 'Показать собеседнику экран вместо камеры';
+
+  @override
+  String get callScreenShareStarted =>
+      'Собеседник видит ваш экран вместо камеры';
+
+  @override
+  String get callScreenShareDenied => 'Показ экрана не разрешён';
+
+  @override
+  String get callScreenShareServiceFailed =>
+      'Android не разрешил показ экрана во время звонка';
+
+  @override
   String get themeSettingsCustomizeAction => 'Настроить';
 
   @override
