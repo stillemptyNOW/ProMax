@@ -2707,7 +2707,8 @@ class AppLocalizationsRu extends AppLocalizations {
       'Упс! Сервер не прислал profile. Попробую регенерировать…';
 
   @override
-  String get profilePhoneRegenFailed => 'Номер ещё не загрузился';
+  String get profilePhoneRegenFailed =>
+      'Номер не пришёл от MAX — нажмите, чтобы указать';
 
   @override
   String get addContactTitle => 'Новый контакт';
@@ -7502,4 +7503,17 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatStatsSyncAll => 'Загрузить всю историю с сервера';
+
+  @override
+  String get profilePhoneManualTitle => 'Ваш номер';
+
+  @override
+  String get profilePhoneManualHint =>
+      'MAX не прислал номер этого аккаунта. Укажите его, он сохранится только на этом устройстве.';
+
+  @override
+  String get profilePhoneManualSave => 'Сохранить';
+
+  @override
+  String get profilePhoneManualInvalid => 'Не похоже на номер телефона';
 }

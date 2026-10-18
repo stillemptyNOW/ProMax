@@ -66,10 +66,14 @@ class ProfileData {
     if (contact is! Map) {
       throw const FormatException('No contact in profile');
     }
-    return ProfileData.fromServerMap(
+    final parsed = ProfileData.fromServerMap(
       contact.cast<dynamic, dynamic>(),
       profileOptions: _parseProfileOptions(profile['profileOptions']),
     );
+    if (parsed.phone > 0) return parsed;
+    final outerPhone = parsePhone(profile['phone']);
+    if (outerPhone <= 0) return parsed;
+    return ProfileData.fromDbRow({...parsed.toDbRow(), 'phone': outerPhone});
   }
 
   factory ProfileData.fromServerMap(

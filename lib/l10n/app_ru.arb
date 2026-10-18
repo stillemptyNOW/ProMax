@@ -856,7 +856,7 @@
   "updateUpToDate": "Установлена актуальная версия",
   "updateCheckFailed": "Не удалось проверить обновления. Повторите позже",
   "profileResurrecting": "Упс! Сервер не прислал profile. Попробую регенерировать…",
-  "profilePhoneRegenFailed": "Номер ещё не загрузился",
+  "profilePhoneRegenFailed": "Номер не пришёл от MAX — нажмите, чтобы указать",
   "addContactTitle": "Новый контакт",
   "addContactFirstName": "Имя",
   "addContactLastName": "Фамилия (необязательно)",
@@ -2365,5 +2365,9 @@
   "chatStatsPerDay": "В день",
   "chatStatsBusiestDay": "Рекорд за день",
   "chatStatsSynced": "Загружено сообщений: {count}",
-  "chatStatsSyncAll": "Загрузить всю историю с сервера"
+  "chatStatsSyncAll": "Загрузить всю историю с сервера",
+  "profilePhoneManualTitle": "Ваш номер",
+  "profilePhoneManualHint": "MAX не прислал номер этого аккаунта. Укажите его, он сохранится только на этом устройстве.",
+  "profilePhoneManualSave": "Сохранить",
+  "profilePhoneManualInvalid": "Не похоже на номер телефона"
 }

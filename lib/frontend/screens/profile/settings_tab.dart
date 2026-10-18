@@ -15,6 +15,7 @@ import '../../../core/config/build_profile.dart';
 import '../../../core/config/app_colors.dart';
 import '../../../core/config/promax_settings.dart';
 import '../../../core/config/app_show_extra_info.dart';
+import '../../../core/storage/account_phone_store.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/utils/format.dart';
 import '../../../core/utils/logger.dart';
@@ -259,12 +260,67 @@ class _SettingsTabState extends State<SettingsTab>
     await _loadAvatars();
   }
 
+  Future<void> _askPhone() async {
+    final profile = _profile;
+    if (profile == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController(text: '+');
+    try {
+      final entered = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.profilePhoneManualTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.profilePhoneManualHint),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                keyboardType: TextInputType.phone,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(l10n.chatInfoActionCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, controller.text),
+              child: Text(l10n.profilePhoneManualSave),
+            ),
+          ],
+        ),
+      );
+      if (entered == null || !mounted) return;
+      final phone = ProfileData.parsePhone(entered);
+      if (phone <= 0) {
+        showCustomNotification(context, l10n.profilePhoneManualInvalid);
+        return;
+      }
+      await AccountPhoneStore.remember(profile.id, phone);
+      await AppDatabase.setProfilePhone(profile.id, phone);
+      if (mounted) await _loadProfile();
+    } finally {
+      controller.dispose();
+    }
+  }
+
   bool _phoneRecoveryTried = false;
 
   Future<void> _recoverPhone(int accountId) async {
     if (_phoneRecoveryTried) return;
     _phoneRecoveryTried = true;
     try {
+      final known = await AccountPhoneStore.phoneOf(accountId);
+      if (known != null) {
+        await AppDatabase.setProfilePhone(accountId, known);
+        if (mounted) await _loadProfile();
+        return;
+      }
       final phone = await ContactsModule.recoverSelfPhone(api, accountId);
       if (phone != null && mounted) await _loadProfile();
     } catch (e) {
@@ -1141,18 +1197,22 @@ class _SettingsTabState extends State<SettingsTab>
                     _headerAligned(
                       pt,
                       phoneMissing
-                          ? Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              child: Text(
-                                phone,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: subColor,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.3,
+                          ? GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _askPhone,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                child: Text(
+                                  phone,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: subColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.3,
+                                  ),
                                 ),
                               ),
                             )

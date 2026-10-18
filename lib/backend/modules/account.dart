@@ -10,6 +10,7 @@ import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
 import '../../core/media/media_playback.dart';
 import '../../core/crypto/e2ee_service.dart';
+import '../../core/storage/account_phone_store.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/utils/parse.dart';
 import '../../core/storage/profile_deletion_store.dart';
@@ -214,9 +215,19 @@ class AccountModule {
       await TokenStorage.saveToken(loginToken, accountId);
       await TokenStorage.setActiveAccount(accountId);
       await SpoofingService.commitPendingSpoof(accountId);
+      await _rememberLoginPhone(accountId);
     }
 
     return result;
+  }
+
+  int _pendingLoginPhone = 0;
+
+  Future<void> _rememberLoginPhone(int accountId) async {
+    final phone = _pendingLoginPhone;
+    if (phone <= 0) return;
+    await AccountPhoneStore.remember(accountId, phone);
+    await AppDatabase.setProfilePhone(accountId, phone);
   }
 
   ProfileData? _profileFromVerifyPayload(Map<dynamic, dynamic> payload) {
@@ -278,6 +289,7 @@ class AccountModule {
     await TokenStorage.saveToken(loginToken, accountId);
     await TokenStorage.setActiveAccount(accountId);
     await SpoofingService.commitPendingSpoof(accountId);
+    await _rememberLoginPhone(accountId);
 
     logger.i('Регистрация завершена, accountId=$accountId');
     return RegistrationResult(loginToken: loginToken, accountId: accountId);
@@ -683,6 +695,7 @@ class AccountModule {
   // #***! удаляем локально, база токен спуф и заявка
   Future<void> removeAccount(int accountId) async {
     PendingDeletions.instance.forgetAccount(accountId);
+    await AccountPhoneStore.forget(accountId);
     await E2eeService.instance.eraseAccount(accountId);
     await AppDatabase.deleteAccount(accountId);
     await TokenStorage.deleteAccount(accountId);
@@ -833,6 +846,7 @@ class AccountModule {
     await TokenStorage.saveToken(loginToken, accountId);
     await TokenStorage.setActiveAccount(accountId);
     await SpoofingService.commitPendingSpoof(accountId);
+    await _rememberLoginPhone(accountId);
 
     logger.i('2FA пройдена, получен login-токен');
     return TwoFactorResult(loginToken: loginToken, accountId: accountId);
@@ -915,6 +929,18 @@ class AccountModule {
     }
     await AppDatabase.saveProfile(profile, isActive: true);
     await AppDatabase.setActiveAccount(profile.id);
+    if (profile.phone > 0) {
+      await AccountPhoneStore.remember(profile.id, profile.phone);
+    } else {
+      final known = await AccountPhoneStore.phoneOf(profile.id);
+      if (known != null) {
+        await AppDatabase.setProfilePhone(profile.id, known);
+        profile = ProfileData.fromDbRow({
+          ...profile.toDbRow(isActive: true),
+          'phone': known,
+        });
+      }
+    }
     if (profile.phone == 0) {
       unawaited(
         ContactsModule.recoverSelfPhone(_api, profile.id).catchError((
@@ -1083,6 +1109,7 @@ class AccountModule {
     _ensureOnline();
 
     final normalizedPhone = _normalizeAuthPhone(phone);
+    _pendingLoginPhone = ProfileData.parsePhone(normalizedPhone);
 
     final payload = <dynamic, dynamic>{
       'phone': normalizedPhone,

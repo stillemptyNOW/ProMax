@@ -1119,7 +1119,7 @@
   "updateUpToDate": "You have the latest version",
   "updateCheckFailed": "Couldn't check for updates. Try again later",
   "profileResurrecting": "Oops! The server didn't send your profile. Trying to regenerate…",
-  "profilePhoneRegenFailed": "Phone number has not loaded yet",
+  "profilePhoneRegenFailed": "MAX did not send your number — tap to enter it",
   "addContactTitle": "Add contact",
   "addContactFirstName": "First name",
   "addContactLastName": "Last name (optional)",
@@ -2795,5 +2795,9 @@
   "chatStatsBusiestDay": "Busiest day",
   "chatStatsSynced": "Messages loaded: {count}",
   "@chatStatsSynced": {"placeholders": {"count": {"type": "int"}}},
-  "chatStatsSyncAll": "Load the whole history from the server"
+  "chatStatsSyncAll": "Load the whole history from the server",
+  "profilePhoneManualTitle": "Your number",
+  "profilePhoneManualHint": "MAX did not send this account's number. Enter it; it is stored on this device only.",
+  "profilePhoneManualSave": "Save",
+  "profilePhoneManualInvalid": "That does not look like a phone number"
 }

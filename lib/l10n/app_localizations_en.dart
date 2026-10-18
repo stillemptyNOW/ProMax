@@ -2693,7 +2693,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Oops! The server didn\'t send your profile. Trying to regenerate…';
 
   @override
-  String get profilePhoneRegenFailed => 'Phone number has not loaded yet';
+  String get profilePhoneRegenFailed =>
+      'MAX did not send your number — tap to enter it';
 
   @override
   String get addContactTitle => 'Add contact';
@@ -7457,4 +7458,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatStatsSyncAll => 'Load the whole history from the server';
+
+  @override
+  String get profilePhoneManualTitle => 'Your number';
+
+  @override
+  String get profilePhoneManualHint =>
+      'MAX did not send this account\'s number. Enter it; it is stored on this device only.';
+
+  @override
+  String get profilePhoneManualSave => 'Save';
+
+  @override
+  String get profilePhoneManualInvalid =>
+      'That does not look like a phone number';
 }

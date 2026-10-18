@@ -5111,7 +5111,7 @@ abstract class AppLocalizations {
   /// No description provided for @profilePhoneRegenFailed.
   ///
   /// In en, this message translates to:
-  /// **'Phone number has not loaded yet'**
+  /// **'MAX did not send your number — tap to enter it'**
   String get profilePhoneRegenFailed;
 
   /// No description provided for @addContactTitle.
@@ -13189,6 +13189,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Load the whole history from the server'**
   String get chatStatsSyncAll;
+
+  /// No description provided for @profilePhoneManualTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your number'**
+  String get profilePhoneManualTitle;
+
+  /// No description provided for @profilePhoneManualHint.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX did not send this account\'s number. Enter it; it is stored on this device only.'**
+  String get profilePhoneManualHint;
+
+  /// No description provided for @profilePhoneManualSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get profilePhoneManualSave;
+
+  /// No description provided for @profilePhoneManualInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That does not look like a phone number'**
+  String get profilePhoneManualInvalid;
 }
 
 class _AppLocalizationsDelegate
