@@ -24,6 +24,13 @@ void main() {
     events.add('lost');
     await tester.pump(const Duration(seconds: 1));
     expect(wakes, 1);
+    expect(NetworkWatch.offline.value, isTrue);
+
+    events.add('available');
+    await tester.pump();
+    expect(NetworkWatch.offline.value, isFalse);
+    await tester.pump(const Duration(seconds: 1));
+    expect(wakes, 2);
 
     watch.stop();
     unawaited(events.close());

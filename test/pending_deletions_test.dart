@@ -173,6 +173,60 @@ void main() {
     expect(restored, isEmpty);
   });
 
+  test('a deletion for everyone reports what the server confirmed', () async {
+    pending.commit(holdOwn(['23', '24']));
+    await settle();
+
+    final confirmed = reports.single as PendingDeletionConfirmed;
+    expect(confirmed.kind, PendingDeletionKind.messages);
+    expect(confirmed.count, 2);
+    expect(
+      pendingDeletionReportText(
+        confirmed,
+        lookupAppLocalizations(const Locale('ru')),
+      ),
+      'Удалено у обоих: 2',
+    );
+  });
+
+  test('a deletion only for me stays quiet once it went through', () async {
+    pending.commit(holdOwn(['25'], forEveryone: false));
+    await settle();
+
+    expect(gateway.deletes.single.forEveryone, isFalse);
+    expect(reports, isEmpty);
+  });
+
+  test(
+    'messages the server no longer knows are reported, not hidden',
+    () async {
+      gateway.onDelete = (_, _) => const ServerRejected('', notFound: true);
+      pending.commit(holdOwn(['26']));
+      await settle();
+
+      expect(pending.isMessageHeld(_me, _chat, '26'), isFalse);
+      expect(gateway.forgotten.single, ['26']);
+      expect((reports.single as PendingDeletionAlreadyGone).count, 1);
+    },
+  );
+
+  test(
+    'a commit while offline says the deletion waits for the network',
+    () async {
+      gateway.online = false;
+      pending.commit(holdOwn(['27']));
+      await settle();
+
+      expect(gateway.deletes, isEmpty);
+      expect(reports.single, isA<PendingDeletionStalled>());
+
+      gateway.goOnline();
+      await settle();
+      expect(gateway.deletes.single.ids, ['27']);
+      expect(reports.last, isA<PendingDeletionConfirmed>());
+    },
+  );
+
   test('a server refusal brings the messages back with the reason', () async {
     gateway.onDelete = (_, _) => const ServerRejected('слишком старое');
     pending.commit(holdOwn(['31']));
@@ -434,7 +488,14 @@ void main() {
     await pending.flush();
     expect(gateway.chatDeletes.map((d) => d.historyErased), [false, true]);
     expect(pending.entries, isEmpty);
-    expect(reports, isEmpty);
+    expect(
+      reports.single,
+      isA<PendingDeletionConfirmed>().having(
+        (r) => r.kind,
+        'kind',
+        PendingDeletionKind.deleteChat,
+      ),
+    );
   });
 
   test('the erased step survives a restart', () async {

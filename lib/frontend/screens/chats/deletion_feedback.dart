@@ -27,4 +27,10 @@ String pendingDeletionReportText(
   PendingDeletionKeptForPeer(:final count) => l10n.deleteMessagesKeptForPeer(
     count,
   ),
+  PendingDeletionConfirmed(kind: PendingDeletionKind.messages, :final count) =>
+    l10n.wipeSummaryForBoth(count),
+  PendingDeletionConfirmed() => l10n.deleteChatConfirmedForBoth,
+  PendingDeletionAlreadyGone(:final count) => l10n.deleteMessagesAlreadyGone(
+    count,
+  ),
 };

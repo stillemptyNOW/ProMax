@@ -44,12 +44,17 @@ class PacketDispatcher {
 
   Timer? _cleanupTimer;
 
-  // #***! раз в 10 сек чистим зависшие
-  PacketDispatcher() {
-    _cleanupTimer = Timer.periodic(
+  void _armCleanup() {
+    _cleanupTimer ??= Timer.periodic(
       const Duration(seconds: 10),
       (_) => _cleanupStaleRequests(),
     );
+  }
+
+  void _disarmCleanupIfIdle() {
+    if (_pendingRequests.isNotEmpty) return;
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
   }
 
   // #***! зовём перед отправкой, ждём пакет с этим seq
@@ -64,6 +69,7 @@ class PacketDispatcher {
     }
     final completer = Completer<Packet>();
     _pendingRequests[seq] = _PendingRequest(completer, DateTime.now());
+    _armCleanup();
     return completer.future;
   }
 
@@ -128,7 +134,7 @@ class PacketDispatcher {
       } else {
         completer.complete(packet);
       }
-    // #***! ветка пуша, отдаём обработчику и в стрим
+      // #***! ветка пуша, отдаём обработчику и в стрим
     } else if (packet.isPush) {
       logger.i(
         '<= push {ver: ${packet.api}, cmd: ${packet.cmd}, seq: ${packet.seq}, opcode: ${packet.opcode}, payload: ${payloadForLog(packet.payload)}}',
@@ -162,6 +168,7 @@ class PacketDispatcher {
         completer.completeError(TimeoutException('Таймаут запроса seq=$seq'));
       }
     }
+    _disarmCleanupIfIdle();
   }
 
   // #***! при обрыве рубим всех ждущих
@@ -173,6 +180,7 @@ class PacketDispatcher {
       }
     }
     _pendingRequests.clear();
+    _disarmCleanupIfIdle();
   }
 
   void dispose() {

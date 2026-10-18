@@ -57,8 +57,6 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
 
     private var nfcAdapter: NfcAdapter? = null
     private var nfcEvents: EventChannel.EventSink? = null
-    private var networkEvents: EventChannel.EventSink? = null
-    private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private val nfcHandler = Handler(Looper.getMainLooper())
     private val nfcJitter = Random()
     private val seenPeers = HashSet<Long>()
@@ -157,21 +155,6 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
 
             override fun onCancel(arguments: Any?) {
                 nfcEvents = null
-            }
-        })
-
-        EventChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "io.github.stillemptynow.promax/network_events",
-        ).setStreamHandler(object : EventChannel.StreamHandler {
-            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                networkEvents = events
-                startNetworkWatch()
-            }
-
-            override fun onCancel(arguments: Any?) {
-                stopNetworkWatch()
-                networkEvents = null
             }
         })
 
@@ -856,8 +839,6 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         activityChannels().forEach { messenger.setMessageHandler(it, null) }
         nfcEvents = null
-        stopNetworkWatch()
-        networkEvents = null
         EngineHost.unbindActivity(this)
         super.cleanUpFlutterEngine(flutterEngine)
     }
@@ -865,7 +846,6 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
     private fun activityChannels() = listOf(
         "io.github.stillemptynow.promax/nfc",
         "io.github.stillemptynow.promax/nfc_events",
-        "io.github.stillemptynow.promax/network_events",
         channelName,
         "io.github.stillemptynow.promax/app_icon",
         "io.github.stillemptynow.promax/upload_service",
@@ -897,45 +877,6 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
 
     private fun connectivityManager(): ConnectivityManager =
         getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-    private fun startNetworkWatch() {
-        if (networkCallback != null) return
-        val main = Handler(Looper.getMainLooper())
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                main.post { networkEvents?.success("available") }
-            }
-
-            override fun onLost(network: Network) {
-                main.post { networkEvents?.success("lost") }
-            }
-        }
-        try {
-            val cm = connectivityManager()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                cm.registerDefaultNetworkCallback(callback)
-            } else {
-                cm.registerNetworkCallback(
-                    NetworkRequest.Builder()
-                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                        .build(),
-                    callback,
-                )
-            }
-            networkCallback = callback
-        } catch (e: Exception) {
-            Log.w(LOG_TAG, "network watch failed: ${e.message}")
-        }
-    }
-
-    private fun stopNetworkWatch() {
-        val callback = networkCallback ?: return
-        networkCallback = null
-        try {
-            connectivityManager().unregisterNetworkCallback(callback)
-        } catch (_: Exception) {
-        }
-    }
 
     // Перечисляет активные интерфейсы: есть ли tun-туннель и какие прямые.
     private fun detectInterfaces(): Map<String, Any> {

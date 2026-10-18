@@ -4305,6 +4305,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get serverUnreachable => 'Нет связи с сервером';
 
   @override
+  String get deleteChatConfirmedForBoth => 'Чат удалён у обоих';
+
+  @override
+  String deleteMessagesAlreadyGone(int count) {
+    return 'Сервер MAX ответил, что этих сообщений уже нет: $count';
+  }
+
+  @override
   String get deletionStillPending =>
       'Удаление пока не дошло до сервера, ProMax повторит попытку';
 

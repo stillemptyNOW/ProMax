@@ -1363,6 +1363,10 @@ class ChatsModule {
     if (chatId == null) return;
 
     final ids = payload['messageIds'];
+    logger.i(
+      'NOTIF_MSG_DELETE чат $chatId, сообщений '
+      '${ids is List ? ids.length : 0}',
+    );
     if (ids is List) {
       await _applyServerDeletion(accountId, chatId, [
         for (final raw in ids)
@@ -2770,13 +2774,18 @@ class ChatsModule {
         ),
       ),
       deleteChat: ({required bool forAll}) => inSameSession(
-        () => runServerAction(
-          () => api.sendRequest(Opcode.chatDelete, {
+        () => runServerAction(() async {
+          final response = await api.sendRequest(Opcode.chatDelete, {
             'chatId': chatId,
             'lastEventTime': freshLastEventTime(chatId, seen: seenEventTime),
             'forAll': forAll,
-          }),
-        ),
+          });
+          logger.i(
+            'CHAT_DELETE чат $chatId, forAll=$forAll → '
+            '${describeReply(response)}',
+          );
+          return response;
+        }),
       ),
     );
     _logRefusal('deleteChat', chatId, result.outcome);
@@ -2813,13 +2822,17 @@ class ChatsModule {
     required int seenEventTime,
     required int? accountId,
   }) async {
-    final outcome = await runServerAction(
-      () => api.sendRequest(Opcode.chatClear, {
+    final outcome = await runServerAction(() async {
+      final response = await api.sendRequest(Opcode.chatClear, {
         'chatId': chatId,
         'lastEventTime': freshLastEventTime(chatId, seen: seenEventTime),
         'forAll': forAll,
-      }),
-    );
+      });
+      logger.i(
+        'CHAT_CLEAR чат $chatId, forAll=$forAll → ${describeReply(response)}',
+      );
+      return response;
+    });
     _logRefusal('clearHistory', chatId, outcome);
     if (outcome is! ServerDone) return outcome;
     if (accountId != null) {

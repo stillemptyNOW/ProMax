@@ -18,6 +18,7 @@ import '../contacts/add_contact_sheet.dart';
 import '../../widgets/letter_avatar.dart';
 import '../../widgets/adaptive_shell.dart';
 import '../../widgets/chat_call_badge.dart';
+import '../../../core/utils/app_foreground.dart';
 import '../../../core/crypto/message_decryption_cache.dart';
 import '../../widgets/decrypted_text.dart';
 import '../../widgets/encryption_lock_badge.dart';
@@ -292,6 +293,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   Timer? _contactRebuildTimer;
   bool _deferReloads = false;
   bool _reloadQueued = false;
+  bool _staleWhileHidden = false;
   bool _reloadInFlight = false;
   Timer? _settleTimer;
   bool get _shareMode => widget.sharePayload != null;
@@ -997,19 +999,14 @@ class _ChatListScreenState extends State<ChatListScreen>
           _sessionState = state;
         });
         _syncShimmer();
-        if (state == SessionState.online) {
-          _requestReload();
-          _maybeLoadStories();
-        }
+        if (state == SessionState.online) _refreshAfterReconnect();
       }
     });
 
     _loginSub = accountModule.loginStatusStream.listen((status) {
-      if (status == LoginStatus.success) {
-        _requestReload();
-        _maybeLoadStories();
-      }
+      if (status == LoginStatus.success) _refreshAfterReconnect();
     });
+    AppForeground.notifier.addListener(_onForegroundChanged);
     chats.chatOrderRevision.addListener(_onChatsChanged);
     ArchivedChatsStore.instance.revision.addListener(_onArchivedChanged);
     ChatEncryptionStore.instance.revision.addListener(_onEncryptionChanged);
@@ -1083,6 +1080,22 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   void _onStoriesDataChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _refreshAfterReconnect() {
+    if (!AppForeground.value) {
+      _staleWhileHidden = true;
+      return;
+    }
+    _requestReload();
+    _maybeLoadStories();
+  }
+
+  void _onForegroundChanged() {
+    if (!AppForeground.value || !_staleWhileHidden || !mounted) return;
+    _staleWhileHidden = false;
+    _requestReload();
+    _maybeLoadStories();
   }
 
   void _maybeLoadStories() {
@@ -1776,6 +1789,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     appRouteObserver.unsubscribe(this);
     _settleTimer?.cancel();
     chats.chatOrderRevision.removeListener(_onChatsChanged);
+    AppForeground.notifier.removeListener(_onForegroundChanged);
     ArchivedChatsStore.instance.revision.removeListener(_onArchivedChanged);
     ChatEncryptionStore.instance.revision.removeListener(_onEncryptionChanged);
     E2eeService.instance.revision.removeListener(_onEncryptionChanged);

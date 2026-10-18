@@ -4270,6 +4270,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serverUnreachable => 'No connection to the server';
 
   @override
+  String get deleteChatConfirmedForBoth => 'Chat deleted for both of you';
+
+  @override
+  String deleteMessagesAlreadyGone(int count) {
+    return 'MAX says these messages no longer exist: $count';
+  }
+
+  @override
   String get deletionStillPending =>
       'The deletion hasn\'t reached the server yet, ProMax will retry';
 

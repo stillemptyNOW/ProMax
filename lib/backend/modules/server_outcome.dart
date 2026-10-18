@@ -44,3 +44,9 @@ ServerOutcome outcomeOfError(Object error) {
   if (error is PacketError) return ServerUnreachable(error.message);
   return ServerUnreachable('$error');
 }
+
+String describeReply(Packet packet, {int limit = 300}) {
+  final body = '${packet.payload}';
+  final brief = body.length > limit ? '${body.substring(0, limit)}…' : body;
+  return 'cmd ${packet.cmd}: $brief';
+}

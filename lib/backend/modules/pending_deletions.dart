@@ -139,6 +139,19 @@ final class PendingDeletionStalled extends PendingDeletionReport {
   final PendingDeletionKind kind;
 }
 
+final class PendingDeletionConfirmed extends PendingDeletionReport {
+  const PendingDeletionConfirmed(this.kind, this.count);
+
+  final PendingDeletionKind kind;
+  final int count;
+}
+
+final class PendingDeletionAlreadyGone extends PendingDeletionReport {
+  const PendingDeletionAlreadyGone(this.count);
+
+  final int count;
+}
+
 final class PendingDeletionKeptForPeer extends PendingDeletionReport {
   const PendingDeletionKeptForPeer(this.count);
 
@@ -290,6 +303,7 @@ class PendingDeletions {
         for (final message in messages) message.id: message,
       };
       keys.add(entry.key);
+      logger.i('Удаление ${entry.key}: ждёт отмены, ${_describe(entry)}');
     }
     if (keys.isNotEmpty) _changed();
     return keys;
@@ -312,6 +326,7 @@ class PendingDeletions {
     _entries[entry.key] = entry;
     _open.add(entry.key);
     _changed();
+    logger.i('Удаление ${entry.key}: ждёт отмены, ${_describe(entry)}');
     return entry.key;
   }
 
@@ -323,6 +338,7 @@ class PendingDeletions {
       if (entry != null) cancelled.add(entry);
     }
     if (cancelled.isEmpty) return false;
+    logger.i('Удаление отменено: ${cancelled.map((e) => e.key).join(', ')}');
     _changed();
     for (final entry in cancelled) {
       final snapshot = _snapshots.remove(entry.key);
@@ -344,7 +360,9 @@ class PendingDeletions {
     ];
     for (final key in committed) {
       final entry = _entries[key];
-      if (entry != null) unawaited(_process(entry));
+      if (entry == null) continue;
+      logger.i('Удаление $key: подтверждено, отправляю');
+      unawaited(_process(entry));
     }
   }
 
@@ -441,13 +459,30 @@ class PendingDeletions {
     return work.whenComplete(() => _running.remove(key));
   }
 
-  Future<bool> _owns(PendingDeletionGateway gateway, int accountId) async {
-    if (!gateway.isOnline) return false;
+  Future<bool> _owns(
+    PendingDeletionGateway gateway,
+    PendingDeletion entry,
+  ) async {
+    if (!gateway.isOnline) {
+      logger.i('Удаление ${entry.key}: нет связи, отправлю после подключения');
+      _reportStall(entry, waitingForNetwork: true);
+      return false;
+    }
     final epoch = gateway.sessionEpoch;
     final active = await gateway.activeAccountId();
-    return gateway.isOnline &&
-        gateway.sessionEpoch == epoch &&
-        active == accountId;
+    if (active != entry.accountId) {
+      logger.i(
+        'Удаление ${entry.key}: активен другой аккаунт, ждёт аккаунт '
+        '${entry.accountId}',
+      );
+      return false;
+    }
+    if (!gateway.isOnline || gateway.sessionEpoch != epoch) {
+      logger.i('Удаление ${entry.key}: сессия переподключилась, повторю');
+      _scheduleRetry();
+      return false;
+    }
+    return true;
   }
 
   Future<void> _execute(String key) async {
@@ -463,11 +498,16 @@ class PendingDeletions {
     final gateway = _gateway;
     final initial = _entries[key];
     if (gateway == null || initial == null || _open.contains(key)) return;
-    if (!await _owns(gateway, initial.accountId)) return;
+    if (!await _owns(gateway, initial)) return;
     final entry = _entries[key];
     if (entry == null || _open.contains(key)) return;
 
     final sent = await _send(gateway, entry);
+    logger.i(
+      'Удаление $key: ${_describe(entry)}, попытка ${entry.attempts + 1} → '
+      '${_describeOutcome(sent.outcome)}'
+      '${sent.keptForPeer > 0 ? ', только у вас: ${sent.keptForPeer}' : ''}',
+    );
     switch (sent.outcome) {
       case ServerDone():
         await _complete(gateway, entry, keptForPeer: sent.keptForPeer);
@@ -475,7 +515,12 @@ class PendingDeletions {
           when notFound &&
               (entry.kind == PendingDeletionKind.messages ||
                   entry.attempts > 0):
-        await _complete(gateway, entry, keptForPeer: sent.keptForPeer);
+        await _complete(
+          gateway,
+          entry,
+          keptForPeer: sent.keptForPeer,
+          alreadyGone: true,
+        );
       case ServerRejected(:final message):
         await _reject(gateway, entry, _refusalReport(entry, sent, message));
       case ServerUnreachable(:final reason):
@@ -506,8 +551,9 @@ class PendingDeletions {
     );
   }
 
-  void _reportStall(PendingDeletion entry) {
-    if (entry.attempts != stallReportAttempt || _stallReported) return;
+  void _reportStall(PendingDeletion entry, {bool waitingForNetwork = false}) {
+    if (_stallReported) return;
+    if (!waitingForNetwork && entry.attempts != stallReportAttempt) return;
     _stallReported = true;
     _reports.add(PendingDeletionStalled(entry.kind));
   }
@@ -587,6 +633,7 @@ class PendingDeletions {
     PendingDeletionGateway gateway,
     PendingDeletion entry, {
     required int keptForPeer,
+    bool alreadyGone = false,
   }) async {
     if (entry.kind == PendingDeletionKind.messages) {
       try {
@@ -602,7 +649,19 @@ class PendingDeletions {
     _retryRound = 0;
     _stallReported = false;
     _changed();
-    if (keptForPeer > 0) _reports.add(PendingDeletionKeptForPeer(keptForPeer));
+    if (keptForPeer > 0) {
+      _reports.add(PendingDeletionKeptForPeer(keptForPeer));
+      return;
+    }
+    if (!entry.forEveryone) return;
+    final count = entry.kind == PendingDeletionKind.messages
+        ? entry.serverMessageIds.length
+        : 1;
+    _reports.add(
+      alreadyGone
+          ? PendingDeletionAlreadyGone(count)
+          : PendingDeletionConfirmed(entry.kind, count),
+    );
   }
 
   Future<void> _reject(
@@ -679,6 +738,24 @@ class PendingDeletions {
       } catch (_) {}
     });
   }
+
+  static String _describe(PendingDeletion entry) {
+    final scope = entry.forEveryone ? 'у всех' : 'у себя';
+    return switch (entry.kind) {
+      PendingDeletionKind.messages =>
+        'сообщений ${entry.serverMessageIds.length} в чате ${entry.chatId} '
+            '$scope',
+      PendingDeletionKind.deleteChat => 'чат ${entry.chatId} $scope',
+      PendingDeletionKind.leaveChat => 'выход из чата ${entry.chatId}',
+    };
+  }
+
+  static String _describeOutcome(ServerOutcome outcome) => switch (outcome) {
+    ServerDone() => 'сервер подтвердил',
+    ServerRejected(:final notFound) when notFound => 'сервер: не найдено',
+    ServerRejected(:final message) => 'отказ сервера: $message',
+    ServerUnreachable(:final reason) => 'не дошло: $reason',
+  };
 
   String _nextKey() => '${DateTime.now().microsecondsSinceEpoch}-${_keySeq++}';
 

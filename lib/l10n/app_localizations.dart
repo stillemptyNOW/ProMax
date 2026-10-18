@@ -7772,6 +7772,18 @@ abstract class AppLocalizations {
   /// **'No connection to the server'**
   String get serverUnreachable;
 
+  /// No description provided for @deleteChatConfirmedForBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat deleted for both of you'**
+  String get deleteChatConfirmedForBoth;
+
+  /// No description provided for @deleteMessagesAlreadyGone.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX says these messages no longer exist: {count}'**
+  String deleteMessagesAlreadyGone(int count);
+
   /// No description provided for @deletionStillPending.
   ///
   /// In en, this message translates to:

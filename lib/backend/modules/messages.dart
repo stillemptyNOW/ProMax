@@ -1521,7 +1521,14 @@ class MessagesModule {
       'itemType': itemType,
     };
 
-    return runServerAction(() => _api.sendRequest(Opcode.msgDelete, payload));
+    return runServerAction(() async {
+      final response = await _api.sendRequest(Opcode.msgDelete, payload);
+      logger.i(
+        'MSG_DELETE чат $chatId, сообщений ${ids.length}, '
+        'forMe=${!forEveryone} → ${describeReply(response)}',
+      );
+      return response;
+    });
   }
 
   // #***! поставить реакцию

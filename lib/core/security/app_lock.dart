@@ -227,7 +227,14 @@ class AppLock {
     final background =
         state == AppLifecycleState.paused || state == AppLifecycleState.hidden;
     if (background && _externalDepth == 0) lock();
-    if (state == AppLifecycleState.resumed) _expireLockout();
+    if (background) {
+      _idleTimer?.cancel();
+      _idleTimer = null;
+    }
+    if (state == AppLifecycleState.resumed) {
+      _expireLockout();
+      if (_idleTimer == null) _syncIdleTimer();
+    }
   }
 
   void noteInteraction() => _lastInteraction = DateTime.now();
