@@ -388,6 +388,42 @@ class _RenderLiquidGlass extends RenderProxyBox {
   @override
   bool get alwaysNeedsCompositing => true;
 
+  Matrix4? _observedTransform;
+  bool _observing = false;
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _observeTransform();
+  }
+
+  @override
+  void detach() {
+    _observedTransform = null;
+    super.detach();
+  }
+
+  void _observeTransform() {
+    if (_observing) return;
+    _observing = true;
+    SchedulerBinding.instance.addPostFrameCallback(
+      _checkTransform,
+      debugLabel: 'LiquidGlass.transform',
+    );
+  }
+
+  void _checkTransform(Duration _) {
+    _observing = false;
+    if (!attached) return;
+    if (hasSize) {
+      final transform = getTransformTo(null);
+      final previous = _observedTransform;
+      if (previous != null && previous != transform) markNeedsPaint();
+      _observedTransform = transform;
+    }
+    _observeTransform();
+  }
+
   @override
   void dispose() {
     _clipHandle.layer = null;
@@ -640,7 +676,7 @@ class _GlassPressEffectState extends State<GlassPressEffect>
     if (event.pointer != _pointer) return;
     _touch = event.localPosition;
     _stretch = event.localPosition - _origin;
-    _apply(AppLiquidGlass.liftOn);
+    _apply(AppLiquidGlass.liftOff);
     setState(() {});
   }
 

@@ -181,6 +181,14 @@ class AppLiquidGlass {
       (alpha * tuning.specular).round().clamp(0, 255);
 
   static GlassShadow _shadow(GlassRole role, bool dark) {
+    if (dark && role == GlassRole.bar) {
+      return const GlassShadow(
+        contact: Color(0x04FFFFFF),
+        contactBlur: 2.667,
+        contactOffset: 0.85,
+        ambient: true,
+      );
+    }
     if (dark || role == GlassRole.overlay) {
       return const GlassShadow(
         contact: Colors.transparent,

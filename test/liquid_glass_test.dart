@@ -63,6 +63,16 @@ void main() {
     expect(bar.rim.top, const Color(0x11000000));
     expect(bar.rim.bottom, const Color(0x20000000));
     expect(bar.rim.width, closeTo(0.4, 0.001));
+    expect(bar.shadow.contact, const Color(0x20000000));
+
+    final darkBar = AppLiquidGlass.material(
+      _scheme(Brightness.dark),
+      GlassRole.bar,
+      glass: _defaults,
+    );
+    expect(darkBar.rim.top, const Color(0x06FFFFFF));
+    expect(darkBar.rim.bottom, const Color(0x11FFFFFF));
+    expect(darkBar.shadow.contact, const Color(0x04FFFFFF));
 
     final frosted = AppLiquidGlass.material(
       cs,
