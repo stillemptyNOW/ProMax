@@ -49,8 +49,11 @@ final class ProMaxLiveConnection: NSObject {
       result(nil)
     case "setConnected":
       result(nil)
-    case "showMessage", "editMessage":
+    case "showMessage":
       post(message: Self.strings(args?["data"]))
+      result(nil)
+    case "editMessage":
+      edit(message: Self.strings(args?["data"]))
       result(nil)
     case "removeMessage":
       let data = Self.strings(args?["data"])
@@ -153,11 +156,33 @@ final class ProMaxLiveConnection: NSObject {
     let sender = data["userName"] ?? ""
     let text = data["msg"] ?? "Новое сообщение"
     content.title = title
-    content.body = !sender.isEmpty && sender != title ? "\(sender): \(text)" : text
+    content.body = Self.body(title: title, sender: sender, text: text)
     content.sound = .default
     content.threadIdentifier = "chat-\(chat)"
-    content.userInfo = ["chatId": chat, "msgid": data["msgid"] ?? ""]
+    content.userInfo = ["chatId": chat, "msgid": data["msgid"] ?? "", "sender": sender]
     UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+  }
+
+  private func edit(message data: [String: String]) {
+    guard let id = Self.identifier(data), let text = data["msg"], !text.isEmpty else { return }
+    let center = UNUserNotificationCenter.current()
+    center.getDeliveredNotifications { delivered in
+      guard let shown = delivered.first(where: { $0.request.identifier == id }) else { return }
+      let previous = shown.request.content
+      let sender = previous.userInfo["sender"] as? String ?? ""
+      let body = Self.body(title: previous.title, sender: sender, text: text)
+      guard body != previous.body else { return }
+      let content = UNMutableNotificationContent()
+      content.title = previous.title
+      content.body = body
+      content.threadIdentifier = previous.threadIdentifier
+      content.userInfo = previous.userInfo
+      center.add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+    }
+  }
+
+  private static func body(title: String, sender: String, text: String) -> String {
+    !sender.isEmpty && sender != title ? "\(sender): \(text)" : text
   }
 
   private func post(call data: [String: String]) {
