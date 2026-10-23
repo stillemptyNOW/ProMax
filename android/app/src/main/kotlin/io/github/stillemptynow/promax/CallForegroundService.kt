@@ -1,11 +1,14 @@
 package io.github.stillemptynow.promax
 
+import android.app.Notification
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -17,27 +20,58 @@ object CallState {
     var inCall = false
 }
 
+internal class PendingPromotion(private val done: (Boolean) -> Unit) {
+    private var delivered = false
+
+    fun deliver(ok: Boolean) {
+        if (delivered) return
+        delivered = true
+        done(ok)
+    }
+}
+
 class CallForegroundService : Service() {
 
     companion object {
         const val ACTION_START = "io.github.stillemptynow.promax.CALL_ONGOING_START"
         const val ACTION_STOP = "io.github.stillemptynow.promax.CALL_ONGOING_STOP"
         const val ACTION_SCREEN_SHARE = "io.github.stillemptynow.promax.CALL_SCREEN_SHARE"
-        const val EXTRA_SCREEN_SHARE = "screenShare"
         const val ONGOING_ID = 424243
+        private const val DEFAULT_CALLER = "Звонок"
+        private const val PROMOTE_TIMEOUT_MS = 5000L
 
         @Volatile
         var screenShare = false
 
         @Volatile
-        private var running: CallForegroundService? = null
+        internal var running: CallForegroundService? = null
 
-        fun setScreenShare(ctx: Context, enabled: Boolean, caller: String) {
-            screenShare = enabled
+        private val main = Handler(Looper.getMainLooper())
+        private var pendingPromotion: PendingPromotion? = null
+
+        fun setScreenShare(
+            ctx: Context,
+            enabled: Boolean,
+            caller: String?,
+            done: (Boolean) -> Unit,
+        ) {
+            val service = running
+            if (service != null) {
+                done(service.applyScreenShare(enabled, caller))
+                return
+            }
+            if (!enabled) {
+                screenShare = false
+                ScreenShareWatcher.stop()
+                done(true)
+                return
+            }
+            pendingPromotion?.deliver(false)
+            val pending = PendingPromotion(done)
+            pendingPromotion = pending
             val intent = Intent(ctx, CallForegroundService::class.java).apply {
                 action = ACTION_SCREEN_SHARE
-                putExtra(CallConst.EXTRA_CALLER, caller)
-                putExtra(EXTRA_SCREEN_SHARE, enabled)
+                if (caller != null) putExtra(CallConst.EXTRA_CALLER, caller)
             }
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -46,8 +80,17 @@ class CallForegroundService : Service() {
                     ctx.startService(intent)
                 }
             } catch (e: Exception) {
-                Log.w("ProMaxFcm", "screen share FGS update failed: ${e.message}")
+                Log.w("ProMaxFcm", "screen share FGS start failed: ${e.message}")
+                finishPromotion(false)
+                return
             }
+            main.postDelayed({ if (pendingPromotion === pending) finishPromotion(false) }, PROMOTE_TIMEOUT_MS)
+        }
+
+        private fun finishPromotion(ok: Boolean) {
+            val pending = pendingPromotion ?: return
+            pendingPromotion = null
+            pending.deliver(ok)
         }
 
         fun start(ctx: Context, caller: String) {
@@ -70,6 +113,8 @@ class CallForegroundService : Service() {
         fun stop(ctx: Context) {
             CallState.inCall = false
             screenShare = false
+            ScreenShareWatcher.stop()
+            finishPromotion(false)
             val service = running
             if (service != null) {
                 service.shutdown()
@@ -87,6 +132,8 @@ class CallForegroundService : Service() {
         }
     }
 
+    private var caller = DEFAULT_CALLER
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -97,6 +144,9 @@ class CallForegroundService : Service() {
     override fun onDestroy() {
         if (running === this) running = null
         CallState.inCall = false
+        screenShare = false
+        ScreenShareWatcher.stop()
+        finishPromotion(false)
         super.onDestroy()
     }
 
@@ -106,24 +156,66 @@ class CallForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        intent?.getStringExtra(CallConst.EXTRA_CALLER)?.let { caller = it }
         when (intent?.action) {
             ACTION_STOP -> shutdown()
             ACTION_SCREEN_SHARE -> {
-                screenShare = intent.getBooleanExtra(EXTRA_SCREEN_SHARE, false)
-                val caller = intent.getStringExtra(CallConst.EXTRA_CALLER) ?: "Звонок"
                 CallNotifier.ensureChannel(this)
-                startAsForeground(caller)
+                val ok = enableProjection()
+                finishPromotion(ok)
+                if (!ok && !promote(false)) stopSelf()
             }
             else -> {
-                val caller = intent?.getStringExtra(CallConst.EXTRA_CALLER) ?: "Звонок"
                 CallNotifier.ensureChannel(this)
-                startAsForeground(caller)
+                if (promote(screenShare)) return START_NOT_STICKY
+                if (screenShare && promote(false)) {
+                    screenShare = false
+                    ScreenShareWatcher.stop()
+                    return START_NOT_STICKY
+                }
+                stopSelf()
             }
         }
         return START_NOT_STICKY
     }
 
-    private fun startAsForeground(caller: String) {
+    private fun applyScreenShare(enabled: Boolean, newCaller: String?): Boolean {
+        if (newCaller != null) caller = newCaller
+        CallNotifier.ensureChannel(this)
+        if (!enabled) {
+            screenShare = false
+            ScreenShareWatcher.stop()
+            return promote(false)
+        }
+        if (enableProjection()) return true
+        promote(false)
+        return false
+    }
+
+    private fun enableProjection(): Boolean {
+        if (promote(true)) {
+            screenShare = true
+            ScreenShareWatcher.start(this)
+            return true
+        }
+        screenShare = false
+        ScreenShareWatcher.stop()
+        return false
+    }
+
+    private fun promote(projection: Boolean): Boolean {
+        var types = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+        if (projection) types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+        return try {
+            ServiceCompat.startForeground(this, ONGOING_ID, buildNotification(), types)
+            true
+        } catch (e: Exception) {
+            Log.w("ProMaxFcm", "startForeground(projection=$projection) failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun buildNotification(): Notification {
         val immutable = android.app.PendingIntent.FLAG_UPDATE_CURRENT or
             android.app.PendingIntent.FLAG_IMMUTABLE
         val open = LaunchIntents.app(this).apply {
@@ -138,7 +230,7 @@ class CallForegroundService : Service() {
             immutable,
         )
         val person = Person.Builder().setName(caller).build()
-        val notif = NotificationCompat.Builder(this, CallConst.CHANNEL_ID)
+        return NotificationCompat.Builder(this, CallConst.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(CallConst.ACCENT)
             .setColorized(true)
@@ -148,20 +240,5 @@ class CallForegroundService : Service() {
             .setContentIntent(pi)
             .setStyle(NotificationCompat.CallStyle.forOngoingCall(person, hangup))
             .build()
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                var types = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-                if (screenShare) {
-                    types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-                }
-                startForeground(ONGOING_ID, notif, types)
-            } else {
-                startForeground(ONGOING_ID, notif)
-            }
-        } catch (e: Exception) {
-            Log.w("ProMaxFcm", "startForeground failed: ${e.message}")
-            stopSelf()
-        }
     }
 }

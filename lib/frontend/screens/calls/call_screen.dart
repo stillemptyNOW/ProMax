@@ -18,6 +18,7 @@ import '../../../core/calls/call_info.dart';
 import '../../../core/calls/call_session.dart';
 import '../../../core/calls/call_tones.dart';
 import '../../../core/calls/camera_devices.dart';
+import '../../../core/calls/screen_share.dart';
 import '../../../core/config/app_colors.dart';
 import '../../../core/config/call_no_mute.dart';
 import '../../../core/config/call_lighting.dart';
@@ -28,6 +29,7 @@ import '../../widgets/call_video_view.dart';
 import '../../widgets/call_screen_light.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/glossy_pill.dart';
+import '../../widgets/hint_bubble.dart';
 import '../../widgets/animated_slash_icon.dart';
 import '../../widgets/lottie_slash_icon.dart';
 import '../../widgets/sheet_helpers.dart';
@@ -187,6 +189,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       unawaited(CallTones.instance.play(CallTone.ringtone));
     }
     if (_desktop) unawaited(_countCameras());
+    _lifecycle = AppLifecycleListener(onResume: _reportScreenShareInterruption);
   }
 
   bool get _desktop =>
@@ -295,6 +298,9 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     if (session.peerIsProMax) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showProMaxBadge());
     }
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _reportScreenShareInterruption(),
+    );
     final existing = session.remoteStream;
     if (existing != null) _attachStream(existing);
     _resolveParticipants();
@@ -437,6 +443,8 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   }
 
   bool _videoBusy = false;
+  final GlobalKey _screenShareKey = GlobalKey();
+  late final AppLifecycleListener _lifecycle;
 
   Future<void> _toggleVideo() async {
     final session = _session;
@@ -460,21 +468,50 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     final session = _session;
     if (session == null || _videoBusy) return;
     final l10n = AppLocalizations.of(context)!;
+    final starting = !session.localScreen;
     setState(() => _videoBusy = true);
     await WidgetsBinding.instance.endOfFrame;
+    String? hint;
     try {
-      await session.setScreenSharing(!session.localScreen);
-    } catch (e) {
-      if (mounted) {
-        showCustomNotification(
-          context,
-          l10n.callScreenShareFailed(userFacingError(e)),
-        );
+      await session.setScreenSharing(starting);
+      if (starting && session.localScreen) {
+        hint = session.screenShareFollowsApp
+            ? l10n.callScreenShareStartedInApp
+            : l10n.callScreenShareStarted;
       }
+    } on ScreenShareException catch (e) {
+      hint = switch (e.failure) {
+        ScreenShareFailure.denied => l10n.callScreenShareDenied,
+        ScreenShareFailure.service => l10n.callScreenShareServiceFailed,
+        ScreenShareFailure.noPicture => l10n.callScreenShareNoPicture,
+        ScreenShareFailure.capture => l10n.callScreenShareFailed(
+          userFacingError(e.cause ?? e),
+        ),
+      };
+    } catch (e) {
+      hint = l10n.callScreenShareFailed(userFacingError(e));
     } finally {
       _syncLocalPreview();
       if (mounted) setState(() => _videoBusy = false);
     }
+    if (hint != null) _showScreenShareHint(hint);
+  }
+
+  void _reportScreenShareInterruption() {
+    if (!mounted || _session?.takeScreenShareInterruption() != true) return;
+    _showScreenShareHint(
+      AppLocalizations.of(context)!.callScreenShareStoppedInBackground,
+    );
+  }
+
+  void _showScreenShareHint(String text) {
+    if (!mounted) return;
+    final anchor = _screenShareKey.currentContext;
+    if (anchor == null) {
+      showCustomNotification(context, text);
+      return;
+    }
+    showHintBubble(anchor, text, duration: const Duration(seconds: 4));
   }
 
   void _syncLocalPreview() {
@@ -680,6 +717,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     if (_lightOn && _session?.frontCamera == false) {
       unawaited(_session!.setCameraTorch(false));
     }
+    _lifecycle.dispose();
     ActiveCall.instance.leaveScreen();
     unawaited(ScreenWake.instance.release(this));
     unawaited(CallTones.instance.stop());
@@ -1600,13 +1638,6 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                     'Настроить подсветку для селфи',
                     _showLighting,
                   ),
-                item(
-                  Symbols.screen_share,
-                  session.localScreen
-                      ? 'Остановить показ экрана'
-                      : 'Показать экран',
-                  _toggleScreen,
-                ),
                 item(Symbols.mic, 'Выбрать микрофон', _showMicrophones),
                 item(Symbols.group, 'Участники звонка', _showParticipants),
               ],
@@ -1614,6 +1645,30 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
           ),
         );
       },
+    );
+  }
+
+  Widget _screenShareChip(ColorScheme cs, AppLocalizations l10n) {
+    final sharing = _session?.localScreen == true;
+    final foreground = sharing ? cs.onPrimary : cs.onSurface;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ActionChip(
+        key: _screenShareKey,
+        avatar: LottieSlashIcon(
+          asset: 'assets/lottie/ic_screen_share_on_to_off.json',
+          slashed: sharing,
+          color: foreground,
+          size: 20,
+        ),
+        label: Text(
+          sharing ? l10n.callScreenShareStopAction : l10n.callScreenShareAction,
+          style: TextStyle(color: foreground),
+        ),
+        tooltip: sharing ? null : l10n.callScreenShareHint,
+        backgroundColor: sharing ? cs.primary : cs.surfaceContainerHigh,
+        onPressed: _videoBusy ? null : _toggleScreen,
+      ),
     );
   }
 
@@ -1671,6 +1726,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                       size: 20,
                     ),
                   ),
+                _screenShareChip(cs, l10n),
                 action(Symbols.more_horiz, 'Ещё', _showMoreControls),
               ],
             ),

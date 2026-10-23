@@ -667,6 +667,8 @@ FLASH_ON = 0xE3E7
 FLASH_OFF = 0xE3E6
 PERSON = 0xF0D3
 PERSON_OFF = 0xE510
+SCREEN_SHARE = 0xE0E2
+STOP_SCREEN_SHARE = 0xE0E3
 
 POINTS = 56
 FPS = 60
@@ -1012,6 +1014,11 @@ SLASH_SPECS = [
     dict(
         name='ic_person_on_to_off',
         plain_cp=PERSON, slashed_cp=PERSON_OFF,
+        scale=[(0, 100), (11, 92), (DUR, 100)],
+    ),
+    dict(
+        name='ic_screen_share_on_to_off',
+        plain_cp=SCREEN_SHARE, slashed_cp=STOP_SCREEN_SHARE,
         scale=[(0, 100), (11, 92), (DUR, 100)],
     ),
 ]

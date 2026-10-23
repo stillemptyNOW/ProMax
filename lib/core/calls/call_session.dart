@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, defaultTargetPlatform;
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:flutter/widgets.dart'
+    show AppLifecycleListener, AppLifecycleState;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:promax_effects/promax_effects.dart';
 
@@ -21,6 +24,7 @@ import 'call_info.dart';
 import 'conversation_params.dart';
 import 'ice_privacy.dart';
 import 'pulse_audio.dart';
+import 'screen_share.dart';
 import 'sfu_data_channel.dart';
 import 'ws2_signaling.dart';
 
@@ -131,7 +135,9 @@ class CallSession {
   // #***! отправители аудио камеры и экрана, треки подменяем на лету
   RTCRtpSender? _audioSender;
   RTCRtpSender? _videoSender;
-  RTCRtpSender? _screenSender;
+  bool _screenBusy = false;
+  bool _screenShareInterrupted = false;
+  AppLifecycleListener? _screenLifecycle;
   String? _micDeviceId = AppMicrophone.deviceId;
   String? _pulseSource = AppPulseSource.name;
   bool _monitorCapture = false;
@@ -222,8 +228,7 @@ class CallSession {
   }
 
   bool get localScreen => _localScreen;
-  MediaStream? get localVideoStream =>
-      _localScreen ? _screenStream : _cameraStream;
+  MediaStream? get localVideoStream => _outgoingVideoStream;
   MediaStream? get localCameraStream => _cameraStream;
   MediaStream? get localScreenStream => _screenStream;
 
@@ -360,9 +365,9 @@ class CallSession {
         'change-media-settings',
         extra: {
           'mediaSettings': {
-            'isVideoEnabled': _localVideo,
+            'isVideoEnabled': _announcesVideo,
             'isAudioEnabled': !_muted,
-            'isScreenSharingEnabled': _localScreen,
+            'isScreenSharingEnabled': false,
             'isAnimojiEnabled': false,
           },
         },
@@ -464,7 +469,6 @@ class CallSession {
 
     _audioSender = null;
     _videoSender = null;
-    _screenSender = null;
     _remoteDescSet = false;
     _pendingCandidates.clear();
     _accepted = false;
@@ -483,12 +487,17 @@ class CallSession {
     _localStream = null;
     await _disposeMicStream();
 
-    await _disposeStream(_cameraStream);
-    await _disposeStream(_screenStream);
-    _cameraStream = null;
+    final screen = _screenStream;
+    final sharing = _localScreen || screen != null;
     _screenStream = null;
-    _localVideo = false;
     _localScreen = false;
+    _releaseScreenLifecycle();
+    if (sharing) {
+      await _screenPipeline.close(() => _disposeStream(screen));
+    }
+    await _disposeStream(_cameraStream);
+    _cameraStream = null;
+    _localVideo = false;
   }
 
   // #***! замер уровней звука для подсветки говорящего
@@ -1303,11 +1312,10 @@ class CallSession {
     for (final transceiver in await pc.getTransceivers()) {
       final mid = transceiver.mid;
       if (!mids.contains(mid)) continue;
-      final tracks =
-          _cameraStream?.getVideoTracks() ?? const <MediaStreamTrack>[];
-      if (tracks.isNotEmpty) {
+      final track = _outgoingVideoTrack;
+      if (track != null) {
         try {
-          await transceiver.sender.replaceTrack(tracks.first);
+          await transceiver.sender.replaceTrack(track);
         } catch (e) {
           logger.w('[call][sfu] video slot $mid replaceTrack failed: $e');
         }
@@ -1320,6 +1328,7 @@ class CallSession {
       }
       _videoSender = transceiver.sender;
       logger.i('[call][sfu] video slot mid=$mid -> sendonly');
+      await _tuneVideoSenderForScreen();
       return;
     }
   }
@@ -1463,7 +1472,6 @@ class CallSession {
       await _disposeMicStream();
       _audioSender = null;
       _videoSender = null;
-      _screenSender = null;
     }
     _setState(CallSessionState.connecting);
     final pc = await _createPc(_iceServers);
@@ -1490,7 +1498,6 @@ class CallSession {
     _pc = null;
     _audioSender = null;
     _videoSender = null;
-    _screenSender = null;
     _remoteDescSet = false;
     _pendingCandidates.clear();
     await _clearParticipantStreams();
@@ -1514,20 +1521,11 @@ class CallSession {
 
   // #***! после пересборки видео надо опубликовать заново
   Future<void> _republishVideo(RTCPeerConnection pc) async {
-    final camera = _cameraStream;
-    if (camera != null) {
-      final tracks = camera.getVideoTracks();
-      if (tracks.isNotEmpty) {
-        _videoSender = await pc.addTrack(tracks.first, camera);
-      }
-    }
-    final screen = _screenStream;
-    if (screen != null) {
-      final tracks = screen.getVideoTracks();
-      if (tracks.isNotEmpty) {
-        _screenSender = await pc.addTrack(tracks.first, screen);
-      }
-    }
+    final stream = _outgoingVideoStream;
+    final track = _outgoingVideoTrack;
+    if (stream == null || track == null) return;
+    _videoSender = await pc.addTrack(track, stream);
+    await _tuneVideoSenderForScreen();
   }
 
   // #***! сервер сменил топологию
@@ -1886,10 +1884,8 @@ class CallSession {
   String _labelLocalTracks(String sdp) {
     final self = 'u${ws2Config.userId}';
     final names = <String, String>{};
-    final camera = _videoSender?.track?.id;
-    final screen = _screenSender?.track?.id;
-    if (camera != null && camera.isNotEmpty) names[camera] = '$self:sCAMERA';
-    if (screen != null && screen.isNotEmpty) names[screen] = '$self:sSCREEN';
+    final video = _videoSender?.track?.id;
+    if (video != null && video.isNotEmpty) names[video] = '$self:sCAMERA';
     if (names.isEmpty) return sdp;
 
     var out = sdp;
@@ -2217,8 +2213,7 @@ class CallSession {
     logger.i('[call] accept-call sent (activate=$activate)');
     await _signaling?.acceptCall(
       isAudioEnabled: !_muted,
-      isVideoEnabled: _localVideo,
-      isScreenSharingEnabled: _localScreen,
+      isVideoEnabled: _announcesVideo,
     );
     if (activate) _setState(CallSessionState.active);
   }
@@ -2243,9 +2238,24 @@ class CallSession {
   Future<void> _sendMediaSettings() async {
     await _signaling?.changeMediaSettings(
       isAudioEnabled: !_muted,
-      isVideoEnabled: _localVideo,
-      isScreenSharingEnabled: _localScreen,
+      isVideoEnabled: _announcesVideo,
     );
+  }
+
+  OutgoingVideoSource get _outgoingVideo =>
+      outgoingVideoSource(camera: _localVideo, screen: _localScreen);
+
+  bool get _announcesVideo => _outgoingVideo != OutgoingVideoSource.none;
+
+  MediaStream? get _outgoingVideoStream => switch (_outgoingVideo) {
+    OutgoingVideoSource.screen => _screenStream,
+    OutgoingVideoSource.camera => _cameraStream,
+    OutgoingVideoSource.none => null,
+  };
+
+  MediaStreamTrack? get _outgoingVideoTrack {
+    final tracks = _outgoingVideoStream?.getVideoTracks();
+    return tracks == null || tracks.isEmpty ? null : tracks.first;
   }
 
   // #***! камера и демонстрация экрана
@@ -2290,7 +2300,7 @@ class CallSession {
 
     final tracks = stream.getVideoTracks();
     final track = tracks.isEmpty ? null : tracks.first;
-    if (track != null) {
+    if (track != null && !_localScreen) {
       if (_videoSender == null) {
         _videoSender = await pc.addTrack(track, stream);
       } else {
@@ -2306,7 +2316,7 @@ class CallSession {
     if (effectsAvailable && _faceMask != ProMaxMask.none) {
       await setFaceMask(_faceMask);
     }
-    await _renegotiate();
+    if (!_localScreen) await _renegotiate();
     await _sendMediaSettings();
     _notifyInfo();
   }
@@ -2315,9 +2325,11 @@ class CallSession {
     try {
       await setCameraTorch(false);
     } catch (_) {}
-    try {
-      await _videoSender?.replaceTrack(null);
-    } catch (_) {}
+    if (!_localScreen) {
+      try {
+        await _videoSender?.replaceTrack(null);
+      } catch (_) {}
+    }
     await _disposeStream(_cameraStream);
     _cameraStream = null;
     _localVideo = false;
@@ -2359,10 +2371,12 @@ class CallSession {
       return;
     }
     final previous = _cameraStream;
-    if (_videoSender == null) {
-      _videoSender = await pc.addTrack(tracks.first, stream);
-    } else {
-      await _videoSender!.replaceTrack(tracks.first);
+    if (!_localScreen) {
+      if (_videoSender == null) {
+        _videoSender = await pc.addTrack(tracks.first, stream);
+      } else {
+        await _videoSender!.replaceTrack(tracks.first);
+      }
     }
     _cameraStream = stream;
     _cameraDeviceId = nextId;
@@ -2381,49 +2395,147 @@ class CallSession {
 
   // #***! демонстрация экрана, на мобилках нужно своё разрешение
   Future<void> _startScreenShare() async {
-    if (_pc == null) return;
-
-    await CallBridge.instance.setScreenShare(true);
-
-    _localScreen = true;
-    await _sendMediaSettings();
-    _notifyInfo();
-
-    final MediaStream stream;
+    if (_pc == null || _localScreen || _screenBusy) return;
+    _screenBusy = true;
     try {
-      stream = await _captureScreen();
-    } catch (e) {
-      _localScreen = false;
-      await CallBridge.instance.setScreenShare(false);
+      final pipeline = _screenPipeline;
+      final stream = await pipeline.open();
+      final pc = _pc;
+      if (pc == null || _ended || stream.getVideoTracks().isEmpty) {
+        await pipeline.close(() => _disposeStream(stream));
+        if (pc == null || _ended) return;
+        throw const ScreenShareException(ScreenShareFailure.capture);
+      }
+      logger.i('[call] screen captured, topology=$_topology');
+
+      _screenStream = stream;
+      _localScreen = true;
+      try {
+        await _attachOutgoingVideo(pc);
+      } catch (e) {
+        logger.w('[call] screen share publish failed: $e');
+        _localScreen = false;
+        _screenStream = null;
+        await _restoreCameraOnSender();
+        await pipeline.close(() => _disposeStream(stream));
+        _notifyInfo();
+        throw ScreenShareException(ScreenShareFailure.capture, e);
+      }
+
+      logger.i('[call] screen share published, topology=$_topology');
+      _screenShareInterrupted = false;
+      _followAppLifecycleWhileSharing();
       await _sendMediaSettings();
       _notifyInfo();
-      rethrow;
+    } finally {
+      _screenBusy = false;
     }
-    logger.i('[call] screen captured, topology=$_topology');
+  }
 
-    await _disposeStream(_screenStream);
-    _screenStream = stream;
+  bool get screenShareFollowsApp =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
-    final pc = _pc;
-    if (pc == null) return;
+  bool takeScreenShareInterruption() {
+    final interrupted = _screenShareInterrupted;
+    _screenShareInterrupted = false;
+    return interrupted;
+  }
 
-    final tracks = stream.getVideoTracks();
-    final track = tracks.isEmpty ? null : tracks.first;
-    if (track != null) {
-      if (_screenSender == null) {
-        _screenSender = await pc.addTrack(track, stream);
-      } else {
-        await _screenSender!.replaceTrack(track);
+  void _followAppLifecycleWhileSharing() {
+    if (!screenShareFollowsApp) return;
+    _releaseScreenLifecycle();
+    _screenLifecycle = AppLifecycleListener(onHide: _onHiddenWhileSharing);
+  }
+
+  void _releaseScreenLifecycle() {
+    _screenLifecycle?.dispose();
+    _screenLifecycle = null;
+  }
+
+  void _onHiddenWhileSharing() {
+    if (!_localScreen || _screenBusy || _ended) return;
+    logger.i('[call] in-app screen capture stops while ProMax is hidden');
+    _screenShareInterrupted = true;
+    unawaited(Future<void>.microtask(_stopScreenShare));
+  }
+
+  Future<void> screenShareStoppedBySystem() async {
+    if (!_localScreen || _screenBusy) return;
+    logger.i('[call] screen share stopped from the system UI');
+    await _stopScreenShare();
+  }
+
+  ScreenCapturePipeline<MediaStream> get _screenPipeline =>
+      ScreenCapturePipeline<MediaStream>(
+        requestConsent: _requestScreenConsent,
+        setProjectionService: CallBridge.instance.setScreenShare,
+        capture: _captureScreen,
+      );
+
+  Future<bool> _requestScreenConsent() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
+    return Helper.requestCapturePermission(fullScreenOnly: true);
+  }
+
+  Future<void> _attachOutgoingVideo(RTCPeerConnection pc) async {
+    final sender = _videoSender;
+    final stream = _outgoingVideoStream;
+    final track = _outgoingVideoTrack;
+    if (sender != null) {
+      await sender.replaceTrack(track);
+    } else if (stream != null && track != null) {
+      _videoSender = await pc.addTrack(track, stream);
+      await _renegotiate();
+    }
+    await _tuneVideoSenderForScreen();
+  }
+
+  Future<void> _restoreCameraOnSender() async {
+    final sender = _videoSender;
+    if (sender == null) return;
+    try {
+      await sender.replaceTrack(_outgoingVideoTrack);
+    } catch (e) {
+      logger.w('[call] camera restore on video sender failed: $e');
+    }
+    await _setVideoSenderParameters(ScreenShareEncoding.forCamera);
+  }
+
+  Future<void> _tuneVideoSenderForScreen() async {
+    if (!_localScreen) return;
+    final downscale = _screenDownscale();
+    await _setVideoSenderParameters(
+      (current) => ScreenShareEncoding.forScreen(current, downscale: downscale),
+    );
+  }
+
+  Future<void> _setVideoSenderParameters(
+    RTCRtpParameters Function(RTCRtpParameters current) tune,
+  ) async {
+    final sender = _videoSender;
+    if (sender == null) return;
+    try {
+      if (!await sender.setParameters(tune(sender.parameters))) {
+        logger.w('[call] video sender rejected new parameters');
       }
+    } catch (e) {
+      logger.w('[call] video sender setParameters failed: $e');
     }
+  }
 
-    logger.i('[call] screen share published, topology=$_topology');
-    await _renegotiate();
-    await _sendMediaSettings();
-    _notifyInfo();
+  double _screenDownscale() {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return 1.0;
+    final displays = PlatformDispatcher.instance.displays;
+    if (displays.isEmpty) return 1.0;
+    final size = displays.first.size;
+    return ScreenShareEncoding.downscaleFor(
+      size.width.round(),
+      size.height.round(),
+    );
   }
 
   Future<MediaStream> _captureScreen() async {
+    if (screenShareFollowsApp) return _captureAppScreen();
     if (!_isDesktop) {
       return navigator.mediaDevices.getDisplayMedia(<String, dynamic>{
         'video': true,
@@ -2445,14 +2557,62 @@ class CallSession {
     });
   }
 
-  Future<void> _stopScreenShare() async {
+  Future<MediaStream> _captureAppScreen() async {
+    final lifecycle = StreamController<AppLifecycleState>();
+    final listener = AppLifecycleListener(onStateChange: lifecycle.add);
     try {
-      await _screenSender?.replaceTrack(null);
-    } catch (_) {}
-    await _disposeStream(_screenStream);
-    _screenStream = null;
+      final stream = await navigator.mediaDevices.getDisplayMedia(
+        <String, dynamic>{'video': true, 'audio': false},
+      );
+      final outcome = await _firstScreenFrame(stream, lifecycle.stream);
+      logger.i('[call] in-app screen capture check: ${outcome.name}');
+      if (outcome == ScreenFrameOutcome.frame) return stream;
+      await _disposeStream(stream);
+      throw ScreenShareException(
+        outcome == ScreenFrameOutcome.declined
+            ? ScreenShareFailure.denied
+            : ScreenShareFailure.noPicture,
+      );
+    } finally {
+      listener.dispose();
+      unawaited(lifecycle.close());
+    }
+  }
+
+  Future<ScreenFrameOutcome> _firstScreenFrame(
+    MediaStream stream,
+    Stream<AppLifecycleState> lifecycle,
+  ) async {
+    final renderer = RTCVideoRenderer();
+    final frame = Completer<void>();
+    try {
+      await renderer.initialize();
+      renderer.onFirstFrameRendered = () {
+        if (!frame.isCompleted) frame.complete();
+      };
+      await renderer.setSrcObject(stream: stream);
+      return await waitForFirstScreenFrame(
+        firstFrame: frame.future,
+        lifecycle: lifecycle,
+      );
+    } catch (e) {
+      logger.w('[call] in-app screen capture check unavailable: $e');
+      return ScreenFrameOutcome.frame;
+    } finally {
+      try {
+        await renderer.dispose();
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _stopScreenShare() async {
+    final stream = _screenStream;
+    _releaseScreenLifecycle();
+    if (!_localScreen && stream == null) return;
     _localScreen = false;
-    await CallBridge.instance.setScreenShare(false);
+    _screenStream = null;
+    await _restoreCameraOnSender();
+    await _screenPipeline.close(() => _disposeStream(stream));
     await _sendMediaSettings();
     _notifyInfo();
   }
@@ -2554,6 +2714,7 @@ class CallSession {
     await _localStream?.dispose();
     await _disposeMicStream();
     await PulseAudio.closeBridge();
+    _releaseScreenLifecycle();
     await _disposeStream(_cameraStream);
     await _disposeStream(_screenStream);
     _cameraStream = null;
