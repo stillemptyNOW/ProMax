@@ -192,7 +192,7 @@ final class ProMaxLiveConnection: NSObject {
     content.title = data["title"] ?? "ProMax"
     content.body = video ? "Входящий видеозвонок" : "Входящий звонок"
     content.sound = .default
-    if let caller = data["callerId"] { content.userInfo = ["chatId": caller] }
+    if let chat = data["mc"] { content.userInfo = ["chatId": chat] }
     let id = "call-\(data["conversationId"] ?? UUID().uuidString)"
     UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
   }
