@@ -356,7 +356,6 @@ class GlassPreview extends StatelessWidget {
                       liquid: true,
                       borderRadius: BorderRadius.circular(25),
                       frostTint: cs.surface.withValues(alpha: 0.35),
-                      liquidTint: cs.surface.withValues(alpha: 0.12),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Row(

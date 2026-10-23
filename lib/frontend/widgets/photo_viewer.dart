@@ -13,6 +13,7 @@ import '../../backend/modules/messages.dart';
 import '../../backend/modules/shared_content.dart';
 import '../../core/cache/info_cache.dart';
 import '../../core/config/app_frost.dart';
+import '../../core/config/app_liquid_glass.dart';
 import '../../core/utils/download_history.dart';
 import '../../core/utils/format.dart';
 import '../../core/utils/image_format.dart';
@@ -1774,7 +1775,7 @@ class _ViewerGlassSurface extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             frostTint: Colors.black.withValues(alpha: 0.28),
             frostSigma: AppFrost.panelSigma,
-            liquidTint: Colors.black.withValues(alpha: 0.28),
+            role: GlassRole.overlay,
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.12),
               width: 0.5,

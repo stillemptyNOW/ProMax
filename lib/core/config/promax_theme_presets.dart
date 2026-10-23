@@ -16,10 +16,10 @@ class ProMaxThemePreset {
     required this.amoled,
     required this.preview,
     this.blur = 1.0,
-    this.refraction = 12,
-    this.specular = 0.6,
-    this.chroma = 0.06,
-    this.rim = 2.0,
+    this.refraction = 11,
+    this.specular = 1,
+    this.chroma = 0,
+    this.rim = 0.5,
     this.tint = 1.0,
     this.atmosphere,
   });
@@ -50,8 +50,8 @@ class ProMaxThemePresets {
       accent: Color(0xFFE4E4EA),
       amoled: true,
       preview: [Color(0xFF2A2C33), Color(0xFF050506)],
-      tint: 1.2,
-      specular: 0.7,
+      tint: 1.08,
+      specular: 1.2,
     ),
     ProMaxThemePreset(
       id: 'aurora',
@@ -60,8 +60,8 @@ class ProMaxThemePresets {
       accent: Color(0xFF7B5CFF),
       amoled: false,
       preview: [Color(0xFF7B5CFF), Color(0xFF22D3EE)],
-      refraction: 16,
-      chroma: 0.1,
+      refraction: 14,
+      chroma: 0.04,
     ),
     ProMaxThemePreset(
       id: 'sunset',
@@ -70,7 +70,7 @@ class ProMaxThemePresets {
       accent: Color(0xFFFF6B4A),
       amoled: false,
       preview: [Color(0xFFFF7A45), Color(0xFFFF3D8B)],
-      chroma: 0.08,
+      chroma: 0.03,
     ),
     ProMaxThemePreset(
       id: 'ocean',
@@ -79,7 +79,7 @@ class ProMaxThemePresets {
       accent: Color(0xFF1FA2FF),
       amoled: false,
       preview: [Color(0xFF1FA2FF), Color(0xFF12D8FA)],
-      refraction: 15,
+      refraction: 13,
     ),
     ProMaxThemePreset(
       id: 'forest',
@@ -96,9 +96,9 @@ class ProMaxThemePresets {
       accent: Color(0xFF00E5FF),
       amoled: true,
       preview: [Color(0xFF00E5FF), Color(0xFFFF00C8)],
-      specular: 0.85,
-      chroma: 0.14,
-      rim: 2.6,
+      specular: 1.5,
+      chroma: 0.08,
+      rim: 0.8,
     ),
     ProMaxThemePreset(
       id: 'sakura',
@@ -146,7 +146,7 @@ class ProMaxThemePresets {
   }
 
   static const _lookVersionKey = 'promax_glass_look_version';
-  static const _lookVersion = 2;
+  static const _lookVersion = 3;
 
   static Future<void> ensureDefault() async {
     final prefs = await SharedPreferences.getInstance();
@@ -154,7 +154,12 @@ class ProMaxThemePresets {
     await prefs.setInt(_lookVersionKey, _lookVersion);
     if (prefs.containsKey(prefKey) || prefs.containsKey(AppAccent.prefKey)) {
       final chosen = byId(prefs.getString(prefKey));
-      if (outdated && chosen != null) await applyLook(chosen);
+      if (!outdated) return;
+      if (chosen != null) {
+        await applyLook(chosen);
+      } else {
+        await ProMaxGlass.reset();
+      }
       return;
     }
     final preset = all.first;
