@@ -18,6 +18,8 @@ class NetworkWatch {
 
   static bool get supported => !kIsWeb && Platform.isAndroid;
 
+  static final ValueNotifier<bool> offline = ValueNotifier(false);
+
   final Stream<Object?>? _events;
   final Duration debounce;
   StreamSubscription<Object?>? _sub;
@@ -29,7 +31,13 @@ class NetworkWatch {
         _events ?? (supported ? _channel.receiveBroadcastStream() : null);
     if (events == null) return;
     _sub = events.listen((event) {
+      if (event == 'lost') {
+        _pending?.cancel();
+        offline.value = true;
+        return;
+      }
       if (event != 'available') return;
+      offline.value = false;
       _pending?.cancel();
       _pending = Timer(debounce, onNetworkAvailable);
     }, onError: (Object error) => logger.w('NetworkWatch: $error'));
@@ -40,5 +48,6 @@ class NetworkWatch {
     _pending = null;
     _sub?.cancel();
     _sub = null;
+    offline.value = false;
   }
 }

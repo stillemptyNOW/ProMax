@@ -5,7 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:promax/backend/api.dart';
+import 'package:promax/backend/modules/chat_deletion_plan.dart';
 import 'package:promax/backend/modules/chats.dart';
+import 'package:promax/backend/modules/deletion_policy.dart';
 import 'package:promax/backend/modules/messages.dart';
 import 'package:promax/backend/modules/server_outcome.dart';
 import 'package:promax/core/cache/message_session_cache.dart';
@@ -274,98 +276,94 @@ void main() {
   });
 
   group('deleting a dialog for both', () {
-    test('erases the history for both, then removes it only for me', () async {
-      final outcome = await chats.deleteChat(
+    tearDown(DeletionPolicy.instance.forget);
+
+    Packet refusal(int opcode) => Packet(
+      cmd: CmdType.error,
+      opcode: opcode,
+      payload: {'localizedMessage': 'синтетический отказ'},
+    );
+
+    test('sends exactly one CHAT_DELETE with forAll, like MAX', () async {
+      final result = await chats.deleteChat(
         api,
         chatId: _chatId,
         forAll: true,
         accountId: _me,
       );
 
-      expect(outcome.outcome, isA<ServerDone>());
-      expect(outcome.historyErased, isTrue);
-      expect(api.requests.map((r) => r.$1), [
-        Opcode.chatClear,
-        Opcode.chatDelete,
-      ]);
-      final (_, clear) = api.requests.first;
-      final (_, delete) = api.requests.last;
-      expect(clear['chatId'], _chatId);
-      expect(clear['forAll'], isTrue);
-      expect(clear['lastEventTime'], greaterThanOrEqualTo(6000));
-      expect(delete['chatId'], _chatId);
-      expect(delete['forAll'], isFalse);
+      expect(result.ok, isTrue);
+      expect(result.forAll, isTrue);
+      expect(api.requests.map((r) => r.$1), [Opcode.chatDelete]);
+      expect(api.requests.single.$2, {
+        'chatId': _chatId,
+        'lastEventTime': 6000,
+        'forAll': true,
+      });
       expect(await AppDatabase.loadChat(_me, _chatId), isEmpty);
       expect(await storedIds(), isEmpty);
     });
 
-    test('keeps the chat and says why when the server refuses', () async {
-      api.reply = (opcode) => opcode == Opcode.chatClear
-          ? Packet(
-              cmd: CmdType.error,
-              opcode: opcode,
-              payload: {'localizedMessage': 'синтетический отказ'},
-            )
-          : null;
+    test('lastEventTime comes from the chat, never from the clock', () async {
+      ServerClock.sync(
+        DateTime.now().millisecondsSinceEpoch + 5 * 86400 * 1000,
+      );
 
-      final outcome = await chats.deleteChat(
+      await chats.deleteChat(
         api,
         chatId: _chatId,
         forAll: true,
         accountId: _me,
       );
 
-      expect(outcome.historyErased, isFalse);
-      expect(
-        (outcome.outcome as ServerRejected).message,
-        'синтетический отказ',
-      );
-      expect(api.requests.map((r) => r.$1), [Opcode.chatClear]);
-      expect(await AppDatabase.loadChat(_me, _chatId), isNotEmpty);
-      expect(await storedIds(), hasLength(6));
+      expect(api.requests.single.$2['lastEventTime'], 6000);
     });
 
-    test('an erased history with a refused removal keeps the chat', () async {
-      api.reply = (opcode) => opcode == Opcode.chatDelete
-          ? Packet(
-              cmd: CmdType.error,
-              opcode: opcode,
-              payload: {'localizedMessage': 'синтетический отказ'},
-            )
-          : null;
+    test('a newer message the screen saw moves lastEventTime up', () async {
+      await chats.deleteChat(
+        api,
+        chatId: _chatId,
+        forAll: true,
+        seenEventTime: 7000,
+        accountId: _me,
+      );
+
+      expect(api.requests.single.$2['lastEventTime'], 7000);
+    });
+
+    test('without delete-for-all the dialog is deleted only for me', () async {
+      DeletionPolicy.instance.debugSet(accountId: _me, deleteForAll: false);
 
       final result = await chats.deleteChat(
         api,
         chatId: _chatId,
         forAll: true,
         accountId: _me,
-      );
-
-      expect(result.outcome, isA<ServerRejected>());
-      expect(result.historyErased, isTrue);
-      expect(await AppDatabase.loadChat(_me, _chatId), isNotEmpty);
-      expect(await storedIds(), isNot(contains('811')));
-    });
-
-    test('a retry after the erase sends only the removal', () async {
-      final result = await chats.deleteChat(
-        api,
-        chatId: _chatId,
-        forAll: true,
-        accountId: _me,
-        historyErased: true,
       );
 
       expect(result.ok, isTrue);
+      expect(result.forAll, isFalse);
       expect(api.requests.single.$1, Opcode.chatDelete);
       expect(api.requests.single.$2['forAll'], isFalse);
     });
 
-    test('a session change after the erase defers the removal', () async {
-      api.reply = (opcode) {
-        if (opcode == Opcode.chatClear) api.epoch++;
-        return null;
-      };
+    test('a bot keeps its side of the dialog', () async {
+      ContactCache.putOptions(_peer, {'BOT'});
+      addTearDown(() => ContactCache.remove(_peer));
+
+      await chats.deleteChat(
+        api,
+        chatId: _chatId,
+        forAll: true,
+        accountId: _me,
+      );
+
+      expect(api.requests.single.$2['forAll'], isFalse);
+    });
+
+    test('keeps the chat and says why when the server refuses', () async {
+      api.reply = (opcode) =>
+          opcode == Opcode.chatDelete ? refusal(opcode) : null;
 
       final result = await chats.deleteChat(
         api,
@@ -374,10 +372,9 @@ void main() {
         accountId: _me,
       );
 
-      expect(result.outcome, isA<ServerUnreachable>());
-      expect(result.historyErased, isTrue);
-      expect(api.requests.map((r) => r.$1), [Opcode.chatClear]);
+      expect((result.outcome as ServerRejected).message, 'синтетический отказ');
       expect(await AppDatabase.loadChat(_me, _chatId), isNotEmpty);
+      expect(await storedIds(), hasLength(6));
     });
 
     test('another active account gets no request at all', () async {
@@ -392,7 +389,6 @@ void main() {
       );
 
       expect(result.outcome, isA<ServerUnreachable>());
-      expect(result.historyErased, isFalse);
       expect(api.requests, isEmpty);
     });
 
@@ -402,10 +398,15 @@ void main() {
         opcode == Opcode.chatInfo ? {'chats': found} : null;
 
     test(
-      'a chat missing locally is a dialog only if the server says so',
+      'a dialog missing locally takes its type and time from the server',
       () async {
         api.reply = (opcode) => chatInfoReply(opcode, [
-          {'id': unknownChat, 'type': 'DIALOG', 'status': 'ACTIVE'},
+          {
+            'id': unknownChat,
+            'type': 'DIALOG',
+            'status': 'ACTIVE',
+            'lastEventTime': 8000,
+          },
         ]);
 
         final result = await chats.deleteChat(
@@ -418,16 +419,48 @@ void main() {
         expect(result.ok, isTrue);
         expect(api.requests.map((r) => r.$1), [
           Opcode.chatInfo,
-          Opcode.chatClear,
           Opcode.chatDelete,
         ]);
-        expect(api.requests.last.$2['forAll'], isFalse);
+        expect(api.requests.last.$2, {
+          'chatId': unknownChat,
+          'lastEventTime': 8000,
+          'forAll': true,
+        });
       },
     );
 
-    test('a group missing locally is removed for its members', () async {
+    test('only the owner deletes a group for its members', () async {
+      for (final owner in [_me, _peer]) {
+        api.requests.clear();
+        api.reply = (opcode) => chatInfoReply(opcode, [
+          {
+            'id': unknownChat,
+            'type': 'CHAT',
+            'owner': owner,
+            'lastEventTime': 8000,
+          },
+        ]);
+
+        await chats.deleteChat(
+          api,
+          chatId: unknownChat,
+          forAll: true,
+          accountId: _me,
+        );
+
+        expect(api.requests.last.$1, Opcode.chatDelete);
+        expect(api.requests.last.$2['forAll'], owner == _me);
+      }
+    });
+
+    test('a channel goes out without forAll even for its owner', () async {
       api.reply = (opcode) => chatInfoReply(opcode, [
-        {'id': unknownChat, 'type': 'CHAT', 'status': 'ACTIVE'},
+        {
+          'id': unknownChat,
+          'type': 'CHANNEL',
+          'owner': _me,
+          'lastEventTime': 8000,
+        },
       ]);
 
       await chats.deleteChat(
@@ -437,11 +470,8 @@ void main() {
         accountId: _me,
       );
 
-      expect(api.requests.map((r) => r.$1), [
-        Opcode.chatInfo,
-        Opcode.chatDelete,
-      ]);
-      expect(api.requests.last.$2['forAll'], isTrue);
+      expect(api.requests.last.$1, Opcode.chatDelete);
+      expect(api.requests.last.$2['forAll'], isFalse);
     });
 
     test('a chat of unknown type is never deleted for everyone', () async {
@@ -454,9 +484,25 @@ void main() {
         accountId: _me,
       );
 
-      expect(result.typeUnknown, isTrue);
+      expect(result.refusal, ChatDeletionRefusal.typeUnknown);
       expect(result.ok, isFalse);
       expect(api.requests.map((r) => r.$1), [Opcode.chatInfo]);
+    });
+
+    test('without any known event time nothing is sent', () async {
+      api.reply = (opcode) => chatInfoReply(opcode, [
+        {'id': unknownChat, 'type': 'DIALOG', 'status': 'ACTIVE'},
+      ]);
+
+      final result = await chats.deleteChat(
+        api,
+        chatId: unknownChat,
+        forAll: false,
+        accountId: _me,
+      );
+
+      expect(result.refusal, ChatDeletionRefusal.eventTimeUnknown);
+      expect(api.requests.map((r) => r.$1), isNot(contains(Opcode.chatDelete)));
     });
 
     test('only for me sends a single deletion', () async {
@@ -469,6 +515,24 @@ void main() {
 
       expect(api.requests.single.$1, Opcode.chatDelete);
       expect(api.requests.single.$2['forAll'], isFalse);
+    });
+
+    test('clearing for everyone is one CHAT_CLEAR and nothing else', () async {
+      final outcome = await chats.clearHistory(
+        api,
+        chatId: _chatId,
+        forAll: true,
+      );
+
+      expect(outcome, isA<ServerDone>());
+      expect(api.requests.single.$1, Opcode.chatClear);
+      expect(api.requests.single.$2, {
+        'chatId': _chatId,
+        'lastEventTime': 6000,
+        'forAll': true,
+      });
+      expect(await AppDatabase.loadChat(_me, _chatId), isNotEmpty);
+      expect(await storedIds(), isEmpty);
     });
   });
 

@@ -5,48 +5,39 @@ import 'server_outcome.dart';
 
 typedef WipeHistoryPage =
     Future<List<CachedMessage>> Function(int? fromTime, int count);
-typedef WipeDeleteBatch =
-    Future<ServerOutcome> Function(
-      List<String> ids, {
-      required bool forEveryone,
-    });
-typedef WipeChatAction = Future<ServerOutcome> Function(int seenEventTime);
+typedef WipeDeleteForEveryone =
+    Future<MessageDeletionReply> Function(List<String> ids);
+typedef WipeRemoveChat = Future<ServerOutcome> Function(int seenEventTime);
 
 class ChatWipeResult {
   const ChatWipeResult({
     required this.found,
-    required this.ownForBoth,
-    required this.peerForBoth,
-    required this.onlyForMe,
+    required this.eligible,
     required this.deletedIds,
+    required this.notConfirmed,
     required this.historyIncomplete,
     required this.unreachable,
+    required this.removeForAll,
     required this.chatRemoved,
-    this.clearError,
     this.chatError,
   });
 
   final int found;
-  final int ownForBoth;
-  final int peerForBoth;
-  final int onlyForMe;
+  final int eligible;
   final List<String> deletedIds;
+  final int notConfirmed;
   final bool historyIncomplete;
   final bool unreachable;
+  final bool removeForAll;
   final bool chatRemoved;
-  final String? clearError;
   final String? chatError;
 
-  int get deletedForBoth => ownForBoth + peerForBoth;
+  int get deletedForPeer => deletedIds.length;
 
-  int get notDeleted => found - deletedForBoth - onlyForMe;
+  int get keptForPeer => found - eligible;
 
   bool get complete =>
-      chatRemoved &&
-      !historyIncomplete &&
-      onlyForMe == 0 &&
-      notDeleted == 0 &&
-      clearError == null;
+      chatRemoved && !historyIncomplete && !unreachable && notConfirmed == 0;
 }
 
 class ChatWipe {
@@ -55,33 +46,25 @@ class ChatWipe {
   static const int maxPages = 2000;
 
   static Future<ChatWipeResult> run({
-    required int myId,
     required WipeHistoryPage fetchPage,
-    required WipeDeleteBatch deleteBatch,
-    required WipeChatAction clearForAll,
-    required WipeChatAction removeChat,
-    void Function(int scanned, int deleted)? onProgress,
+    required bool Function(CachedMessage message) deletableForEveryone,
+    required WipeDeleteForEveryone deleteForEveryone,
+    required WipeRemoveChat removeChat,
+    required bool removeForAll,
+    void Function(int total, int deleted)? onProgress,
   }) async {
-    final wipe = _Wipe(deleteBatch, onProgress);
-    final scan = await _scan(myId, fetchPage, wipe, onProgress);
+    final wipe = _Wipe(deleteForEveryone, onProgress);
+    final scan = await _scan(fetchPage, wipe, onProgress);
+    final eligible = [
+      for (final message in scan.messages)
+        if (deletableForEveryone(message)) message.id,
+    ];
 
-    wipe.total = scan.own.length + scan.peer.length;
-    await wipe.deleteOwn(scan.own);
-    await wipe.deletePeer(scan.peer);
+    wipe.total = eligible.length;
+    await wipe.deleteAll(eligible);
 
-    String? clearError;
     String? chatError;
     var chatRemoved = false;
-    if (!wipe.unreachable) {
-      switch (await _guard(() => clearForAll(scan.newest))) {
-        case ServerDone():
-          break;
-        case ServerRejected(:final message):
-          clearError = message;
-        case ServerUnreachable():
-          wipe.unreachable = true;
-      }
-    }
     if (!wipe.unreachable) {
       switch (await _guard(() => removeChat(scan.newest))) {
         case ServerDone():
@@ -94,31 +77,26 @@ class ChatWipe {
     }
 
     return ChatWipeResult(
-      found: scan.own.length + scan.peer.length,
-      ownForBoth: scan.own.where(wipe.forBoth.contains).length,
-      peerForBoth: scan.peer.where(wipe.forBoth.contains).length,
-      onlyForMe: wipe.forMe.length,
-      deletedIds: [...wipe.forBoth, ...wipe.forMe],
+      found: scan.messages.length,
+      eligible: eligible.length,
+      deletedIds: wipe.deleted.toList(),
+      notConfirmed: wipe.refused.length,
       historyIncomplete: scan.incomplete,
       unreachable: wipe.unreachable,
+      removeForAll: removeForAll,
       chatRemoved: chatRemoved,
-      clearError: clearError,
       chatError: chatError,
     );
   }
 
-  static Future<
-    ({List<String> own, List<String> peer, int newest, bool incomplete})
-  >
+  static Future<({List<CachedMessage> messages, int newest, bool incomplete})>
   _scan(
-    int myId,
     WipeHistoryPage fetchPage,
     _Wipe wipe,
-    void Function(int scanned, int deleted)? onProgress,
+    void Function(int total, int deleted)? onProgress,
   ) async {
     final seen = <String>{};
-    final own = <String>[];
-    final peer = <String>[];
+    final messages = <CachedMessage>[];
     var newest = 0;
     var incomplete = false;
     int? cursor;
@@ -142,13 +120,13 @@ class ChatWipe {
         if (!seen.add(message.id)) continue;
         added++;
         if (message.isControl || message.deleted) continue;
-        (message.senderId == myId ? own : peer).add(message.id);
+        messages.add(message);
       }
-      onProgress?.call(own.length + peer.length, 0);
+      onProgress?.call(messages.length, 0);
       if (added == 0 || oldest == null) break;
       cursor = oldest;
     }
-    return (own: own, peer: peer, newest: newest, incomplete: incomplete);
+    return (messages: messages, newest: newest, incomplete: incomplete);
   }
 
   static Future<ServerOutcome> _guard(
@@ -163,118 +141,52 @@ class ChatWipe {
 }
 
 class _Wipe {
-  _Wipe(this._deleteBatch, this._onProgress);
+  _Wipe(this._delete, this._onProgress);
 
-  final WipeDeleteBatch _deleteBatch;
-  final void Function(int scanned, int deleted)? _onProgress;
-  final Set<String> forBoth = {};
-  final Set<String> forMe = {};
+  final WipeDeleteForEveryone _delete;
+  final void Function(int total, int deleted)? _onProgress;
+  final Set<String> deleted = {};
+  final Set<String> refused = {};
   int total = 0;
   int _chunkSize = ChatWipe.batchSize;
-  bool? _peerForBothAllowed;
   bool unreachable = false;
 
-  Future<void> deleteOwn(List<String> ids) async {
-    final refused = await _deleteAll(ids, forEveryone: true);
-    await _deleteAll(refused, forEveryone: false);
-  }
-
-  Future<void> deletePeer(List<String> ids) async {
-    final refused = <String>[];
-    for (final chunk in _chunks(ids)) {
-      if (unreachable) return;
-      refused.addAll(await _deletePeerChunk(chunk));
-    }
-    await _deleteAll(refused, forEveryone: false);
-  }
-
-  Future<List<String>> _deletePeerChunk(List<String> chunk) async {
-    if (_peerForBothAllowed == false) return chunk;
-    if (_peerForBothAllowed == true) {
-      return _deleteChunk(chunk, forEveryone: true);
-    }
-    final probe = await _deleteChunk([chunk.first], forEveryone: true);
-    if (unreachable) return const [];
-    if (probe.isNotEmpty) {
-      _peerForBothAllowed = false;
-      return chunk;
-    }
-    _peerForBothAllowed = true;
-    if (chunk.length == 1) return const [];
-    return _deleteChunk(chunk.sublist(1), forEveryone: true);
-  }
-
-  Future<List<String>> _deleteAll(
-    List<String> ids, {
-    required bool forEveryone,
-  }) async {
-    final refused = <String>[];
-    for (final chunk in _chunks(ids)) {
-      if (unreachable) break;
-      refused.addAll(await _deleteChunk(chunk, forEveryone: forEveryone));
-    }
-    return refused;
-  }
-
-  Iterable<List<String>> _chunks(List<String> ids) sync* {
+  Future<void> deleteAll(List<String> ids) async {
     var start = 0;
-    while (start < ids.length) {
+    while (start < ids.length && !unreachable) {
       final end = math.min(start + _chunkSize, ids.length);
-      yield ids.sublist(start, end);
+      await _deleteChunk(ids.sublist(start, end));
       start = end;
     }
   }
 
-  Future<List<String>> _deleteChunk(
-    List<String> chunk, {
-    required bool forEveryone,
-  }) async {
-    if (unreachable || chunk.isEmpty) return const [];
-    final ServerOutcome outcome;
+  Future<void> _deleteChunk(List<String> chunk) async {
+    if (unreachable || chunk.isEmpty) return;
+    MessageDeletionReply reply;
     try {
-      outcome = await _deleteBatch(chunk, forEveryone: forEveryone);
+      reply = await _delete(chunk);
     } catch (e) {
-      return _settle(chunk, outcomeOfError(e), forEveryone: forEveryone);
+      reply = MessageDeletionReply(outcomeOfError(e));
     }
-    return _settle(chunk, outcome, forEveryone: forEveryone);
-  }
-
-  Future<List<String>> _settle(
-    List<String> chunk,
-    ServerOutcome outcome, {
-    required bool forEveryone,
-  }) async {
-    switch (outcome) {
+    switch (reply.outcome) {
       case ServerDone():
-        _record(chunk, forEveryone: forEveryone);
-        return const [];
+        final unconfirmed = reply.unconfirmedOf(chunk);
+        deleted.addAll(chunk.where((id) => !unconfirmed.contains(id)));
+        refused.addAll(unconfirmed);
+        _onProgress?.call(total, deleted.length);
       case ServerUnreachable():
         unreachable = true;
-        return const [];
       case ServerRejected(:final notFound) when chunk.length == 1:
-        if (notFound) {
-          _record(chunk, forEveryone: forEveryone);
-          return const [];
-        }
-        return chunk;
+        (notFound ? deleted : refused).addAll(chunk);
+        _onProgress?.call(total, deleted.length);
       case ServerRejected():
         final half = chunk.length ~/ 2;
-        final refused = [
-          ...await _deleteChunk(
-            chunk.sublist(0, half),
-            forEveryone: forEveryone,
-          ),
-          ...await _deleteChunk(chunk.sublist(half), forEveryone: forEveryone),
-        ];
-        if (refused.isEmpty && !unreachable) {
+        final refusedBefore = refused.length;
+        await _deleteChunk(chunk.sublist(0, half));
+        await _deleteChunk(chunk.sublist(half));
+        if (refused.length == refusedBefore && !unreachable) {
           _chunkSize = math.max(1, math.min(_chunkSize, half));
         }
-        return refused;
     }
-  }
-
-  void _record(List<String> ids, {required bool forEveryone}) {
-    (forEveryone ? forBoth : forMe).addAll(ids);
-    _onProgress?.call(total, forBoth.length + forMe.length);
   }
 }

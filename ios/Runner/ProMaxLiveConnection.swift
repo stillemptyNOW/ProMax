@@ -6,6 +6,8 @@ import UserNotifications
 final class ProMaxLiveConnection: NSObject {
   static let shared = ProMaxLiveConnection()
 
+  private static let keepAliveBufferDuration: TimeInterval = 0.5
+
   private let enabledKey = "promax_live_connection"
   private var engine: AVAudioEngine?
   private var player: AVAudioPlayerNode?
@@ -114,12 +116,14 @@ final class ProMaxLiveConnection: NSObject {
     do {
       let session = AVAudioSession.sharedInstance()
       try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+      try? session.setPreferredIOBufferDuration(Self.keepAliveBufferDuration)
       try session.setActive(true, options: [])
       let engine = AVAudioEngine()
       let player = AVAudioPlayerNode()
-      let format = engine.mainMixerNode.outputFormat(forBus: 0)
-      guard format.sampleRate > 0,
-            let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(format.sampleRate)) else { return }
+      let rate = engine.mainMixerNode.outputFormat(forBus: 0).sampleRate
+      guard rate > 0,
+            let format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 1),
+            let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(rate * 4)) else { return }
       buffer.frameLength = buffer.frameCapacity
       engine.attach(player)
       engine.connect(player, to: engine.mainMixerNode, format: format)

@@ -28,115 +28,102 @@ WipeHistoryPage _pagesOf(
   };
 }
 
+bool _mine(CachedMessage message) => message.senderId == _me;
+
+Future<MessageDeletionReply> _confirmAll(List<String> ids) async =>
+    MessageDeletionReply(const ServerDone(), confirmed: ids.toSet());
+
 Future<ServerOutcome> _done(int seen) async => const ServerDone();
 
-bool _isPeer(String id) => int.parse(id).isOdd;
-
 void main() {
-  test('walks every page even when the server returns short pages', () async {
+  test('walks every page and deletes only eligible messages', () async {
     final history = [
       for (var i = 0; i < 250; i++) _message(i, i.isEven ? _me : _peer),
     ];
     final deleted = <String>{};
-    var seenByClear = 0;
-    var seenByDelete = 0;
+    var seenByRemoval = 0;
     final result = await ChatWipe.run(
-      myId: _me,
       fetchPage: _pagesOf(history, serverLimit: 40),
-      deleteBatch: (ids, {required forEveryone}) async {
-        expect(forEveryone, isTrue);
+      deletableForEveryone: _mine,
+      deleteForEveryone: (ids) {
         deleted.addAll(ids);
-        return const ServerDone();
-      },
-      clearForAll: (seen) async {
-        seenByClear = seen;
-        return const ServerDone();
+        return _confirmAll(ids);
       },
       removeChat: (seen) async {
-        seenByDelete = seen;
+        seenByRemoval = seen;
         return const ServerDone();
       },
+      removeForAll: true,
     );
+
     expect(result.found, 250);
-    expect(result.ownForBoth, 125);
-    expect(result.peerForBoth, 125);
-    expect(result.onlyForMe, 0);
+    expect(result.eligible, 125);
+    expect(result.deletedForPeer, 125);
+    expect(result.keptForPeer, 125);
+    expect(result.notConfirmed, 0);
     expect(result.complete, isTrue);
-    expect(deleted.length, 250);
-    expect(seenByClear, history.last.time);
-    expect(seenByDelete, history.last.time);
+    expect(deleted, {
+      for (final m in history)
+        if (m.senderId == _me) m.id,
+    });
+    expect(seenByRemoval, history.last.time);
   });
 
   test(
-    'peer messages refused with PacketError are deleted only for me',
+    'messages the server leaves out of messageIds are not counted',
     () async {
-      final history = [
-        for (var i = 0; i < 12; i++) _message(i, i.isOdd ? _peer : _me),
-      ];
-      final calls = <({List<String> ids, bool forEveryone})>[];
+      final history = [for (var i = 0; i < 6; i++) _message(i, _me)];
       final result = await ChatWipe.run(
-        myId: _me,
         fetchPage: _pagesOf(history),
-        deleteBatch: (ids, {required forEveryone}) async {
-          calls.add((ids: ids, forEveryone: forEveryone));
-          if (forEveryone && ids.any(_isPeer)) {
-            throw const PacketError(
-              'Нельзя удалить чужое сообщение',
-              errorKey: 'error.message.delete',
-            );
-          }
-          return const ServerDone();
-        },
-        clearForAll: _done,
+        deletableForEveryone: _mine,
+        deleteForEveryone: (ids) async => MessageDeletionReply(
+          const ServerDone(),
+          confirmed: ids.take(4).toSet(),
+        ),
         removeChat: _done,
+        removeForAll: false,
       );
-      expect(result.found, 12);
-      expect(result.ownForBoth, 6);
-      expect(result.peerForBoth, 0);
-      expect(result.onlyForMe, 6);
-      expect(result.notDeleted, 0);
-      expect(result.chatRemoved, isTrue);
+
+      expect(result.deletedForPeer, 4);
+      expect(result.notConfirmed, 2);
       expect(result.complete, isFalse);
-      final ownCalls = calls.where((c) => !c.ids.any(_isPeer));
-      expect(ownCalls.every((c) => c.forEveryone), isTrue);
-      expect(calls.where((c) => c.forEveryone && c.ids.any(_isPeer)).length, 1);
-      expect(result.deletedIds.toSet(), history.map((m) => m.id).toSet());
+      expect(result.deletedIds, hasLength(4));
     },
   );
 
-  test('peer messages the server accepts count as deleted for both', () async {
-    final history = [
-      for (var i = 0; i < 6; i++) _message(i, i < 2 ? _me : _peer),
-    ];
+  test('an OK without messageIds confirms nothing', () async {
+    final history = [for (var i = 0; i < 3; i++) _message(i, _me)];
     final result = await ChatWipe.run(
-      myId: _me,
       fetchPage: _pagesOf(history),
-      deleteBatch: (ids, {required forEveryone}) async => const ServerDone(),
-      clearForAll: _done,
+      deletableForEveryone: _mine,
+      deleteForEveryone: (ids) async =>
+          MessageDeletionReply.fromPacket(Packet(cmd: CmdType.ok, payload: {})),
       removeChat: _done,
+      removeForAll: false,
     );
-    expect(result.ownForBoth, 2);
-    expect(result.peerForBoth, 4);
-    expect(result.complete, isTrue);
+
+    expect(result.deletedForPeer, 0);
+    expect(result.notConfirmed, 3);
   });
 
   test('a batch above the server limit is split instead of dropped', () async {
     final history = [for (var i = 0; i < 230; i++) _message(i, _me)];
     final sizes = <int>[];
     final result = await ChatWipe.run(
-      myId: _me,
       fetchPage: _pagesOf(history),
-      deleteBatch: (ids, {required forEveryone}) async {
+      deletableForEveryone: _mine,
+      deleteForEveryone: (ids) {
         sizes.add(ids.length);
         if (ids.length > 30) {
           throw const PacketError('Слишком много сообщений');
         }
-        return const ServerDone();
+        return _confirmAll(ids);
       },
-      clearForAll: _done,
       removeChat: _done,
+      removeForAll: true,
     );
-    expect(result.ownForBoth, 230);
+
+    expect(result.deletedForPeer, 230);
     expect(result.complete, isTrue);
     expect(sizes.last, lessThanOrEqualTo(30));
     expect(sizes.where((size) => size > 30).length, lessThan(4));
@@ -144,25 +131,22 @@ void main() {
 
   test('a dropped connection stops the wipe and keeps the chat', () async {
     final history = [for (var i = 0; i < 6; i++) _message(i, _me)];
-    var finished = false;
+    var removed = false;
     final result = await ChatWipe.run(
-      myId: _me,
       fetchPage: _pagesOf(history),
-      deleteBatch: (ids, {required forEveryone}) async =>
-          throw StateError('Нет соединения'),
-      clearForAll: (seen) async {
-        finished = true;
-        return const ServerDone();
-      },
+      deletableForEveryone: _mine,
+      deleteForEveryone: (ids) async => throw StateError('Нет соединения'),
       removeChat: (seen) async {
-        finished = true;
+        removed = true;
         return const ServerDone();
       },
+      removeForAll: true,
     );
+
     expect(result.unreachable, isTrue);
     expect(result.chatRemoved, isFalse);
-    expect(result.notDeleted, 6);
-    expect(finished, isFalse);
+    expect(result.deletedForPeer, 0);
+    expect(removed, isFalse);
   });
 
   test('a history error keeps what was found and reports it', () async {
@@ -170,32 +154,32 @@ void main() {
     final pages = _pagesOf(history);
     var page = 0;
     final result = await ChatWipe.run(
-      myId: _me,
       fetchPage: (from, count) async {
         if (page++ > 0) throw const PacketError('История недоступна');
         return pages(from, count);
       },
-      deleteBatch: (ids, {required forEveryone}) async => const ServerDone(),
-      clearForAll: _done,
+      deletableForEveryone: _mine,
+      deleteForEveryone: _confirmAll,
       removeChat: _done,
+      removeForAll: true,
     );
+
     expect(result.found, 100);
     expect(result.historyIncomplete, isTrue);
-    expect(result.ownForBoth, 100);
+    expect(result.deletedForPeer, 100);
     expect(result.complete, isFalse);
   });
 
-  test('clear and delete refusals are reported separately', () async {
+  test('a refused chat removal is reported with its reason', () async {
     final result = await ChatWipe.run(
-      myId: _me,
       fetchPage: (from, count) async => const [],
-      deleteBatch: (ids, {required forEveryone}) async => const ServerDone(),
-      clearForAll: (seen) async =>
-          const ServerRejected('чат не найден', notFound: true),
+      deletableForEveryone: _mine,
+      deleteForEveryone: _confirmAll,
       removeChat: (seen) async => const ServerRejected('нет доступа'),
+      removeForAll: false,
     );
+
     expect(result.found, 0);
-    expect(result.clearError, 'чат не найден');
     expect(result.chatError, 'нет доступа');
     expect(result.chatRemoved, isFalse);
   });
@@ -224,5 +208,20 @@ void main() {
 
     final ok = await runServerAction(() async => Packet(cmd: CmdType.ok));
     expect(ok, isA<ServerDone>());
+  });
+
+  test('confirmed ids are read from the MSG_DELETE answer', () {
+    final reply = MessageDeletionReply.fromPacket(
+      Packet(
+        cmd: CmdType.ok,
+        payload: {
+          'chatId': 77,
+          'messageIds': [1001, 1003],
+        },
+      ),
+    );
+
+    expect(reply.confirmed, {'1001', '1003'});
+    expect(reply.unconfirmedOf(['1001', '1002', '1003', 'temp_1']), ['1002']);
   });
 }

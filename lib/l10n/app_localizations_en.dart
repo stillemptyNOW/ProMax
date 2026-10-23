@@ -2693,7 +2693,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Oops! The server didn\'t send your profile. Trying to regenerate…';
 
   @override
-  String get profilePhoneRegenFailed => 'Phone number has not loaded yet';
+  String get profilePhoneRegenFailed =>
+      'MAX did not send your number — tap to enter it';
 
   @override
   String get addContactTitle => 'Add contact';
@@ -4237,20 +4238,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deleteMessagesPeerFallbackNote =>
-      'The other person\'s messages will be deleted for both of you if the server allows it, otherwise only for you.';
-
-  @override
-  String deleteMessagesOthersOnlyForMe(int count) {
-    return 'Other people\'s messages ($count) will be deleted only for you.';
-  }
-
-  @override
-  String deleteMessagesKeptForPeer(int count) {
-    return 'The server didn\'t let you delete $count of the other person\'s messages for both — they were deleted only for you';
-  }
-
-  @override
   String deleteMessagesFailedWithReason(String reason) {
     return 'Couldn\'t delete messages: $reason';
   }
@@ -4269,17 +4256,159 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serverUnreachable => 'No connection to the server';
 
   @override
+  String deleteMessagesAlreadyGone(int count) {
+    return 'MAX says these messages no longer exist: $count';
+  }
+
+  @override
   String get deletionStillPending =>
       'The deletion hasn\'t reached the server yet, ProMax will retry';
 
   @override
-  String deleteChatErasedOnly(String reason) {
-    return 'The history was erased for both of you, but the chat wasn\'t removed: $reason';
+  String get deleteChatTypeUnknown =>
+      'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again';
+
+  @override
+  String get chatForAllNotAllowedHint =>
+      'The MAX server doesn\'t allow deleting this chat for the other person, so it will be deleted only for you.';
+
+  @override
+  String get chatListForAllNotAllowedHint =>
+      'The MAX server doesn\'t allow deleting some of these chats for the other person, so they will be deleted only for you.';
+
+  @override
+  String get chatClearAlsoForPeer =>
+      'Also erase the history for the other person';
+
+  @override
+  String get chatDeleteForAllMembers => 'Delete for all members';
+
+  @override
+  String get chatTypeUnknownForAll =>
+      'Couldn\'t tell whether this is a personal chat or a group, so nothing was done for everyone. Try again';
+
+  @override
+  String get chatEventTimeUnknown =>
+      'The request wasn\'t sent: the time of the chat\'s last event is unknown. Refresh the chat and try again';
+
+  @override
+  String get deleteChatForAllAccepted =>
+      'MAX accepted the request to delete the chat for everyone';
+
+  @override
+  String deleteMessagesConfirmedForAll(int count) {
+    return 'MAX confirmed deleting for everyone: $count';
   }
 
   @override
-  String get deleteChatTypeUnknown =>
-      'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again';
+  String deleteMessagesNotConfirmedForAll(int count) {
+    return 'MAX didn\'t delete $count messages for everyone. They are still in the chat';
+  }
+
+  @override
+  String deleteMessagesNotConfirmed(int count) {
+    return 'MAX didn\'t confirm deleting $count messages. They are still in the chat';
+  }
+
+  @override
+  String get deleteMessagesPeerOnlyForMe =>
+      'MAX deletes the other person\'s messages only for you';
+
+  @override
+  String get deleteMessagesOthersOnlyForMe =>
+      'MAX deletes other people\'s messages only for you';
+
+  @override
+  String deleteMessagesTooOldForPeer(String age) {
+    return 'Only your own messages younger than $age can be deleted for the other person — a MAX server limit';
+  }
+
+  @override
+  String deleteMessagesTooOldForAll(String age) {
+    return 'Only your own messages younger than $age can be deleted for everyone — a MAX server limit';
+  }
+
+  @override
+  String get deleteMessagesScheduledOnlyForMe =>
+      'Scheduled messages are deleted for everyone only from the scheduled list';
+
+  @override
+  String get deleteMessagesSelectionOnlyForMe =>
+      'So the selected messages will be deleted only for you';
+
+  @override
+  String deletionAgeLimitDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '$count day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deletionAgeLimitHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours',
+      one: '$count hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deletionAgeLimitMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes',
+      one: '$count minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wipeForBothMessage(String age) {
+    return 'ProMax will delete your messages younger than $age for the other person and then ask MAX to delete the chat for both of you. This can\'t be undone.';
+  }
+
+  @override
+  String get wipeOwnForPeerTitle => 'Delete my messages for the other person?';
+
+  @override
+  String get wipeOwnForPeerAction => 'Delete mine for the other person';
+
+  @override
+  String wipeOwnForPeerMessage(String age) {
+    return 'The MAX server doesn\'t allow deleting this chat for the other person. ProMax will delete your messages younger than $age for them; the rest of the history stays with them and the chat is deleted only for you. This can\'t be undone.';
+  }
+
+  @override
+  String wipeSummaryForPeer(int count) {
+    return 'Your messages deleted for the other person: $count';
+  }
+
+  @override
+  String wipeSummaryNotConfirmed(int count) {
+    return 'MAX didn\'t delete for the other person: $count';
+  }
+
+  @override
+  String wipeSummaryKeptForPeer(int count, String age) {
+    return 'Left with the other person (their messages and yours older than $age): $count';
+  }
+
+  @override
+  String get wipeSummaryChatForAllAccepted =>
+      'MAX accepted the request to delete the chat for both of you';
+
+  @override
+  String get wipeSummaryChatRemovedForMe => 'The chat was deleted only for you';
+
+  @override
+  String get infoDeleteForAll => 'delete-for-all';
 
   @override
   String get chatActionProfileUnavailable =>
@@ -4287,17 +4416,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatDeleteAlsoForPeer =>
-      'Also erase the history for the other person';
+      'Also delete the chat for the other person — the history disappears for them too';
 
   @override
   String get wipeForBothAction => 'Delete for both';
 
   @override
   String get wipeForBothTitle => 'Delete for both?';
-
-  @override
-  String get wipeForBothMessage =>
-      'ProMax will delete every message in this chat for you and the other person, then remove the chat from your list. The other person keeps an empty chat. This can\'t be undone.';
 
   @override
   String get wipeCollecting => 'Collecting the history…';
@@ -4313,21 +4438,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String wipeSummaryForBoth(int count) {
-    return 'Deleted for both: $count';
-  }
-
-  @override
-  String wipeSummaryOnlyForMe(int count) {
-    return 'Deleted only for you (the server refused to delete them for the other person): $count';
-  }
-
-  @override
-  String wipeSummaryNotDeleted(int count) {
-    return 'Not deleted: $count';
-  }
-
-  @override
   String get wipeSummaryHistoryIncomplete =>
       'The server didn\'t return the whole history';
 
@@ -4338,11 +4448,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String wipeSummaryChatKept(String reason) {
     return 'The chat wasn\'t deleted: $reason';
-  }
-
-  @override
-  String wipeSummaryClearFailed(String reason) {
-    return 'The history wasn\'t cleared for both: $reason';
   }
 
   @override
@@ -4682,6 +4787,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String callScreenShareFailed(String error) {
     return 'Screen sharing didn\'t start: $error';
   }
+
+  @override
+  String get callScreenShareAction => 'Screen';
+
+  @override
+  String get callScreenShareStopAction => 'Stop sharing';
+
+  @override
+  String get callScreenShareHint =>
+      'Show your screen to the other side instead of the camera';
+
+  @override
+  String get callScreenShareStarted =>
+      'The other side now sees your screen instead of the camera';
+
+  @override
+  String get callScreenShareDenied => 'Screen sharing wasn\'t allowed';
+
+  @override
+  String get callScreenShareServiceFailed =>
+      'Android didn\'t allow screen sharing during the call';
+
+  @override
+  String get callScreenShareStartedInApp =>
+      'The other side sees the ProMax screen. Sharing stops if you leave the app';
+
+  @override
+  String get callScreenShareNoPicture =>
+      'iOS didn\'t start recording the screen. Try again';
+
+  @override
+  String get callScreenShareStoppedInBackground =>
+      'Screen sharing stopped: iOS only shares ProMax itself, and the app was in the background';
 
   @override
   String get themeSettingsCustomizeAction => 'Customize';
@@ -6855,13 +6993,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proMaxMaskNone => 'None';
 
   @override
-  String get proMaxMaskGlasses => 'Glasses';
+  String get proMaxMaskSunglasses => 'Sunglasses';
 
   @override
-  String get proMaxMaskVisor => 'Neon visor';
+  String get proMaxMaskGoggles => 'Goggles';
+
+  @override
+  String get proMaxMaskHeartEyes => 'Heart eyes';
+
+  @override
+  String get proMaxMaskCrown => 'Crown';
+
+  @override
+  String get proMaxMaskTopHat => 'Top hat';
+
+  @override
+  String get proMaxMaskPigNose => 'Pig snout';
+
+  @override
+  String get proMaxMaskMustache => 'Mustache';
 
   @override
   String get proMaxMaskCat => 'Cat';
+
+  @override
+  String get proMaxMaskFox => 'Fox';
+
+  @override
+  String get proMaxMaskPanda => 'Panda';
+
+  @override
+  String get proMaxMaskAlien => 'Alien';
+
+  @override
+  String get proMaxMaskRobot => 'Robot';
 
   @override
   String get proMaxEffectFailed => 'Could not enable effect';
@@ -7457,4 +7622,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatStatsSyncAll => 'Load the whole history from the server';
+
+  @override
+  String get profilePhoneManualTitle => 'Your number';
+
+  @override
+  String get profilePhoneManualHint =>
+      'MAX did not send this account\'s number. Enter it; it is stored on this device only.';
+
+  @override
+  String get profilePhoneManualSave => 'Save';
+
+  @override
+  String get profilePhoneManualInvalid =>
+      'That does not look like a phone number';
 }

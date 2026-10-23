@@ -1,70 +1,71 @@
+import 'deletion_policy.dart';
 import 'server_outcome.dart';
 
-final class ChatDeletionResult {
-  const ChatDeletionResult(this.outcome, {this.historyErased = false})
-    : typeUnknown = false;
+enum ChatDeletionRefusal {
+  typeUnknown('promax.chat.type-unknown'),
+  eventTimeUnknown('promax.chat.event-time-unknown');
 
-  const ChatDeletionResult.typeUnknown()
-    : outcome = const ServerRejected('chat type unknown'),
-      historyErased = false,
-      typeUnknown = true;
+  const ChatDeletionRefusal(this.errorKey);
+
+  final String errorKey;
+
+  ServerRejected get outcome =>
+      ServerRejected('запрос не отправлен: $name', errorKey: errorKey);
+
+  static ChatDeletionRefusal? of(ServerOutcome outcome) => switch (outcome) {
+    ServerRejected(:final errorKey?) =>
+      values.where((refusal) => refusal.errorKey == errorKey).firstOrNull,
+    _ => null,
+  };
+}
+
+final class ChatDeletionResult {
+  const ChatDeletionResult(this.outcome, {this.forAll = false});
+
+  ChatDeletionResult.refused(ChatDeletionRefusal refusal)
+    : outcome = refusal.outcome,
+      forAll = false;
 
   final ServerOutcome outcome;
-  final bool historyErased;
-  final bool typeUnknown;
+  final bool forAll;
+
+  ChatDeletionRefusal? get refusal => ChatDeletionRefusal.of(outcome);
 
   bool get ok => outcome.ok;
 }
 
 class ChatDeletionPlan {
-  const ChatDeletionPlan._({
-    required this.clearForAll,
-    required this.deleteForAll,
-  });
+  const ChatDeletionPlan._(this.forAll);
 
-  static const forMe = ChatDeletionPlan._(
-    clearForAll: false,
-    deleteForAll: false,
-  );
-  static const eraseForPeer = ChatDeletionPlan._(
-    clearForAll: true,
-    deleteForAll: false,
-  );
-  static const removeForMembers = ChatDeletionPlan._(
-    clearForAll: false,
-    deleteForAll: true,
-  );
+  static const forMe = ChatDeletionPlan._(false);
+  static const forEveryone = ChatDeletionPlan._(true);
 
-  final bool clearForAll;
-  final bool deleteForAll;
+  final bool forAll;
 
   static ChatDeletionPlan? of({
-    required String? chatType,
     required bool forAll,
+    required int chatId,
+    required String? chatType,
+    required int? owner,
+    required int myId,
+    required bool peerIsBot,
+    required bool? deleteForAll,
   }) {
-    if (!forAll) return forMe;
-    return switch (chatType) {
-      null => null,
-      'DIALOG' => eraseForPeer,
-      _ => removeForMembers,
-    };
+    if (!forAll || chatId == 0) return forMe;
+    if (chatType == null) return null;
+    final allowed = chatForAllAllowed(
+      chatId: chatId,
+      chatType: chatType,
+      owner: owner,
+      myId: myId,
+      peerIsBot: peerIsBot,
+      deleteForAll: deleteForAll,
+    );
+    return allowed ? forEveryone : forMe;
   }
 
-  Future<ChatDeletionResult> run({
-    required Future<ServerOutcome> Function() clearHistoryForAll,
-    required Future<ServerOutcome> Function({required bool forAll}) deleteChat,
-    bool historyErased = false,
-  }) async {
-    final eraseNow = clearForAll && !historyErased;
-    if (eraseNow) {
-      final cleared = await clearHistoryForAll();
-      if (cleared is! ServerDone) return ChatDeletionResult(cleared);
-    }
-    final deleted = await deleteChat(forAll: deleteForAll);
-    final gone = clearForAll && deleted is ServerRejected && deleted.notFound;
-    return ChatDeletionResult(
-      gone ? const ServerDone() : deleted,
-      historyErased: clearForAll,
-    );
-  }
+  Map<String, Object> payload({
+    required int chatId,
+    required int lastEventTime,
+  }) => {'chatId': chatId, 'lastEventTime': lastEventTime, 'forAll': forAll};
 }

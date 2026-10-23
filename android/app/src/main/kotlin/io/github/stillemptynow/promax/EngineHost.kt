@@ -81,6 +81,7 @@ object EngineHost {
         ChatNotifications.attach(messenger, app)
         CallChannel.attach(messenger, app)
         ShareIntake.attach(messenger, app)
+        NetworkEvents.attach(messenger, app)
         target.addEngineLifecycleListener(object : FlutterEngine.EngineLifecycleListener {
             override fun onPreEngineRestart() = Unit
 
@@ -101,6 +102,7 @@ object EngineHost {
         ChatNotifications.activeChatId = 0L
         CallEvents.sink = null
         ShareIntake.sink = null
+        NetworkEvents.detach()
         FkmState.connected = false
         FkmService.refresh(app)
         main.post { FkmService.restoreEngine() }

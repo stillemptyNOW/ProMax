@@ -1502,7 +1502,7 @@ class MessagesModule {
   }
 
   // #***! удаление, deleteForAll значит у всех
-  Future<ServerOutcome> deleteMessages(
+  Future<MessageDeletionReply> deleteMessages(
     int chatId,
     List<String> messageIds, {
     bool forEveryone = false,
@@ -1512,7 +1512,7 @@ class MessagesModule {
         .map((id) => int.tryParse(id))
         .whereType<int>()
         .toList();
-    if (ids.isEmpty) return const ServerDone();
+    if (ids.isEmpty) return const MessageDeletionReply(ServerDone());
 
     final payload = {
       'messageIds': ids,
@@ -1521,7 +1521,34 @@ class MessagesModule {
       'itemType': itemType,
     };
 
-    return runServerAction(() => _api.sendRequest(Opcode.msgDelete, payload));
+    Packet? reply;
+    final outcome = await runServerAction(() async {
+      final response = await _api.sendRequest(Opcode.msgDelete, payload);
+      logger.i(
+        'MSG_DELETE чат $chatId, сообщений ${ids.length}, '
+        'forMe=${!forEveryone} → ${describeReply(response)}',
+      );
+      reply = response;
+      return response;
+    });
+    final answered = reply;
+    if (outcome is! ServerDone || answered == null) {
+      return MessageDeletionReply(outcome);
+    }
+    final confirmed = MessageDeletionReply.fromPacket(answered);
+    final missing = ids.length - confirmed.confirmed.length;
+    if (!MessageDeletionReply.listsMessageIds(answered.payload)) {
+      logger.w(
+        'MSG_DELETE чат $chatId: в ответе нет messageIds, '
+        'ни одно из $ids не считается удалённым',
+      );
+    } else if (missing > 0) {
+      logger.w(
+        'MSG_DELETE чат $chatId: сервер подтвердил '
+        '${confirmed.confirmed.length} из ${ids.length}',
+      );
+    }
+    return confirmed;
   }
 
   // #***! поставить реакцию

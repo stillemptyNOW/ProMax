@@ -5111,7 +5111,7 @@ abstract class AppLocalizations {
   /// No description provided for @profilePhoneRegenFailed.
   ///
   /// In en, this message translates to:
-  /// **'Phone number has not loaded yet'**
+  /// **'MAX did not send your number — tap to enter it'**
   String get profilePhoneRegenFailed;
 
   /// No description provided for @addContactTitle.
@@ -7730,24 +7730,6 @@ abstract class AppLocalizations {
   /// **'Also delete for {name}'**
   String chatScreenDeleteAlsoFor(String name);
 
-  /// No description provided for @deleteMessagesPeerFallbackNote.
-  ///
-  /// In en, this message translates to:
-  /// **'The other person\'s messages will be deleted for both of you if the server allows it, otherwise only for you.'**
-  String get deleteMessagesPeerFallbackNote;
-
-  /// No description provided for @deleteMessagesOthersOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'Other people\'s messages ({count}) will be deleted only for you.'**
-  String deleteMessagesOthersOnlyForMe(int count);
-
-  /// No description provided for @deleteMessagesKeptForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'The server didn\'t let you delete {count} of the other person\'s messages for both — they were deleted only for you'**
-  String deleteMessagesKeptForPeer(int count);
-
   /// No description provided for @deleteMessagesFailedWithReason.
   ///
   /// In en, this message translates to:
@@ -7772,23 +7754,197 @@ abstract class AppLocalizations {
   /// **'No connection to the server'**
   String get serverUnreachable;
 
+  /// No description provided for @deleteMessagesAlreadyGone.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX says these messages no longer exist: {count}'**
+  String deleteMessagesAlreadyGone(int count);
+
   /// No description provided for @deletionStillPending.
   ///
   /// In en, this message translates to:
   /// **'The deletion hasn\'t reached the server yet, ProMax will retry'**
   String get deletionStillPending;
 
-  /// No description provided for @deleteChatErasedOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'The history was erased for both of you, but the chat wasn\'t removed: {reason}'**
-  String deleteChatErasedOnly(String reason);
-
   /// No description provided for @deleteChatTypeUnknown.
   ///
   /// In en, this message translates to:
   /// **'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again'**
   String get deleteChatTypeUnknown;
+
+  /// No description provided for @chatForAllNotAllowedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The MAX server doesn\'t allow deleting this chat for the other person, so it will be deleted only for you.'**
+  String get chatForAllNotAllowedHint;
+
+  /// No description provided for @chatListForAllNotAllowedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The MAX server doesn\'t allow deleting some of these chats for the other person, so they will be deleted only for you.'**
+  String get chatListForAllNotAllowedHint;
+
+  /// No description provided for @chatClearAlsoForPeer.
+  ///
+  /// In en, this message translates to:
+  /// **'Also erase the history for the other person'**
+  String get chatClearAlsoForPeer;
+
+  /// No description provided for @chatDeleteForAllMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete for all members'**
+  String get chatDeleteForAllMembers;
+
+  /// No description provided for @chatTypeUnknownForAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t tell whether this is a personal chat or a group, so nothing was done for everyone. Try again'**
+  String get chatTypeUnknownForAll;
+
+  /// No description provided for @chatEventTimeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'The request wasn\'t sent: the time of the chat\'s last event is unknown. Refresh the chat and try again'**
+  String get chatEventTimeUnknown;
+
+  /// No description provided for @deleteChatForAllAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX accepted the request to delete the chat for everyone'**
+  String get deleteChatForAllAccepted;
+
+  /// No description provided for @deleteMessagesConfirmedForAll.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX confirmed deleting for everyone: {count}'**
+  String deleteMessagesConfirmedForAll(int count);
+
+  /// No description provided for @deleteMessagesNotConfirmedForAll.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX didn\'t delete {count} messages for everyone. They are still in the chat'**
+  String deleteMessagesNotConfirmedForAll(int count);
+
+  /// No description provided for @deleteMessagesNotConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX didn\'t confirm deleting {count} messages. They are still in the chat'**
+  String deleteMessagesNotConfirmed(int count);
+
+  /// No description provided for @deleteMessagesPeerOnlyForMe.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX deletes the other person\'s messages only for you'**
+  String get deleteMessagesPeerOnlyForMe;
+
+  /// No description provided for @deleteMessagesOthersOnlyForMe.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX deletes other people\'s messages only for you'**
+  String get deleteMessagesOthersOnlyForMe;
+
+  /// No description provided for @deleteMessagesTooOldForPeer.
+  ///
+  /// In en, this message translates to:
+  /// **'Only your own messages younger than {age} can be deleted for the other person — a MAX server limit'**
+  String deleteMessagesTooOldForPeer(String age);
+
+  /// No description provided for @deleteMessagesTooOldForAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Only your own messages younger than {age} can be deleted for everyone — a MAX server limit'**
+  String deleteMessagesTooOldForAll(String age);
+
+  /// No description provided for @deleteMessagesScheduledOnlyForMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled messages are deleted for everyone only from the scheduled list'**
+  String get deleteMessagesScheduledOnlyForMe;
+
+  /// No description provided for @deleteMessagesSelectionOnlyForMe.
+  ///
+  /// In en, this message translates to:
+  /// **'So the selected messages will be deleted only for you'**
+  String get deleteMessagesSelectionOnlyForMe;
+
+  /// No description provided for @deletionAgeLimitDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} day} other{{count} days}}'**
+  String deletionAgeLimitDays(int count);
+
+  /// No description provided for @deletionAgeLimitHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} hour} other{{count} hours}}'**
+  String deletionAgeLimitHours(int count);
+
+  /// No description provided for @deletionAgeLimitMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} minute} other{{count} minutes}}'**
+  String deletionAgeLimitMinutes(int count);
+
+  /// No description provided for @wipeForBothMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax will delete your messages younger than {age} for the other person and then ask MAX to delete the chat for both of you. This can\'t be undone.'**
+  String wipeForBothMessage(String age);
+
+  /// No description provided for @wipeOwnForPeerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my messages for the other person?'**
+  String get wipeOwnForPeerTitle;
+
+  /// No description provided for @wipeOwnForPeerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete mine for the other person'**
+  String get wipeOwnForPeerAction;
+
+  /// No description provided for @wipeOwnForPeerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The MAX server doesn\'t allow deleting this chat for the other person. ProMax will delete your messages younger than {age} for them; the rest of the history stays with them and the chat is deleted only for you. This can\'t be undone.'**
+  String wipeOwnForPeerMessage(String age);
+
+  /// No description provided for @wipeSummaryForPeer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your messages deleted for the other person: {count}'**
+  String wipeSummaryForPeer(int count);
+
+  /// No description provided for @wipeSummaryNotConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX didn\'t delete for the other person: {count}'**
+  String wipeSummaryNotConfirmed(int count);
+
+  /// No description provided for @wipeSummaryKeptForPeer.
+  ///
+  /// In en, this message translates to:
+  /// **'Left with the other person (their messages and yours older than {age}): {count}'**
+  String wipeSummaryKeptForPeer(int count, String age);
+
+  /// No description provided for @wipeSummaryChatForAllAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX accepted the request to delete the chat for both of you'**
+  String get wipeSummaryChatForAllAccepted;
+
+  /// No description provided for @wipeSummaryChatRemovedForMe.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat was deleted only for you'**
+  String get wipeSummaryChatRemovedForMe;
+
+  /// No description provided for @infoDeleteForAll.
+  ///
+  /// In en, this message translates to:
+  /// **'delete-for-all'**
+  String get infoDeleteForAll;
 
   /// No description provided for @chatActionProfileUnavailable.
   ///
@@ -7799,7 +7955,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatDeleteAlsoForPeer.
   ///
   /// In en, this message translates to:
-  /// **'Also erase the history for the other person'**
+  /// **'Also delete the chat for the other person — the history disappears for them too'**
   String get chatDeleteAlsoForPeer;
 
   /// No description provided for @wipeForBothAction.
@@ -7813,12 +7969,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete for both?'**
   String get wipeForBothTitle;
-
-  /// No description provided for @wipeForBothMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'ProMax will delete every message in this chat for you and the other person, then remove the chat from your list. The other person keeps an empty chat. This can\'t be undone.'**
-  String get wipeForBothMessage;
 
   /// No description provided for @wipeCollecting.
   ///
@@ -7838,24 +7988,6 @@ abstract class AppLocalizations {
   /// **'Deleted {done} of {total}'**
   String wipeDeleting(int done, int total);
 
-  /// No description provided for @wipeSummaryForBoth.
-  ///
-  /// In en, this message translates to:
-  /// **'Deleted for both: {count}'**
-  String wipeSummaryForBoth(int count);
-
-  /// No description provided for @wipeSummaryOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'Deleted only for you (the server refused to delete them for the other person): {count}'**
-  String wipeSummaryOnlyForMe(int count);
-
-  /// No description provided for @wipeSummaryNotDeleted.
-  ///
-  /// In en, this message translates to:
-  /// **'Not deleted: {count}'**
-  String wipeSummaryNotDeleted(int count);
-
   /// No description provided for @wipeSummaryHistoryIncomplete.
   ///
   /// In en, this message translates to:
@@ -7873,12 +8005,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The chat wasn\'t deleted: {reason}'**
   String wipeSummaryChatKept(String reason);
-
-  /// No description provided for @wipeSummaryClearFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'The history wasn\'t cleared for both: {reason}'**
-  String wipeSummaryClearFailed(String reason);
 
   /// No description provided for @messageDeletedMark.
   ///
@@ -8437,6 +8563,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Screen sharing didn\'t start: {error}'**
   String callScreenShareFailed(String error);
+
+  /// No description provided for @callScreenShareAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen'**
+  String get callScreenShareAction;
+
+  /// No description provided for @callScreenShareStopAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing'**
+  String get callScreenShareStopAction;
+
+  /// No description provided for @callScreenShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your screen to the other side instead of the camera'**
+  String get callScreenShareHint;
+
+  /// No description provided for @callScreenShareStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'The other side now sees your screen instead of the camera'**
+  String get callScreenShareStarted;
+
+  /// No description provided for @callScreenShareDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen sharing wasn\'t allowed'**
+  String get callScreenShareDenied;
+
+  /// No description provided for @callScreenShareServiceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Android didn\'t allow screen sharing during the call'**
+  String get callScreenShareServiceFailed;
+
+  /// No description provided for @callScreenShareStartedInApp.
+  ///
+  /// In en, this message translates to:
+  /// **'The other side sees the ProMax screen. Sharing stops if you leave the app'**
+  String get callScreenShareStartedInApp;
+
+  /// No description provided for @callScreenShareNoPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'iOS didn\'t start recording the screen. Try again'**
+  String get callScreenShareNoPicture;
+
+  /// No description provided for @callScreenShareStoppedInBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen sharing stopped: iOS only shares ProMax itself, and the app was in the background'**
+  String get callScreenShareStoppedInBackground;
 
   /// No description provided for @themeSettingsCustomizeAction.
   ///
@@ -12098,23 +12278,77 @@ abstract class AppLocalizations {
   /// **'None'**
   String get proMaxMaskNone;
 
-  /// No description provided for @proMaxMaskGlasses.
+  /// No description provided for @proMaxMaskSunglasses.
   ///
   /// In en, this message translates to:
-  /// **'Glasses'**
-  String get proMaxMaskGlasses;
+  /// **'Sunglasses'**
+  String get proMaxMaskSunglasses;
 
-  /// No description provided for @proMaxMaskVisor.
+  /// No description provided for @proMaxMaskGoggles.
   ///
   /// In en, this message translates to:
-  /// **'Neon visor'**
-  String get proMaxMaskVisor;
+  /// **'Goggles'**
+  String get proMaxMaskGoggles;
+
+  /// No description provided for @proMaxMaskHeartEyes.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart eyes'**
+  String get proMaxMaskHeartEyes;
+
+  /// No description provided for @proMaxMaskCrown.
+  ///
+  /// In en, this message translates to:
+  /// **'Crown'**
+  String get proMaxMaskCrown;
+
+  /// No description provided for @proMaxMaskTopHat.
+  ///
+  /// In en, this message translates to:
+  /// **'Top hat'**
+  String get proMaxMaskTopHat;
+
+  /// No description provided for @proMaxMaskPigNose.
+  ///
+  /// In en, this message translates to:
+  /// **'Pig snout'**
+  String get proMaxMaskPigNose;
+
+  /// No description provided for @proMaxMaskMustache.
+  ///
+  /// In en, this message translates to:
+  /// **'Mustache'**
+  String get proMaxMaskMustache;
 
   /// No description provided for @proMaxMaskCat.
   ///
   /// In en, this message translates to:
   /// **'Cat'**
   String get proMaxMaskCat;
+
+  /// No description provided for @proMaxMaskFox.
+  ///
+  /// In en, this message translates to:
+  /// **'Fox'**
+  String get proMaxMaskFox;
+
+  /// No description provided for @proMaxMaskPanda.
+  ///
+  /// In en, this message translates to:
+  /// **'Panda'**
+  String get proMaxMaskPanda;
+
+  /// No description provided for @proMaxMaskAlien.
+  ///
+  /// In en, this message translates to:
+  /// **'Alien'**
+  String get proMaxMaskAlien;
+
+  /// No description provided for @proMaxMaskRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot'**
+  String get proMaxMaskRobot;
 
   /// No description provided for @proMaxEffectFailed.
   ///
@@ -13189,6 +13423,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Load the whole history from the server'**
   String get chatStatsSyncAll;
+
+  /// No description provided for @profilePhoneManualTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your number'**
+  String get profilePhoneManualTitle;
+
+  /// No description provided for @profilePhoneManualHint.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX did not send this account\'s number. Enter it; it is stored on this device only.'**
+  String get profilePhoneManualHint;
+
+  /// No description provided for @profilePhoneManualSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get profilePhoneManualSave;
+
+  /// No description provided for @profilePhoneManualInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That does not look like a phone number'**
+  String get profilePhoneManualInvalid;
 }
 
 class _AppLocalizationsDelegate

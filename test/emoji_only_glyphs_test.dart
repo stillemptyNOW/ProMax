@@ -3,7 +3,7 @@ import 'package:promax/core/utils/text_format.dart';
 
 void main() {
   group('emojiOnlyGlyphs', () {
-    test('takes one to three emoji with spaces around them', () {
+    test('takes emoji-only text with spaces around them', () {
       expect(emojiOnlyGlyphs('😂', const []), ['😂']);
       expect(emojiOnlyGlyphs(' 🙏 ', const []), ['🙏']);
       expect(emojiOnlyGlyphs('🔥 🔥🔥', const []), ['🔥', '🔥', '🔥']);
@@ -17,11 +17,12 @@ void main() {
       expect(emojiOnlyGlyphs('❤️', const []), ['❤️']);
     });
 
-    test('rejects text, digits, symbols and too many emoji', () {
+    test('rejects text, digits, symbols and more emoji than the limit', () {
       expect(emojiOnlyGlyphs('ок 👍', const []), isNull);
       expect(emojiOnlyGlyphs('12', const []), isNull);
       expect(emojiOnlyGlyphs('©', const []), isNull);
-      expect(emojiOnlyGlyphs('😂😂😂😂', const []), isNull);
+      expect(emojiOnlyGlyphs('😂😂😂😂', const [], limit: 3), isNull);
+      expect(emojiOnlyGlyphs('😂😂😂😂', const []), hasLength(4));
       expect(emojiOnlyGlyphs('   ', const []), isNull);
       expect(emojiOnlyGlyphs(null, const []), isNull);
     });

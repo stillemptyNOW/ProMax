@@ -19,6 +19,7 @@ import 'decrypted_text.dart';
 import '../../core/utils/bubble_radius.dart';
 import '../../core/utils/emoji_keyword_index.dart';
 import '../../core/utils/haptics.dart';
+import '../../core/utils/jumbo_emoji.dart';
 import '../../core/utils/link_opener.dart';
 import '../../core/utils/text_format.dart';
 import '../../core/utils/user_facing_error.dart';
@@ -867,33 +868,21 @@ class MessageBubble extends StatelessWidget {
     return first is VideoAttachment && !first.isNote;
   }
 
-  static const int _jumboAnimojiLimit = 4;
-
   List<String>? get _jumboAnimojiUrls {
     if (message.attachments?.isNotEmpty ?? false) return null;
     final cached = _jumboAnimojiUrlsCache[message];
     if (cached != null) return cached;
-    final computed = animojiOnlyLottieUrls(
-      message.text,
-      message.formatRanges,
-      limit: _jumboAnimojiLimit,
-    );
+    final computed = animojiOnlyLottieUrls(message.text, message.formatRanges);
     if (computed != null) _jumboAnimojiUrlsCache[message] = computed;
     return computed;
   }
-
-  static const int _jumboEmojiLimit = 3;
 
   List<String>? get _jumboEmoji {
     if (message.attachments?.isNotEmpty ?? false) return null;
     if (_jumboAnimojiUrls != null) return null;
     final cached = _jumboEmojiCache[message];
     if (cached != null) return cached;
-    final computed = emojiOnlyGlyphs(
-      message.text,
-      message.formatRanges,
-      limit: _jumboEmojiLimit,
-    );
+    final computed = emojiOnlyGlyphs(message.text, message.formatRanges);
     if (computed != null) _jumboEmojiCache[message] = computed;
     return computed;
   }
@@ -1806,14 +1795,11 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildJumboAnimojiContent(BubbleContext ctx, List<String> urls) {
-    final n = urls.length;
-    final size = switch (n) {
-      1 => 96.0,
-      2 => 76.0,
-      3 => 64.0,
-      _ => 56.0,
-    };
-    final cache = (size * 2).round();
+    final size = jumboAnimojiSize(
+      urls.length,
+      MediaQuery.sizeOf(ctx.context).shortestSide,
+    );
+    final cache = (size * MediaQuery.devicePixelRatioOf(ctx.context)).round();
 
     final animations = Stack(
       children: [
@@ -1853,29 +1839,34 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildJumboEmojiContent(BubbleContext ctx, List<String> glyphs) {
-    final fontSize = switch (glyphs.length) {
-      1 => 72.0,
-      2 => 58.0,
-      _ => 48.0,
-    };
+    final fontSize = jumboEmojiFontSize(glyphs.length);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: ctx.isMe
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [
-        Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Text(
+        IntrinsicWidth(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
                 glyphs.join(),
                 textScaler: TextScaler.noScaling,
-                style: TextStyle(fontSize: fontSize, height: 1.15),
+                textAlign: ctx.isMe ? TextAlign.end : TextAlign.start,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  height: 1.2,
+                  leadingDistribution: TextLeadingDistribution.even,
+                ),
               ),
-            ),
-            Positioned(bottom: 0, right: 0, child: _buildJumboAnimojiMeta(ctx)),
-          ],
+              Align(
+                alignment: Alignment.centerRight,
+                child: _buildJumboAnimojiMeta(ctx),
+              ),
+            ],
+          ),
         ),
         _buildReactionsBarFor(ctx.cs, ctx.reactionInfo),
       ],

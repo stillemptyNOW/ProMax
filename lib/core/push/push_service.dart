@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:kolibri/kolibri.dart' show initKolibri;
@@ -176,6 +177,11 @@ Future<void> _handleReply(String payloadJson, String text) async {
 
 bool _localActionsReady = false;
 
+bool get _usesNativeNotificationCenter =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS);
+
 // #***! каналы и обработчики уведомлений при старте
 /// Инициализация локальных уведомлений и их action-коллбэков.
 ///
@@ -184,6 +190,7 @@ bool _localActionsReady = false;
 Future<void> initLocalNotificationActions() async {
   if (_localActionsReady) return;
   _localActionsReady = true;
+  if (_usesNativeNotificationCenter) return;
   final plugin = FlutterLocalNotificationsPlugin();
   await plugin.initialize(
     settings: InitializationSettings(

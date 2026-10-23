@@ -40,6 +40,10 @@ jobs:
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined native/promax_effects/test/voice_processor_test.cpp -o /tmp/promax-voice-test
           /tmp/promax-voice-test
+      - name: Verify face mask tracking
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined native/promax_effects/test/mask_pose_test.cpp -o /tmp/promax-mask-test
+          /tmp/promax-mask-test
       - name: Dependencies
         run: flutter pub get
       - name: Analyze

@@ -18,6 +18,8 @@ class CallBridge {
     'io.github.stillemptynow.promax/calls_events',
   );
 
+  static const screenShareStoppedEvent = 'screenShareStopped';
+
   bool _started = false;
 
   bool get _android {
@@ -57,6 +59,12 @@ class CallBridge {
       CallController.instance.dismissIncoming();
       return;
     }
+    if (action == screenShareStoppedEvent) {
+      unawaited(
+        CallController.instance.activeSession?.screenShareStoppedBySystem(),
+      );
+      return;
+    }
     final dataStr = event['data'];
     if (dataStr is! String) return;
     Object? decoded;
@@ -92,15 +100,17 @@ class CallBridge {
     }
   }
 
-  Future<void> setScreenShare(bool enabled, {String? caller}) async {
-    if (!_android) return;
+  Future<bool> setScreenShare(bool enabled, {String? caller}) async {
+    if (!_android) return true;
     try {
-      await _method.invokeMethod<void>('setScreenShare', {
-        'enabled': enabled,
-        'caller': caller,
-      });
+      return await _method.invokeMethod<bool>('setScreenShare', {
+            'enabled': enabled,
+            'caller': caller,
+          }) ??
+          false;
     } catch (e) {
       logger.w('CallBridge.setScreenShare: enabled=$enabled $e');
+      return false;
     }
   }
 

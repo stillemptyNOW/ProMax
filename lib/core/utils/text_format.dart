@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'jumbo_emoji.dart';
+
 // #***! виды форматирования текста
 enum TextFormat {
   heading,
@@ -120,7 +122,7 @@ List<Map<String, dynamic>> serializeFormatElements(
 List<String>? animojiOnlyLottieUrls(
   String? text,
   List<FormatRange> ranges, {
-  int limit = 4,
+  int limit = jumboEmojiLimit,
 }) {
   if (text == null || text.isEmpty) return null;
   final len = text.length;
@@ -193,7 +195,7 @@ bool isEmojiGlyph(String glyph) {
 List<String>? emojiOnlyGlyphs(
   String? text,
   List<FormatRange> ranges, {
-  int limit = 3,
+  int limit = jumboEmojiLimit,
 }) {
   if (text == null || ranges.isNotEmpty) return null;
   final glyphs = <String>[];

@@ -20,6 +20,7 @@ import '../core/storage/app_database.dart';
 import '../core/storage/device_identity.dart';
 import '../core/storage/spoofing_service.dart';
 import '../core/transport/dispatcher.dart';
+import '../core/transport/network_watch.dart';
 import '../core/transport/session_factory.dart';
 import '../core/transport/tls_config.dart';
 import '../core/transport/traffic_monitor.dart';
@@ -95,6 +96,7 @@ class Api {
 
   // #***! таймеры и счётчики автореконнекта
   Timer? _livenessTimer;
+  Duration? _livenessPeriod;
   Timer? _reconnectTimer;
   Timer? _connectWatchdog;
   // #***! поколение попытки конекта
@@ -127,9 +129,11 @@ class Api {
   static const Duration _connectWatchdogTimeout = Duration(seconds: 75);
   static const Duration _shouldArmTimeout = Duration(seconds: 5);
   static const Duration _endpointTimeout = Duration(seconds: 5);
-  static const Duration _livenessInterval = Duration(seconds: 5);
+  static const Duration _foregroundLivenessInterval = Duration(seconds: 5);
+  static const Duration _backgroundLivenessInterval = Duration(seconds: 30);
   static const int _foregroundReconnectCapSec = 15;
   static const int _backgroundReconnectCapSec = 60;
+  static const int _offlineReconnectCapSec = 300;
 
   int get sessionEpoch => _sessionEpoch;
 
@@ -216,7 +220,6 @@ class Api {
       );
 
       _setSessionState(SessionState.connected);
-      _reconnectAttempts = 0;
 
       // #***! Сервер отвечает кто мы для него💔
       HandshakeInfo info;
@@ -239,6 +242,7 @@ class Api {
       _callsSeed = info.callsSeed?.toInt();
       _registrationCountries = _parseRegistrationCountries(info.payloadMap);
       _sessionState = SessionState.online;
+      _reconnectAttempts = 0;
       _sessionEpoch++;
       _cancelConnectWatchdog();
       _startLiveness();
@@ -798,7 +802,7 @@ class Api {
     _cancelConnectWatchdog();
     _livenessTimer?.cancel();
     _livenessTimer = null;
-    AppForeground.notifier.removeListener(refreshPresence);
+    AppForeground.notifier.removeListener(_onForegroundChanged);
     _pushSub?.cancel();
     _pushSub = null;
     _wireLogSub?.cancel();
@@ -869,9 +873,24 @@ class Api {
   void _startLiveness() {
     _livenessTimer?.cancel();
     _lastInteractive = null;
-    AppForeground.notifier.removeListener(refreshPresence);
-    AppForeground.notifier.addListener(refreshPresence);
-    _livenessTimer = Timer.periodic(_livenessInterval, (_) => _tickLiveness());
+    AppForeground.notifier.removeListener(_onForegroundChanged);
+    AppForeground.notifier.addListener(_onForegroundChanged);
+    _armLiveness();
+    refreshPresence();
+  }
+
+  void _armLiveness() {
+    final interval = AppForeground.value
+        ? _foregroundLivenessInterval
+        : _backgroundLivenessInterval;
+    if (_livenessTimer != null && _livenessPeriod == interval) return;
+    _livenessTimer?.cancel();
+    _livenessPeriod = interval;
+    _livenessTimer = Timer.periodic(interval, (_) => _tickLiveness());
+  }
+
+  void _onForegroundChanged() {
+    if (_livenessTimer != null) _armLiveness();
     refreshPresence();
   }
 
@@ -941,8 +960,10 @@ class Api {
 
   // #***! задержка реконнекта 2 4 8, в фоне потолок выше чтоб батарею не жрать
   void _scheduleReconnect() {
-    final capSec = AppForeground.value || keepAliveInBackground
+    final capSec = AppForeground.value
         ? _foregroundReconnectCapSec
+        : NetworkWatch.offline.value
+        ? _offlineReconnectCapSec
         : _backgroundReconnectCapSec;
     final delaySec = (2 * (1 << _reconnectAttempts.clamp(0, 6))).clamp(
       2,

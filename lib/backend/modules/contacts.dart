@@ -4,6 +4,7 @@ import '../../core/cache/info_cache.dart';
 import '../../core/config/debug_test.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
+import '../../core/storage/account_phone_store.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/utils/logger.dart';
 import '../../models/contact_info.dart';
@@ -550,6 +551,7 @@ class ContactsModule {
     final phone = fetched?.phone ?? 0;
     if (phone <= 0) return null;
     await AppDatabase.setProfilePhone(accountId, phone);
+    await AccountPhoneStore.remember(accountId, phone);
     return phone;
   }
 

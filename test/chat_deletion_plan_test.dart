@@ -1,137 +1,107 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/backend/modules/chat_deletion_plan.dart';
+import 'package:promax/backend/modules/deletion_policy.dart';
 import 'package:promax/backend/modules/server_outcome.dart';
 
+const _me = 41;
+const _other = 42;
+const _chat = 7301;
+
+ChatDeletionPlan? _plan(
+  String? type, {
+  bool forAll = true,
+  int chatId = _chat,
+  int? owner,
+  bool peerIsBot = false,
+  bool? deleteForAll = true,
+}) => ChatDeletionPlan.of(
+  forAll: forAll,
+  chatId: chatId,
+  chatType: type,
+  owner: owner,
+  myId: _me,
+  peerIsBot: peerIsBot,
+  deleteForAll: deleteForAll,
+);
+
 void main() {
-  group('which requests a chat deletion becomes', () {
-    test('a dialog deleted for both erases the history for everyone', () {
+  group('who may delete a chat for everyone', () {
+    test('a dialog is deleted for both with one CHAT_DELETE forAll', () {
+      final plan = _plan('DIALOG');
+
+      expect(plan, ChatDeletionPlan.forEveryone);
+      expect(plan!.payload(chatId: _chat, lastEventTime: 5000), {
+        'chatId': _chat,
+        'lastEventTime': 5000,
+        'forAll': true,
+      });
+    });
+
+    test('without the server flag a dialog is deleted only for me', () {
+      expect(_plan('DIALOG', deleteForAll: false), ChatDeletionPlan.forMe);
+    });
+
+    test('an unknown flag leaves the decision to the server', () {
+      expect(_plan('DIALOG', deleteForAll: null), ChatDeletionPlan.forEveryone);
+    });
+
+    test('a bot dialog is never deleted for the bot', () {
+      expect(_plan('DIALOG', peerIsBot: true), ChatDeletionPlan.forMe);
+    });
+
+    test('saved messages are never deleted for anyone else', () {
+      expect(_plan('DIALOG', chatId: 0), ChatDeletionPlan.forMe);
+    });
+
+    test('only the owner deletes a group for its members', () {
+      expect(_plan('CHAT', owner: _me), ChatDeletionPlan.forEveryone);
+      expect(_plan('CHAT', owner: _other), ChatDeletionPlan.forMe);
+      expect(_plan('CHAT'), ChatDeletionPlan.forMe);
+    });
+
+    test('a channel never goes out with forAll, even for its owner', () {
+      expect(_plan('CHANNEL', owner: _me), ChatDeletionPlan.forMe);
       expect(
-        ChatDeletionPlan.of(chatType: 'DIALOG', forAll: true),
-        ChatDeletionPlan.eraseForPeer,
+        chatForAllAllowed(
+          chatId: _chat,
+          chatType: 'CHANNEL',
+          owner: _me,
+          myId: _me,
+          peerIsBot: false,
+          deleteForAll: true,
+        ),
+        isFalse,
       );
-      expect(ChatDeletionPlan.eraseForPeer.clearForAll, isTrue);
-      expect(ChatDeletionPlan.eraseForPeer.deleteForAll, isFalse);
     });
 
-    test('a chat of unknown type gets no plan for everyone', () {
-      expect(ChatDeletionPlan.of(chatType: null, forAll: true), isNull);
+    test('an unknown type is refused instead of guessed', () {
+      expect(_plan(null), isNull);
+      expect(_plan(null, forAll: false), ChatDeletionPlan.forMe);
     });
 
-    test('a group removed for all members goes through chat deletion', () {
-      for (final type in ['CHAT', 'CHANNEL']) {
+    test('deleting only for me never asks for anything else', () {
+      for (final type in ['DIALOG', 'CHAT', 'CHANNEL']) {
+        final plan = _plan(type, forAll: false, owner: _me)!;
+        expect(plan.forAll, isFalse);
         expect(
-          ChatDeletionPlan.of(chatType: type, forAll: true),
-          ChatDeletionPlan.removeForMembers,
-        );
-      }
-      expect(ChatDeletionPlan.removeForMembers.clearForAll, isFalse);
-      expect(ChatDeletionPlan.removeForMembers.deleteForAll, isTrue);
-    });
-
-    test('a deletion only for me never touches the other side', () {
-      for (final type in ['DIALOG', 'CHAT', 'CHANNEL', null]) {
-        expect(
-          ChatDeletionPlan.of(chatType: type, forAll: false),
-          ChatDeletionPlan.forMe,
+          plan.payload(chatId: _chat, lastEventTime: 1)['forAll'],
+          isFalse,
         );
       }
     });
   });
 
-  group('running the plan', () {
-    late List<String> sent;
-
-    Future<ChatDeletionResult> run(
-      ChatDeletionPlan plan, {
-      ServerOutcome clear = const ServerDone(),
-      ServerOutcome delete = const ServerDone(),
-      bool historyErased = false,
-    }) => plan.run(
-      historyErased: historyErased,
-      clearHistoryForAll: () async {
-        sent.add('clear:all');
-        return clear;
-      },
-      deleteChat: ({required bool forAll}) async {
-        sent.add(forAll ? 'delete:all' : 'delete:me');
-        return delete;
-      },
+  test('a local refusal keeps its reason through the outcome', () {
+    final refused = ChatDeletionResult.refused(
+      ChatDeletionRefusal.eventTimeUnknown,
     );
 
-    setUp(() => sent = []);
-
-    test('the history is erased for both before the chat is removed', () async {
-      final result = await run(ChatDeletionPlan.eraseForPeer);
-      expect(result.outcome, isA<ServerDone>());
-      expect(result.historyErased, isTrue);
-      expect(sent, ['clear:all', 'delete:me']);
-    });
-
-    test('a refused erase keeps the chat and reports the refusal', () async {
-      final result = await run(
-        ChatDeletionPlan.eraseForPeer,
-        clear: const ServerRejected('нельзя'),
-      );
-      expect((result.outcome as ServerRejected).message, 'нельзя');
-      expect(result.historyErased, isFalse);
-      expect(sent, ['clear:all']);
-    });
-
-    test('a lost erase is retried as a whole', () async {
-      final result = await run(
-        ChatDeletionPlan.eraseForPeer,
-        clear: const ServerUnreachable('таймаут'),
-      );
-      expect(result.outcome, isA<ServerUnreachable>());
-      expect(result.historyErased, isFalse);
-      expect(sent, ['clear:all']);
-    });
-
-    test(
-      'a refused removal after the erase says the history is gone',
-      () async {
-        final result = await run(
-          ChatDeletionPlan.eraseForPeer,
-          delete: const ServerRejected('нет доступа'),
-        );
-        expect(result.outcome, isA<ServerRejected>());
-        expect(result.historyErased, isTrue);
-        expect(sent, ['clear:all', 'delete:me']);
-      },
+    expect(refused.ok, isFalse);
+    expect(refused.forAll, isFalse);
+    expect(refused.refusal, ChatDeletionRefusal.eventTimeUnknown);
+    expect(
+      ChatDeletionRefusal.of(const ServerRejected('отказ сервера')),
+      isNull,
     );
-
-    test('a retry after the erase only removes the chat', () async {
-      final result = await run(
-        ChatDeletionPlan.eraseForPeer,
-        historyErased: true,
-      );
-      expect(result.outcome, isA<ServerDone>());
-      expect(result.historyErased, isTrue);
-      expect(sent, ['delete:me']);
-    });
-
-    test('a retry that finds the chat already gone is done', () async {
-      final result = await run(
-        ChatDeletionPlan.eraseForPeer,
-        historyErased: true,
-        delete: const ServerRejected('нет чата', notFound: true),
-      );
-      expect(result.outcome, isA<ServerDone>());
-      expect(sent, ['delete:me']);
-    });
-
-    test('a removal for me alone that finds no chat is reported', () async {
-      final result = await run(
-        ChatDeletionPlan.forMe,
-        delete: const ServerRejected('нет чата', notFound: true),
-      );
-      expect(result.outcome, isA<ServerRejected>());
-    });
-
-    test('a group removal sends one request for all members', () async {
-      final result = await run(ChatDeletionPlan.removeForMembers);
-      expect(result.historyErased, isFalse);
-      expect(sent, ['delete:all']);
-    });
   });
 }

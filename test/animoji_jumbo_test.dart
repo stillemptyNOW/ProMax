@@ -34,15 +34,17 @@ void main() {
   });
 
   test('more than the limit is NOT jumbo', () {
-    final ranges = [
-      for (var i = 0; i < 5; i++) _animoji(i * 2, 2, 'L$i'),
-    ];
-    expect(animojiOnlyLottieUrls('❤️❤️❤️❤️❤️', ranges), isNull);
+    final ranges = [for (var i = 0; i < 5; i++) _animoji(i * 2, 2, 'L$i')];
+    expect(animojiOnlyLottieUrls('❤️❤️❤️❤️❤️', ranges, limit: 4), isNull);
+    expect(animojiOnlyLottieUrls('❤️❤️❤️❤️❤️', ranges), hasLength(5));
   });
 
   test('whitespace between animoji is allowed', () {
     expect(
-      animojiOnlyLottieUrls('❤️ ❤️', [_animoji(0, 2, 'L1'), _animoji(3, 2, 'L2')]),
+      animojiOnlyLottieUrls('❤️ ❤️', [
+        _animoji(0, 2, 'L1'),
+        _animoji(3, 2, 'L2'),
+      ]),
       ['L1', 'L2'],
     );
   });

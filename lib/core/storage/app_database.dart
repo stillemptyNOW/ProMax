@@ -66,10 +66,14 @@ class ProfileData {
     if (contact is! Map) {
       throw const FormatException('No contact in profile');
     }
-    return ProfileData.fromServerMap(
+    final parsed = ProfileData.fromServerMap(
       contact.cast<dynamic, dynamic>(),
       profileOptions: _parseProfileOptions(profile['profileOptions']),
     );
+    if (parsed.phone > 0) return parsed;
+    final outerPhone = parsePhone(profile['phone']);
+    if (outerPhone <= 0) return parsed;
+    return ProfileData.fromDbRow({...parsed.toDbRow(), 'phone': outerPhone});
   }
 
   factory ProfileData.fromServerMap(
@@ -188,6 +192,9 @@ abstract class SyncKey {
   static const serverConfigSeen = 'server_config_seen';
   static const profileInviteLink = 'profile_invite_link';
   static const welcomeStickerIds = 'welcome_sticker_ids';
+  static const deleteForAll = 'delete_for_all';
+  static const editTimeout = 'edit_timeout';
+  static const editCommentTimeout = 'edit_comment_timeout';
 }
 
 // #***! вся локальная база, профили чаты контакты сообщения

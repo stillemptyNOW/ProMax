@@ -18,6 +18,7 @@ import '../contacts/add_contact_sheet.dart';
 import '../../widgets/letter_avatar.dart';
 import '../../widgets/adaptive_shell.dart';
 import '../../widgets/chat_call_badge.dart';
+import '../../../core/utils/app_foreground.dart';
 import '../../../core/crypto/message_decryption_cache.dart';
 import '../../widgets/decrypted_text.dart';
 import '../../widgets/encryption_lock_badge.dart';
@@ -63,6 +64,7 @@ import '../../widgets/lost_account_dialog.dart';
 import 'chat/view/chat_list_shimmer.dart';
 import 'chat/view/chat_list_tile.dart';
 import 'chat_list_deletion.dart';
+import '../../../backend/modules/deletion_policy.dart';
 import 'chat/view/chat_preview_line.dart';
 import '../../widgets/connection_status.dart';
 import '../../../backend/api.dart';
@@ -292,6 +294,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   Timer? _contactRebuildTimer;
   bool _deferReloads = false;
   bool _reloadQueued = false;
+  bool _staleWhileHidden = false;
   bool _reloadInFlight = false;
   Timer? _settleTimer;
   bool get _shareMode => widget.sharePayload != null;
@@ -752,8 +755,9 @@ class _ChatListScreenState extends State<ChatListScreen>
     }
     final kind = cats.single;
 
-    final choice = await _showDeleteConfirmDialog(selectedAfter, kind);
+    final choice = await _showDeleteConfirmDialog(selectedAfter, kind, myId);
     if (!mounted || choice == null) return;
+    final deleteForAll = DeletionPolicy.instance.deleteForAll;
 
     _clearSelection();
     removeChatsWithUndo(
@@ -769,6 +773,8 @@ class _ChatListScreenState extends State<ChatListScreen>
             forAll: chatListDeletesForAll(
               kind,
               c,
+              myId: myId,
+              deleteForAll: deleteForAll,
               erasePeerChosen: choice.forAll,
             ),
           ),
@@ -779,6 +785,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   Future<({bool forAll})?> _showDeleteConfirmDialog(
     List<CachedChat> selected,
     ChatListDeleteKind kind,
+    int myId,
   ) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
@@ -811,8 +818,19 @@ class _ChatListScreenState extends State<ChatListScreen>
         return Future.value(null);
     }
 
-    final offerForAll =
-        kind == ChatListDeleteKind.personal && selected.any((c) => c.id != 0);
+    final deleteForAll = DeletionPolicy.instance.deleteForAll;
+    final personal = kind == ChatListDeleteKind.personal;
+    final allowsForAll = [
+      for (final chat in selected)
+        if (chat.id != 0)
+          chatListAllowsForAll(chat, myId: myId, deleteForAll: deleteForAll),
+    ];
+    final offerForAll = personal && allowsForAll.contains(true);
+    final forAllHint = !personal || !allowsForAll.contains(false)
+        ? null
+        : (count == 1
+              ? l10n.chatForAllNotAllowedHint
+              : l10n.chatListForAllNotAllowedHint);
     var forAll = false;
     return showModalBottomSheet<({bool forAll})>(
       context: context,
@@ -839,6 +857,13 @@ class _ChatListScreenState extends State<ChatListScreen>
                   body,
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
                 ),
+                if (forAllHint != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    forAllHint,
+                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+                  ),
+                ],
                 if (offerForAll) ...[
                   const SizedBox(height: 8),
                   InkWell(
@@ -997,19 +1022,14 @@ class _ChatListScreenState extends State<ChatListScreen>
           _sessionState = state;
         });
         _syncShimmer();
-        if (state == SessionState.online) {
-          _requestReload();
-          _maybeLoadStories();
-        }
+        if (state == SessionState.online) _refreshAfterReconnect();
       }
     });
 
     _loginSub = accountModule.loginStatusStream.listen((status) {
-      if (status == LoginStatus.success) {
-        _requestReload();
-        _maybeLoadStories();
-      }
+      if (status == LoginStatus.success) _refreshAfterReconnect();
     });
+    AppForeground.notifier.addListener(_onForegroundChanged);
     chats.chatOrderRevision.addListener(_onChatsChanged);
     ArchivedChatsStore.instance.revision.addListener(_onArchivedChanged);
     ChatEncryptionStore.instance.revision.addListener(_onEncryptionChanged);
@@ -1083,6 +1103,22 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   void _onStoriesDataChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _refreshAfterReconnect() {
+    if (!AppForeground.value) {
+      _staleWhileHidden = true;
+      return;
+    }
+    _requestReload();
+    _maybeLoadStories();
+  }
+
+  void _onForegroundChanged() {
+    if (!AppForeground.value || !_staleWhileHidden || !mounted) return;
+    _staleWhileHidden = false;
+    _requestReload();
+    _maybeLoadStories();
   }
 
   void _maybeLoadStories() {
@@ -1776,6 +1812,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     appRouteObserver.unsubscribe(this);
     _settleTimer?.cancel();
     chats.chatOrderRevision.removeListener(_onChatsChanged);
+    AppForeground.notifier.removeListener(_onForegroundChanged);
     ArchivedChatsStore.instance.revision.removeListener(_onArchivedChanged);
     ChatEncryptionStore.instance.revision.removeListener(_onEncryptionChanged);
     E2eeService.instance.revision.removeListener(_onEncryptionChanged);
