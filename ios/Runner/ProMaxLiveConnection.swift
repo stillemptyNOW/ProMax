@@ -11,6 +11,8 @@ final class ProMaxLiveConnection: NSObject {
   private let enabledKey = "promax_live_connection"
   private var engine: AVAudioEngine?
   private var player: AVAudioPlayerNode?
+  private var displacedSession: (category: AVAudioSession.Category, mode: AVAudioSession.Mode,
+                                 options: AVAudioSession.CategoryOptions, ioBuffer: TimeInterval)?
   private var observers: [NSObjectProtocol] = []
   private var started = false
   private var callActive = false
@@ -118,7 +120,10 @@ final class ProMaxLiveConnection: NSObject {
     guard engine == nil, !callActive else { return }
     do {
       let session = AVAudioSession.sharedInstance()
+      let previous = (category: session.category, mode: session.mode,
+                      options: session.categoryOptions, ioBuffer: session.preferredIOBufferDuration)
       try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+      if displacedSession == nil { displacedSession = previous }
       try? session.setPreferredIOBufferDuration(Self.keepAliveBufferDuration)
       try session.setActive(true, options: [])
       let engine = AVAudioEngine()
@@ -146,6 +151,20 @@ final class ProMaxLiveConnection: NSObject {
     engine?.stop()
     player = nil
     engine = nil
+    restoreSession()
+  }
+
+  private func restoreSession() {
+    guard let previous = displacedSession else { return }
+    displacedSession = nil
+    let session = AVAudioSession.sharedInstance()
+    guard session.category == .playback, session.categoryOptions.contains(.mixWithOthers) else { return }
+    do {
+      try session.setCategory(previous.category, mode: previous.mode, options: previous.options)
+      if previous.ioBuffer > 0 { try session.setPreferredIOBufferDuration(previous.ioBuffer) }
+    } catch {
+      NSLog("ProMaxLiveConnection: audio session restore failed: \(error)")
+    }
   }
 
   private func post(message data: [String: String]) {
