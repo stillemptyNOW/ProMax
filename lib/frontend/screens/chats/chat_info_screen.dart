@@ -13,6 +13,7 @@ import 'package:promax/main.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../contacts/edit_contact_sheet.dart';
 import '../../../backend/modules/complaints.dart';
+import '../../../backend/modules/deletion_policy.dart';
 import '../../../backend/modules/contacts.dart';
 import '../../../backend/modules/messages.dart' show ContactCache;
 import '../../../core/cache/info_cache.dart';
@@ -1071,7 +1072,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
                 state: admin,
                 onLeave: _leaveChat,
                 onClearHistory: _clearHistory,
-                onDelete: _deleteChannelForAll,
+                onDelete: _deleteOwnedChat,
               ),
             _buildTabBar(cs),
             const SizedBox(height: 12),
@@ -1804,11 +1805,21 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     }
   }
 
-  bool get _canActForAll => widget.chatType == 'DIALOG'
-      ? _mediaChatId != 0
-      : _isGroupOrChannel && _iAmAdmin;
+  bool get _isDialogWithPeer =>
+      widget.chatType == 'DIALOG' && _mediaChatId != 0;
 
-  bool get _canDeleteDialogForAll => _mediaChatId != 0;
+  bool get _canActForAll => DeletionPolicy.instance.allowsChatForAll(
+    chatId: _mediaChatId,
+    chatType: widget.chatType,
+    owner: _chatInfo?.owner,
+    myId: _myId,
+    peerIsBot: _isBot,
+  );
+
+  String _withForAllHint(String message, {required bool forAllAllowed}) =>
+      forAllAllowed || !_isDialogWithPeer
+      ? message
+      : '$message\n\n${l10n.chatForAllNotAllowedHint}';
 
   Future<bool> _profileReady() async {
     await _identityKnown.future;
@@ -1824,11 +1835,18 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     final choice = await showBlurredConfirm(
       context,
       title: l10n.chatInfoClearHistoryTitle,
-      message: l10n.chatInfoClearHistoryMessage,
+      message: _withForAllHint(
+        l10n.chatInfoClearHistoryMessage,
+        forAllAllowed: canClearForAll,
+      ),
       confirmLabel: l10n.chatInfoClearHistoryConfirm,
       cancelLabel: l10n.chatInfoActionCancel,
       destructive: true,
-      checkboxLabel: canClearForAll ? l10n.chatInfoClearHistoryForAll : null,
+      checkboxLabel: canClearForAll
+          ? (_isDialogWithPeer
+                ? l10n.chatClearAlsoForPeer
+                : l10n.chatInfoClearHistoryForAll)
+          : null,
     );
     if (!mounted || !choice.confirmed) return;
 
@@ -1847,15 +1865,22 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
 
   Future<void> _deleteChat() async {
     if (!await _profileReady() || !mounted) return;
-    final canDeleteForAll = _canDeleteDialogForAll;
+    final canDeleteForAll = _canActForAll;
     final choice = await showBlurredConfirm(
       context,
       title: l10n.chatInfoDeleteChatTitle,
-      message: l10n.chatInfoDeleteChatMessage,
+      message: _withForAllHint(
+        l10n.chatInfoDeleteChatMessage,
+        forAllAllowed: canDeleteForAll,
+      ),
       confirmLabel: l10n.chatInfoDeleteChatConfirm,
       cancelLabel: l10n.chatInfoActionCancel,
       destructive: true,
-      checkboxLabel: canDeleteForAll ? l10n.chatDeleteAlsoForPeer : null,
+      checkboxLabel: canDeleteForAll
+          ? (_isDialogWithPeer
+                ? l10n.chatDeleteAlsoForPeer
+                : l10n.chatDeleteForAllMembers)
+          : null,
     );
     if (!mounted || !choice.confirmed) return;
 
@@ -1870,12 +1895,12 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  void _deleteChannelForAll() {
+  void _deleteOwnedChat() {
     removeChatsWithUndo(
       context,
       message: l10n.undoChatsDeleted(1),
       accountId: _myId,
-      chats: [(chatId: _mediaChatId, forAll: true)],
+      chats: [(chatId: _mediaChatId, forAll: _canActForAll)],
     );
     Navigator.of(context).popUntil((route) => route.isFirst);
   }

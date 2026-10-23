@@ -221,14 +221,18 @@ class _ScheduledMessagesScreenState extends State<ScheduledMessagesScreen>
     );
     if (!confirmed || !mounted) return;
 
-    final outcome = await messagesModule.deleteMessages(
+    final reply = await messagesModule.deleteMessages(
       widget.chatId,
       [msg.id],
       forEveryone: true,
       itemType: 'DELAYED',
     );
     if (!mounted) return;
-    final failure = outcomeFailureText(outcome, l10n);
+    final failure =
+        outcomeFailureText(reply.outcome, l10n) ??
+        (reply.unconfirmedOf([msg.id]).isEmpty
+            ? null
+            : l10n.deleteMessagesNotConfirmed(1));
     if (failure == null) {
       Haptics.send();
       setState(() => _messages.removeWhere((m) => m.id == msg.id));

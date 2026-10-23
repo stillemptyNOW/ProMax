@@ -28,7 +28,7 @@ class ApiDeletionGateway implements PendingDeletionGateway {
   Future<int?> activeAccountId() => TokenStorage.getActiveAccountId();
 
   @override
-  Future<ServerOutcome> deleteMessages(
+  Future<MessageDeletionReply> deleteMessages(
     int chatId,
     List<String> messageIds, {
     required bool forEveryone,
@@ -39,13 +39,11 @@ class ApiDeletionGateway implements PendingDeletionGateway {
     int accountId,
     int chatId, {
     required bool forAll,
-    required bool historyErased,
   }) => chats.deleteChat(
     _api,
     chatId: chatId,
     forAll: forAll,
     accountId: accountId,
-    historyErased: historyErased,
   );
 
   @override

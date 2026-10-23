@@ -34,6 +34,7 @@ import 'chat_deletion_plan.dart';
 import 'chat_parsing.dart';
 import 'chat_preview.dart';
 import 'contacts.dart' show ContactsModule;
+import 'deletion_policy.dart';
 import 'folders.dart';
 import 'messages.dart'
     show ContactCache, CachedMessage, HistoryPage, MessagesModule;
@@ -1112,6 +1113,7 @@ class ChatsModule {
   // #***! сменили аккаунт, всё локальное чужое
   void resetForAccountSwitch() {
     E2eeService.instance.lock();
+    DeletionPolicy.instance.forget();
     _historyFetched.clear();
     _readBaselines.end();
     ContactInfoFetch.clear();
@@ -1183,6 +1185,16 @@ class ChatsModule {
     final accountId = await TokenStorage.getActiveAccountId();
     if (accountId == null) return;
     await PrivacyModule.applyConfigPush(accountId, payload);
+    final config = payload['config'];
+    final server = config is Map ? config['server'] : payload['server'];
+    if (server is Map && server.isNotEmpty) {
+      await DeletionPolicy.instance.applyServerConfig(
+        accountId,
+        server,
+        complete: false,
+      );
+      logger.i('NOTIF_CONFIG: ${DeletionPolicy.instance.describe()}');
+    }
   }
 
   Future<void> _handleNotifMsgYouReacted(Packet packet) async {
@@ -2678,17 +2690,53 @@ class ChatsModule {
     }
   }
 
-  int freshLastEventTime(int chatId, {int seen = 0}) {
-    final cached = _chatsById[chatId];
-    var latest = ServerClock.now();
-    for (final time in [
-      seen,
-      cached?.lastEventTime ?? 0,
-      cached?.lastMsgTime ?? 0,
-    ]) {
-      if (time > latest) latest = time;
+  static int knownEventTime(CachedChat? chat, {int seen = 0}) =>
+      [seen, chat?.lastEventTime ?? 0, chat?.lastMsgTime ?? 0].reduce(math.max);
+
+  static int _eventTimeOfInfo(Map<String, dynamic>? info) {
+    final lastMessage = info?['lastMessage'];
+    return [
+      _asTime(info?['lastEventTime']),
+      if (lastMessage is Map) _asTime(lastMessage['time']),
+    ].reduce(math.max);
+  }
+
+  static int _asTime(Object? raw) => raw is num ? raw.toInt() : 0;
+
+  Future<int?> chatEventTime(
+    Api api,
+    int chatId, {
+    int seen = 0,
+    int? accountId,
+  }) async {
+    final known = knownEventTime(
+      await _cachedChat(accountId, chatId),
+      seen: seen,
+    );
+    if (known > 0) return known;
+    final fetched = _eventTimeOfInfo(await getChatInfo(api, chatId));
+    if (fetched > 0) return fetched;
+    logger.w('Чат $chatId: время последнего события неизвестно и в CHAT_INFO');
+    return null;
+  }
+
+  Future<({int? time, ServerOutcome? failure})> _requestEventTime(
+    Api api,
+    int chatId, {
+    required int seen,
+    required int? accountId,
+  }) async {
+    try {
+      final time = await chatEventTime(
+        api,
+        chatId,
+        seen: seen,
+        accountId: accountId,
+      );
+      return (time: time, failure: null);
+    } catch (e) {
+      return (time: null, failure: outcomeOfError(e));
     }
-    return latest;
   }
 
   void _logRefusal(String action, int chatId, ServerOutcome outcome) {
@@ -2702,27 +2750,83 @@ class ChatsModule {
     }
   }
 
-  Future<String?> _chatTypeOf(int? accountId, int chatId) async {
+  Future<CachedChat?> _cachedChat(int? accountId, int chatId) async {
     final cached = _chatsById[chatId];
-    if (cached != null) return cached.type;
+    if (cached != null) return cached;
     if (accountId == null) return null;
     final rows = await AppDatabase.loadChat(accountId, chatId);
-    return rows.isEmpty ? null : CachedChat.fromDbRow(rows.first).type;
+    return rows.isEmpty ? null : CachedChat.fromDbRow(rows.first);
   }
 
-  Future<({String? type, ServerOutcome? failure})> _resolveChatType(
-    Api api,
-    int? accountId,
-    int chatId,
-  ) async {
-    final known = await _chatTypeOf(accountId, chatId);
-    if (known != null) return (type: known, failure: null);
-    try {
-      final type = (await getChatInfo(api, chatId))?['type'];
-      return (type: type is String ? type : null, failure: null);
-    } catch (e) {
-      return (type: null, failure: outcomeOfError(e));
+  Future<({ChatDeletionPlan? plan, int eventTime, ServerOutcome? failure})>
+  _planForAll(
+    Api api, {
+    required int chatId,
+    required int myId,
+    required int? accountId,
+    required String action,
+  }) async {
+    String? type;
+    int? owner;
+    Iterable<int> participants;
+    Set<String> options;
+    int eventTime;
+    final cached = await _cachedChat(accountId, chatId);
+    if (cached != null) {
+      eventTime = knownEventTime(cached);
+      type = cached.type;
+      owner = cached.owner;
+      participants = cached.participants.keys;
+      options = cached.options;
+    } else {
+      final Map<String, dynamic>? info;
+      try {
+        info = await getChatInfo(api, chatId);
+      } catch (e) {
+        return (plan: null, eventTime: 0, failure: outcomeOfError(e));
+      }
+      eventTime = _eventTimeOfInfo(info);
+      final rawType = info?['type'];
+      final rawOwner = info?['owner'];
+      type = rawType is String ? rawType : null;
+      owner = rawOwner is int ? rawOwner : null;
+      participants = parseParticipants(info?['participants']).keys;
+      options = const {};
     }
+    final peerIsBot =
+        type == 'DIALOG' &&
+        knownBot(
+          dialogPeerId(chatId: chatId, myId: myId, participants: participants),
+          chatOptions: options,
+        );
+    final policy = DeletionPolicy.instance;
+    final deleteForAll = policy.accountId == accountId
+        ? policy.deleteForAll
+        : null;
+    final plan = ChatDeletionPlan.of(
+      forAll: true,
+      chatId: chatId,
+      chatType: type,
+      owner: owner,
+      myId: myId,
+      peerIsBot: peerIsBot,
+      deleteForAll: deleteForAll,
+    );
+    if (plan == null) {
+      logger.w('$action $chatId: тип чата неизвестен, для всех не отправляем');
+    } else if (!plan.forAll) {
+      logger.w(
+        '$action $chatId: $type, владелец $owner, бот $peerIsBot, '
+        'delete-for-all=$deleteForAll — сервер MAX не даёт сделать это для '
+        'всех, отправляю только для себя, как официальный клиент',
+      );
+    } else if (type == 'DIALOG' && deleteForAll == null) {
+      logger.i(
+        '$action $chatId: delete-for-all ещё не известен, отправляю для всех, '
+        'решит сервер',
+      );
+    }
+    return (plan: plan, eventTime: eventTime, failure: null);
   }
 
   // #***! удаление чата
@@ -2732,63 +2836,70 @@ class ChatsModule {
     required bool forAll,
     int seenEventTime = 0,
     int? accountId,
-    bool historyErased = false,
   }) async {
     final epoch = api.sessionEpoch;
     final owner = accountId ?? await TokenStorage.getActiveAccountId();
-    Future<ServerOutcome> inSameSession(
-      Future<ServerOutcome> Function() step,
-    ) async {
+    Future<bool> sameSession() async {
       final active = await TokenStorage.getActiveAccountId();
-      if (api.sessionEpoch != epoch || (owner != null && active != owner)) {
-        return const ServerUnreachable('сессия сменилась');
-      }
-      return step();
+      return api.sessionEpoch == epoch && (owner == null || active == owner);
     }
 
-    final wantsAll = forAll && chatId != 0;
-    String? chatType;
-    if (wantsAll) {
-      final resolved = await _resolveChatType(api, owner, chatId);
+    const sessionChanged = ServerUnreachable('сессия сменилась');
+    if (!await sameSession()) return const ChatDeletionResult(sessionChanged);
+
+    var plan = ChatDeletionPlan.forMe;
+    var seen = seenEventTime;
+    if (forAll && chatId != 0) {
+      final resolved = await _planForAll(
+        api,
+        chatId: chatId,
+        myId: owner ?? 0,
+        accountId: owner,
+        action: 'deleteChat',
+      );
       final failure = resolved.failure;
       if (failure != null) {
         _logRefusal('deleteChat', chatId, failure);
         return ChatDeletionResult(failure);
       }
-      chatType = resolved.type;
+      final chosen = resolved.plan;
+      if (chosen == null) {
+        return ChatDeletionResult.refused(ChatDeletionRefusal.typeUnknown);
+      }
+      plan = chosen;
+      seen = math.max(seen, resolved.eventTime);
     }
-    final plan = ChatDeletionPlan.of(chatType: chatType, forAll: wantsAll);
-    if (plan == null) {
-      logger.w('deleteChat $chatId: тип чата неизвестен, для всех не удаляем');
-      return const ChatDeletionResult.typeUnknown();
-    }
-    final result = await plan.run(
-      historyErased: historyErased,
-      clearHistoryForAll: () => inSameSession(
-        () => _clearOnServer(
-          api,
-          chatId: chatId,
-          forAll: true,
-          seenEventTime: seenEventTime,
-          accountId: owner,
-        ),
-      ),
-      deleteChat: ({required bool forAll}) => inSameSession(
-        () => runServerAction(() async {
-          final response = await api.sendRequest(Opcode.chatDelete, {
-            'chatId': chatId,
-            'lastEventTime': freshLastEventTime(chatId, seen: seenEventTime),
-            'forAll': forAll,
-          });
-          logger.i(
-            'CHAT_DELETE чат $chatId, forAll=$forAll → '
-            '${describeReply(response)}',
-          );
-          return response;
-        }),
-      ),
+
+    final eventTime = await _requestEventTime(
+      api,
+      chatId,
+      seen: seen,
+      accountId: owner,
     );
-    _logRefusal('deleteChat', chatId, result.outcome);
+    final timeFailure = eventTime.failure;
+    if (timeFailure != null) {
+      _logRefusal('deleteChat', chatId, timeFailure);
+      return ChatDeletionResult(timeFailure);
+    }
+    final lastEventTime = eventTime.time;
+    if (lastEventTime == null) {
+      return ChatDeletionResult.refused(ChatDeletionRefusal.eventTimeUnknown);
+    }
+    if (!await sameSession()) return const ChatDeletionResult(sessionChanged);
+
+    final outcome = await runServerAction(() async {
+      final response = await api.sendRequest(
+        Opcode.chatDelete,
+        plan.payload(chatId: chatId, lastEventTime: lastEventTime),
+      );
+      logger.i(
+        'CHAT_DELETE чат $chatId, forAll=${plan.forAll}, '
+        'lastEventTime=$lastEventTime → ${describeReply(response)}',
+      );
+      return response;
+    });
+    _logRefusal('deleteChat', chatId, outcome);
+    final result = ChatDeletionResult(outcome, forAll: plan.forAll);
     if (!result.ok) return result;
     if (owner != null) {
       await AppDatabase.deleteChat(chatId, owner);
@@ -2807,29 +2918,54 @@ class ChatsModule {
     required int chatId,
     bool forAll = false,
     int seenEventTime = 0,
-  }) async => _clearOnServer(
-    api,
-    chatId: chatId,
-    forAll: forAll,
-    seenEventTime: seenEventTime,
-    accountId: await TokenStorage.getActiveAccountId(),
-  );
-
-  Future<ServerOutcome> _clearOnServer(
-    Api api, {
-    required int chatId,
-    required bool forAll,
-    required int seenEventTime,
-    required int? accountId,
   }) async {
+    final accountId = await TokenStorage.getActiveAccountId();
+    var sendForAll = false;
+    var seen = seenEventTime;
+    if (forAll && chatId != 0) {
+      final resolved = await _planForAll(
+        api,
+        chatId: chatId,
+        myId: accountId ?? 0,
+        accountId: accountId,
+        action: 'clearHistory',
+      );
+      final failure = resolved.failure;
+      if (failure != null) {
+        _logRefusal('clearHistory', chatId, failure);
+        return failure;
+      }
+      final plan = resolved.plan;
+      if (plan == null) return ChatDeletionRefusal.typeUnknown.outcome;
+      sendForAll = plan.forAll;
+      seen = math.max(seen, resolved.eventTime);
+    }
+
+    final eventTime = await _requestEventTime(
+      api,
+      chatId,
+      seen: seen,
+      accountId: accountId,
+    );
+    final timeFailure = eventTime.failure;
+    if (timeFailure != null) {
+      _logRefusal('clearHistory', chatId, timeFailure);
+      return timeFailure;
+    }
+    final lastEventTime = eventTime.time;
+    if (lastEventTime == null) {
+      return ChatDeletionRefusal.eventTimeUnknown.outcome;
+    }
+
     final outcome = await runServerAction(() async {
       final response = await api.sendRequest(Opcode.chatClear, {
         'chatId': chatId,
-        'lastEventTime': freshLastEventTime(chatId, seen: seenEventTime),
-        'forAll': forAll,
+        'lastEventTime': lastEventTime,
+        'forAll': sendForAll,
       });
       logger.i(
-        'CHAT_CLEAR чат $chatId, forAll=$forAll → ${describeReply(response)}',
+        'CHAT_CLEAR чат $chatId, forAll=$sendForAll, '
+        'lastEventTime=$lastEventTime → ${describeReply(response)}',
       );
       return response;
     });
