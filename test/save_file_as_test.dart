@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:promax/core/utils/media_saver.dart';
 import 'package:promax/core/utils/save_file_as.dart';
 
 void main() {
@@ -82,5 +83,40 @@ void main() {
     expect(result.saved, isFalse);
     expect(result.cancelled, isFalse);
     expect(result.error, isNotNull);
+  });
+
+  group('a document saved from chat info', () {
+    test('goes through the export sheet on iOS', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      answer((_) => '/exported/report.pdf');
+
+      final result = await saveLocalMedia(
+        source,
+        saveName: 'report.pdf',
+        kind: SaveMediaKind.file,
+      );
+
+      expect(result.ok, isTrue);
+      expect(result.toGallery, isFalse);
+      expect(result.location, '/exported/report.pdf');
+      expect(calls.single.arguments, {
+        'path': source.path,
+        'name': 'report.pdf',
+      });
+    });
+
+    test('reports a dismissed sheet as cancelled, not failed', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      answer((_) => null);
+
+      final result = await saveLocalMedia(
+        source,
+        saveName: 'report.pdf',
+        kind: SaveMediaKind.file,
+      );
+
+      expect(result.ok, isFalse);
+      expect(result.cancelled, isTrue);
+    });
   });
 }
