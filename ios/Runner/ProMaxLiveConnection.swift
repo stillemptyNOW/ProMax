@@ -11,6 +11,8 @@ final class ProMaxLiveConnection: NSObject {
   private let enabledKey = "promax_live_connection"
   private var engine: AVAudioEngine?
   private var player: AVAudioPlayerNode?
+  private var displacedSession: (category: AVAudioSession.Category, mode: AVAudioSession.Mode,
+                                 options: AVAudioSession.CategoryOptions, ioBuffer: TimeInterval)?
   private var observers: [NSObjectProtocol] = []
   private var started = false
   private var callActive = false
@@ -49,8 +51,11 @@ final class ProMaxLiveConnection: NSObject {
       result(nil)
     case "setConnected":
       result(nil)
-    case "showMessage", "editMessage":
+    case "showMessage":
       post(message: Self.strings(args?["data"]))
+      result(nil)
+    case "editMessage":
+      edit(message: Self.strings(args?["data"]))
       result(nil)
     case "removeMessage":
       let data = Self.strings(args?["data"])
@@ -115,7 +120,10 @@ final class ProMaxLiveConnection: NSObject {
     guard engine == nil, !callActive else { return }
     do {
       let session = AVAudioSession.sharedInstance()
+      let previous = (category: session.category, mode: session.mode,
+                      options: session.categoryOptions, ioBuffer: session.preferredIOBufferDuration)
       try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+      if displacedSession == nil { displacedSession = previous }
       try? session.setPreferredIOBufferDuration(Self.keepAliveBufferDuration)
       try session.setActive(true, options: [])
       let engine = AVAudioEngine()
@@ -143,6 +151,20 @@ final class ProMaxLiveConnection: NSObject {
     engine?.stop()
     player = nil
     engine = nil
+    restoreSession()
+  }
+
+  private func restoreSession() {
+    guard let previous = displacedSession else { return }
+    displacedSession = nil
+    let session = AVAudioSession.sharedInstance()
+    guard session.category == .playback, session.categoryOptions.contains(.mixWithOthers) else { return }
+    do {
+      try session.setCategory(previous.category, mode: previous.mode, options: previous.options)
+      if previous.ioBuffer > 0 { try session.setPreferredIOBufferDuration(previous.ioBuffer) }
+    } catch {
+      NSLog("ProMaxLiveConnection: audio session restore failed: \(error)")
+    }
   }
 
   private func post(message data: [String: String]) {
@@ -153,11 +175,33 @@ final class ProMaxLiveConnection: NSObject {
     let sender = data["userName"] ?? ""
     let text = data["msg"] ?? "Новое сообщение"
     content.title = title
-    content.body = !sender.isEmpty && sender != title ? "\(sender): \(text)" : text
-    content.sound = .default
+    content.body = Self.body(title: title, sender: sender, text: text)
+    content.sound = data["sound"] == "false" ? nil : .default
     content.threadIdentifier = "chat-\(chat)"
-    content.userInfo = ["chatId": chat, "msgid": data["msgid"] ?? ""]
+    content.userInfo = ["chatId": chat, "msgid": data["msgid"] ?? "", "sender": sender]
     UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+  }
+
+  private func edit(message data: [String: String]) {
+    guard let id = Self.identifier(data), let text = data["msg"], !text.isEmpty else { return }
+    let center = UNUserNotificationCenter.current()
+    center.getDeliveredNotifications { delivered in
+      guard let shown = delivered.first(where: { $0.request.identifier == id }) else { return }
+      let previous = shown.request.content
+      let sender = previous.userInfo["sender"] as? String ?? ""
+      let body = Self.body(title: previous.title, sender: sender, text: text)
+      guard body != previous.body else { return }
+      let content = UNMutableNotificationContent()
+      content.title = previous.title
+      content.body = body
+      content.threadIdentifier = previous.threadIdentifier
+      content.userInfo = previous.userInfo
+      center.add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+    }
+  }
+
+  private static func body(title: String, sender: String, text: String) -> String {
+    !sender.isEmpty && sender != title ? "\(sender): \(text)" : text
   }
 
   private func post(call data: [String: String]) {
@@ -167,7 +211,7 @@ final class ProMaxLiveConnection: NSObject {
     content.title = data["title"] ?? "ProMax"
     content.body = video ? "Входящий видеозвонок" : "Входящий звонок"
     content.sound = .default
-    if let caller = data["callerId"] { content.userInfo = ["chatId": caller] }
+    if let chat = data["mc"] { content.userInfo = ["chatId": chat] }
     let id = "call-\(data["conversationId"] ?? UUID().uuidString)"
     UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
   }

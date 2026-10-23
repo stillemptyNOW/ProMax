@@ -33,6 +33,8 @@ import '../../widgets/sheet_helpers.dart';
 import '../../widgets/swipe_route.dart';
 import '../../widgets/toast_placement.dart';
 import '../../widgets/sliding_pill_nav.dart';
+import '../../widgets/native_tab_bar.dart';
+import 'native_main_tab_bar.dart';
 import '../../widgets/springy_tap.dart';
 import '../../widgets/visible_page_tickers.dart';
 import '../../widgets/informer_banner_tile.dart';
@@ -2610,6 +2612,47 @@ class _ChatListScreenState extends State<ChatListScreen>
   }
 
   Widget _buildDockedBottomNav(
+    ColorScheme cs,
+    double navInnerW,
+    double bottomInset,
+  ) {
+    return ListenableBuilder(
+      listenable: NativeTabBarPolicy.listenable,
+      builder: (context, _) => NativeTabBarPolicy.current
+          ? _buildNativeBottomNav(bottomInset)
+          : _buildPillBottomNav(cs, navInnerW, bottomInset),
+    );
+  }
+
+  Widget _buildNativeBottomNav(double bottomInset) {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      left: 12,
+      right: 12,
+      bottom: _isSelectionMode
+          ? -(NativeTabBar.fallbackHeight + bottomInset + 40)
+          : (bottomInset > 0 ? bottomInset : 8.0),
+      child: ToastObstruction(
+        child: ValueListenableBuilder<int>(
+          valueListenable: chats.chatsChanged,
+          builder: (context, _, _) => NativeMainTabBar(
+            selectedIndex: _currentNavIndex,
+            chatsBadge: NativeMainTabBar.unreadBadge(_liveUnread(_chats).loud),
+            avatarUrl: _profile?.baseUrl,
+            onSelected: _onNavTabSelected,
+            onLongPress: (index, pos) {
+              if (index == NativeMainTabBar.settingsIndex) {
+                _openAccountSwitcher(pos);
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPillBottomNav(
     ColorScheme cs,
     double navInnerW,
     double bottomInset,

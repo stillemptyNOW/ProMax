@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/config/app_native_glass.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../core/config/promax_aura.dart';
 import '../../../core/config/promax_glass.dart';
@@ -77,6 +78,25 @@ class ProMaxDesignScreen extends StatelessWidget {
                 child: const Text('Сбросить'),
               ),
             ),
+            if (NativeGlass.isSupported) ...[
+              ValueListenableBuilder<bool>(
+                valueListenable: NativeGlass.enabled,
+                builder: (context, value, _) => SettingsCard(
+                  children: [
+                    SettingsToggleTile(
+                      icon: Symbols.phone_iphone,
+                      label: 'Системное стекло iOS 26',
+                      subtitle:
+                          'Liquid Glass от Apple для панелей, кнопок и таб-бара. '
+                          'Ползунки ниже меняют только стекло ProMax',
+                      value: value,
+                      onChanged: NativeGlass.save,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             SettingsCard(
               children: [
                 ProMaxSliderTile(

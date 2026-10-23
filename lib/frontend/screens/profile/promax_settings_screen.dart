@@ -22,6 +22,7 @@ import 'quick_replies_screen.dart';
 import '../../../core/storage/quick_replies_store.dart';
 import '../../../core/reminders/message_reminders.dart';
 import 'export_reader_screen.dart';
+import 'ignored_senders_screen.dart';
 import 'plugins_screen.dart';
 import 'privacy_sandbox_screen.dart';
 import 'promax_design_screen.dart';
@@ -92,6 +93,11 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   icon: Symbols.privacy_tip,
                   label: l10n.privacySandboxTitle,
                   onTap: () => _open(context, const PrivacySandboxScreen()),
+                ),
+                SettingsNavTile(
+                  icon: Symbols.speaker_notes_off,
+                  label: l10n.ignoredSendersTitle,
+                  onTap: () => _open(context, const IgnoredSendersScreen()),
                 ),
                 ValueListenableBuilder<bool>(
                   valueListenable: ProMaxSettings.ghostMode,

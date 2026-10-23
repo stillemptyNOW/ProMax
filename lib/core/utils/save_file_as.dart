@@ -10,7 +10,9 @@ import '../security/app_lock.dart';
 import '../security/file_name_policy.dart';
 import '../security/mark_of_the_web.dart';
 
-const _documentExport = MethodChannel('io.github.stillemptynow.promax/media_export');
+const _documentExport = MethodChannel(
+  'io.github.stillemptynow.promax/media_export',
+);
 
 // #***! итог сохранить как, отмену отличаем от ошибки
 class SaveFileAsResult {
@@ -27,7 +29,11 @@ class SaveFileAsResult {
   });
 }
 
-// #***! на андроиде системное сохранить файл, на остальных выбор папки и копирование
+bool get _savesThroughSystemExport =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS);
+
 Future<SaveFileAsResult> saveFileAs({
   required File source,
   required String fileName,
@@ -38,8 +44,10 @@ Future<SaveFileAsResult> saveFileAs({
     fallback: sanitizeFileName(p.basename(source.path)),
   );
   try {
-    if (!kIsWeb && Platform.isAndroid) {
-      return await _exportDocument(source, name);
+    if (_savesThroughSystemExport) {
+      return await AppLock.instance.external(
+        () => _exportDocument(source, name),
+      );
     }
     final directory = await AppLock.instance.external(
       () => FilePicker.platform.getDirectoryPath(dialogTitle: dialogTitle),

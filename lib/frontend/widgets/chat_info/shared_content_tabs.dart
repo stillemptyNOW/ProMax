@@ -214,7 +214,7 @@ Widget _moreButton(ColorScheme cs, VoidCallback onTap, {bool overlay = false}) {
 }
 
 void _notifySave(BuildContext context, MediaSaveResult result) {
-  if (!context.mounted) return;
+  if (!context.mounted || result.cancelled) return;
   final l10n = AppLocalizations.of(context)!;
   if (result.ok) {
     showCustomNotification(

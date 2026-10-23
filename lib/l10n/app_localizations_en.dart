@@ -7636,4 +7636,77 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profilePhoneManualInvalid =>
       'That does not look like a phone number';
+
+  @override
+  String get ignoredSendersTitle => 'Don\'t let them write to me';
+
+  @override
+  String get ignoredSendersHowItWorks => 'How it works';
+
+  @override
+  String get ignoredSendersExplanation =>
+      'MAX has no \"who can message me\" setting. The only way to make sending fail is the MAX server black list, and the other person may notice it.\n\nThis mode works in ProMax only and blocks nobody on the server. Messages from the chosen people in private chats are deleted for you only, you get no notifications for them, no read mark is set, the chat does not jump up and the counter does not grow, and their calls are declined silently. They will not know: for them the message was sent as usual.';
+
+  @override
+  String get ignoredSendersCaveat =>
+      'Messages are deleted \"for me\" on the server, so they also disappear in your other MAX apps, although a notification may still show up there. Removing someone from the list does not bring deleted messages back. Group chats are not affected.';
+
+  @override
+  String get ignoredSendersEmpty => 'The list is empty';
+
+  @override
+  String get ignoredSendersEmptyHint =>
+      'Add someone by ID or from a private chat menu: \"Don\'t let them write to me\"';
+
+  @override
+  String get ignoredSendersAdd => 'Add by ID';
+
+  @override
+  String get ignoredSendersIdLabel => 'User ID';
+
+  @override
+  String get ignoredSendersIdHint => 'For example, 123456789';
+
+  @override
+  String get ignoredSendersConfirmAdd => 'Hide';
+
+  @override
+  String get ignoredSendersCancel => 'Cancel';
+
+  @override
+  String get ignoredSendersInvalidId => 'A numeric user ID is required';
+
+  @override
+  String get ignoredSendersSelfId => 'This is your own ID';
+
+  @override
+  String get ignoredSendersAlreadyAdded => 'This ID is already on the list';
+
+  @override
+  String get ignoredSendersAdded => 'Their messages will no longer be shown';
+
+  @override
+  String get ignoredSendersRemoved => 'Their new messages will be shown again';
+
+  @override
+  String get ignoredSendersRemove => 'Allow';
+
+  @override
+  String ignoredSendersUserId(int id) {
+    return 'ID $id';
+  }
+
+  @override
+  String get ignoredSendersNoAccount => 'Sign in to an account first';
+
+  @override
+  String get chatInfoMenuIgnore => 'Don\'t let them write to me';
+
+  @override
+  String get chatInfoMenuUnignore => 'Let them write to me';
+
+  @override
+  String chatInfoIgnoreConfirmMessage(String name) {
+    return '$name can still send you messages and will not know, but ProMax will delete them for you, show no notifications, never mark them read and decline calls. Only the MAX black list stops the sending itself.';
+  }
 }

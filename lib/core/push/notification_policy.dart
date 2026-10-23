@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 
 import '../../backend/modules/account/account_models.dart';
@@ -7,6 +9,8 @@ import '../../backend/modules/messages.dart';
 import '../config/promax_settings.dart';
 import '../crypto/e2ee_service.dart';
 import '../storage/app_database.dart';
+import '../storage/ignored_senders.dart';
+import '../storage/local_read_state.dart';
 import '../storage/token_storage.dart';
 
 enum MessagePushKind { created, edited, removed }
@@ -48,6 +52,8 @@ class NotificationFacts {
     this.senderName,
     this.streamerMode = false,
     this.encrypted = false,
+    this.readMark = 0,
+    this.senderIgnored = false,
   });
 
   final int accountId;
@@ -56,20 +62,44 @@ class NotificationFacts {
   final String? senderName;
   final bool streamerMode;
   final bool encrypted;
+  final int readMark;
+  final bool senderIgnored;
+
+  static int effectiveReadMark({
+    required int accountId,
+    CachedChat? chat,
+    LocalReadState local = const LocalReadState(),
+  }) => math.max(chat?.participants[accountId] ?? 0, local.mark);
 
   static Future<NotificationFacts?> load(int chatId, {int? senderId}) async {
     final accountId = await TokenStorage.getActiveAccountId();
     if (accountId == null) return null;
     final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
     final rows = await AppDatabase.loadChat(accountId, chatId);
+    final chat = rows.isEmpty ? null : CachedChat.fromDbRow(rows.first);
+    final local = ProMaxSettings.antiRead.value
+        ? await LocalReadState.load(accountId, chatId)
+        : const LocalReadState();
+    await IgnoredSenders.instance.load();
     await E2eeService.instance.ensureLoaded(accountId);
     return NotificationFacts(
       accountId: accountId,
       privacy: rawConfig == null ? null : PrivacyConfig.fromJson(rawConfig),
-      chat: rows.isEmpty ? null : CachedChat.fromDbRow(rows.first),
+      chat: chat,
       senderName: senderId == null ? null : ContactCache.get(senderId),
       streamerMode: ProMaxSettings.streamerMode.value,
       encrypted: E2eeService.instance.isOn(accountId, chatId),
+      readMark: effectiveReadMark(
+        accountId: accountId,
+        chat: chat,
+        local: local,
+      ),
+      senderIgnored: IgnoredSenders.instance.hidesFromDialog(
+        accountId: accountId,
+        chatId: chatId,
+        senderId: senderId,
+        isDialog: chat?.type == 'DIALOG',
+      ),
     );
   }
 }
@@ -110,6 +140,7 @@ class MessageNotification {
     'title': title,
     'msg': text,
     'ctime': '$time',
+    'sound': '$sound',
     'msgid': ?messageId,
   };
 }
@@ -210,6 +241,9 @@ abstract final class NotificationPolicy {
   }) {
     final senderId = push.senderId;
     if (senderId == null || senderId == facts.accountId) return null;
+    if (facts.senderIgnored) return null;
+    final time = push.message['time'];
+    if (time is int && time <= facts.readMark) return null;
 
     final privacy = facts.privacy;
     if (!chatsEnabled(privacy)) return null;
@@ -226,7 +260,6 @@ abstract final class NotificationPolicy {
 
     final textVisible = showPreview && !facts.streamerMode && !facts.encrypted;
     final text = textVisible ? previewText(push.message) : hiddenPreview;
-    final time = push.message['time'];
     final msgId = push.message['id'];
 
     return MessageNotification(

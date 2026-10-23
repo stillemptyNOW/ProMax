@@ -10,6 +10,7 @@ import '../../core/protocol/packet.dart';
 import '../../core/crypto/e2ee_service.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/chat_activity_store.dart';
+import '../../core/storage/ignored_senders.dart';
 import '../../core/storage/message_ranges.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
@@ -871,6 +872,8 @@ class MessagesModule {
     final List<CachedMessage> results = [];
     final serverIds = <String>{};
     final times = <int>[];
+    final ignored = <String>[];
+    await IgnoredSenders.instance.load();
 
     for (var i = 0; i < messagesData.length; i++) {
       final m = messagesData[i];
@@ -881,7 +884,14 @@ class MessagesModule {
       if (time is int) times.add(time);
 
       final msg = _parseMessage(m.cast<dynamic, dynamic>(), accountId, chatId);
-      if (msg != null) {
+      if (msg != null &&
+          IgnoredSenders.instance.hidesFromDialog(
+            accountId: accountId,
+            chatId: chatId,
+            senderId: msg.senderId,
+          )) {
+        ignored.add(msg.id);
+      } else if (msg != null) {
         results.add(msg);
       }
 
@@ -898,6 +908,7 @@ class MessagesModule {
       times: times,
       emptyConfirmed: emptyConfirmed,
     );
+    discardIgnored(chatId, ignored);
 
     final merged = results.isNotEmpty
         ? await _mergeLocalFields(accountId, chatId, results)
@@ -1499,6 +1510,32 @@ class MessagesModule {
     };
 
     return _api.sendRequestOk(Opcode.msgEdit, payload);
+  }
+
+  static final Set<String> _discarding = {};
+
+  void discardIgnored(int chatId, List<String> messageIds) {
+    final fresh = [
+      for (final id in messageIds)
+        if (int.tryParse(id) != null && _discarding.add('$chatId:$id')) id,
+    ];
+    if (fresh.isEmpty) return;
+    unawaited(
+      deleteMessages(chatId, fresh).then<void>(
+        (reply) {
+          if (reply.outcome is ServerDone) return;
+          for (final id in fresh) {
+            _discarding.remove('$chatId:$id');
+          }
+        },
+        onError: (Object e) {
+          logger.w('Скрытие сообщений $chatId не дошло до сервера: $e');
+          for (final id in fresh) {
+            _discarding.remove('$chatId:$id');
+          }
+        },
+      ),
+    );
   }
 
   // #***! удаление, deleteForAll значит у всех

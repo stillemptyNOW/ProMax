@@ -9,7 +9,9 @@ import 'package:flutter/scheduler.dart';
 
 import '../../core/config/app_frost.dart';
 import '../../core/config/app_liquid_glass.dart';
+import '../../core/config/app_native_glass.dart';
 import '../../core/config/promax_glass.dart';
+import 'native_glass_view.dart';
 
 class LiquidGlass {
   static const String _asset = 'shaders/liquid_glass.frag';
@@ -17,7 +19,9 @@ class LiquidGlass {
   static ui.FragmentProgram? _program;
   static bool _loadAttempted = false;
 
-  static bool get isSupported => _program != null;
+  static bool get isSupported => _program != null || NativeGlass.isSupported;
+
+  static bool get _shaded => _program != null;
 
   static bool get flipsBackdrop =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -127,8 +131,36 @@ class LiquidGlassSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!NativeGlass.isSupported) return _flutterGlass(context);
+    return ValueListenableBuilder<bool>(
+      valueListenable: NativeGlass.enabled,
+      builder: (context, native, _) =>
+          native ? _nativeGlass(context) : _flutterGlass(context),
+    );
+  }
+
+  Widget _nativeGlass(BuildContext context) {
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        Positioned.fill(
+          child: NativeGlassView(
+            params: NativeGlassParams.surface(
+              borderRadius: borderRadius,
+              brightness: Theme.of(context).brightness,
+              role: role,
+              tint: tint,
+            ),
+          ),
+        ),
+        child,
+      ],
+    );
+  }
+
+  Widget _flutterGlass(BuildContext context) {
     final theme = Theme.of(context);
-    final shaded = LiquidGlass.isSupported;
+    final shaded = LiquidGlass._shaded;
     final material = AppLiquidGlass.material(
       theme.colorScheme,
       role,
