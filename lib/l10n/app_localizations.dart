@@ -8474,6 +8474,24 @@ abstract class AppLocalizations {
   /// **'Android didn\'t allow screen sharing during the call'**
   String get callScreenShareServiceFailed;
 
+  /// No description provided for @callScreenShareStartedInApp.
+  ///
+  /// In en, this message translates to:
+  /// **'The other side sees the ProMax screen. Sharing stops if you leave the app'**
+  String get callScreenShareStartedInApp;
+
+  /// No description provided for @callScreenShareNoPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'iOS didn\'t start recording the screen. Try again'**
+  String get callScreenShareNoPicture;
+
+  /// No description provided for @callScreenShareStoppedInBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen sharing stopped: iOS only shares ProMax itself, and the app was in the background'**
+  String get callScreenShareStoppedInBackground;
+
   /// No description provided for @themeSettingsCustomizeAction.
   ///
   /// In en, this message translates to:

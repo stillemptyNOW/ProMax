@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, defaultTargetPlatform;
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:flutter/widgets.dart'
+    show AppLifecycleListener, AppLifecycleState;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:promax_effects/promax_effects.dart';
 
@@ -134,6 +136,8 @@ class CallSession {
   RTCRtpSender? _audioSender;
   RTCRtpSender? _videoSender;
   bool _screenBusy = false;
+  bool _screenShareInterrupted = false;
+  AppLifecycleListener? _screenLifecycle;
   String? _micDeviceId = AppMicrophone.deviceId;
   String? _pulseSource = AppPulseSource.name;
   bool _monitorCapture = false;
@@ -487,6 +491,7 @@ class CallSession {
     final sharing = _localScreen || screen != null;
     _screenStream = null;
     _localScreen = false;
+    _releaseScreenLifecycle();
     if (sharing) {
       await _screenPipeline.close(() => _disposeStream(screen));
     }
@@ -2418,11 +2423,40 @@ class CallSession {
       }
 
       logger.i('[call] screen share published, topology=$_topology');
+      _screenShareInterrupted = false;
+      _followAppLifecycleWhileSharing();
       await _sendMediaSettings();
       _notifyInfo();
     } finally {
       _screenBusy = false;
     }
+  }
+
+  bool get screenShareFollowsApp =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  bool takeScreenShareInterruption() {
+    final interrupted = _screenShareInterrupted;
+    _screenShareInterrupted = false;
+    return interrupted;
+  }
+
+  void _followAppLifecycleWhileSharing() {
+    if (!screenShareFollowsApp) return;
+    _releaseScreenLifecycle();
+    _screenLifecycle = AppLifecycleListener(onHide: _onHiddenWhileSharing);
+  }
+
+  void _releaseScreenLifecycle() {
+    _screenLifecycle?.dispose();
+    _screenLifecycle = null;
+  }
+
+  void _onHiddenWhileSharing() {
+    if (!_localScreen || _screenBusy || _ended) return;
+    logger.i('[call] in-app screen capture stops while ProMax is hidden');
+    _screenShareInterrupted = true;
+    unawaited(Future<void>.microtask(_stopScreenShare));
   }
 
   Future<void> screenShareStoppedBySystem() async {
@@ -2439,7 +2473,7 @@ class CallSession {
       );
 
   Future<bool> _requestScreenConsent() async {
-    if (defaultTargetPlatform != TargetPlatform.android) return true;
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
     return Helper.requestCapturePermission(fullScreenOnly: true);
   }
 
@@ -2490,7 +2524,7 @@ class CallSession {
   }
 
   double _screenDownscale() {
-    if (defaultTargetPlatform != TargetPlatform.android) return 1.0;
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return 1.0;
     final displays = PlatformDispatcher.instance.displays;
     if (displays.isEmpty) return 1.0;
     final size = displays.first.size;
@@ -2501,6 +2535,7 @@ class CallSession {
   }
 
   Future<MediaStream> _captureScreen() async {
+    if (screenShareFollowsApp) return _captureAppScreen();
     if (!_isDesktop) {
       return navigator.mediaDevices.getDisplayMedia(<String, dynamic>{
         'video': true,
@@ -2522,8 +2557,57 @@ class CallSession {
     });
   }
 
+  Future<MediaStream> _captureAppScreen() async {
+    final lifecycle = StreamController<AppLifecycleState>();
+    final listener = AppLifecycleListener(onStateChange: lifecycle.add);
+    try {
+      final stream = await navigator.mediaDevices.getDisplayMedia(
+        <String, dynamic>{'video': true, 'audio': false},
+      );
+      final outcome = await _firstScreenFrame(stream, lifecycle.stream);
+      logger.i('[call] in-app screen capture check: ${outcome.name}');
+      if (outcome == ScreenFrameOutcome.frame) return stream;
+      await _disposeStream(stream);
+      throw ScreenShareException(
+        outcome == ScreenFrameOutcome.declined
+            ? ScreenShareFailure.denied
+            : ScreenShareFailure.noPicture,
+      );
+    } finally {
+      listener.dispose();
+      unawaited(lifecycle.close());
+    }
+  }
+
+  Future<ScreenFrameOutcome> _firstScreenFrame(
+    MediaStream stream,
+    Stream<AppLifecycleState> lifecycle,
+  ) async {
+    final renderer = RTCVideoRenderer();
+    final frame = Completer<void>();
+    try {
+      await renderer.initialize();
+      renderer.onFirstFrameRendered = () {
+        if (!frame.isCompleted) frame.complete();
+      };
+      await renderer.setSrcObject(stream: stream);
+      return await waitForFirstScreenFrame(
+        firstFrame: frame.future,
+        lifecycle: lifecycle,
+      );
+    } catch (e) {
+      logger.w('[call] in-app screen capture check unavailable: $e');
+      return ScreenFrameOutcome.frame;
+    } finally {
+      try {
+        await renderer.dispose();
+      } catch (_) {}
+    }
+  }
+
   Future<void> _stopScreenShare() async {
     final stream = _screenStream;
+    _releaseScreenLifecycle();
     if (!_localScreen && stream == null) return;
     _localScreen = false;
     _screenStream = null;
@@ -2630,6 +2714,7 @@ class CallSession {
     await _localStream?.dispose();
     await _disposeMicStream();
     await PulseAudio.closeBridge();
+    _releaseScreenLifecycle();
     await _disposeStream(_cameraStream);
     await _disposeStream(_screenStream);
     _cameraStream = null;

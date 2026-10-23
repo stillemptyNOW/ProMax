@@ -4743,6 +4743,18 @@ class AppLocalizationsRu extends AppLocalizations {
       'Android не разрешил показ экрана во время звонка';
 
   @override
+  String get callScreenShareStartedInApp =>
+      'Собеседник видит экран ProMax. Если свернуть приложение, показ остановится';
+
+  @override
+  String get callScreenShareNoPicture =>
+      'iOS не начал запись экрана. Попробуйте ещё раз';
+
+  @override
+  String get callScreenShareStoppedInBackground =>
+      'Показ экрана остановлен: iOS показывает собеседнику только ProMax, а приложение свернули';
+
+  @override
   String get themeSettingsCustomizeAction => 'Настроить';
 
   @override

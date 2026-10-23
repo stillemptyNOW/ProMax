@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:promax/core/calls/screen_share.dart';
@@ -115,6 +118,23 @@ void main() {
       ]);
     });
 
+    test('a typed capture failure keeps its reason', () async {
+      final recorder = _Recorder()
+        ..captureError = const ScreenShareException(
+          ScreenShareFailure.noPicture,
+        );
+      await expectLater(
+        recorder.pipeline().open(),
+        throwsA(_failure(ScreenShareFailure.noPicture)),
+      );
+      expect(recorder.calls, [
+        'consent',
+        'service:true',
+        'capture',
+        'service:false',
+      ]);
+    });
+
     test('close stops the capture before downgrading the service', () async {
       final recorder = _Recorder();
       await recorder.pipeline().close(() async => recorder.calls.add('stop'));
@@ -171,10 +191,7 @@ void main() {
         downscale: 2,
       );
       final camera = ScreenShareEncoding.forCamera(screen);
-      expect(
-        camera.degradationPreference,
-        RTCDegradationPreference.MAINTAIN_FRAMERATE,
-      );
+      expect(camera.degradationPreference, RTCDegradationPreference.BALANCED);
       final encoding = camera.encodings!.single;
       expect(encoding.rid, 'r0');
       expect(encoding.maxFramerate, ScreenShareEncoding.cameraFramerate);
@@ -204,6 +221,71 @@ void main() {
       expect(ScreenShareEncoding.downscaleFor(1080, 1920), 1.0);
       expect(ScreenShareEncoding.downscaleFor(1080, 2400), 1.25);
       expect(ScreenShareEncoding.downscaleFor(3840, 2160), 2.0);
+    });
+  });
+
+  group('waitForFirstScreenFrame', () {
+    const timeouts = ScreenFrameTimeouts(
+      silent: Duration(milliseconds: 120),
+      afterPrompt: Duration(milliseconds: 60),
+      prompt: Duration(milliseconds: 400),
+    );
+
+    late Completer<void> frame;
+    late StreamController<AppLifecycleState> lifecycle;
+
+    setUp(() {
+      frame = Completer<void>();
+      lifecycle = StreamController<AppLifecycleState>();
+    });
+
+    tearDown(() => lifecycle.close());
+
+    Future<ScreenFrameOutcome> wait() => waitForFirstScreenFrame(
+      firstFrame: frame.future,
+      lifecycle: lifecycle.stream,
+      timeouts: timeouts,
+    );
+
+    test('a frame means the capture runs', () async {
+      final outcome = wait();
+      frame.complete();
+      expect(await outcome, ScreenFrameOutcome.frame);
+      expect(lifecycle.hasListener, isFalse);
+    });
+
+    test('no prompt and no frame is a silent capture', () async {
+      expect(await wait(), ScreenFrameOutcome.silent);
+    });
+
+    test('a frame after the accepted prompt wins', () async {
+      final outcome = wait();
+      lifecycle.add(AppLifecycleState.inactive);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      lifecycle.add(AppLifecycleState.resumed);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      frame.complete();
+      expect(await outcome, ScreenFrameOutcome.frame);
+    });
+
+    test('returning from the prompt without frames is a refusal', () async {
+      final outcome = wait();
+      lifecycle
+        ..add(AppLifecycleState.inactive)
+        ..add(AppLifecycleState.resumed);
+      expect(await outcome, ScreenFrameOutcome.declined);
+    });
+
+    test('a prompt left open too long is a refusal', () async {
+      final outcome = wait();
+      lifecycle.add(AppLifecycleState.inactive);
+      expect(await outcome, ScreenFrameOutcome.declined);
+    });
+
+    test('a failed frame check counts as silent', () async {
+      final outcome = wait();
+      frame.completeError(StateError('renderer'));
+      expect(await outcome, ScreenFrameOutcome.silent);
     });
   });
 }

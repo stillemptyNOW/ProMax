@@ -189,6 +189,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       unawaited(CallTones.instance.play(CallTone.ringtone));
     }
     if (_desktop) unawaited(_countCameras());
+    _lifecycle = AppLifecycleListener(onResume: _reportScreenShareInterruption);
   }
 
   bool get _desktop =>
@@ -297,6 +298,9 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     if (session.peerIsProMax) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showProMaxBadge());
     }
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _reportScreenShareInterruption(),
+    );
     final existing = session.remoteStream;
     if (existing != null) _attachStream(existing);
     _resolveParticipants();
@@ -439,6 +443,8 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   }
 
   bool _videoBusy = false;
+  final GlobalKey _screenShareKey = GlobalKey();
+  late final AppLifecycleListener _lifecycle;
 
   Future<void> _toggleVideo() async {
     final session = _session;
@@ -458,7 +464,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _toggleScreen(BuildContext anchor) async {
+  Future<void> _toggleScreen() async {
     final session = _session;
     if (session == null || _videoBusy) return;
     final l10n = AppLocalizations.of(context)!;
@@ -468,11 +474,16 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     String? hint;
     try {
       await session.setScreenSharing(starting);
-      if (starting && session.localScreen) hint = l10n.callScreenShareStarted;
+      if (starting && session.localScreen) {
+        hint = session.screenShareFollowsApp
+            ? l10n.callScreenShareStartedInApp
+            : l10n.callScreenShareStarted;
+      }
     } on ScreenShareException catch (e) {
       hint = switch (e.failure) {
         ScreenShareFailure.denied => l10n.callScreenShareDenied,
         ScreenShareFailure.service => l10n.callScreenShareServiceFailed,
+        ScreenShareFailure.noPicture => l10n.callScreenShareNoPicture,
         ScreenShareFailure.capture => l10n.callScreenShareFailed(
           userFacingError(e.cause ?? e),
         ),
@@ -483,9 +494,24 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       _syncLocalPreview();
       if (mounted) setState(() => _videoBusy = false);
     }
-    if (hint != null && mounted && anchor.mounted) {
-      showHintBubble(anchor, hint);
+    if (hint != null) _showScreenShareHint(hint);
+  }
+
+  void _reportScreenShareInterruption() {
+    if (!mounted || _session?.takeScreenShareInterruption() != true) return;
+    _showScreenShareHint(
+      AppLocalizations.of(context)!.callScreenShareStoppedInBackground,
+    );
+  }
+
+  void _showScreenShareHint(String text) {
+    if (!mounted) return;
+    final anchor = _screenShareKey.currentContext;
+    if (anchor == null) {
+      showCustomNotification(context, text);
+      return;
     }
+    showHintBubble(anchor, text, duration: const Duration(seconds: 4));
   }
 
   void _syncLocalPreview() {
@@ -691,6 +717,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     if (_lightOn && _session?.frontCamera == false) {
       unawaited(_session!.setCameraTorch(false));
     }
+    _lifecycle.dispose();
     ActiveCall.instance.leaveScreen();
     unawaited(ScreenWake.instance.release(this));
     unawaited(CallTones.instance.stop());
@@ -1626,23 +1653,21 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     final foreground = sharing ? cs.onPrimary : cs.onSurface;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Builder(
-        builder: (chipContext) => ActionChip(
-          avatar: Icon(
-            sharing ? Symbols.stop_screen_share : Symbols.screen_share,
-            size: 20,
-            color: foreground,
-          ),
-          label: Text(
-            sharing
-                ? l10n.callScreenShareStopAction
-                : l10n.callScreenShareAction,
-            style: TextStyle(color: foreground),
-          ),
-          tooltip: sharing ? null : l10n.callScreenShareHint,
-          backgroundColor: sharing ? cs.primary : cs.surfaceContainerHigh,
-          onPressed: _videoBusy ? null : () => _toggleScreen(chipContext),
+      child: ActionChip(
+        key: _screenShareKey,
+        avatar: LottieSlashIcon(
+          asset: 'assets/lottie/ic_screen_share_on_to_off.json',
+          slashed: sharing,
+          color: foreground,
+          size: 20,
         ),
+        label: Text(
+          sharing ? l10n.callScreenShareStopAction : l10n.callScreenShareAction,
+          style: TextStyle(color: foreground),
+        ),
+        tooltip: sharing ? null : l10n.callScreenShareHint,
+        backgroundColor: sharing ? cs.primary : cs.surfaceContainerHigh,
+        onPressed: _videoBusy ? null : _toggleScreen,
       ),
     );
   }

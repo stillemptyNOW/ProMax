@@ -4705,6 +4705,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Android didn\'t allow screen sharing during the call';
 
   @override
+  String get callScreenShareStartedInApp =>
+      'The other side sees the ProMax screen. Sharing stops if you leave the app';
+
+  @override
+  String get callScreenShareNoPicture =>
+      'iOS didn\'t start recording the screen. Try again';
+
+  @override
+  String get callScreenShareStoppedInBackground =>
+      'Screen sharing stopped: iOS only shares ProMax itself, and the app was in the background';
+
+  @override
   String get themeSettingsCustomizeAction => 'Customize';
 
   @override
