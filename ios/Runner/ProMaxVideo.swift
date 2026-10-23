@@ -64,6 +64,7 @@ final class ProMaxVideo: NSObject, PHPickerViewControllerDelegate, UIDocumentPic
   private var cancelled = false
   private var pickerResult: FlutterResult?
   private var documentResult: FlutterResult?
+  private var exportStaging: URL?
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
@@ -100,13 +101,10 @@ final class ProMaxVideo: NSObject, PHPickerViewControllerDelegate, UIDocumentPic
       result(FlutterError(code: "PICKER_BUSY", message: "Выбор видео уже открыт", details: nil))
       return
     }
-    guard var presenter = UIApplication.shared.connectedScenes
-      .compactMap({ $0 as? UIWindowScene }).flatMap({ $0.windows })
-      .first(where: { $0.isKeyWindow })?.rootViewController else {
+    guard let presenter = Self.topViewController() else {
       result(FlutterError(code: "NO_WINDOW", message: "Не удалось открыть галерею", details: nil))
       return
     }
-    while let presented = presenter.presentedViewController { presenter = presented }
     var configuration = PHPickerConfiguration()
     configuration.filter = .videos
     configuration.selectionLimit = 1
@@ -118,30 +116,82 @@ final class ProMaxVideo: NSObject, PHPickerViewControllerDelegate, UIDocumentPic
   }
 
   private func exportPromaxArchive(_ arguments: Any?, _ result: @escaping FlutterResult) {
-    guard documentResult == nil,
-          let args = arguments as? [String: Any], let path = args["path"] as? String,
-          path.hasSuffix(".promax"), FileManager.default.fileExists(atPath: path),
-          var presenter = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene }).flatMap({ $0.windows })
-            .first(where: { $0.isKeyWindow })?.rootViewController else {
-      result(FlutterError(code: "EXPORT_UNAVAILABLE", message: "Не удалось открыть сохранение файла", details: nil))
+    guard let args = arguments as? [String: Any], let path = args["path"] as? String,
+          path.hasSuffix(".promax"), FileManager.default.fileExists(atPath: path) else {
+      result(Self.exportUnavailable())
       return
     }
-    while let presented = presenter.presentedViewController { presenter = presented }
-    let picker = UIDocumentPickerViewController(forExporting: [URL(fileURLWithPath: path)], asCopy: true)
+    presentExport(URL(fileURLWithPath: path), staging: nil, result)
+  }
+
+  func saveAs(_ arguments: Any?, _ result: @escaping FlutterResult) {
+    guard documentResult == nil,
+          let args = arguments as? [String: Any], let path = args["path"] as? String,
+          FileManager.default.fileExists(atPath: path) else {
+      result(Self.exportUnavailable())
+      return
+    }
+    let source = URL(fileURLWithPath: path)
+    let requested = ((args["name"] as? String) ?? "") as NSString
+    let name = requested.lastPathComponent.isEmpty ? source.lastPathComponent : requested.lastPathComponent
+    let manager = FileManager.default
+    let staging = manager.temporaryDirectory
+      .appendingPathComponent("promax_export_\(UUID().uuidString)", isDirectory: true)
+    let target = staging.appendingPathComponent(name)
+    do {
+      try manager.createDirectory(at: staging, withIntermediateDirectories: true)
+      do {
+        try manager.linkItem(at: source, to: target)
+      } catch {
+        try manager.copyItem(at: source, to: target)
+      }
+    } catch {
+      try? manager.removeItem(at: staging)
+      result(FlutterError(code: "EXPORT_FAILED", message: error.localizedDescription, details: nil))
+      return
+    }
+    presentExport(target, staging: staging, result)
+  }
+
+  private func presentExport(_ file: URL, staging: URL?, _ result: @escaping FlutterResult) {
+    guard documentResult == nil, let presenter = Self.topViewController() else {
+      if let staging = staging { try? FileManager.default.removeItem(at: staging) }
+      result(Self.exportUnavailable())
+      return
+    }
+    let picker = UIDocumentPickerViewController(forExporting: [file], asCopy: true)
     picker.delegate = self
     documentResult = result
+    exportStaging = staging
     presenter.present(picker, animated: true)
   }
 
-  func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-    documentResult?(urls.first?.absoluteString)
+  private func finishExport(_ value: Any?) {
+    let result = documentResult
     documentResult = nil
+    if let staging = exportStaging { try? FileManager.default.removeItem(at: staging) }
+    exportStaging = nil
+    result?(value)
+  }
+
+  func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+    finishExport(urls.first?.path ?? "")
   }
 
   func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-    documentResult?(nil)
-    documentResult = nil
+    finishExport(nil)
+  }
+
+  private static func exportUnavailable() -> FlutterError {
+    FlutterError(code: "EXPORT_UNAVAILABLE", message: "Не удалось открыть сохранение файла", details: nil)
+  }
+
+  private static func topViewController() -> UIViewController? {
+    guard var presenter = UIApplication.shared.connectedScenes
+      .compactMap({ $0 as? UIWindowScene }).flatMap({ $0.windows })
+      .first(where: { $0.isKeyWindow })?.rootViewController else { return nil }
+    while let presented = presenter.presentedViewController { presenter = presented }
+    return presenter
   }
 
   func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {

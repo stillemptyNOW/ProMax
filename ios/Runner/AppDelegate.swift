@@ -41,6 +41,7 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
       let messenger = controller.binaryMessenger
       registerAppIcon(messenger)
       registerVideo(messenger)
+      registerMediaExport(messenger)
       registerVideoNote(messenger)
       registerNotifications(messenger)
       registerScreen(messenger)
@@ -118,6 +119,17 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
   private func registerVideo(_ messenger: FlutterBinaryMessenger) {
     method("io.github.stillemptynow.promax/video", messenger) { call, result in
       ProMaxVideo.shared.handle(call, result: result)
+    }
+  }
+
+  private func registerMediaExport(_ messenger: FlutterBinaryMessenger) {
+    method("io.github.stillemptynow.promax/media_export", messenger) { call, result in
+      switch call.method {
+      case "saveAs":
+        ProMaxVideo.shared.saveAs(call.arguments, result)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
     }
   }
 
