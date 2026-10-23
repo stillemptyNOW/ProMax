@@ -149,6 +149,7 @@ void main() {
         'title': 'Synthetic Peer',
         'msg': 'synthetic hello',
         'ctime': '1700000000123',
+        'sound': 'true',
         'msgid': '77001',
       });
     });
@@ -234,6 +235,7 @@ void main() {
         ),
       )!;
       expect(n.sound, isFalse);
+      expect(n.toFkmData()['sound'], 'false');
     });
 
     test('a missing time is filled from the clock', () {

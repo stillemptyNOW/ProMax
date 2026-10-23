@@ -110,6 +110,7 @@ class MessageNotification {
     'title': title,
     'msg': text,
     'ctime': '$time',
+    'sound': '$sound',
     'msgid': ?messageId,
   };
 }

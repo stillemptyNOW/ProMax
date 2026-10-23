@@ -157,7 +157,7 @@ final class ProMaxLiveConnection: NSObject {
     let text = data["msg"] ?? "Новое сообщение"
     content.title = title
     content.body = Self.body(title: title, sender: sender, text: text)
-    content.sound = .default
+    content.sound = data["sound"] == "false" ? nil : .default
     content.threadIdentifier = "chat-\(chat)"
     content.userInfo = ["chatId": chat, "msgid": data["msgid"] ?? "", "sender": sender]
     UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
