@@ -12278,23 +12278,77 @@ abstract class AppLocalizations {
   /// **'None'**
   String get proMaxMaskNone;
 
-  /// No description provided for @proMaxMaskGlasses.
+  /// No description provided for @proMaxMaskSunglasses.
   ///
   /// In en, this message translates to:
-  /// **'Glasses'**
-  String get proMaxMaskGlasses;
+  /// **'Sunglasses'**
+  String get proMaxMaskSunglasses;
 
-  /// No description provided for @proMaxMaskVisor.
+  /// No description provided for @proMaxMaskGoggles.
   ///
   /// In en, this message translates to:
-  /// **'Neon visor'**
-  String get proMaxMaskVisor;
+  /// **'Goggles'**
+  String get proMaxMaskGoggles;
+
+  /// No description provided for @proMaxMaskHeartEyes.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart eyes'**
+  String get proMaxMaskHeartEyes;
+
+  /// No description provided for @proMaxMaskCrown.
+  ///
+  /// In en, this message translates to:
+  /// **'Crown'**
+  String get proMaxMaskCrown;
+
+  /// No description provided for @proMaxMaskTopHat.
+  ///
+  /// In en, this message translates to:
+  /// **'Top hat'**
+  String get proMaxMaskTopHat;
+
+  /// No description provided for @proMaxMaskPigNose.
+  ///
+  /// In en, this message translates to:
+  /// **'Pig snout'**
+  String get proMaxMaskPigNose;
+
+  /// No description provided for @proMaxMaskMustache.
+  ///
+  /// In en, this message translates to:
+  /// **'Mustache'**
+  String get proMaxMaskMustache;
 
   /// No description provided for @proMaxMaskCat.
   ///
   /// In en, this message translates to:
   /// **'Cat'**
   String get proMaxMaskCat;
+
+  /// No description provided for @proMaxMaskFox.
+  ///
+  /// In en, this message translates to:
+  /// **'Fox'**
+  String get proMaxMaskFox;
+
+  /// No description provided for @proMaxMaskPanda.
+  ///
+  /// In en, this message translates to:
+  /// **'Panda'**
+  String get proMaxMaskPanda;
+
+  /// No description provided for @proMaxMaskAlien.
+  ///
+  /// In en, this message translates to:
+  /// **'Alien'**
+  String get proMaxMaskAlien;
+
+  /// No description provided for @proMaxMaskRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot'**
+  String get proMaxMaskRobot;
 
   /// No description provided for @proMaxEffectFailed.
   ///

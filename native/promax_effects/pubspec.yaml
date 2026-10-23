@@ -9,6 +9,8 @@ dependencies:
     sdk: flutter
   flutter_webrtc: 1.5.2
 flutter:
+  assets:
+    - ios/Resources/masks/
   plugin:
     platforms:
       ios:

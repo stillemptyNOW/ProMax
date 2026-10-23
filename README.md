@@ -50,3 +50,5 @@
 ## Лицензия
 
 ProMax распространяется по [GPL v3](LICENSE). Он основан на открытом клиенте Komet, авторство исходного кода сохранено в истории репозитория.
+
+Картинки масок для звонков взяты из [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji) под лицензией MIT. Текст лицензии лежит рядом с ними в `native/promax_effects/ios/Resources/masks/LICENSE-fluentui-emoji.txt`, а пересобирает их `python3 tool/make_call_masks.py`.

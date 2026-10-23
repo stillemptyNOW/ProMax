@@ -1,0 +1,18 @@
+{
+  "source": "https://github.com/microsoft/fluentui-emoji/tree/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
+  "masks": [
+    {"id": "sunglasses", "asset": "sunglasses.png", "anchor": "eyes", "scale": 2.0391, "offset": [0, 0], "pivot": [0.4914, 0.4845], "depth": 0.15},
+    {"id": "goggles", "asset": "goggles.png", "anchor": "eyes", "scale": 2.2203, "offset": [0, 0], "pivot": [0.4871, 0.5948], "depth": 0.15},
+    {"id": "heartEyes", "asset": "heartEyes.png", "anchor": "eachEye", "scale": 0.8609, "offset": [0, 0], "pivot": [0.5, 0.4976], "depth": 0.1},
+    {"id": "crown", "asset": "crown.png", "anchor": "forehead", "scale": 1.94, "offset": [0, 0.35], "pivot": [0.4978, 0.9424], "depth": -0.45},
+    {"id": "topHat", "asset": "topHat.png", "anchor": "forehead", "scale": 2.6953, "offset": [0, 0.08], "pivot": [0.5, 0.8945], "depth": -0.45},
+    {"id": "pigNose", "asset": "pigNose.png", "anchor": "nose", "scale": 1.0422, "offset": [0, -0.05], "pivot": [0.5, 0.5], "depth": 0.1},
+    {"id": "mustache", "asset": "mustache.png", "anchor": "mouth", "scale": 1.3805, "offset": [0, 0.3], "pivot": [0.5088, 0.4918], "depth": 0},
+    {"id": "cat", "asset": "cat.png", "anchor": "eyes", "scale": 3.1719, "offset": [0, 0], "pivot": [0.4828, 0.5403], "depth": 0},
+    {"id": "fox", "asset": "fox.png", "anchor": "eyes", "scale": 3.0625, "offset": [0, 0], "pivot": [0.4866, 0.5776], "depth": 0},
+    {"id": "panda", "asset": "panda.png", "anchor": "eyes", "scale": 3.0812, "offset": [0, 0], "pivot": [0.5, 0.4808], "depth": 0},
+    {"id": "alien", "asset": "alien.png", "anchor": "eyes", "scale": 2.8875, "offset": [0, 0], "pivot": [0.4719, 0.5302], "depth": 0},
+    {"id": "robot", "asset": "robot.png", "anchor": "eyes", "scale": 2.9, "offset": [0, 0], "pivot": [0.5, 0.4353], "depth": 0},
+    {"id": "pixels", "effect": "pixelate", "anchor": "face", "scale": 3.0, "aspect": 1.3}
+  ]
+}

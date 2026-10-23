@@ -1,12 +1,15 @@
 #import "ProMaxEffectsPlugin.h"
+#import "ProMaxMaskCatalog.h"
+#import "ProMaxMaskProcessor.h"
 #import "VoiceProcessor.h"
 #import <flutter_webrtc/FlutterWebRTCPlugin.h>
 #import <flutter_webrtc/LocalVideoTrack.h>
 #import <flutter_webrtc/AudioManager.h>
-#import <CoreImage/CoreImage.h>
 #import <UIKit/UIKit.h>
 #include <atomic>
 #include <cmath>
+
+static NSString *const kProMaxNoMask = @"none";
 
 @interface ProMaxAudioProcessor : NSObject<ExternalAudioProcessingDelegate>
 - (void)setMode:(int)mode;
@@ -36,136 +39,10 @@
 - (void)audioProcessingRelease { _rate = 0; }
 @end
 
-@interface ProMaxFaceProcessor : NSObject<ExternalVideoProcessingDelegate>
-- (void)setMode:(int)mode;
-@end
-
-@implementation ProMaxFaceProcessor {
-  std::atomic<int> _mode;
-  CIContext *_context;
-  CIDetector *_detector;
-  NSArray<CIFaceFeature *> *_faces;
-  CGRect _lastExtent;
-  NSUInteger _frame;
-}
-- (instancetype)init {
-  if ((self = [super init])) {
-    _mode.store(0);
-    _context = [CIContext contextWithOptions:@{kCIContextCacheIntermediates: @NO}];
-    _detector = [CIDetector detectorOfType:CIDetectorTypeFace context:_context options:@{CIDetectorAccuracy: CIDetectorAccuracyLow}];
-    _faces = @[];
-    _lastExtent = CGRectZero;
-  }
-  return self;
-}
-- (void)setMode:(int)mode { _mode.store(mode); }
-- (RTCVideoFrame *)onFrame:(RTCVideoFrame *)frame {
-  const int mode = _mode.load();
-  if (mode == 0 || ![frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) return frame;
-  @autoreleasepool {
-    CVPixelBufferRef input = ((RTCCVPixelBuffer *)frame.buffer).pixelBuffer;
-    const size_t sourceWidth = CVPixelBufferGetWidth(input);
-    const size_t sourceHeight = CVPixelBufferGetHeight(input);
-    CIImage *image = [CIImage imageWithCVPixelBuffer:input];
-    int orientation = frame.rotation == RTCVideoRotation_90 ? 6 : frame.rotation == RTCVideoRotation_180 ? 3 : frame.rotation == RTCVideoRotation_270 ? 8 : 1;
-    image = [image imageByApplyingOrientation:orientation];
-    image = [image imageByApplyingTransform:CGAffineTransformMakeTranslation(-image.extent.origin.x, -image.extent.origin.y)];
-    if (mode == 4 || _frame++ % 4 == 0 || !CGRectEqualToRect(image.extent, _lastExtent)) {
-      _faces = (NSArray<CIFaceFeature *> *)[_detector featuresInImage:image];
-      _lastExtent = image.extent;
-    }
-    if (_faces.count == 0 && mode != 4) return frame;
-    const size_t width = static_cast<size_t>(image.extent.size.width);
-    const size_t height = static_cast<size_t>(image.extent.size.height);
-    CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
-    if (mode == 4) {
-      CIImage *pixelated = [image imageByApplyingFilter:@"CIPixellate" withInputParameters:@{kCIInputScaleKey: @(MAX(24, MIN(width, height) / 18.0))}];
-      if (_faces.count == 0) {
-        image = [pixelated imageByCroppingToRect:image.extent];
-      } else {
-        for (CIFaceFeature *face in _faces) {
-          CGRect region = CGRectIntersection(image.extent, CGRectInset(face.bounds, -face.bounds.size.width * 0.18, -face.bounds.size.height * 0.18));
-          if (!CGRectIsEmpty(region)) image = [[pixelated imageByCroppingToRect:region] imageByCompositingOverImage:image];
-        }
-      }
-    } else {
-    CGContextRef canvas = CGBitmapContextCreate(NULL, width, height, 8, 0, space, kCGImageAlphaPremultipliedLast);
-    if (!canvas) { CGColorSpaceRelease(space); return frame; }
-    for (CIFaceFeature *face in _faces) {
-      if (!face.hasLeftEyePosition || !face.hasRightEyePosition) continue;
-      CGPoint left = face.leftEyePosition;
-      CGPoint right = face.rightEyePosition;
-      if (left.x > right.x) std::swap(left, right);
-      CGFloat eyeDistance = hypot(right.x - left.x, right.y - left.y);
-      CGPoint center = CGPointMake((left.x + right.x) / 2, (left.y + right.y) / 2);
-      CGFloat radius = eyeDistance * 0.36;
-      CGContextSaveGState(canvas);
-      CGContextTranslateCTM(canvas, center.x, center.y);
-      CGContextRotateCTM(canvas, atan2(right.y - left.y, right.x - left.x));
-      if (mode == 1) {
-        CGContextSetRGBFillColor(canvas, 0.04, 0.06, 0.10, 0.92);
-        CGContextSetRGBStrokeColor(canvas, 0.55, 0.80, 1, 1);
-        CGContextSetLineWidth(canvas, eyeDistance * 0.045);
-        for (int side : {-1, 1}) {
-          CGRect lens = CGRectMake(side * eyeDistance * 0.5 - radius, -radius * 0.65, radius * 2, radius * 1.3);
-          CGContextAddEllipseInRect(canvas, lens);
-          CGContextDrawPath(canvas, kCGPathFillStroke);
-        }
-        CGContextMoveToPoint(canvas, -eyeDistance * 0.14, 0);
-        CGContextAddLineToPoint(canvas, eyeDistance * 0.14, 0);
-        CGContextStrokePath(canvas);
-      } else if (mode == 2) {
-        CGContextSetRGBFillColor(canvas, 0.20, 0.60, 1, 0.72);
-        CGContextFillRect(canvas, CGRectMake(-eyeDistance * 0.95, -radius * 0.6, eyeDistance * 1.9, radius * 1.5));
-        CGContextSetRGBStrokeColor(canvas, 0.80, 0.95, 1, 1);
-        CGContextSetLineWidth(canvas, eyeDistance * 0.025);
-        CGContextStrokeRect(canvas, CGRectMake(-eyeDistance * 0.95, -radius * 0.6, eyeDistance * 1.9, radius * 1.5));
-      } else {
-        CGContextSetRGBFillColor(canvas, 0.95, 0.55, 0.73, 0.94);
-        for (int side : {-1, 1}) {
-          CGFloat x = side * eyeDistance * 0.78;
-          CGContextMoveToPoint(canvas, x - eyeDistance * 0.28, eyeDistance * 0.65);
-          CGContextAddLineToPoint(canvas, x, eyeDistance * 1.34);
-          CGContextAddLineToPoint(canvas, x + eyeDistance * 0.28, eyeDistance * 0.65);
-          CGContextClosePath(canvas);
-          CGContextFillPath(canvas);
-        }
-        CGContextSetRGBStrokeColor(canvas, 1, 1, 1, 0.95);
-        CGContextSetLineWidth(canvas, eyeDistance * 0.025);
-        for (int side : {-1, 1}) {
-          for (int whisker = -1; whisker <= 1; ++whisker) {
-            CGContextMoveToPoint(canvas, side * eyeDistance * 0.35, -eyeDistance * 0.65);
-            CGContextAddLineToPoint(canvas, side * eyeDistance * 0.95, -eyeDistance * (0.65 + whisker * 0.16));
-            CGContextStrokePath(canvas);
-          }
-        }
-      }
-      CGContextRestoreGState(canvas);
-    }
-    CGImageRef overlay = CGBitmapContextCreateImage(canvas);
-    CGContextRelease(canvas);
-    if (!overlay) { CGColorSpaceRelease(space); return frame; }
-    image = [[CIImage imageWithCGImage:overlay] imageByCompositingOverImage:image];
-    CGImageRelease(overlay);
-    }
-    const int inverseOrientation = orientation == 6 ? 8 : orientation == 8 ? 6 : orientation;
-    CIImage *outputImage = [image imageByApplyingOrientation:inverseOrientation];
-    outputImage = [outputImage imageByApplyingTransform:CGAffineTransformMakeTranslation(-outputImage.extent.origin.x, -outputImage.extent.origin.y)];
-    CVPixelBufferRef output = NULL;
-    CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, sourceWidth, sourceHeight, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)@{(id)kCVPixelBufferIOSurfacePropertiesKey: @{}}, &output);
-    if (status != kCVReturnSuccess || !output) { CGColorSpaceRelease(space); return frame; }
-    [_context render:outputImage toCVPixelBuffer:output bounds:CGRectMake(0, 0, sourceWidth, sourceHeight) colorSpace:space];
-    CGColorSpaceRelease(space);
-    RTCVideoFrame *processed = [[RTCVideoFrame alloc] initWithBuffer:[[RTCCVPixelBuffer alloc] initWithPixelBuffer:output] rotation:frame.rotation timeStampNs:frame.timeStampNs];
-    CVPixelBufferRelease(output);
-    return processed;
-  }
-}
-@end
-
 @implementation ProMaxEffectsPlugin {
   ProMaxAudioProcessor *_audio;
-  ProMaxFaceProcessor *_face;
+  ProMaxMaskProcessor *_face;
+  ProMaxMaskCatalog *_masks;
   LocalVideoTrack *_track;
   BOOL _audioAttached;
   NSNumber *_originalBrightness;
@@ -179,7 +56,8 @@
 - (instancetype)init {
   if ((self = [super init])) {
     _audio = [[ProMaxAudioProcessor alloc] init];
-    _face = [[ProMaxFaceProcessor alloc] init];
+    _face = [[ProMaxMaskProcessor alloc] init];
+    _masks = [[ProMaxMaskCatalog alloc] init];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pauseLight) name:UIApplicationWillResignActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(resumeLight) name:UIApplicationDidBecomeActiveNotification object:nil];
   }
@@ -217,21 +95,28 @@
     if (!_audioAttached) { [[AudioManager sharedInstance].capturePostProcessingAdapter addProcessing:_audio]; _audioAttached = YES; }
     [_audio setMode:value.intValue];
   } else if ([call.method isEqualToString:@"setMask"]) {
-    NSNumber *value = args[@"mask"];
+    NSString *mask = args[@"mask"];
     NSString *trackId = args[@"trackId"];
-    if (![value isKindOfClass:[NSNumber class]] || value.intValue < 0 || value.intValue > 4 || ![trackId isKindOfClass:[NSString class]]) {
+    if (![mask isKindOfClass:[NSString class]] || ![trackId isKindOfClass:[NSString class]]) {
       result([FlutterError errorWithCode:@"BAD_MASK" message:@"Unknown face mask" details:nil]); return;
+    }
+    ProMaxMaskStyle *style = nil;
+    if (![mask isEqualToString:kProMaxNoMask]) {
+      style = [_masks styleWithIdentifier:mask];
+      if (!style) {
+        result([FlutterError errorWithCode:@"BAD_MASK" message:@"Unknown face mask" details:mask]); return;
+      }
     }
     id track = [FlutterWebRTCPlugin sharedSingleton].localTracks[trackId];
     if (![track isKindOfClass:[LocalVideoTrack class]]) {
       result([FlutterError errorWithCode:@"NO_CAMERA" message:@"Camera track is unavailable" details:nil]); return;
     }
     if (_track != track) { [_track removeProcessing:_face]; _track = track; [_track addProcessing:_face]; }
-    [_face setMode:value.intValue];
+    [_face setStyle:style];
   } else if ([call.method isEqualToString:@"reset"]) {
     [self restoreBrightness];
     [_audio setMode:0];
-    [_face setMode:0];
+    [_face reset];
     [_track removeProcessing:_face];
     _track = nil;
     if (_audioAttached) { [[AudioManager sharedInstance].capturePostProcessingAdapter removeProcessing:_audio]; _audioAttached = NO; }

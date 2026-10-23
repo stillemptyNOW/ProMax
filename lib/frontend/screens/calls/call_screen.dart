@@ -34,6 +34,7 @@ import '../../widgets/animated_slash_icon.dart';
 import '../../widgets/lottie_slash_icon.dart';
 import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
+import 'call_mask_sheet.dart';
 import 'call_mic_sheet.dart';
 import 'call_lighting_sheet.dart';
 import 'call_participants_sheet.dart';
@@ -641,20 +642,24 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   Future<void> _showFaceMasks() async {
     final session = _session;
     if (session == null || !session.localVideo) return;
-    final l10n = AppLocalizations.of(context)!;
-    final selected = await _chooseCallEffect(l10n.proMaxCallMasks, [
-      l10n.proMaxMaskNone,
-      l10n.proMaxMaskGlasses,
-      l10n.proMaxMaskVisor,
-      l10n.proMaxMaskCat,
-      l10n.proMaxMaskPixels,
-    ], session.faceMask.index);
-    if (selected == null || !mounted || _session != session) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => CallMaskSheet(
+        initial: session.faceMask,
+        onSelected: (mask) => _applyFaceMask(session, mask),
+      ),
+    );
+  }
+
+  Future<bool> _applyFaceMask(CallSession session, ProMaxMask mask) async {
+    if (!mounted || _session != session || !session.localVideo) return false;
     try {
-      await session.setFaceMask(ProMaxMask.values[selected]);
+      await session.setFaceMask(mask);
       if (mounted) setState(() {});
+      return true;
     } catch (_) {
-      if (mounted) showCustomNotification(context, l10n.proMaxEffectFailed);
+      return false;
     }
   }
 

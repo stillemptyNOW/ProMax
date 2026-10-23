@@ -7042,13 +7042,40 @@ class AppLocalizationsRu extends AppLocalizations {
   String get proMaxMaskNone => 'Без маски';
 
   @override
-  String get proMaxMaskGlasses => 'Очки';
+  String get proMaxMaskSunglasses => 'Солнечные очки';
 
   @override
-  String get proMaxMaskVisor => 'Неоновый визор';
+  String get proMaxMaskGoggles => 'Защитные очки';
+
+  @override
+  String get proMaxMaskHeartEyes => 'Влюблённые глаза';
+
+  @override
+  String get proMaxMaskCrown => 'Корона';
+
+  @override
+  String get proMaxMaskTopHat => 'Цилиндр';
+
+  @override
+  String get proMaxMaskPigNose => 'Пятачок';
+
+  @override
+  String get proMaxMaskMustache => 'Усы';
 
   @override
   String get proMaxMaskCat => 'Кот';
+
+  @override
+  String get proMaxMaskFox => 'Лиса';
+
+  @override
+  String get proMaxMaskPanda => 'Панда';
+
+  @override
+  String get proMaxMaskAlien => 'Пришелец';
+
+  @override
+  String get proMaxMaskRobot => 'Робот';
 
   @override
   String get proMaxEffectFailed => 'Не удалось включить эффект';
