@@ -57,6 +57,7 @@ import 'core/config/app_chat_chrome.dart';
 import 'core/config/app_composer_background.dart';
 import 'core/config/app_composer_style.dart';
 import 'core/config/app_nav_pill_style.dart';
+import 'core/config/app_native_glass.dart';
 import 'core/config/app_wallpaper_tint.dart';
 import 'core/storage/chat_wallpaper_store.dart';
 import 'core/utils/wallpaper_seed.dart';
@@ -303,6 +304,7 @@ void main(List<String> args) async {
   final pillGradientFuture = AppPillGradient.load();
   final visualStyleFuture = AppVisualStyle.load();
   final liquidGlassFuture = LiquidGlass.load();
+  final nativeGlassFuture = NativeGlass.load();
   final meshGradientFuture = MeshGradient.load();
   final chatChromeFuture = AppChatChrome.load();
   final composerStyleFuture = AppComposerStyle.load();
@@ -392,6 +394,7 @@ void main(List<String> args) async {
     pillGradientFuture,
     visualStyleFuture,
     liquidGlassFuture,
+    nativeGlassFuture,
     meshGradientFuture,
     chatChromeFuture,
     composerStyleFuture,
