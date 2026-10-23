@@ -142,12 +142,16 @@ class FkmController {
     }
 
     final name = ContactCache.get(callerId);
+    final chatId =
+        await AppDatabase.findDialogChatByParticipant(accountId, callerId) ??
+        (accountId ^ callerId);
 
     return {
       'type': 'InboundCall',
       'vcp': vcp,
       'conversationId': conversationId,
       'callerId': '$callerId',
+      'mc': '$chatId',
       'suid': '$callerId',
       'userName': ?name,
       'title': ?name,

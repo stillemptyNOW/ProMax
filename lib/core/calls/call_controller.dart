@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 
 import '../../backend/api.dart';
 import '../../backend/modules/calls.dart';
+import '../config/build_profile.dart';
 import '../protocol/opcode_map.dart';
 import '../push/fkm_controller.dart';
 import '../protocol/packet.dart';
+import '../utils/app_foreground.dart';
 import '../utils/logger.dart';
 import '../utils/parse.dart';
 import 'call_bridge.dart';
@@ -117,6 +119,18 @@ class CallController {
   // #***! приложение в фоне, звонок показывает натив а не мы
   bool appResumed = false;
 
+  @visibleForTesting
+  static bool systemShowsIncoming({
+    required bool resumed,
+    required bool visible,
+    required bool desktop,
+    required bool backgroundNotifications,
+    required bool firebasePush,
+  }) {
+    if (resumed || desktop) return false;
+    return backgroundNotifications || firebasePush || !visible;
+  }
+
   Stream<IncomingCall> get incomingCalls => _incoming.stream;
 
   Stream<void> get callEnded => _ended.stream;
@@ -165,9 +179,13 @@ class CallController {
     final callerId = payload['callerId'] as int?;
     if (vcp == null || conversationId == null || callerId == null) return;
 
-    // Приложение свёрнуто — звонок показывает FKM отдельным уведомлением,
-    // приём оттуда вернётся через injectFromNative.
-    if (!appResumed && !_desktop) {
+    if (systemShowsIncoming(
+      resumed: appResumed,
+      visible: AppForeground.value,
+      desktop: _desktop,
+      backgroundNotifications: FkmController.instance.enabled.value,
+      firebasePush: BuildProfile.firebasePush,
+    )) {
       unawaited(FkmController.instance.showIncomingCall(payload));
       return;
     }

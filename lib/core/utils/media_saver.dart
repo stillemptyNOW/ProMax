@@ -11,12 +11,14 @@ import '../security/mark_of_the_web.dart';
 import 'download_history.dart';
 import 'image_format.dart';
 import 'media_cache.dart';
+import 'save_file_as.dart';
 
 enum MediaSaveFailure { noLink, downloadFailed, fileNotFound, noGalleryAccess }
 
 // #***! итог сохранения, в галерею или в папку
 class MediaSaveResult {
   final bool ok;
+  final bool cancelled;
   final bool toGallery;
   final String? location;
   final MediaSaveFailure? failure;
@@ -24,6 +26,7 @@ class MediaSaveResult {
 
   const MediaSaveResult({
     required this.ok,
+    this.cancelled = false,
     this.toGallery = false,
     this.location,
     this.failure,
@@ -66,7 +69,10 @@ Future<MediaSaveResult> saveImageFromUrl(String url) async {
 // #***! фото и видео в галерею, остальное в папку
 enum SaveMediaKind { image, video, file }
 
-bool get savesToGallery => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+bool get savesToGallery =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS);
 
 const _scopedStorageSdk = 29;
 
@@ -171,12 +177,29 @@ Future<MediaSaveResult> _write(
     }
     return const MediaSaveResult(ok: true, toGallery: true);
   }
+  if (savesToGallery) return _export(file, safeName);
 
   final dir = await _targetDirectory();
   final target = await availableFileIn(dir.path, safeName);
   await file.copy(target.path);
   await MarkOfTheWeb.apply(target.path);
   return MediaSaveResult(ok: true, location: target.path);
+}
+
+Future<MediaSaveResult> _export(File file, String name) async {
+  final exported = await saveFileAs(
+    source: file,
+    fileName: name,
+    dialogTitle: name,
+  );
+  if (exported.cancelled) {
+    return const MediaSaveResult(ok: false, cancelled: true);
+  }
+  return MediaSaveResult(
+    ok: exported.saved,
+    location: exported.path,
+    error: exported.error,
+  );
 }
 
 Future<bool> _mayWriteGallery() async {
