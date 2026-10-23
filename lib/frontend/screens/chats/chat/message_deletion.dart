@@ -1,56 +1,61 @@
 import 'package:flutter/material.dart';
 
+import '../../../../backend/modules/deletion_policy.dart';
 import '../../../../backend/modules/messages.dart';
 import '../../../../backend/modules/pending_deletions.dart';
 import '../../../../core/config/app_shape.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class MessageDeletionPlan {
-  MessageDeletionPlan({
-    required int myId,
-    required List<CachedMessage> messages,
-    required this.isDialog,
-    required this.canDeleteOthersForEveryone,
-  }) : own = [
-         for (final message in messages)
-           if (message.senderId == myId) message,
-       ],
-       peer = [
-         for (final message in messages)
-           if (message.senderId != myId) message,
-       ];
+  MessageDeletionPlan({required this.messages, required this.rules})
+    : denials = {for (final message in messages) ?rules.denialFor(message)};
 
-  final List<CachedMessage> own;
-  final List<CachedMessage> peer;
-  final bool isDialog;
-  final bool canDeleteOthersForEveryone;
+  final List<CachedMessage> messages;
+  final MessageDeletionRules rules;
+  final Set<ForEveryoneDenial> denials;
 
-  bool get isEmpty => own.isEmpty && peer.isEmpty;
+  bool get isEmpty => messages.isEmpty;
 
-  bool get _peerForEveryone => isDialog || canDeleteOthersForEveryone;
+  bool get offersForEveryone => messages.isNotEmpty && denials.isEmpty;
 
-  bool get offersForEveryone =>
-      own.isNotEmpty || (peer.isNotEmpty && _peerForEveryone);
+  bool get _someEligible => messages.any(rules.allowsForEveryone);
 
-  String? note(AppLocalizations l10n) {
-    if (peer.isEmpty) return null;
-    if (isDialog) return l10n.deleteMessagesPeerFallbackNote;
-    if (!_peerForEveryone && own.isNotEmpty) {
-      return l10n.deleteMessagesOthersOnlyForMe(peer.length);
-    }
-    return null;
+  List<String> notes(AppLocalizations l10n) {
+    if (offersForEveryone || messages.isEmpty) return const [];
+    final dialog = rules.chat == MessageDeletionChat.dialog;
+    final age = deletionAgeLimitText(l10n, rules.editTimeout);
+    return [
+      if (denials.contains(ForEveryoneDenial.notMine))
+        dialog
+            ? l10n.deleteMessagesPeerOnlyForMe
+            : l10n.deleteMessagesOthersOnlyForMe,
+      if (denials.contains(ForEveryoneDenial.tooOld))
+        dialog
+            ? l10n.deleteMessagesTooOldForPeer(age)
+            : l10n.deleteMessagesTooOldForAll(age),
+      if (denials.contains(ForEveryoneDenial.scheduled))
+        l10n.deleteMessagesScheduledOnlyForMe,
+      if (_someEligible) l10n.deleteMessagesSelectionOnlyForMe,
+    ];
   }
 
   List<DeletionPart> parts({required bool forEveryone}) => [
-    if (own.isNotEmpty)
-      (messages: own, forEveryone: forEveryone, fallbackToSelf: false),
-    if (peer.isNotEmpty)
-      (
-        messages: peer,
-        forEveryone: forEveryone && _peerForEveryone,
-        fallbackToSelf: isDialog,
-      ),
+    (messages: messages, forEveryone: forEveryone && offersForEveryone),
   ];
+}
+
+String deletionAgeLimitText(AppLocalizations l10n, Duration limit) {
+  final days = limit.inDays;
+  if (days >= 2 && limit == Duration(days: days)) {
+    return l10n.deletionAgeLimitDays(days);
+  }
+  final hours = limit.inHours;
+  if (hours >= 1 && limit == Duration(hours: hours)) {
+    return l10n.deletionAgeLimitHours(hours);
+  }
+  return l10n.deletionAgeLimitMinutes(
+    limit.inMinutes < 1 ? 1 : limit.inMinutes,
+  );
 }
 
 Future<bool?> showDeleteMessagesDialog(
@@ -61,7 +66,7 @@ Future<bool?> showDeleteMessagesDialog(
   final cs = Theme.of(context).colorScheme;
   final l10n = AppLocalizations.of(context)!;
   final offersForEveryone = plan.offersForEveryone;
-  final note = plan.note(l10n);
+  final notes = plan.notes(l10n);
   var alsoForEveryone = offersForEveryone;
   return showDialog<bool>(
     context: context,
@@ -103,7 +108,7 @@ Future<bool?> showDeleteMessagesDialog(
                 ),
               ),
             ],
-            if (note != null && offersForEveryone && alsoForEveryone) ...[
+            for (final note in notes) ...[
               const SizedBox(height: 8),
               Text(
                 note,

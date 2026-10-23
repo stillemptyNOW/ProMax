@@ -407,10 +407,7 @@ class RegistrationResult {
   final String loginToken;
   final int accountId;
 
-  const RegistrationResult({
-    required this.loginToken,
-    required this.accountId,
-  });
+  const RegistrationResult({required this.loginToken, required this.accountId});
 }
 
 class TwoFactorResult {
@@ -433,7 +430,7 @@ class LoginSyncParams {
   final String? chatCacheFingerprint;
   final bool serverConfigSeen;
 
-  static const String serverConfigRevision = '2';
+  static const String serverConfigRevision = '3';
 
   static Future<void> forgetServerConfig(int accountId) =>
       AppDatabase.setSyncValue(accountId, SyncKey.serverConfigSeen, '');

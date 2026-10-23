@@ -23,6 +23,7 @@ import 'banners.dart';
 import 'chats.dart';
 import 'complaints.dart';
 import 'contacts.dart';
+import 'deletion_policy.dart';
 import 'folders.dart';
 import 'messages.dart';
 import 'pending_deletions.dart';
@@ -672,6 +673,7 @@ class AccountModule {
     banners.clear();
     chats.resetForAccountSwitch();
     await ContactsModule.primeCacheFromDb(accountId);
+    await DeletionPolicy.instance.load(accountId);
 
     await _api.connect(authenticated: true);
     if (_api.state != SessionState.online) {
@@ -1083,6 +1085,18 @@ class AccountModule {
         parseIntList(serverConfig['welcome-sticker-ids']),
       );
       await _persistEntryBannerApps(accountId, serverConfig);
+      await DeletionPolicy.instance.applyServerConfig(
+        accountId,
+        serverConfig,
+        complete: true,
+      );
+      logger.i('Сервер прислал конфиг: ${DeletionPolicy.instance.describe()}');
+    } else {
+      await DeletionPolicy.instance.load(accountId);
+      logger.i(
+        'Конфиг сервера пришёл хэшем, сохранённые значения: '
+        '${DeletionPolicy.instance.describe()}',
+      );
     }
     final info = LoginInfo.fromPayload(data);
 

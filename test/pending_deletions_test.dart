@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'dart:convert';
-
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/backend/modules/chat_deletion_plan.dart';
@@ -33,13 +31,12 @@ class _FakeGateway implements PendingDeletionGateway {
   int? account = _me;
   final StreamController<void> _online = StreamController.broadcast();
   final List<_Delete> deletes = [];
-  final List<({int accountId, int chatId, bool forAll, bool historyErased})>
-  chatDeletes = [];
+  final List<({int accountId, int chatId, bool forAll})> chatDeletes = [];
   final List<List<String>> forgotten = [];
-  ServerOutcome Function(List<String> ids, bool forEveryone) onDelete =
-      (_, _) => const ServerDone();
+  MessageDeletionReply Function(List<String> ids, bool forEveryone) onDelete =
+      (ids, _) => MessageDeletionReply(const ServerDone(), confirmed: {...ids});
   ServerOutcome chatOutcome = const ServerDone();
-  ChatDeletionResult Function(int chatId, bool historyErased)? onChatDelete;
+  ChatDeletionResult Function(int chatId, bool forAll)? onChatDelete;
 
   void goOnline() {
     online = true;
@@ -60,7 +57,7 @@ class _FakeGateway implements PendingDeletionGateway {
   Future<int?> activeAccountId() async => account;
 
   @override
-  Future<ServerOutcome> deleteMessages(
+  Future<MessageDeletionReply> deleteMessages(
     int chatId,
     List<String> messageIds, {
     required bool forEveryone,
@@ -74,16 +71,10 @@ class _FakeGateway implements PendingDeletionGateway {
     int accountId,
     int chatId, {
     required bool forAll,
-    required bool historyErased,
   }) async {
-    chatDeletes.add((
-      accountId: accountId,
-      chatId: chatId,
-      forAll: forAll,
-      historyErased: historyErased,
-    ));
-    return onChatDelete?.call(chatId, historyErased) ??
-        ChatDeletionResult(chatOutcome);
+    chatDeletes.add((accountId: accountId, chatId: chatId, forAll: forAll));
+    return onChatDelete?.call(chatId, forAll) ??
+        ChatDeletionResult(chatOutcome, forAll: forAll);
   }
 
   @override
@@ -143,7 +134,6 @@ void main() {
           (
             messages: [for (final id in ids) _message(id)],
             forEveryone: forEveryone,
-            fallbackToSelf: false,
           ),
         ],
       );
@@ -185,7 +175,7 @@ void main() {
         confirmed,
         lookupAppLocalizations(const Locale('ru')),
       ),
-      'Удалено у обоих: 2',
+      'Сервер MAX подтвердил удаление у всех: 2',
     );
   });
 
@@ -200,7 +190,8 @@ void main() {
   test(
     'messages the server no longer knows are reported, not hidden',
     () async {
-      gateway.onDelete = (_, _) => const ServerRejected('', notFound: true);
+      gateway.onDelete = (_, _) =>
+          const MessageDeletionReply(ServerRejected('', notFound: true));
       pending.commit(holdOwn(['26']));
       await settle();
 
@@ -228,7 +219,8 @@ void main() {
   );
 
   test('a server refusal brings the messages back with the reason', () async {
-    gateway.onDelete = (_, _) => const ServerRejected('слишком старое');
+    gateway.onDelete = (_, _) =>
+        const MessageDeletionReply(ServerRejected('слишком старое'));
     pending.commit(holdOwn(['31']));
     await settle();
 
@@ -255,8 +247,9 @@ void main() {
 
   test('a dropped request is retried instead of being lost', () async {
     var calls = 0;
-    gateway.onDelete = (_, _) =>
-        calls++ == 0 ? const ServerUnreachable('таймаут') : const ServerDone();
+    gateway.onDelete = (ids, _) => calls++ == 0
+        ? const MessageDeletionReply(ServerUnreachable('таймаут'))
+        : MessageDeletionReply(const ServerDone(), confirmed: {...ids});
     pending.commit(holdOwn(['51']));
     await settle();
     expect(pending.entries.single.attempts, 1);
@@ -303,35 +296,58 @@ void main() {
     expect(gateway.deletes.single.ids, ['81']);
   });
 
-  test('peer messages the server keeps are deleted only for me', () async {
-    gateway.onDelete = (ids, forEveryone) => forEveryone && ids.contains('92')
-        ? const ServerRejected('чужое сообщение')
-        : const ServerDone();
+  test('ids the server did not confirm come back and are reported', () async {
+    gateway.onDelete = (ids, _) =>
+        MessageDeletionReply(const ServerDone(), confirmed: {ids.first});
     final keys = pending.holdMessages(
       accountId: _me,
       chatId: _chat,
       parts: [
         (
-          messages: [
-            _message('91'),
-            _message('92', sender: _other),
-          ],
+          messages: [_message('91'), _message('92'), _message('93')],
           forEveryone: true,
-          fallbackToSelf: true,
         ),
       ],
     );
     pending.commit(keys);
     await settle();
 
-    expect(gateway.deletes.last.ids, ['92']);
-    expect(gateway.deletes.last.forEveryone, isFalse);
+    expect(gateway.deletes.single.ids, ['91', '92', '93']);
+    expect(gateway.forgotten.single, ['91']);
+    expect(restored.single.messages.map((m) => m.id), ['92', '93']);
+    expect(pending.isMessageHeld(_me, _chat, '92'), isFalse);
+    expect((reports.first as PendingDeletionConfirmed).count, 1);
+    final kept = reports.last as PendingDeletionNotConfirmed;
+    expect(kept.count, 2);
+    expect(kept.forEveryone, isTrue);
     expect(
-      gateway.deletes.where((d) => d.forEveryone && d.ids.length == 1).length,
-      2,
+      pendingDeletionReportText(
+        kept,
+        lookupAppLocalizations(const Locale('ru')),
+      ),
+      'Сервер MAX не удалил у всех сообщений: 2. Они остались в чате',
     );
-    expect((reports.single as PendingDeletionKeptForPeer).count, 1);
-    expect(restored, isEmpty);
+  });
+
+  test('an OK without messageIds confirms nothing, even for me', () async {
+    gateway.onDelete = (_, _) => const MessageDeletionReply(ServerDone());
+    pending.commit(holdOwn(['94', '95'], forEveryone: false));
+    await settle();
+
+    expect(gateway.forgotten, isEmpty);
+    expect(restored.single.messages.map((m) => m.id), ['94', '95']);
+    final kept = reports.single as PendingDeletionNotConfirmed;
+    expect(kept.count, 2);
+    expect(kept.forEveryone, isFalse);
+  });
+
+  test('a large selection goes out in batches of a hundred', () async {
+    final keys = holdOwn([for (var i = 0; i < 230; i++) '${2000 + i}']);
+    expect(keys, hasLength(3));
+    pending.commit(keys);
+    await settle();
+
+    expect(gateway.deletes.map((d) => d.ids.length), [100, 100, 30]);
   });
 
   test(
@@ -453,73 +469,78 @@ void main() {
     expect(reports.whereType<PendingDeletionStalled>(), hasLength(2));
   });
 
-  test('an erased history with a refused removal is told apart', () async {
-    gateway.onChatDelete = (_, _) => const ChatDeletionResult(
-      ServerRejected('нет доступа'),
-      historyErased: true,
-    );
+  test(
+    'a chat deleted for all reports the request the server accepted',
+    () async {
+      pending.commit([holdChatForAll()]);
+      await settle();
+
+      expect(gateway.chatDeletes.single.forAll, isTrue);
+      final accepted = reports.single as PendingDeletionConfirmed;
+      expect(accepted.kind, PendingDeletionKind.deleteChat);
+      expect(
+        pendingDeletionReportText(
+          accepted,
+          lookupAppLocalizations(const Locale('ru')),
+        ),
+        'Сервер MAX принял запрос на удаление чата у всех',
+      );
+    },
+  );
+
+  test('a chat the server deleted only for me claims nothing more', () async {
+    gateway.onChatDelete = (_, _) => const ChatDeletionResult(ServerDone());
     pending.commit([holdChatForAll()]);
     await settle();
 
-    expect(pending.isChatHeld(_chat), isFalse);
-    final report = reports.single as PendingDeletionErasedOnly;
-    expect(report.message, 'нет доступа');
-  });
-
-  test('after the erase went through a retry only removes the chat', () async {
-    gateway.onChatDelete = (_, historyErased) => historyErased
-        ? const ChatDeletionResult(ServerDone(), historyErased: true)
-        : const ChatDeletionResult(
-            ServerUnreachable('таймаут'),
-            historyErased: true,
-          );
-    pending.commit([holdChatForAll()]);
-    await settle();
-    expect(pending.entries.single.historyErased, isTrue);
-    final stored =
-        jsonDecode(
-              (await SharedPreferences.getInstance()).getString(
-                PendingDeletions.storageKey,
-              )!,
-            )
-            as List;
-    expect((stored.single as Map)['h'], isTrue);
-
-    await pending.flush();
-    expect(gateway.chatDeletes.map((d) => d.historyErased), [false, true]);
     expect(pending.entries, isEmpty);
-    expect(
-      reports.single,
-      isA<PendingDeletionConfirmed>().having(
-        (r) => r.kind,
-        'kind',
-        PendingDeletionKind.deleteChat,
-      ),
-    );
+    expect(reports, isEmpty);
   });
 
-  test('the erased step survives a restart', () async {
-    final entry = PendingDeletion.fromJson(
-      const PendingDeletion(
-        key: 'k',
-        accountId: _me,
-        chatId: _chat,
-        kind: PendingDeletionKind.deleteChat,
-        forEveryone: true,
-        historyErased: true,
-        attempts: 1,
-      ).toJson(),
-    );
-    expect(entry!.historyErased, isTrue);
-    expect(entry.retried().historyErased, isTrue);
+  test('an entry stored by the old two-step erase decodes as one', () {
+    final entry = PendingDeletion.fromJson({
+      'k': 'k',
+      'a': _me,
+      'c': _chat,
+      't': 'deleteChat',
+      'm': <String>[],
+      'e': true,
+      'f': false,
+      'h': true,
+      'n': 1,
+    });
+
+    expect(entry!.forEveryone, isTrue);
+    expect(entry.attempts, 1);
+    expect(entry.toJson().containsKey('h'), isFalse);
   });
+
+  test(
+    'a chat without a known event time is refused with its reason',
+    () async {
+      gateway.onChatDelete = (_, _) =>
+          ChatDeletionResult.refused(ChatDeletionRefusal.eventTimeUnknown);
+      pending.commit([holdChatForAll()]);
+      await settle();
+
+      expect(pending.isChatHeld(_chat), isFalse);
+      expect(
+        (reports.single as PendingDeletionChatRefused).refusal,
+        ChatDeletionRefusal.eventTimeUnknown,
+      );
+    },
+  );
 
   test('a chat of unknown type comes back with its own reason', () async {
-    gateway.onChatDelete = (_, _) => const ChatDeletionResult.typeUnknown();
+    gateway.onChatDelete = (_, _) =>
+        ChatDeletionResult.refused(ChatDeletionRefusal.typeUnknown);
     pending.commit([holdChatForAll()]);
     await settle();
 
     expect(pending.isChatHeld(_chat), isFalse);
-    expect(reports.single, isA<PendingDeletionChatTypeUnknown>());
+    expect(
+      (reports.single as PendingDeletionChatRefused).refusal,
+      ChatDeletionRefusal.typeUnknown,
+    );
   });
 }

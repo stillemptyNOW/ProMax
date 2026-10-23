@@ -4,26 +4,34 @@ import 'package:flutter/material.dart';
 
 import '../../../../backend/modules/chat_wipe.dart';
 import '../../../../backend/modules/chats.dart';
+import '../../../../backend/modules/deletion_policy.dart';
 import '../../../../core/cache/message_session_cache.dart';
 import '../../../../core/storage/app_database.dart';
 import '../../../../core/utils/haptics.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/utils/server_clock.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../main.dart';
 import '../../../widgets/custom_notification.dart';
 import '../profile_action_sheets.dart';
+import 'message_deletion.dart';
 
 Future<bool> wipeDialogForBoth(
   BuildContext context, {
   required int myId,
   required int chatId,
+  required bool removeForAll,
 }) async {
   final l10n = AppLocalizations.of(context)!;
+  final policy = DeletionPolicy.instance;
+  final age = deletionAgeLimitText(l10n, policy.editTimeout);
   final choice = await showBlurredConfirm(
     context,
-    title: l10n.wipeForBothTitle,
-    message: l10n.wipeForBothMessage,
-    confirmLabel: l10n.wipeForBothAction,
+    title: removeForAll ? l10n.wipeForBothTitle : l10n.wipeOwnForPeerTitle,
+    message: removeForAll
+        ? l10n.wipeForBothMessage(age)
+        : l10n.wipeOwnForPeerMessage(age),
+    confirmLabel: wipeActionLabel(l10n, removeForAll: removeForAll),
     cancelLabel: l10n.chatInfoActionCancel,
     destructive: true,
   );
@@ -62,29 +70,30 @@ Future<bool> wipeDialogForBoth(
 
   ChatWipeResult? result;
   try {
-    result = await ChatWipe.run(
+    final rules = MessageDeletionRules(
+      chat: MessageDeletionChat.dialog,
       myId: myId,
+      nowMs: ServerClock.now(),
+      editTimeout: policy.editTimeout,
+    );
+    result = await ChatWipe.run(
       fetchPage: (from, count) => messagesModule.fetchHistory(
         myId,
         chatId,
         fromTime: from,
         count: count,
       ),
-      deleteBatch: (ids, {required forEveryone}) =>
-          messagesModule.deleteMessages(chatId, ids, forEveryone: forEveryone),
-      clearForAll: (seen) => chats.clearHistory(
-        api,
-        chatId: chatId,
-        forAll: true,
-        seenEventTime: seen,
-      ),
+      deletableForEveryone: rules.allowsForEveryone,
+      deleteForEveryone: (ids) =>
+          messagesModule.deleteMessages(chatId, ids, forEveryone: true),
       removeChat: (seen) async => (await chats.deleteChat(
         api,
         chatId: chatId,
-        forAll: false,
+        forAll: removeForAll,
         seenEventTime: seen,
         accountId: myId,
       )).outcome,
+      removeForAll: removeForAll,
       onProgress: (total, deleted) => progress.value = deleted == 0
           ? l10n.wipeFound(total)
           : l10n.wipeDeleting(deleted, total),
@@ -104,12 +113,15 @@ Future<bool> wipeDialogForBoth(
   if (overlay.mounted) {
     showCustomNotificationOnOverlay(
       overlay,
-      _summary(finished, l10n),
+      _summary(finished, l10n, age),
       duration: const Duration(seconds: 6),
     );
   }
   return finished?.chatRemoved ?? false;
 }
+
+String wipeActionLabel(AppLocalizations l10n, {required bool removeForAll}) =>
+    removeForAll ? l10n.wipeForBothAction : l10n.wipeOwnForPeerAction;
 
 Future<void> _forgetLocally(int myId, int chatId, List<String> ids) async {
   await AppDatabase.deleteMessages(myId, chatId, ids);
@@ -117,16 +129,20 @@ Future<void> _forgetLocally(int myId, int chatId, List<String> ids) async {
   await chats.reconcileLastMessage(myId, chatId);
 }
 
-String _summary(ChatWipeResult? result, AppLocalizations l10n) {
+String _summary(ChatWipeResult? result, AppLocalizations l10n, String age) {
   if (result == null) return l10n.wipeSummaryInterrupted;
-  final clearError = result.clearError;
   final chatError = result.chatError;
   return [
-    l10n.wipeSummaryForBoth(result.deletedForBoth),
-    if (result.onlyForMe > 0) l10n.wipeSummaryOnlyForMe(result.onlyForMe),
-    if (result.notDeleted > 0) l10n.wipeSummaryNotDeleted(result.notDeleted),
+    l10n.wipeSummaryForPeer(result.deletedForPeer),
+    if (result.notConfirmed > 0)
+      l10n.wipeSummaryNotConfirmed(result.notConfirmed),
+    if (!result.removeForAll && result.keptForPeer > 0)
+      l10n.wipeSummaryKeptForPeer(result.keptForPeer, age),
     if (result.historyIncomplete) l10n.wipeSummaryHistoryIncomplete,
-    if (clearError != null) l10n.wipeSummaryClearFailed(clearError),
+    if (result.chatRemoved)
+      result.removeForAll
+          ? l10n.wipeSummaryChatForAllAccepted
+          : l10n.wipeSummaryChatRemovedForMe,
     if (chatError != null) l10n.wipeSummaryChatKept(chatError),
     if (result.unreachable) l10n.wipeSummaryInterrupted,
   ].join('. ');

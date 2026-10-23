@@ -1,13 +1,21 @@
+import '../../../backend/modules/chat_deletion_plan.dart';
 import '../../../backend/modules/pending_deletions.dart';
 import '../../../backend/modules/server_outcome.dart';
 import '../../../l10n/app_localizations.dart';
 
-String? outcomeFailureText(ServerOutcome outcome, AppLocalizations l10n) =>
-    switch (outcome) {
-      ServerDone() => null,
-      ServerRejected(:final message) => message,
-      ServerUnreachable() => l10n.serverUnreachable,
+String? outcomeFailureText(ServerOutcome outcome, AppLocalizations l10n) {
+  if (ChatDeletionRefusal.of(outcome) case final refusal?) {
+    return switch (refusal) {
+      ChatDeletionRefusal.typeUnknown => l10n.chatTypeUnknownForAll,
+      ChatDeletionRefusal.eventTimeUnknown => l10n.chatEventTimeUnknown,
     };
+  }
+  return switch (outcome) {
+    ServerDone() => null,
+    ServerRejected(:final message) => message,
+    ServerUnreachable() => l10n.serverUnreachable,
+  };
+}
 
 String pendingDeletionReportText(
   PendingDeletionReport report,
@@ -19,18 +27,20 @@ String pendingDeletionReportText(
     l10n.deleteChatFailedWithReason(message),
   PendingDeletionFailed(kind: PendingDeletionKind.leaveChat, :final message) =>
     l10n.leaveChatFailedWithReason(message),
-  PendingDeletionErasedOnly(:final message) => l10n.deleteChatErasedOnly(
-    message,
-  ),
-  PendingDeletionChatTypeUnknown() => l10n.deleteChatTypeUnknown,
+  PendingDeletionChatRefused(refusal: ChatDeletionRefusal.typeUnknown) =>
+    l10n.deleteChatTypeUnknown,
+  PendingDeletionChatRefused(refusal: ChatDeletionRefusal.eventTimeUnknown) =>
+    l10n.chatEventTimeUnknown,
   PendingDeletionStalled() => l10n.deletionStillPending,
-  PendingDeletionKeptForPeer(:final count) => l10n.deleteMessagesKeptForPeer(
+  PendingDeletionConfirmed(kind: PendingDeletionKind.messages, :final count) =>
+    l10n.deleteMessagesConfirmedForAll(count),
+  PendingDeletionConfirmed() => l10n.deleteChatForAllAccepted,
+  PendingDeletionAlreadyGone(:final count) => l10n.deleteMessagesAlreadyGone(
     count,
   ),
-  PendingDeletionConfirmed(kind: PendingDeletionKind.messages, :final count) =>
-    l10n.wipeSummaryForBoth(count),
-  PendingDeletionConfirmed() => l10n.deleteChatConfirmedForBoth,
-  PendingDeletionAlreadyGone(:final count) => l10n.deleteMessagesAlreadyGone(
+  PendingDeletionNotConfirmed(:final count, forEveryone: true) =>
+    l10n.deleteMessagesNotConfirmedForAll(count),
+  PendingDeletionNotConfirmed(:final count) => l10n.deleteMessagesNotConfirmed(
     count,
   ),
 };

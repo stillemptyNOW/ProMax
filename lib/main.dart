@@ -69,6 +69,7 @@ import 'backend/modules/chats.dart';
 import 'backend/modules/comments.dart';
 import 'backend/modules/contacts.dart';
 import 'backend/modules/deletion_gateway.dart';
+import 'backend/modules/deletion_policy.dart';
 import 'backend/modules/file_uploader.dart';
 import 'backend/modules/folders.dart';
 import 'backend/modules/messages.dart';
@@ -246,13 +247,17 @@ void main(List<String> args) async {
   final activeAccountId = await TokenStorage.getActiveAccountId();
   if (activeAccountId != null) {
     await ContactsModule.primeCacheFromDb(activeAccountId);
+    await DeletionPolicy.instance.load(activeAccountId);
   }
   attachInfoCacheApi(api);
   unawaited(
     DisappearingMessages.instance.start(
       events: chats.messageEvents,
-      delete: (chatId, ids) =>
-          messagesModule.deleteMessages(chatId, ids, forEveryone: true),
+      delete: (chatId, ids) async => (await messagesModule.deleteMessages(
+        chatId,
+        ids,
+        forEveryone: true,
+      )).outcome,
       myId: TokenStorage.getActiveAccountId,
     ),
   );
