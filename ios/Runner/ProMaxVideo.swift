@@ -56,7 +56,8 @@ private struct VideoExportSpec {
   }
 }
 
-final class ProMaxVideo: NSObject, PHPickerViewControllerDelegate, UIDocumentPickerDelegate {
+final class ProMaxVideo: NSObject, PHPickerViewControllerDelegate, UIDocumentPickerDelegate,
+  UIAdaptivePresentationControllerDelegate {
   static let shared = ProMaxVideo()
 
   private let queue = DispatchQueue(label: "io.github.stillemptynow.promax.video", qos: .userInitiated)
@@ -111,6 +112,7 @@ final class ProMaxVideo: NSObject, PHPickerViewControllerDelegate, UIDocumentPic
     configuration.preferredAssetRepresentationMode = .current
     let picker = PHPickerViewController(configuration: configuration)
     picker.delegate = self
+    picker.presentationController?.delegate = self
     pickerResult = result
     presenter.present(picker, animated: true)
   }
@@ -161,6 +163,7 @@ final class ProMaxVideo: NSObject, PHPickerViewControllerDelegate, UIDocumentPic
     }
     let picker = UIDocumentPickerViewController(forExporting: [file], asCopy: true)
     picker.delegate = self
+    picker.presentationController?.delegate = self
     documentResult = result
     exportStaging = staging
     presenter.present(picker, animated: true)
@@ -180,6 +183,19 @@ final class ProMaxVideo: NSObject, PHPickerViewControllerDelegate, UIDocumentPic
 
   func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
     finishExport(nil)
+  }
+
+  func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+    switch presentationController.presentedViewController {
+    case is PHPickerViewController:
+      let callback = pickerResult
+      pickerResult = nil
+      callback?(nil)
+    case is UIDocumentPickerViewController:
+      finishExport(nil)
+    default:
+      break
+    }
   }
 
   private static func exportUnavailable() -> FlutterError {
