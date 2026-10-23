@@ -55,6 +55,14 @@ final class ProMaxNotifications: NSObject {
     case "clearActiveChat":
       activeChatId = 0
       result(nil)
+    case "cancelChat":
+      dismissDelivered(chatId: Self.chatId(from: call.arguments))
+      result(nil)
+    case "notifiedChats":
+      UNUserNotificationCenter.current().getDeliveredNotifications { delivered in
+        let chats = Set(delivered.map { Self.chatId(from: $0.request.content.userInfo) }.filter { $0 != 0 })
+        DispatchQueue.main.async { result(chats.map { NSNumber(value: $0) }) }
+      }
     case "requestReminderPermission":
       UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
         DispatchQueue.main.async { result(granted) }

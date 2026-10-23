@@ -37,6 +37,10 @@ class ProMaxFcmService : FirebaseMessagingService() {
             Log.d("ProMaxFcm", "message push dropped: FKM handles messages")
             return
         }
+        if (type != "InboundCall" && type != "CallFinished" && IgnoredSenders.hidesPush(applicationContext, data)) {
+            Log.d("ProMaxFcm", "message push dropped: sender is on the ignore list")
+            return
+        }
         ProMaxNotifier(applicationContext).handle(data)
         if (type != "InboundCall" && type != "CallFinished") {
             LauncherBadge.countPush(applicationContext, data["mc"]?.toLongOrNull() ?: 0L)
@@ -106,6 +110,7 @@ class ProMaxNotifier(private val ctx: Context) {
             return
         }
         if (QuietHours.isQuiet(ctx, chatId)) return
+        if (IgnoredSenders.hidesPush(ctx, data)) return
         val mid = data["msgid"] ?: ""
         if (mid.isNotEmpty() && loadHistory(chatId).any { it.mid == mid }) return
         val senderId = data["suid"] ?: ""

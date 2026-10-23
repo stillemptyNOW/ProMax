@@ -7,6 +7,8 @@ import '../../backend/modules/calls.dart';
 import '../protocol/opcode_map.dart';
 import '../push/fkm_controller.dart';
 import '../protocol/packet.dart';
+import '../storage/ignored_senders.dart';
+import '../storage/token_storage.dart';
 import '../utils/logger.dart';
 import '../utils/parse.dart';
 import 'call_bridge.dart';
@@ -164,6 +166,26 @@ class CallController {
     final conversationId = payload['conversationId'] as String?;
     final callerId = payload['callerId'] as int?;
     if (vcp == null || conversationId == null || callerId == null) return;
+    unawaited(
+      _screenIncoming(
+        payload,
+        vcp: vcp,
+        conversationId: conversationId,
+        callerId: callerId,
+      ),
+    );
+  }
+
+  Future<void> _screenIncoming(
+    Map<dynamic, dynamic> payload, {
+    required String vcp,
+    required String conversationId,
+    required int callerId,
+  }) async {
+    if (await _callerIgnored(callerId)) {
+      await _declineQuietly(vcp, conversationId);
+      return;
+    }
 
     // Приложение свёрнуто — звонок показывает FKM отдельным уведомлением,
     // приём оттуда вернётся через injectFromNative.
@@ -187,6 +209,34 @@ class CallController {
         isContact: payload['isContact'] as bool?,
       ),
     );
+  }
+
+  Future<bool> _callerIgnored(int callerId) async {
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) return false;
+    await IgnoredSenders.instance.load();
+    return IgnoredSenders.instance.isIgnored(accountId, callerId);
+  }
+
+  Future<void> _declineQuietly(String vcp, String conversationId) async {
+    final params = ConversationParams.decode(vcp);
+    if (params == null) return;
+    final signaling = Ws2Signaling(
+      Ws2Config.fromVcp(
+        params,
+        conversationId: conversationId,
+        device: _api?.callsDevice,
+        osVersion: _api?.callsOsVersion,
+      ),
+    );
+    try {
+      await signaling.connect();
+      await signaling.hangup(reason: 'REJECTED');
+    } catch (e) {
+      logger.w('CallController: звонок из списка запрета не отклонён: $e');
+    } finally {
+      await signaling.close();
+    }
   }
 
   void _onCallRecord(Object? payload) {

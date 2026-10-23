@@ -35,7 +35,10 @@ class FkmController {
   // #***! enabled, на него подписан переключатель в настройках
   final ValueNotifier<bool> enabled = ValueNotifier(false);
 
+  static const _notifiedLimit = 512;
+
   Api? _api;
+  final Set<String> _notified = <String>{};
   StreamSubscription<Packet>? _pushSub;
   StreamSubscription<SessionState>? _stateSub;
   bool _started = false;
@@ -206,9 +209,16 @@ class FkmController {
     final facts = await NotificationFacts.load(chatId, senderId: push.senderId);
     if (facts == null) return;
     final notification = NotificationPolicy.compose(push, facts);
-    if (notification != null) {
-      await _bridge.showMessage(notification.toFkmData());
-    }
+    if (notification == null || !_firstNotice(notification)) return;
+    await _bridge.showMessage(notification.toFkmData());
+  }
+
+  bool _firstNotice(MessageNotification notification) {
+    final messageId = notification.messageId;
+    if (messageId == null) return true;
+    if (!_notified.add('${notification.chatId}:$messageId')) return false;
+    if (_notified.length > _notifiedLimit) _notified.remove(_notified.first);
+    return true;
   }
 
   // #***! сообщение удалили, гасим уведомление

@@ -15,6 +15,7 @@ import '../../core/crypto/e2ee_service.dart';
 import '../../core/crypto/message_decryption_cache.dart';
 import '../../core/media/deleted_media_keeper.dart';
 import '../../core/storage/app_database.dart';
+import '../../core/storage/ignored_senders.dart';
 import '../../core/storage/local_read_state.dart';
 import '../../core/storage/read_receipt.dart';
 import '../../core/storage/chat_activity_store.dart';
@@ -580,13 +581,14 @@ class ChatsModule {
     String messageId,
     int mark,
   ) async {
+    unawaited(PushService.clearChatNotification(chatId));
     final rows = await AppDatabase.loadChat(accountId, chatId);
     if (rows.isEmpty) return;
     final row = Map<String, dynamic>.from(rows.first);
     if ((row['unread_count'] as int? ?? 0) == 0) return;
 
     final msgIdNum = int.tryParse(messageId);
-    if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
+    if (msgIdNum != null && _sendsReadMarks(accountId, chatId)) {
       await ReadMarkQueue.instance.submit(
         api,
         ReadMark(
@@ -606,16 +608,20 @@ class ChatsModule {
       ..[accountId] = mark > currentMark ? mark : currentMark;
     final updated = cached.copyWith(unreadCount: 0, participants: participants);
     if (ProMaxSettings.antiRead.value) {
-      await LocalReadState.record(
+      await LocalReadState.recordView(
         accountId,
         chatId,
         mark,
         serverMark: currentMark,
+        displayedUnread: cached.unreadCount,
       );
     }
     await _commitChatContent([(fresh.first, updated.toDbRow())]);
-    unawaited(PushService.clearChatNotification(chatId));
   }
+
+  bool _sendsReadMarks(int accountId, int chatId) =>
+      !ProMaxSettings.antiRead.value &&
+      IgnoredSenders.instance.ignoredPeer(accountId, chatId) == null;
 
   Future<void> _applyLocalReadState(
     Map<String, dynamic> row, {
@@ -625,31 +631,29 @@ class ChatsModule {
     final accountId = row['account_id'] as int;
     final chatId = row['id'] as int;
     final local = await LocalReadState.load(accountId, chatId);
-    if (local.mark == 0) return;
+    if (!local.isActive) return;
     final participants = parseParticipants(row['participants']);
-    final serverMark = updateServerMark
-        ? participants[accountId] ?? 0
-        : local.serverMark;
-    if (updateServerMark && serverMark != local.serverMark) {
-      await LocalReadState(
-        mark: local.mark,
-        serverMark: serverMark,
-      ).save(accountId, chatId);
-    }
-    if (local.mark <= serverMark) return;
-    final read = await AppDatabase.countLocallyReadMessages(
-      accountId,
-      chatId,
-      serverMark,
-      local.mark,
-    );
-    row['unread_count'] = localUnreadCount(
+    var next = local.withServer(
       serverUnread: (row['unread_count'] as int?) ?? 0,
-      locallyRead: read,
-      localMark: local.mark,
-      lastMessageTime: (row['last_msg_time'] as int?) ?? 0,
+      serverMark: updateServerMark ? participants[accountId] ?? 0 : null,
     );
-    participants[accountId] = local.mark;
+    if (!next.isActive) {
+      await next.save(accountId, chatId);
+      return;
+    }
+    if (next.seen == null) {
+      next = next.withSeen(
+        await AppDatabase.countLocallyReadMessages(
+          accountId,
+          chatId,
+          next.serverMark,
+          next.mark,
+        ),
+      );
+    }
+    if (next != local) await next.save(accountId, chatId);
+    row['unread_count'] = next.unreadFor((row['last_msg_time'] as int?) ?? 0);
+    participants[accountId] = next.mark;
     row['participants'] = jsonEncode(
       participants.map((key, value) => MapEntry('$key', value)),
     );
@@ -665,7 +669,7 @@ class ChatsModule {
     required int remaining,
   }) async {
     final msgIdNum = int.tryParse(messageId);
-    if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
+    if (msgIdNum != null && _sendsReadMarks(accountId, chatId)) {
       await ReadMarkQueue.instance.submit(
         api,
         ReadMark(
@@ -694,11 +698,13 @@ class ChatsModule {
       participants: participants,
     );
     if (ProMaxSettings.antiRead.value) {
-      await LocalReadState.record(
+      await LocalReadState.recordView(
         accountId,
         chatId,
         nextMark,
         serverMark: currentMark,
+        displayedUnread: cached.unreadCount,
+        remaining: next,
       );
     }
     await _commitChatContent([(rows.first, updated.toDbRow())]);
@@ -1053,6 +1059,7 @@ class ChatsModule {
   }
 
   StreamSubscription<Packet>? _globalPushSub;
+  Api? _pushApi;
   StreamSubscription<SessionState>? _globalStateSub;
   Future<void> _pushQueue = Future.value();
   final ReadBaselines _readBaselines = ReadBaselines();
@@ -1075,6 +1082,7 @@ class ChatsModule {
   void attachGlobalPushHandlers(Api api) {
     _globalPushSub?.cancel();
     _globalStateSub?.cancel();
+    _pushApi = api;
     _globalPushSub = api.pushStream.listen(_enqueueGlobalPush);
     _globalStateSub = api.stateStream.listen(_handleSessionState);
     PendingDeletions.instance.chatHolds
@@ -1495,6 +1503,18 @@ class ChatsModule {
     final status = msg['status'] as String?;
     final unread = payload['unread'] as int?;
 
+    await IgnoredSenders.instance.load();
+    if (IgnoredSenders.instance.hidesFromDialog(
+      accountId: accountId,
+      chatId: chatId,
+      senderId: senderId,
+    )) {
+      if (status != 'REMOVED' && msgIdStr != null) {
+        _discardIgnored(chatId, [msgIdStr]);
+      }
+      return;
+    }
+
     var rows = await AppDatabase.loadChat(accountId, chatId);
     // #***! чата нет в базе, нас только что добавили, тянем карточку
     if (rows.isEmpty) {
@@ -1654,6 +1674,40 @@ class ChatsModule {
 
     await _commitChatContent([(rows.first, newRow)]);
   }
+
+  void _discardIgnored(int chatId, List<String> messageIds) {
+    final api = _pushApi;
+    if (api == null) return;
+    MessagesModule(api).discardIgnored(chatId, messageIds);
+  }
+
+  void _hideIgnoredDialog(Map<String, dynamic> row, CachedChat? existing) {
+    final accountId = row['account_id'] as int;
+    final chatId = row['id'] as int;
+    final peer = IgnoredSenders.instance.ignoredPeer(accountId, chatId);
+    if (peer == null) return;
+    row['unread_count'] = 0;
+    if (row['last_msg_sender'] != peer) return;
+    final lastId = row['last_msg_id'];
+    if (lastId is int) _discardIgnored(chatId, ['$lastId']);
+    final previous = existing?.toDbRow();
+    final keep = previous != null && previous['last_msg_sender'] != peer;
+    for (final key in _lastMessageColumns) {
+      row[key] = keep ? previous[key] : null;
+    }
+    if (!keep) row['last_msg_text'] = lastMsgPlaceholder;
+    if (previous != null) row['last_event_time'] = previous['last_event_time'];
+  }
+
+  static const _lastMessageColumns = [
+    'last_msg_id',
+    'last_msg_time',
+    'last_msg_text',
+    'last_msg_elements',
+    'last_msg_preview',
+    'last_msg_sender',
+    'last_msg_status',
+  ];
 
   Future<bool> _adoptSentEcho(int accountId, int chatId, Map msg) async {
     final cid = MessagesModule.clientIdOf({'cid': msg['cid']});
@@ -2077,6 +2131,8 @@ class ChatsModule {
     }
     final row = parsed.toDbRow();
     await _applyLocalReadState(row, updateServerMark: true);
+    await IgnoredSenders.instance.load();
+    _hideIgnoredDialog(row, ex);
     row['in_list'] = listState;
     await AppDatabase.saveChats([row]);
     final adjusted = CachedChat.fromDbRow(row);
@@ -2135,6 +2191,7 @@ class ChatsModule {
     Map<dynamic, dynamic> presenceMap = const {},
   }) async {
     final cachedAt = DateTime.now().millisecondsSinceEpoch;
+    await IgnoredSenders.instance.load();
     final existingRows = await AppDatabase.loadChats(
       accountId,
       includeHidden: true,
@@ -2166,6 +2223,7 @@ class ChatsModule {
       if (parsed == null) continue;
       final row = parsed.toDbRow();
       await _applyLocalReadState(row, updateServerMark: true);
+      _hideIgnoredDialog(row, existing[parsed.id]);
       row['in_list'] = chatListStateForStatus(
         map['status'],
         previous: existingListState[parsed.id],

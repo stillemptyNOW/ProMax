@@ -2827,5 +2827,41 @@
   "profilePhoneManualTitle": "Your number",
   "profilePhoneManualHint": "MAX did not send this account's number. Enter it; it is stored on this device only.",
   "profilePhoneManualSave": "Save",
-  "profilePhoneManualInvalid": "That does not look like a phone number"
+  "profilePhoneManualInvalid": "That does not look like a phone number",
+  "ignoredSendersTitle": "Don't let them write to me",
+  "ignoredSendersHowItWorks": "How it works",
+  "ignoredSendersExplanation": "MAX has no \"who can message me\" setting. The only way to make sending fail is the MAX server black list, and the other person may notice it.\n\nThis mode works in ProMax only and blocks nobody on the server. Messages from the chosen people in private chats are deleted for you only, you get no notifications for them, no read mark is set, the chat does not jump up and the counter does not grow, and their calls are declined silently. They will not know: for them the message was sent as usual.",
+  "ignoredSendersCaveat": "Messages are deleted \"for me\" on the server, so they also disappear in your other MAX apps, although a notification may still show up there. Removing someone from the list does not bring deleted messages back. Group chats are not affected.",
+  "ignoredSendersEmpty": "The list is empty",
+  "ignoredSendersEmptyHint": "Add someone by ID or from a private chat menu: \"Don't let them write to me\"",
+  "ignoredSendersAdd": "Add by ID",
+  "ignoredSendersIdLabel": "User ID",
+  "ignoredSendersIdHint": "For example, 123456789",
+  "ignoredSendersConfirmAdd": "Hide",
+  "ignoredSendersCancel": "Cancel",
+  "ignoredSendersInvalidId": "A numeric user ID is required",
+  "ignoredSendersSelfId": "This is your own ID",
+  "ignoredSendersAlreadyAdded": "This ID is already on the list",
+  "ignoredSendersAdded": "Their messages will no longer be shown",
+  "ignoredSendersRemoved": "Their new messages will be shown again",
+  "ignoredSendersRemove": "Allow",
+  "ignoredSendersUserId": "ID {id}",
+  "@ignoredSendersUserId": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "ignoredSendersNoAccount": "Sign in to an account first",
+  "chatInfoMenuIgnore": "Don't let them write to me",
+  "chatInfoMenuUnignore": "Let them write to me",
+  "chatInfoIgnoreConfirmMessage": "{name} can still send you messages and will not know, but ProMax will delete them for you, show no notifications, never mark them read and decline calls. Only the MAX black list stops the sending itself.",
+  "@chatInfoIgnoreConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

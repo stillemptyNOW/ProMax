@@ -13339,6 +13339,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That does not look like a phone number'**
   String get profilePhoneManualInvalid;
+
+  /// No description provided for @ignoredSendersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t let them write to me'**
+  String get ignoredSendersTitle;
+
+  /// No description provided for @ignoredSendersHowItWorks.
+  ///
+  /// In en, this message translates to:
+  /// **'How it works'**
+  String get ignoredSendersHowItWorks;
+
+  /// No description provided for @ignoredSendersExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX has no \"who can message me\" setting. The only way to make sending fail is the MAX server black list, and the other person may notice it.\n\nThis mode works in ProMax only and blocks nobody on the server. Messages from the chosen people in private chats are deleted for you only, you get no notifications for them, no read mark is set, the chat does not jump up and the counter does not grow, and their calls are declined silently. They will not know: for them the message was sent as usual.'**
+  String get ignoredSendersExplanation;
+
+  /// No description provided for @ignoredSendersCaveat.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages are deleted \"for me\" on the server, so they also disappear in your other MAX apps, although a notification may still show up there. Removing someone from the list does not bring deleted messages back. Group chats are not affected.'**
+  String get ignoredSendersCaveat;
+
+  /// No description provided for @ignoredSendersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The list is empty'**
+  String get ignoredSendersEmpty;
+
+  /// No description provided for @ignoredSendersEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add someone by ID or from a private chat menu: \"Don\'t let them write to me\"'**
+  String get ignoredSendersEmptyHint;
+
+  /// No description provided for @ignoredSendersAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add by ID'**
+  String get ignoredSendersAdd;
+
+  /// No description provided for @ignoredSendersIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'User ID'**
+  String get ignoredSendersIdLabel;
+
+  /// No description provided for @ignoredSendersIdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, 123456789'**
+  String get ignoredSendersIdHint;
+
+  /// No description provided for @ignoredSendersConfirmAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get ignoredSendersConfirmAdd;
+
+  /// No description provided for @ignoredSendersCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get ignoredSendersCancel;
+
+  /// No description provided for @ignoredSendersInvalidId.
+  ///
+  /// In en, this message translates to:
+  /// **'A numeric user ID is required'**
+  String get ignoredSendersInvalidId;
+
+  /// No description provided for @ignoredSendersSelfId.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your own ID'**
+  String get ignoredSendersSelfId;
+
+  /// No description provided for @ignoredSendersAlreadyAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'This ID is already on the list'**
+  String get ignoredSendersAlreadyAdded;
+
+  /// No description provided for @ignoredSendersAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Their messages will no longer be shown'**
+  String get ignoredSendersAdded;
+
+  /// No description provided for @ignoredSendersRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Their new messages will be shown again'**
+  String get ignoredSendersRemoved;
+
+  /// No description provided for @ignoredSendersRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get ignoredSendersRemove;
+
+  /// No description provided for @ignoredSendersUserId.
+  ///
+  /// In en, this message translates to:
+  /// **'ID {id}'**
+  String ignoredSendersUserId(int id);
+
+  /// No description provided for @ignoredSendersNoAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to an account first'**
+  String get ignoredSendersNoAccount;
+
+  /// No description provided for @chatInfoMenuIgnore.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t let them write to me'**
+  String get chatInfoMenuIgnore;
+
+  /// No description provided for @chatInfoMenuUnignore.
+  ///
+  /// In en, this message translates to:
+  /// **'Let them write to me'**
+  String get chatInfoMenuUnignore;
+
+  /// No description provided for @chatInfoIgnoreConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} can still send you messages and will not know, but ProMax will delete them for you, show no notifications, never mark them read and decline calls. Only the MAX black list stops the sending itself.'**
+  String chatInfoIgnoreConfirmMessage(String name);
 }
 
 class _AppLocalizationsDelegate
