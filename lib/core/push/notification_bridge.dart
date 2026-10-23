@@ -7,6 +7,7 @@ import '../../backend/api.dart';
 import '../../frontend/widgets/max_link_nav.dart';
 import '../../main.dart';
 import '../storage/app_database.dart';
+import '../storage/ignored_senders.dart';
 import '../storage/token_storage.dart';
 import '../utils/logger.dart';
 import 'native_event_stream.dart';
@@ -113,12 +114,14 @@ class NotificationBridge {
     if (notified.isEmpty) return;
     final accountId = await TokenStorage.getActiveAccountId();
     if (accountId == null) return;
+    await IgnoredSenders.instance.load();
     for (final chatId in notified) {
       final rows = await AppDatabase.loadChat(accountId, chatId);
       if (rows.isEmpty) continue;
-      if ((rows.first['unread_count'] as int? ?? 0) == 0) {
-        await cancelChat(chatId);
-      }
+      final read = (rows.first['unread_count'] as int? ?? 0) == 0;
+      final ignored =
+          IgnoredSenders.instance.ignoredPeer(accountId, chatId) != null;
+      if (read || ignored) await cancelChat(chatId);
     }
   }
 

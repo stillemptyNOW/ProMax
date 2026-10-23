@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/backend/modules/account/account_models.dart';
 import 'package:promax/backend/modules/chats.dart';
 import 'package:promax/core/push/notification_policy.dart';
+import 'package:promax/core/storage/local_read_state.dart';
 
 const int _me = 4242;
 const int _peer = 5151;
@@ -247,6 +248,52 @@ void main() {
         now: () => 1234,
       )!;
       expect(n.time, 1234);
+    });
+
+    test('a message at or below the read watermark is not notified again', () {
+      NotificationFacts facts(int readMark) =>
+          NotificationFacts(accountId: _me, readMark: readMark);
+      expect(NotificationPolicy.compose(_push(), facts(1700000000123)), isNull);
+      expect(NotificationPolicy.compose(_push(), facts(1700000000500)), isNull);
+      expect(
+        NotificationPolicy.compose(_push(), facts(1700000000122)),
+        isNotNull,
+      );
+    });
+
+    test('the read watermark takes the later of server and local marks', () {
+      final chat = _chat(id: _dialogId);
+      expect(
+        NotificationFacts.effectiveReadMark(accountId: _me, chat: chat),
+        1700000000000,
+      );
+      expect(
+        NotificationFacts.effectiveReadMark(
+          accountId: _me,
+          chat: chat,
+          local: const LocalReadState(mark: 1700000000999),
+        ),
+        1700000000999,
+      );
+      expect(
+        NotificationFacts.effectiveReadMark(
+          accountId: _me,
+          chat: chat,
+          local: const LocalReadState(mark: 1600000000000),
+        ),
+        1700000000000,
+      );
+      expect(NotificationFacts.effectiveReadMark(accountId: _me), 0);
+    });
+
+    test('a sender on the ignore list never produces a notification', () {
+      expect(
+        NotificationPolicy.compose(
+          _push(),
+          const NotificationFacts(accountId: _me, senderIgnored: true),
+        ),
+        isNull,
+      );
     });
   });
 

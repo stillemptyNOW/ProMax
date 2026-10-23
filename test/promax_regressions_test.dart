@@ -65,7 +65,7 @@ void main() {
     expect(
       localUnreadCount(
         serverUnread: 8,
-        locallyRead: 8,
+        seen: 8,
         localMark: 500,
         lastMessageTime: 500,
       ),
@@ -74,7 +74,7 @@ void main() {
     expect(
       localUnreadCount(
         serverUnread: 10,
-        locallyRead: 8,
+        seen: 8,
         localMark: 500,
         lastMessageTime: 600,
       ),
@@ -83,11 +83,11 @@ void main() {
     expect(
       localUnreadCount(
         serverUnread: 1,
-        locallyRead: 8,
+        seen: 8,
         localMark: 500,
         lastMessageTime: 600,
       ),
-      0,
+      1,
     );
   });
 
