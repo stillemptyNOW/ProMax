@@ -46,14 +46,6 @@ class NotificationBridge {
     }
   }
 
-  bool get _android {
-    try {
-      return Platform.isAndroid;
-    } catch (_) {
-      return false;
-    }
-  }
-
   // #***! подписка на уведомления и сессию
   void init() {
     if (_started) return;
@@ -100,7 +92,7 @@ class NotificationBridge {
   }
 
   Future<void> cancelChat(int chatId) async {
-    if (!_android || chatId == 0) return;
+    if (!_native || chatId == 0) return;
     try {
       await _method.invokeMethod<void>('cancelChat', {'chatId': chatId});
     } catch (e) {
@@ -109,7 +101,7 @@ class NotificationBridge {
   }
 
   Future<void> dismissReadChats() async {
-    if (!_android) return;
+    if (!_native) return;
     final List<int> notified;
     try {
       notified =

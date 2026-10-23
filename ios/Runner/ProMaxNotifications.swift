@@ -6,6 +6,7 @@ final class ProMaxNotifications: NSObject {
   static let shared = ProMaxNotifications()
 
   private static let chatKeys = ["promax_chat", "chatId", "chat_id"]
+  private static let nonMessagePrefixes = ["reminder-", "call-", "promax-test"]
 
   private var sink: FlutterEventSink?
   private var pendingChatId: Int64 = 0
@@ -55,6 +56,17 @@ final class ProMaxNotifications: NSObject {
     case "clearActiveChat":
       activeChatId = 0
       result(nil)
+    case "cancelChat":
+      dismissDelivered(chatId: Self.chatId(from: call.arguments), messagesOnly: true)
+      result(nil)
+    case "notifiedChats":
+      UNUserNotificationCenter.current().getDeliveredNotifications { delivered in
+        let chats = Set(delivered
+          .filter { Self.isMessage($0.request) }
+          .map { Self.chatId(from: $0.request.content.userInfo) }
+          .filter { $0 != 0 })
+        DispatchQueue.main.async { result(chats.map { NSNumber(value: $0) }) }
+      }
     case "requestReminderPermission":
       UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
         DispatchQueue.main.async { result(granted) }
@@ -128,16 +140,21 @@ final class ProMaxNotifications: NSObject {
     }
   }
 
-  private func dismissDelivered(chatId: Int64) {
+  private func dismissDelivered(chatId: Int64, messagesOnly: Bool = false) {
     guard chatId != 0 else { return }
     let center = UNUserNotificationCenter.current()
     center.getDeliveredNotifications { delivered in
       let identifiers = delivered
+        .filter { !messagesOnly || Self.isMessage($0.request) }
         .filter { Self.chatId(from: $0.request.content.userInfo) == chatId }
         .map { $0.request.identifier }
       guard !identifiers.isEmpty else { return }
       center.removeDeliveredNotifications(withIdentifiers: identifiers)
     }
+  }
+
+  private static func isMessage(_ request: UNNotificationRequest) -> Bool {
+    !nonMessagePrefixes.contains { request.identifier.hasPrefix($0) }
   }
 
   private func registerNativePush(_ result: @escaping FlutterResult) {
