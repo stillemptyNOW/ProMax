@@ -6855,13 +6855,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proMaxMaskNone => 'None';
 
   @override
-  String get proMaxMaskGlasses => 'Glasses';
+  String get proMaxMaskSunglasses => 'Sunglasses';
 
   @override
-  String get proMaxMaskVisor => 'Neon visor';
+  String get proMaxMaskGoggles => 'Goggles';
+
+  @override
+  String get proMaxMaskHeartEyes => 'Heart eyes';
+
+  @override
+  String get proMaxMaskCrown => 'Crown';
+
+  @override
+  String get proMaxMaskTopHat => 'Top hat';
+
+  @override
+  String get proMaxMaskPigNose => 'Pig snout';
+
+  @override
+  String get proMaxMaskMustache => 'Mustache';
 
   @override
   String get proMaxMaskCat => 'Cat';
+
+  @override
+  String get proMaxMaskFox => 'Fox';
+
+  @override
+  String get proMaxMaskPanda => 'Panda';
+
+  @override
+  String get proMaxMaskAlien => 'Alien';
+
+  @override
+  String get proMaxMaskRobot => 'Robot';
 
   @override
   String get proMaxEffectFailed => 'Could not enable effect';
