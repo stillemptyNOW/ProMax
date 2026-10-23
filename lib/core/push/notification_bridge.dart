@@ -128,7 +128,6 @@ class NotificationBridge {
     await _syncActiveChat();
     final chatId = activeChatId;
     if (chatId != 0) await cancelChat(chatId);
-    await dismissReadChats();
   }
 
   Future<void> _syncActiveChat() async {
