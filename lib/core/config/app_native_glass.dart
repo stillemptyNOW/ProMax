@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../utils/logger.dart';
 import 'persisted_setting.dart';
 
 abstract final class NativeGlass {
@@ -36,11 +37,17 @@ abstract final class NativeGlass {
     if (!_platformCanHost) return;
     try {
       _supported = await _support.invokeMethod<bool>('isSupported') ?? false;
-    } on PlatformException {
+    } on PlatformException catch (e) {
+      logger.w('Системное стекло iOS: ошибка проверки ($e)');
       _supported = false;
     } on MissingPluginException {
+      logger.w('Системное стекло iOS: канал не зарегистрирован');
       _supported = false;
     }
+    logger.i(
+      'Системное стекло iOS: ${_supported ? 'поддерживается' : 'не поддерживается'}, '
+      'переключатель ${_setting.current.value ? 'включён' : 'выключен'}',
+    );
   }
 
   static Future<void> save(bool value) => _setting.save(value);

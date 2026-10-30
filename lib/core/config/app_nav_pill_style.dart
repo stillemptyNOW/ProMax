@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../frontend/widgets/liquid_glass.dart';
+import 'app_native_glass.dart';
 import 'app_visual_style.dart';
 import 'persisted_setting.dart';
 
@@ -17,9 +18,11 @@ class NavPillMaterial {
   }
 
   static bool isLiquid(NavPillStyle style) =>
-      resolve(style) == NavPillStyle.liquidGlass && LiquidGlass.isSupported;
+      NativeGlass.active ||
+      (resolve(style) == NavPillStyle.liquidGlass && LiquidGlass.isSupported);
 
   static bool isFrost(NavPillStyle style) {
+    if (NativeGlass.active) return false;
     final resolved = resolve(style);
     return resolved == NavPillStyle.frostBlur ||
         (resolved == NavPillStyle.liquidGlass && !LiquidGlass.isSupported);
