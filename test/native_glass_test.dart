@@ -271,6 +271,7 @@ void main() {
         ),
       );
       await tester.pump();
+      await tester.pump();
 
       expect(find.byType(NativeGlassView), findsOneWidget);
       expect(find.text('glass'), findsOneWidget);
