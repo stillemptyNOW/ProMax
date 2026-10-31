@@ -13,6 +13,7 @@ import '../../../core/config/app_fonts.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../backend/modules/account/account_models.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 String _passwordErrorText(Object error, AppLocalizations l10n) =>
     error is WrongPasswordException
@@ -183,13 +184,14 @@ class _PasswordEntryScreenState extends State<PasswordEntryScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
-          IconButton(
+          ChromeLeadingButton(
             icon: Icon(
               Symbols.arrow_back,
               color: cs.onSurface,
               size: 24,
               weight: 400,
             ),
+            native: false,
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 4),
@@ -667,7 +669,7 @@ class _TwoFactorSetupScreenState extends State<TwoFactorSetupScreen> {
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
@@ -1047,7 +1049,7 @@ class _TwoFactorPasswordChangeScreenState
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
@@ -1225,7 +1227,7 @@ class _TwoFactorEmailChangeScreenState
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
@@ -1385,7 +1387,7 @@ class _TwoFactorRemoveScreenState extends State<TwoFactorRemoveScreen> {
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),

@@ -28,6 +28,8 @@ import 'open_contact_profile.dart';
 import '../../../core/config/app_frost.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../widgets/chrome_glass.dart';
+import '../../widgets/liquid_glass.dart';
 
 class ContactsTab extends StatefulWidget {
   const ContactsTab({super.key});
@@ -237,7 +239,10 @@ class _ContactsTabState extends State<ContactsTab> with SpectrumSurface {
     );
   }
 
-  Future<void> _startContactCall(CachedContact contact, {bool video = false}) async {
+  Future<void> _startContactCall(
+    CachedContact contact, {
+    bool video = false,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
     if (CallController.instance.isBusy) {
       showCustomNotification(context, l10n.callsTabAlreadyInCall);
@@ -442,8 +447,14 @@ class _ContactsTabState extends State<ContactsTab> with SpectrumSurface {
   }
 
   Widget _buildHeader(ColorScheme cs, AppLocalizations l10n) {
+    return ChromeGlassBuilder(
+      builder: (context, liquid) => _buildHeaderRow(cs, l10n, liquid),
+    );
+  }
+
+  Widget _buildHeaderRow(ColorScheme cs, AppLocalizations l10n, bool liquid) {
     if (_searching) {
-      return Row(
+      final row = Row(
         children: [
           Expanded(
             child: TextField(
@@ -467,7 +478,34 @@ class _ContactsTabState extends State<ContactsTab> with SpectrumSurface {
           ),
         ],
       );
+      if (!liquid) return row;
+      return SizedBox(
+        height: 48,
+        child: LiquidGlassSurface(
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 18, right: 2),
+            child: row,
+          ),
+        ),
+      );
     }
+    final actions = <Widget>[
+      ContactsNfcExchangeButton(
+        tooltip: l10n.contactsNfcExchange,
+        onPressed: _openNfcExchange,
+      ),
+      IconButton(
+        icon: Icon(Symbols.person_add, color: cs.onSurface),
+        tooltip: l10n.contactsFindUser,
+        onPressed: _openFindUser,
+      ),
+      IconButton(
+        icon: Icon(Symbols.search, color: cs.onSurface),
+        tooltip: l10n.contactsSearchHint,
+        onPressed: _startSearch,
+      ),
+    ];
     return Row(
       children: [
         Expanded(
@@ -489,20 +527,7 @@ class _ContactsTabState extends State<ContactsTab> with SpectrumSurface {
             ],
           ),
         ),
-        ContactsNfcExchangeButton(
-          tooltip: l10n.contactsNfcExchange,
-          onPressed: _openNfcExchange,
-        ),
-        IconButton(
-          icon: Icon(Symbols.person_add, color: cs.onSurface),
-          tooltip: l10n.contactsFindUser,
-          onPressed: _openFindUser,
-        ),
-        IconButton(
-          icon: Icon(Symbols.search, color: cs.onSurface),
-          tooltip: l10n.contactsSearchHint,
-          onPressed: _startSearch,
-        ),
+        if (liquid) ChromeGlassToolbar(children: actions) else ...actions,
       ],
     );
   }

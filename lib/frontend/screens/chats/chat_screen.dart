@@ -126,6 +126,7 @@ import 'chat_tool_tile.dart';
 import '../../../core/push/quiet_hours.dart';
 import '../../../core/disappearing/disappearing_messages.dart';
 import '../../../core/config/app_chat_chrome.dart';
+import '../../../core/config/app_native_glass.dart';
 import 'package:promax/core/config/app_composer_background.dart';
 import 'package:promax/core/config/app_composer_style.dart';
 import '../../../core/config/promax_settings.dart';
@@ -636,7 +637,7 @@ class _ChatScreenState extends State<ChatScreen>
 
   ChatChromeStyle get _effectiveChrome {
     final chrome = AppChatChrome.current.value;
-    if (chrome == ChatChromeStyle.liquidGlass) {
+    if (chrome == ChatChromeStyle.liquidGlass || NativeGlass.active) {
       return ChatChromeStyle.transparent;
     }
     return chrome;

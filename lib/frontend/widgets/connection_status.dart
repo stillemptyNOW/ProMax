@@ -6,6 +6,8 @@ import 'package:m3e_collection/m3e_collection.dart';
 import '../../backend/api.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart' show api;
+import 'chrome_glass.dart';
+import 'liquid_glass.dart';
 import 'small_spinner.dart';
 
 final ValueNotifier<bool> debugForceOffline = ValueNotifier<bool>(false);
@@ -127,7 +129,8 @@ class ConnectionTitleText extends StatelessWidget {
   );
 }
 
-class ConnectionTitleBar extends StatelessWidget implements PreferredSizeWidget {
+class ConnectionTitleBar extends StatelessWidget
+    implements PreferredSizeWidget {
   final String titleText;
   final Color? backgroundColor;
 
@@ -141,10 +144,13 @@ class ConnectionTitleBar extends StatelessWidget implements PreferredSizeWidget 
   Size get preferredSize => const Size.fromHeight(64);
 
   @override
-  Widget build(BuildContext context) => ConnectionStatusBuilder(
-    builder: (context, label) => AppBarM3E(
-      titleText: label ?? titleText,
-      backgroundColor: backgroundColor,
+  Widget build(BuildContext context) => ChromeGlassBuilder(
+    builder: (context, liquid) => ConnectionStatusBuilder(
+      builder: (context, label) => AppBarM3E(
+        leading: ChromeBackButton.leadingFor(context, liquid: liquid),
+        titleText: label ?? titleText,
+        backgroundColor: backgroundColor,
+      ),
     ),
   );
 }
@@ -164,24 +170,38 @@ class ConnectionSpinner extends StatelessWidget {
             ScaleTransition(scale: animation, child: child),
         child: label == null
             ? const SizedBox.shrink(key: ValueKey('online'))
-            : Container(
+            : ChromeGlassBuilder(
                 key: const ValueKey('offline'),
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.18),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                builder: (context, liquid) {
+                  final spinner = Center(
+                    child: SmallSpinner(size: 20, color: cs.primary),
+                  );
+                  if (liquid) {
+                    return SizedBox.square(
+                      dimension: 40,
+                      child: LiquidGlassSurface(
+                        borderRadius: BorderRadius.circular(20),
+                        child: spinner,
+                      ),
+                    );
+                  }
+                  return Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.18),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Center(
-                  child: SmallSpinner(size: 20, color: cs.primary),
-                ),
+                    child: spinner,
+                  );
+                },
               ),
       ),
     );

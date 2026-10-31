@@ -24,6 +24,7 @@ import '../../widgets/web_qr_login.dart';
 import 'web_qr_scan_screen.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 class DevicesScreen extends StatefulWidget {
   const DevicesScreen({super.key});
@@ -235,7 +236,7 @@ class _DevicesScreenState extends State<DevicesScreen>
         backgroundColor: cs.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: const Icon(Symbols.chevron_left, size: 28),
           onPressed: () => Navigator.pop(context),
         ),

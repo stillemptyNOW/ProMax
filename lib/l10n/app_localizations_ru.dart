@@ -7761,4 +7761,137 @@ class AppLocalizationsRu extends AppLocalizations {
   String chatInfoIgnoreConfirmMessage(String name) {
     return '$name сможет отправлять вам сообщения и не узнает об этом, но ProMax будет удалять их у вас, не покажет уведомления, не отметит прочитанными и отклонит звонки. Остановить саму отправку может только чёрный список MAX.';
   }
+
+  @override
+  String get pluginsScreenNativeSection => 'Встроенные нативные';
+
+  @override
+  String get pluginsScreenJsSection => 'Плагины команд';
+
+  @override
+  String get pluginsScreenConfigure => 'Настроить';
+
+  @override
+  String get motionBlurTitle => 'Motion Blur';
+
+  @override
+  String get motionBlurDescription =>
+      'Размытие в движении при прокрутке, переходах и смене вкладок';
+
+  @override
+  String get motionBlurEnabled => 'Размытие в движении';
+
+  @override
+  String get motionBlurEnabledSubtitle =>
+      'Шлейф вдоль направления движения, длина зависит от скорости';
+
+  @override
+  String get motionBlurSectionPreview => 'Предпросмотр';
+
+  @override
+  String get motionBlurPreviewHint =>
+      'Прокрутите список или проиграйте переход: предпросмотр показывает эффект с текущими параметрами, даже если плагин выключен';
+
+  @override
+  String get motionBlurPreviewPlay => 'Проиграть переход';
+
+  @override
+  String motionBlurPreviewRow(int index) {
+    return 'Пример строки $index';
+  }
+
+  @override
+  String get motionBlurPreviewCard => 'Экран';
+
+  @override
+  String get motionBlurSectionTuning => 'Параметры';
+
+  @override
+  String get motionBlurStrength => 'Сила';
+
+  @override
+  String get motionBlurStrengthHint => 'Максимальная длина шлейфа';
+
+  @override
+  String motionBlurStrengthValue(int value) {
+    return 'до $value pt';
+  }
+
+  @override
+  String get motionBlurSensitivity => 'Чувствительность';
+
+  @override
+  String get motionBlurSensitivityHint =>
+      'С какой скорости появляется шлейф и как быстро растёт';
+
+  @override
+  String motionBlurSensitivityValue(String value) {
+    return '×$value';
+  }
+
+  @override
+  String get motionBlurQuality => 'Качество';
+
+  @override
+  String get motionBlurQualityHint =>
+      'Число выборок вдоль шлейфа: больше — глаже, но тяжелее для GPU';
+
+  @override
+  String get motionBlurQualityLow => 'Экономно';
+
+  @override
+  String get motionBlurQualityBalanced => 'Баланс';
+
+  @override
+  String get motionBlurQualityHigh => 'Максимум';
+
+  @override
+  String get motionBlurSectionTargets => 'Где размывать';
+
+  @override
+  String get motionBlurTargetScrolling => 'Прокрутка';
+
+  @override
+  String get motionBlurTargetScrollingSubtitle =>
+      'Чаты, сообщения, настройки и другие списки';
+
+  @override
+  String get motionBlurTargetTransitions => 'Переходы между экранами';
+
+  @override
+  String get motionBlurTargetTransitionsSubtitle =>
+      'Открытие и закрытие экранов, жест «назад»';
+
+  @override
+  String get motionBlurTargetPages => 'Вкладки и листание';
+
+  @override
+  String get motionBlurTargetPagesSubtitle =>
+      'Нижние вкладки, папки чатов и другие перелистываемые страницы';
+
+  @override
+  String get motionBlurTargetLens => 'Линза панели вкладок';
+
+  @override
+  String get motionBlurTargetLensSubtitle =>
+      'Движение выделения в плавающей панели вкладок';
+
+  @override
+  String get motionBlurLowEndNotice =>
+      'Устройство определено как слабое: сила и качество ограничены';
+
+  @override
+  String get motionBlurReduceMotionNotice =>
+      'В системе включено уменьшение движения — размытие не применяется';
+
+  @override
+  String get motionBlurFallbackNotice =>
+      'Шейдерные фильтры недоступны, используется упрощённое гауссово размытие по оси движения';
+
+  @override
+  String get motionBlurPlatformViewsNote =>
+      'Нативное стекло iOS 26, системный таб-бар и мини-приложения — нативные вью, Flutter не может их размыть. Экраны и списки с ними двигаются без шлейфа';
+
+  @override
+  String get motionBlurReset => 'Сбросить параметры';
 }

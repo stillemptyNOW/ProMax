@@ -13579,6 +13579,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} can still send you messages and will not know, but ProMax will delete them for you, show no notifications, never mark them read and decline calls. Only the MAX black list stops the sending itself.'**
   String chatInfoIgnoreConfirmMessage(String name);
+
+  /// No description provided for @pluginsScreenNativeSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in native'**
+  String get pluginsScreenNativeSection;
+
+  /// No description provided for @pluginsScreenJsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Command plugins'**
+  String get pluginsScreenJsSection;
+
+  /// No description provided for @pluginsScreenConfigure.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure'**
+  String get pluginsScreenConfigure;
+
+  /// No description provided for @motionBlurTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Motion Blur'**
+  String get motionBlurTitle;
+
+  /// No description provided for @motionBlurDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Motion blur while scrolling, on screen transitions and tab switches'**
+  String get motionBlurDescription;
+
+  /// No description provided for @motionBlurEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Motion blur'**
+  String get motionBlurEnabled;
+
+  /// No description provided for @motionBlurEnabledSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A streak along the direction of motion, its length follows the speed'**
+  String get motionBlurEnabledSubtitle;
+
+  /// No description provided for @motionBlurSectionPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get motionBlurSectionPreview;
+
+  /// No description provided for @motionBlurPreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll the list or play a transition: the preview shows the effect with the current settings even while the plugin is off'**
+  String get motionBlurPreviewHint;
+
+  /// No description provided for @motionBlurPreviewPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play transition'**
+  String get motionBlurPreviewPlay;
+
+  /// No description provided for @motionBlurPreviewRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample row {index}'**
+  String motionBlurPreviewRow(int index);
+
+  /// No description provided for @motionBlurPreviewCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen'**
+  String get motionBlurPreviewCard;
+
+  /// No description provided for @motionBlurSectionTuning.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get motionBlurSectionTuning;
+
+  /// No description provided for @motionBlurStrength.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength'**
+  String get motionBlurStrength;
+
+  /// No description provided for @motionBlurStrengthHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest streak'**
+  String get motionBlurStrengthHint;
+
+  /// No description provided for @motionBlurStrengthValue.
+  ///
+  /// In en, this message translates to:
+  /// **'up to {value} pt'**
+  String motionBlurStrengthValue(int value);
+
+  /// No description provided for @motionBlurSensitivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensitivity'**
+  String get motionBlurSensitivity;
+
+  /// No description provided for @motionBlurSensitivityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'At what speed the streak appears and how fast it grows'**
+  String get motionBlurSensitivityHint;
+
+  /// No description provided for @motionBlurSensitivityValue.
+  ///
+  /// In en, this message translates to:
+  /// **'×{value}'**
+  String motionBlurSensitivityValue(String value);
+
+  /// No description provided for @motionBlurQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality'**
+  String get motionBlurQuality;
+
+  /// No description provided for @motionBlurQualityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Samples along the streak: more is smoother but heavier on the GPU'**
+  String get motionBlurQualityHint;
+
+  /// No description provided for @motionBlurQualityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Saver'**
+  String get motionBlurQualityLow;
+
+  /// No description provided for @motionBlurQualityBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get motionBlurQualityBalanced;
+
+  /// No description provided for @motionBlurQualityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum'**
+  String get motionBlurQualityHigh;
+
+  /// No description provided for @motionBlurSectionTargets.
+  ///
+  /// In en, this message translates to:
+  /// **'Where to blur'**
+  String get motionBlurSectionTargets;
+
+  /// No description provided for @motionBlurTargetScrolling.
+  ///
+  /// In en, this message translates to:
+  /// **'Scrolling'**
+  String get motionBlurTargetScrolling;
+
+  /// No description provided for @motionBlurTargetScrollingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats, messages, settings and other lists'**
+  String get motionBlurTargetScrollingSubtitle;
+
+  /// No description provided for @motionBlurTargetTransitions.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen transitions'**
+  String get motionBlurTargetTransitions;
+
+  /// No description provided for @motionBlurTargetTransitionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening and closing screens, the back gesture'**
+  String get motionBlurTargetTransitionsSubtitle;
+
+  /// No description provided for @motionBlurTargetPages.
+  ///
+  /// In en, this message translates to:
+  /// **'Tabs and paging'**
+  String get motionBlurTargetPages;
+
+  /// No description provided for @motionBlurTargetPagesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bottom tabs, chat folders and other swipeable pages'**
+  String get motionBlurTargetPagesSubtitle;
+
+  /// No description provided for @motionBlurTargetLens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tab bar lens'**
+  String get motionBlurTargetLens;
+
+  /// No description provided for @motionBlurTargetLensSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The selection moving in the floating tab bar'**
+  String get motionBlurTargetLensSubtitle;
+
+  /// No description provided for @motionBlurLowEndNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is treated as low-end: strength and quality are capped'**
+  String get motionBlurLowEndNotice;
+
+  /// No description provided for @motionBlurReduceMotionNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce motion is on in the system, so no blur is applied'**
+  String get motionBlurReduceMotionNotice;
+
+  /// No description provided for @motionBlurFallbackNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Shader filters are unavailable, a simpler Gaussian blur along the motion axis is used'**
+  String get motionBlurFallbackNotice;
+
+  /// No description provided for @motionBlurPlatformViewsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'iOS 26 native glass, the system tab bar and mini apps are native views that Flutter cannot blur. Screens and lists that contain them move without a streak'**
+  String get motionBlurPlatformViewsNote;
+
+  /// No description provided for @motionBlurReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset settings'**
+  String get motionBlurReset;
 }
 
 class _AppLocalizationsDelegate

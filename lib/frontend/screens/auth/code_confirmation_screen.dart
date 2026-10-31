@@ -15,6 +15,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/login_success_screen.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 class CodeConfirmationScreen extends StatefulWidget {
   final String phoneNumber;
@@ -399,7 +400,7 @@ class _CodeConfirmationScreenState extends State<CodeConfirmationScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurfaceVariant),
           onPressed: () => Navigator.pop(context),
         ),

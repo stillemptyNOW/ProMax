@@ -44,6 +44,9 @@ jobs:
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined native/promax_effects/test/mask_pose_test.cpp -o /tmp/promax-mask-test
           /tmp/promax-mask-test
+      - name: Verify Android effects bridge
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -fsyntax-only -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" -Inative/promax_effects/ios/Classes native/promax_effects/android/src/main/cpp/promax_effects_jni.cpp
       - name: Dependencies
         run: flutter pub get
       - name: Analyze
@@ -101,7 +104,13 @@ jobs:
       - name: Build iPhone app
         run: |
           flutter config --no-enable-swift-package-manager
-          flutter build ios --release --no-codesign
+          mkdir -p build
+          if ! flutter build ios --release --no-codesign -v > build/ios-build.log 2>&1; then
+            grep -nE "error:|Error:|\*\* BUILD FAILED|Command .* failed|Exception|fatal" build/ios-build.log | grep -v "warning:" | tail -120
+            tail -60 build/ios-build.log
+            exit 1
+          fi
+          tail -20 build/ios-build.log
       - name: Package IPA for eSign
         run: |
           mkdir -p build/ios/Payload dist

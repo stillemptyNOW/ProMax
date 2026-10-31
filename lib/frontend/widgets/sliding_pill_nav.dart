@@ -8,9 +8,11 @@ import '../../core/config/app_nav_pill_style.dart';
 import '../../core/config/app_pill_gradient.dart';
 import '../../core/config/app_visual_style.dart';
 import '../../core/config/promax_nav.dart';
+import '../../core/plugins/motion_blur/motion_blur_settings.dart';
 import 'animated_lottie_icon.dart';
 import 'glossy_pill.dart';
 import 'liquid_glass.dart';
+import 'motion_blur/motion_blur_box.dart';
 
 class PillNavItem {
   final IconData icon;
@@ -217,10 +219,14 @@ class SlidingPillNav extends StatelessWidget {
               top: lensInset,
               bottom: lensInset,
               width: geometry.activeWidth - 8,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: liquid ? AppLiquidGlass.lensColor(cs) : cs.primary,
-                  borderRadius: BorderRadius.circular(height / 2 - lensInset),
+              child: MotionBlurBox(
+                target: MotionBlurTarget.lens,
+                bounded: false,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: liquid ? AppLiquidGlass.lensColor(cs) : cs.primary,
+                    borderRadius: BorderRadius.circular(height / 2 - lensInset),
+                  ),
                 ),
               ),
             ),
@@ -238,29 +244,33 @@ class SlidingPillNav extends StatelessWidget {
                         top: liquid ? 4 : 6,
                         bottom: liquid ? 4 : 6,
                         width: cellW - (liquid ? 4 : 10),
-                        child: DecoratedBox(
-                          decoration: liquid
-                              ? BoxDecoration(
-                                  color: AppLiquidGlass.lensColor(cs),
-                                  borderRadius: BorderRadius.circular(
-                                    height / 2 - 4,
+                        child: MotionBlurBox(
+                          target: MotionBlurTarget.lens,
+                          bounded: false,
+                          child: DecoratedBox(
+                            decoration: liquid
+                                ? BoxDecoration(
+                                    color: AppLiquidGlass.lensColor(cs),
+                                    borderRadius: BorderRadius.circular(
+                                      height / 2 - 4,
+                                    ),
+                                  )
+                                : BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        cs.primary.withValues(alpha: 0.22),
+                                        cs.primary.withValues(alpha: 0.12),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(26),
+                                    border: Border.all(
+                                      color: cs.primary.withValues(alpha: 0.25),
+                                      width: 0.6,
+                                    ),
                                   ),
-                                )
-                              : BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      cs.primary.withValues(alpha: 0.22),
-                                      cs.primary.withValues(alpha: 0.12),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(26),
-                                  border: Border.all(
-                                    color: cs.primary.withValues(alpha: 0.25),
-                                    width: 0.6,
-                                  ),
-                                ),
+                          ),
                         ),
                       ),
                       Row(

@@ -12,6 +12,7 @@ import '../../widgets/glossy_pill.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 class InfoScreen extends StatefulWidget {
   const InfoScreen({super.key});
@@ -72,7 +73,7 @@ class _InfoScreenState extends State<InfoScreen> {
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),

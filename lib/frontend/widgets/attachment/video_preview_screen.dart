@@ -22,6 +22,7 @@ import 'photo_hero.dart';
 import 'preview_chrome.dart';
 import 'video_edit.dart';
 import 'video_editor.dart';
+import '../chrome_glass.dart';
 
 const int _kStripFrames = 12;
 
@@ -487,7 +488,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
         surfaceTintColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: const Icon(Symbols.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),

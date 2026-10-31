@@ -40,6 +40,28 @@ the core sources directly. Protocol and byte formats are specified in
 `native/promax_crypto/docs/PROTOCOL.md` — never reimplement them in Dart. The core's own suite
 (`make -C native/promax_crypto test`, `make asan`) must pass after every change to it; CI runs it.
 
+## Built-in native plugins (Motion Blur)
+
+Besides the JS command plugins (`PluginStore`, `.pmx`), ProMax ships native built-ins that can draw
+UI: `NativePlugin` / `NativePlugins` in `lib/core/plugins/native_plugin.dart`, listed on the Plugins
+screen through `nativePluginEntries` (`frontend/screens/profile/native_plugin_entries.dart`, title,
+icon and settings screen). They are not downloaded code, so the Plugins screen stays in App Store
+builds with only the native section. The first one is Motion Blur (`core/plugins/motion_blur/`,
+`frontend/widgets/motion_blur/`, `shaders/motion_blur.frag`), installed but off by default, settings
+persisted as JSON under `native_plugin_motion_blur_v1`.
+
+`MotionBlurBox` hosts the blur: at rest it paints its child directly (no filter layer); while
+something moves it pushes a clip plus an `ImageFilterLayer` with `ImageFilter.shader` (directional
+taps along the velocity), or a single-axis `ImageFilter.blur` where shader filters are unavailable.
+It is wired in once per target: every scrollable through `MotionBlurScrollBehavior` (installed on
+`MaterialApp`; its `copyWith` keeps the wrapper, and custom behaviors are passed in as `inner`), page
+routes through `MotionBlurPageTransitionsBuilder` and `SwipeRoute`, the main tabs in
+`chat_list_screen.dart`, the pill-nav lens in `sliding_pill_nav.dart`. Reduce motion disables it.
+
+A layer filter cannot reach platform views (iOS 26 native glass, the native `UITabBar`, the mini-app
+WebView), so every `UiKitView`/WebView is wrapped in `MotionBlurExclusion`: while one is mounted, all
+`MotionBlurBox` ancestors stay unfiltered. Wrap any new platform view the same way.
+
 ## Sticker renderer
 
 Animated stickers, animoji and reactions are rendered by [tlottie](https://github.com/dkaraush/tlottie)

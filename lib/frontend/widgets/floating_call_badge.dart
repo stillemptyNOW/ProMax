@@ -20,6 +20,7 @@ import 'call_video_view.dart';
 import 'custom_notification.dart';
 import 'draggable_floating_layer.dart';
 import 'glossy_pill.dart';
+import 'chrome_glass.dart';
 import 'lottie_slash_icon.dart';
 import 'small_spinner.dart';
 
@@ -347,54 +348,69 @@ class _CallBadgeState extends State<_CallBadge>
     required Widget? controls,
   }) {
     final radius = BorderRadius.circular(26);
+    final content = _cardContent(radius, t, title, face, expand, controls);
     return DefaultTextStyle(
       style: text,
-      child: GlossyPill(
-        color: cs.surfaceContainerHigh,
-        borderRadius: radius,
-        depth: 10,
-        child: ClipRRect(
+      child: ChromeGlassBuilder(
+        builder: (context, liquid) => GlossyPill(
+          liquid: liquid,
+          color: cs.surfaceContainerHigh,
           borderRadius: radius,
-          child: Stack(
-            children: [
-              Positioned(
-                left: 12,
-                right: lerpDouble(12, 44, t)!,
-                top: 10,
-                child: title,
-              ),
-              if (expand != null)
-                Positioned(top: 7, right: 7, child: _fade(t, expand)),
-              Positioned(
-                left: 0,
-                right: 0,
-                top: 44,
-                bottom: lerpDouble(12, 58, t)!,
-                child: Center(child: face),
-              ),
-              if (controls != null)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 10,
-                  child: _fade(
-                    t,
-                    SizedBox(
-                      height: _buttonSize,
-                      child: OverflowBox(
-                        minWidth: _controlsWidth,
-                        maxWidth: _controlsWidth,
-                        minHeight: _buttonSize,
-                        maxHeight: _buttonSize,
-                        alignment: Alignment.center,
-                        child: controls,
-                      ),
-                    ),
+          depth: 10,
+          child: content,
+        ),
+      ),
+    );
+  }
+
+  Widget _cardContent(
+    BorderRadius radius,
+    double t,
+    Widget title,
+    Widget face,
+    Widget? expand,
+    Widget? controls,
+  ) {
+    return ClipRRect(
+      borderRadius: radius,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 12,
+            right: lerpDouble(12, 44, t)!,
+            top: 10,
+            child: title,
+          ),
+          if (expand != null)
+            Positioned(top: 7, right: 7, child: _fade(t, expand)),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 44,
+            bottom: lerpDouble(12, 58, t)!,
+            child: Center(child: face),
+          ),
+          if (controls != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 10,
+              child: _fade(
+                t,
+                SizedBox(
+                  height: _buttonSize,
+                  child: OverflowBox(
+                    minWidth: _controlsWidth,
+                    maxWidth: _controlsWidth,
+                    minHeight: _buttonSize,
+                    maxHeight: _buttonSize,
+                    alignment: Alignment.center,
+                    child: controls,
                   ),
                 ),
-            ],
-          ),
-        ),
+              ),
+            ),
+        ],
       ),
     );
   }

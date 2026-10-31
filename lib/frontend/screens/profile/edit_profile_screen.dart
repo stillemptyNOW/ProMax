@@ -13,6 +13,7 @@ import '../../widgets/hint_bubble.dart';
 import '../../widgets/promax_avatar.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -201,7 +202,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),

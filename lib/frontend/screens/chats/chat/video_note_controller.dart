@@ -29,6 +29,8 @@ import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/lottie_slash_icon.dart';
 import 'voice_record_controller.dart';
 import '../../../../core/config/app_frost.dart';
+import 'package:promax/core/config/app_chrome_glass.dart';
+import 'package:promax/frontend/widgets/liquid_glass.dart';
 
 const String _flashIcon = 'assets/lottie/ic_flash_on_to_off.json';
 
@@ -149,11 +151,15 @@ class VideoNoteController {
     String? output;
     var handedOff = false;
     try {
-      final path = await AppLock.instance.external(() async => Platform.isIOS
-          ? await const MethodChannel(
-              'io.github.stillemptynow.promax/video',
-            ).invokeMethod<String>('pickGalleryVideo')
-          : (await ImagePicker().pickVideo(source: ImageSource.gallery))?.path);
+      final path = await AppLock.instance.external(
+        () async => Platform.isIOS
+            ? await const MethodChannel(
+                'io.github.stillemptynow.promax/video',
+              ).invokeMethod<String>('pickGalleryVideo')
+            : (await ImagePicker().pickVideo(
+                source: ImageSource.gallery,
+              ))?.path,
+      );
       if (path == null) return;
       if (Platform.isIOS) input = File(path);
       if (!isMounted()) return;
@@ -509,7 +515,10 @@ class _VideoNoteRecordingLayerState extends State<VideoNoteRecordingLayer>
               const Positioned.fill(
                 child: AbsorbPointer(child: SizedBox.expand()),
               ),
-              Opacity(opacity: t, child: child),
+              NativeGlassHold(
+                held: t < 1,
+                child: Opacity(opacity: t, child: child),
+              ),
             ],
           );
         },
@@ -599,6 +608,7 @@ class _CameraControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlossyPill(
+      liquid: ChromeGlass.isLiquid,
       color: cs.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(26),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),

@@ -8,6 +8,7 @@ import '../../../../core/utils/format.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../widgets/promax_avatar.dart';
 import '../../../widgets/small_spinner.dart';
+import '../../../widgets/chrome_glass.dart';
 
 class AdminScaffold extends StatelessWidget {
   final String title;
@@ -29,7 +30,7 @@ class AdminScaffold extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface, weight: 400),
           onPressed: () => Navigator.pop(context),
         ),

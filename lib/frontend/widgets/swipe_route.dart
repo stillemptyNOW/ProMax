@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 
 import 'directional_drag_recognizer.dart';
+import 'motion_blur/motion_blur_page_transitions.dart';
 
 class SwipeRoute<T> extends PageRoute<T> {
   SwipeRoute({
@@ -93,7 +94,11 @@ class SwipeRoute<T> extends PageRoute<T> {
         primaryRouteAnimation: animation,
         secondaryRouteAnimation: secondaryAnimation,
         linearTransition: popGestureInProgress,
-        child: child,
+        child: MotionBlurRouteContent(
+          animation: animation,
+          secondaryAnimation: secondaryAnimation,
+          child: child,
+        ),
       ),
     );
   }

@@ -2,6 +2,8 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
+import 'chrome_glass.dart';
+import 'liquid_glass.dart';
 import 'toast_placement.dart';
 
 const Duration _defaultNotificationDuration = Duration(milliseconds: 2600);
@@ -108,8 +110,6 @@ class _CustomNotificationState extends State<CustomNotification>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final fill = cs.inverseSurface.withValues(alpha: 0.9);
     return ToastBottomPositioned(
       left: 12,
       right: 12,
@@ -126,50 +126,70 @@ class _CustomNotificationState extends State<CustomNotification>
                 position: _slide,
                 child: ScaleTransition(
                   scale: _scale,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(50),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.22),
-                          blurRadius: 24,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(50),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 22,
-                            vertical: 13,
-                          ),
-                          decoration: BoxDecoration(
-                            color: fill,
-                            borderRadius: BorderRadius.circular(50),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
-                          ),
-                          child: Text(
-                            widget.message,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: cs.onInverseSurface,
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w600,
-                              height: 1.3,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  child: ChromeGlassBuilder(
+                    builder: (context, liquid) =>
+                        liquid ? _glass(context) : _frosted(context),
                   ),
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static const _radius = BorderRadius.all(Radius.circular(50));
+  static const _padding = EdgeInsets.symmetric(horizontal: 22, vertical: 13);
+
+  Widget _message(Color color) => Text(
+    widget.message,
+    textAlign: TextAlign.center,
+    style: TextStyle(
+      color: color,
+      fontSize: 14.5,
+      fontWeight: FontWeight.w600,
+      height: 1.3,
+    ),
+  );
+
+  Widget _glass(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return NativeGlassAnimationHold(
+      animation: _controller,
+      child: LiquidGlassSurface(
+        borderRadius: _radius,
+        child: Padding(padding: _padding, child: _message(cs.onSurface)),
+      ),
+    );
+  }
+
+  Widget _frosted(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final fill = cs.inverseSurface.withValues(alpha: 0.9);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: _radius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: _radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            padding: _padding,
+            decoration: BoxDecoration(
+              color: fill,
+              borderRadius: _radius,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            child: _message(cs.onInverseSurface),
           ),
         ),
       ),

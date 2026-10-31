@@ -7,6 +7,7 @@ import 'package:promax/core/config/app_chat_chrome.dart';
 import 'package:promax/core/config/app_frost.dart';
 
 import 'chat_header.dart';
+import 'package:promax/frontend/widgets/liquid_glass.dart';
 import 'frosted_panel.dart';
 import 'search_view.dart';
 import 'selection_bar.dart';
@@ -187,38 +188,41 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   if (t < 1 && s < 1)
                     IgnorePointer(
                       ignoring: t > 0.5 || s > 0.5,
-                      child: Opacity(
-                        opacity: (1 - t) * (1 - s),
-                        child: Transform.translate(
-                          offset: Offset(0, -height * 0.4 * t),
-                          child: ChatHeaderRow(
-                            glossy: glossyChrome,
-                            frosted:
-                                glossyChrome &&
-                                chrome == ChatChromeStyle.transparent,
-                            backdropVisible: t == 0 && s == 0,
-                            liquid: liquidChrome,
-                            backdropKey: pillBackdrop,
-                            cs: cs,
-                            embedded: embedded,
-                            chatId: chatId,
-                            heroTag: heroTag,
-                            name: name,
-                            imageUrl: imageUrl,
-                            chatType: chatType,
-                            isOfficial: isOfficial,
-                            encrypted: encrypted,
-                            verified: verified,
-                            myId: myId,
-                            headerStatus: headerStatus,
-                            scheduledCount: scheduledCount,
-                            otherUnread: otherUnread,
-                            showCall: showCall,
-                            onClose: onClose,
-                            onOpenInfo: onOpenInfo,
-                            onOpenScheduled: onOpenScheduled,
-                            onCall: onCall,
-                            onMenu: onMenu,
+                      child: NativeGlassHold(
+                        held: t > 0 || s > 0,
+                        child: Opacity(
+                          opacity: (1 - t) * (1 - s),
+                          child: Transform.translate(
+                            offset: Offset(0, -height * 0.4 * t),
+                            child: ChatHeaderRow(
+                              glossy: glossyChrome,
+                              frosted:
+                                  glossyChrome &&
+                                  chrome == ChatChromeStyle.transparent,
+                              backdropVisible: t == 0 && s == 0,
+                              liquid: liquidChrome,
+                              backdropKey: pillBackdrop,
+                              cs: cs,
+                              embedded: embedded,
+                              chatId: chatId,
+                              heroTag: heroTag,
+                              name: name,
+                              imageUrl: imageUrl,
+                              chatType: chatType,
+                              isOfficial: isOfficial,
+                              encrypted: encrypted,
+                              verified: verified,
+                              myId: myId,
+                              headerStatus: headerStatus,
+                              scheduledCount: scheduledCount,
+                              otherUnread: otherUnread,
+                              showCall: showCall,
+                              onClose: onClose,
+                              onOpenInfo: onOpenInfo,
+                              onOpenScheduled: onOpenScheduled,
+                              onCall: onCall,
+                              onMenu: onMenu,
+                            ),
                           ),
                         ),
                       ),
@@ -226,21 +230,25 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   if (t > 0)
                     IgnorePointer(
                       ignoring: t < 0.5,
-                      child: Opacity(
-                        opacity: t,
-                        child: Transform.translate(
-                          offset: Offset(0, height * 0.4 * (1 - t)),
-                          child: SelectionTopBar(
-                            cs: cs,
-                            selected: selected,
-                            glossy: glossyChrome,
-                            copyMsgs: copyableSelection(selected),
-                            editMsg: singleEditable(selected),
-                            onClear: onClearSelection,
-                            onCopy: onCopySelected,
-                            onScreenshot: onScreenshotSelected,
-                            onEdit: onEditSelected,
-                            onDelete: onDeleteSelected,
+                      child: NativeGlassHold(
+                        held: t < 1,
+                        child: Opacity(
+                          opacity: t,
+                          child: Transform.translate(
+                            offset: Offset(0, height * 0.4 * (1 - t)),
+                            child: SelectionTopBar(
+                              cs: cs,
+                              selected: selected,
+                              glossy: glossyChrome,
+                              liquid: liquidChrome,
+                              copyMsgs: copyableSelection(selected),
+                              editMsg: singleEditable(selected),
+                              onClear: onClearSelection,
+                              onCopy: onCopySelected,
+                              onScreenshot: onScreenshotSelected,
+                              onEdit: onEditSelected,
+                              onDelete: onDeleteSelected,
+                            ),
                           ),
                         ),
                       ),
@@ -248,14 +256,18 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   if (s > 0)
                     IgnorePointer(
                       ignoring: s < 0.5,
-                      child: Opacity(
-                        opacity: s,
-                        child: SearchTopBar(
-                          cs: cs,
-                          glossy: glossyChrome,
-                          search: search,
-                          focusNode: searchFocusNode,
-                          onClose: onCloseSearch,
+                      child: NativeGlassHold(
+                        held: s < 1,
+                        child: Opacity(
+                          opacity: s,
+                          child: SearchTopBar(
+                            cs: cs,
+                            glossy: glossyChrome,
+                            liquid: liquidChrome,
+                            search: search,
+                            focusNode: searchFocusNode,
+                            onClose: onCloseSearch,
+                          ),
                         ),
                       ),
                     ),

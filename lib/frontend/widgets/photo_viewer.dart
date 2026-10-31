@@ -36,6 +36,8 @@ import 'chat_menu_overlay.dart';
 import 'custom_notification.dart';
 import 'liquid_glass.dart';
 import 'small_spinner.dart';
+import '../../core/config/app_chrome_glass.dart';
+import 'chrome_glass.dart';
 
 Future<void> openAvatarViewer(
   BuildContext context,
@@ -950,7 +952,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
               Positioned.fill(
                 child: IgnorePointer(
                   ignoring: !_chromeVisible,
-                  child: AnimatedOpacity(
+                  child: NativeGlassAnimatedOpacity(
                     opacity: _chromeVisible ? 1 : 0,
                     duration: const Duration(milliseconds: 220),
                     curve: Curves.easeOut,
@@ -1136,31 +1138,49 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
               ),
             )
           : null,
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Symbols.close, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          if (compact) ...[
-            const SizedBox(width: 4),
-            Expanded(child: _buildInfo(l10n)),
-          ] else
-            const Spacer(),
-          if (_saving && _current.isVideo)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 14),
-              child: SmallSpinner(size: 20, color: Colors.white),
-            ),
-          if (compact) ..._buildMediaActions(l10n),
-          if (hasMenu)
-            Builder(
-              builder: (btnContext) => IconButton(
-                icon: const Icon(Symbols.more_vert, color: Colors.white),
-                onPressed: () => _openMenu(btnContext),
+      child: ChromeGlassBuilder(
+        builder: (context, liquid) => Row(
+          children: [
+            if (liquid)
+              ChromeGlassCircleButton(
+                icon: const Icon(Symbols.close),
+                color: Colors.white,
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            else
+              IconButton(
+                icon: const Icon(Symbols.close, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
               ),
-            ),
-        ],
+            if (compact) ...[
+              const SizedBox(width: 4),
+              Expanded(child: _buildInfo(l10n)),
+            ] else
+              const Spacer(),
+            if (_saving && _current.isVideo)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 14),
+                child: SmallSpinner(size: 20, color: Colors.white),
+              ),
+            if (compact) ..._buildMediaActions(l10n),
+            if (hasMenu)
+              Builder(
+                builder: (btnContext) => liquid
+                    ? ChromeGlassCircleButton(
+                        icon: const Icon(Symbols.more_vert),
+                        color: Colors.white,
+                        onPressed: () => _openMenu(btnContext),
+                      )
+                    : IconButton(
+                        icon: const Icon(
+                          Symbols.more_vert,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => _openMenu(btnContext),
+                      ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1772,6 +1792,7 @@ class _ViewerGlassSurface extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           child: GlassSurface(
+            liquid: ChromeGlass.isLiquid,
             borderRadius: BorderRadius.circular(12),
             frostTint: Colors.black.withValues(alpha: 0.28),
             frostSigma: AppFrost.panelSigma,

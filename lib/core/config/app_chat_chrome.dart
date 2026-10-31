@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../frontend/widgets/liquid_glass.dart';
+import 'app_native_glass.dart';
 import 'persisted_setting.dart';
 
 // #***! чем заливается шапка чата
@@ -9,7 +10,8 @@ enum ChatChromeStyle { color, blur, none, transparent, liquidGlass }
 // #***! стекло есть не везде, где нет откатываемся молча
 class ChatChromeMaterial {
   static bool isLiquid(ChatChromeStyle style) =>
-      style == ChatChromeStyle.liquidGlass && LiquidGlass.isSupported;
+      NativeGlass.active ||
+      (style == ChatChromeStyle.liquidGlass && LiquidGlass.isSupported);
 }
 
 // #***! настройка шапки чата

@@ -100,7 +100,6 @@ class _CardShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final width = MediaQuery.sizeOf(context).width;
 
     return Center(
@@ -108,17 +107,10 @@ class _CardShell extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Material(
           color: Colors.transparent,
-          child: Container(
+          child: BlurredCardSurface(
             width: width > 420 ? 380 : double.infinity,
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-              child: child,
-            ),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+            child: child,
           ),
         ),
       ),

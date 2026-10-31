@@ -9,6 +9,7 @@ import '../../core/storage/token_storage.dart';
 import '../../core/utils/haptics.dart';
 import '../../l10n/app_localizations.dart';
 import 'animated_overlay_popup.dart';
+import 'chrome_glass.dart';
 import 'promax_avatar.dart';
 import '../../core/config/app_frost.dart';
 
@@ -273,7 +274,6 @@ class _AccountSwitcherLayerState extends State<_AccountSwitcherLayer>
   }
 
   Widget _buildMenu(double t) {
-    final cs = Theme.of(context).colorScheme;
     final eased = Curves.easeOutCubic.transform(t);
     final scale = 0.88 + 0.12 * eased;
     return Positioned(
@@ -286,12 +286,11 @@ class _AccountSwitcherLayerState extends State<_AccountSwitcherLayer>
         child: Transform.scale(
           scale: scale,
           alignment: Alignment.bottomCenter,
-          child: Material(
-            color: cs.surfaceContainerHigh,
+          child: ChromeMenuSurface(
             borderRadius: BorderRadius.circular(22),
-            clipBehavior: Clip.antiAlias,
+            animation: overlayAnimation,
             elevation: 10,
-            shadowColor: Colors.black.withValues(alpha: 0.4),
+            shadowOpacity: 0.4,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

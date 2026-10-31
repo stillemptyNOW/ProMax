@@ -12,6 +12,7 @@ import '../../widgets/glossy_pill.dart';
 import '../../widgets/promax_avatar.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../widgets/small_spinner.dart';
+import '../../widgets/chrome_glass.dart';
 
 // #***! входящие заявки на вступление, видно админам группы/канала
 class JoinRequestsScreen extends StatefulWidget {
@@ -55,8 +56,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen>
     });
   }
 
-  String _nameOf(ChatMemberEntry m) =>
-      m.name ?? m.fullName ?? 'ID ${m.id}';
+  String _nameOf(ChatMemberEntry m) => m.name ?? m.fullName ?? 'ID ${m.id}';
 
   Future<void> _resolve(ChatMemberEntry m, {required bool approve}) async {
     if (_pending.contains(m.id)) return;
@@ -108,7 +108,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen>
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
-          IconButton(
+          ChromeLeadingButton(
             icon: Icon(
               Symbols.arrow_back,
               color: cs.onSurface,
@@ -154,8 +154,7 @@ class _JoinRequestsScreenState extends State<JoinRequestsScreen>
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
       itemCount: _requests.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) =>
-          _buildTile(cs, _requests[index]),
+      itemBuilder: (context, index) => _buildTile(cs, _requests[index]),
     );
   }
 

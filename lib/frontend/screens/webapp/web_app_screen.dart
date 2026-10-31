@@ -23,6 +23,7 @@ import '../../../main.dart' show api;
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/error_view.dart';
+import '../../widgets/motion_blur/motion_blur_box.dart';
 import '../../widgets/sandbox_prompts.dart';
 import '../../widgets/small_spinner.dart';
 import '../../widgets/webview_permission_prompt.dart';
@@ -31,6 +32,7 @@ import 'web_app_bridge.dart';
 import '../../../core/utils/user_facing_error.dart';
 import 'web_app_downloads.dart';
 import 'web_app_origin_policy.dart';
+import '../../widgets/chrome_glass.dart';
 
 class WebAppScreen extends StatefulWidget {
   final String title;
@@ -378,7 +380,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
           backgroundColor: cs.surface,
           surfaceTintColor: Colors.transparent,
           title: Text(widget.title),
-          leading: IconButton(
+          leading: ChromeLeadingButton(
             icon: const Icon(Symbols.close),
             onPressed: _closeByUser,
           ),
@@ -415,7 +417,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
         _viewport = Size(constraints.maxWidth, constraints.maxHeight);
         return Listener(
           onPointerDown: (_) => bridge.registerGesture(),
-          child: _buildWebView(launch, bridge),
+          child: MotionBlurExclusion(child: _buildWebView(launch, bridge)),
         );
       },
     );

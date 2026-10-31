@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../../core/config/app_frost.dart';
+import '../../widgets/chrome_glass.dart';
 
 Future<T?> showBlurredCard<T>(
   BuildContext context,
@@ -29,6 +30,45 @@ Future<T?> showBlurredCard<T>(
       );
     },
   );
+}
+
+class BlurredCardSurface extends StatelessWidget {
+  const BlurredCardSurface({
+    super.key,
+    required this.width,
+    this.padding = EdgeInsets.zero,
+    required this.child,
+  });
+
+  static const BorderRadius radius = BorderRadius.all(Radius.circular(22));
+
+  final double width;
+  final EdgeInsetsGeometry padding;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Padding(padding: padding, child: child);
+    return ChromeGlassBuilder(
+      builder: (context, liquid) {
+        if (liquid) {
+          return SizedBox(
+            width: width,
+            child: ChromeGlassPanel(borderRadius: radius, child: content),
+          );
+        }
+        return Container(
+          width: width,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            borderRadius: radius,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: content,
+        );
+      },
+    );
+  }
 }
 
 Widget contactSheetDivider(ColorScheme cs) =>

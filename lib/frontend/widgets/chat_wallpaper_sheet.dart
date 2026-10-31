@@ -16,6 +16,7 @@ import 'mesh_gradient_background.dart';
 import 'custom_notification.dart';
 import '../../core/config/app_fonts.dart';
 import '../../core/security/app_lock.dart';
+import 'chrome_glass.dart';
 
 enum WallpaperPickType { none, theme, gallery, gradient }
 
@@ -215,7 +216,7 @@ class _ChatWallpaperGalleryScreenState
       appBar: AppBar(
         backgroundColor: cs.surface,
         surfaceTintColor: Colors.transparent,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: const Icon(Symbols.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),

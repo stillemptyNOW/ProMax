@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/config/build_profile.dart';
 import '../../../core/plugins/plugin_installer.dart';
 import '../../../core/plugins/plugin_models.dart';
 import '../../../core/plugins/plugin_permission_label.dart';
@@ -11,9 +12,12 @@ import '../../../core/plugins/plugin_store.dart';
 import '../../../core/plugins/plugin_updater.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/custom_notification.dart';
+import '../../widgets/promax_ui.dart';
 import '../../widgets/settings_card.dart';
 import '../../../core/security/app_lock.dart';
 import '../../../core/utils/user_facing_error.dart';
+import 'native_plugin_entries.dart';
+import '../../widgets/chrome_glass.dart';
 
 class PluginsScreen extends StatefulWidget {
   const PluginsScreen({super.key});
@@ -290,23 +294,25 @@ class _PluginsScreenState extends State<PluginsScreen> {
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
+        leading: const ChromeImpliedLeading(),
         title: Text(l10n.pluginsScreenTitle),
         backgroundColor: cs.surface,
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) =>
-                value == 'file' ? _installFile() : _installUrl(),
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'file',
-                child: Text(l10n.pluginsScreenInstallFile),
-              ),
-              PopupMenuItem(
-                value: 'url',
-                child: Text(l10n.pluginsScreenInstallUrl),
-              ),
-            ],
-          ),
+          if (BuildProfile.plugins)
+            PopupMenuButton<String>(
+              onSelected: (value) =>
+                  value == 'file' ? _installFile() : _installUrl(),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'file',
+                  child: Text(l10n.pluginsScreenInstallFile),
+                ),
+                PopupMenuItem(
+                  value: 'url',
+                  child: Text(l10n.pluginsScreenInstallUrl),
+                ),
+              ],
+            ),
         ],
       ),
       body: ValueListenableBuilder<List<PluginDescriptor>>(
@@ -315,6 +321,13 @@ class _PluginsScreenState extends State<PluginsScreen> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
           children: [
+            ProMaxSectionTitle(l10n.pluginsScreenNativeSection),
+            for (final entry in nativePluginEntries) ...[
+              NativePluginCard(entry: entry),
+              const SizedBox(height: 12),
+            ],
+            if (plugins.isNotEmpty)
+              ProMaxSectionTitle(l10n.pluginsScreenJsSection),
             if (_busy.contains('install-url')) const LinearProgressIndicator(),
             if (_busy.contains('install-url')) const SizedBox(height: 12),
             for (final plugin in plugins) ...[

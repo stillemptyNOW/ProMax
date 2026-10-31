@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/core/config/app_liquid_glass.dart';
-import 'package:promax/core/config/app_nav_pill_style.dart';
 import 'package:promax/core/config/app_native_glass.dart';
 import 'package:promax/core/config/app_visual_style.dart';
 import 'package:promax/frontend/widgets/liquid_glass.dart';
@@ -107,24 +106,17 @@ void main() {
   });
 
   group('NativeTabBarPolicy', () {
-    test('the system tab bar replaces only the liquid glass pill', () {
-      bool use(VisualStyle style, NavPillStyle nav, {bool native = true}) =>
+    test('the system tab bar follows the switch, not the pill style', () {
+      bool use(VisualStyle style, {bool native = true}) =>
           NativeTabBarPolicy.shouldUse(
             nativeActive: native,
             visualStyle: style,
-            navStyle: nav,
           );
 
-      expect(use(VisualStyle.liquidGlass, NavPillStyle.auto), isTrue);
-      expect(use(VisualStyle.glossy, NavPillStyle.liquidGlass), isTrue);
-      expect(use(VisualStyle.glossy, NavPillStyle.auto), isFalse);
-      expect(use(VisualStyle.liquidGlass, NavPillStyle.frostBlur), isFalse);
-      expect(use(VisualStyle.liquidGlass, NavPillStyle.glossy), isFalse);
-      expect(use(VisualStyle.materialYou, NavPillStyle.liquidGlass), isFalse);
-      expect(
-        use(VisualStyle.liquidGlass, NavPillStyle.auto, native: false),
-        isFalse,
-      );
+      expect(use(VisualStyle.liquidGlass), isTrue);
+      expect(use(VisualStyle.glossy), isTrue);
+      expect(use(VisualStyle.materialYou), isFalse);
+      expect(use(VisualStyle.liquidGlass, native: false), isFalse);
     });
   });
 
@@ -278,6 +270,7 @@ void main() {
           ),
         ),
       );
+      await tester.pump();
       await tester.pump();
 
       expect(find.byType(NativeGlassView), findsOneWidget);

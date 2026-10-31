@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/cupertino.dart' show CupertinoRouteTransitionMixin;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
@@ -12,6 +13,7 @@ import '../../core/config/app_liquid_glass.dart';
 import '../../core/config/app_native_glass.dart';
 import '../../core/config/promax_glass.dart';
 import 'native_glass_view.dart';
+import 'swipe_route.dart';
 
 class LiquidGlass {
   static const String _asset = 'shaders/liquid_glass.frag';
@@ -95,12 +97,140 @@ class GlassSurface extends StatelessWidget {
   }
 }
 
+class NativeGlassHold extends StatelessWidget {
+  const NativeGlassHold({super.key, required this.held, required this.child});
+
+  final bool held;
+  final Widget child;
+
+  static bool isHeld(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<_NativeGlassHoldScope>()
+          ?.held ??
+      false;
+
+  static bool routeAnimates(ModalRoute<dynamic> route) =>
+      route is! SwipeRoute &&
+      route is! MaterialRouteTransitionMixin &&
+      route is! CupertinoRouteTransitionMixin;
+
+  @override
+  Widget build(BuildContext context) =>
+      _NativeGlassHoldScope(held: held || isHeld(context), child: child);
+}
+
+class _NativeGlassHoldScope extends InheritedWidget {
+  const _NativeGlassHoldScope({required this.held, required super.child});
+
+  final bool held;
+
+  @override
+  bool updateShouldNotify(_NativeGlassHoldScope oldWidget) =>
+      oldWidget.held != held;
+}
+
+class NativeGlassAnimationHold extends StatefulWidget {
+  const NativeGlassAnimationHold({
+    super.key,
+    required this.animation,
+    required this.child,
+  });
+
+  final Animation<double> animation;
+  final Widget child;
+
+  @override
+  State<NativeGlassAnimationHold> createState() =>
+      _NativeGlassAnimationHoldState();
+}
+
+class _NativeGlassAnimationHoldState extends State<NativeGlassAnimationHold> {
+  late bool _settled = widget.animation.isCompleted;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.animation.addStatusListener(_onStatus);
+  }
+
+  @override
+  void didUpdateWidget(NativeGlassAnimationHold oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (identical(oldWidget.animation, widget.animation)) return;
+    oldWidget.animation.removeStatusListener(_onStatus);
+    widget.animation.addStatusListener(_onStatus);
+    _settled = widget.animation.isCompleted;
+  }
+
+  @override
+  void dispose() {
+    widget.animation.removeStatusListener(_onStatus);
+    super.dispose();
+  }
+
+  void _onStatus(AnimationStatus status) {
+    final settled = status == AnimationStatus.completed;
+    if (settled != _settled) setState(() => _settled = settled);
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      NativeGlassHold(held: !_settled, child: widget.child);
+}
+
+class NativeGlassAnimatedOpacity extends StatefulWidget {
+  const NativeGlassAnimatedOpacity({
+    super.key,
+    required this.opacity,
+    required this.duration,
+    this.curve = Curves.linear,
+    required this.child,
+  });
+
+  final double opacity;
+  final Duration duration;
+  final Curve curve;
+  final Widget child;
+
+  @override
+  State<NativeGlassAnimatedOpacity> createState() =>
+      _NativeGlassAnimatedOpacityState();
+}
+
+class _NativeGlassAnimatedOpacityState
+    extends State<NativeGlassAnimatedOpacity> {
+  bool _settled = true;
+
+  @override
+  void didUpdateWidget(NativeGlassAnimatedOpacity oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.opacity != widget.opacity) _settled = false;
+  }
+
+  void _onEnd() {
+    if (mounted && !_settled) setState(() => _settled = true);
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedOpacity(
+    opacity: widget.opacity,
+    duration: widget.duration,
+    curve: widget.curve,
+    onEnd: _onEnd,
+    child: NativeGlassHold(
+      held: !_settled || widget.opacity < 1,
+      child: widget.child,
+    ),
+  );
+}
+
 class LiquidGlassSurface extends StatelessWidget {
   final BorderRadius borderRadius;
   final GlassRole role;
   final Color? tint;
   final BackdropKey? backdropKey;
   final bool shadow;
+  final bool native;
   final Widget child;
 
   const LiquidGlassSurface({
@@ -110,6 +240,7 @@ class LiquidGlassSurface extends StatelessWidget {
     this.tint,
     this.backdropKey,
     this.shadow = true,
+    this.native = true,
     this.child = const SizedBox.expand(),
   });
 
@@ -131,34 +262,18 @@ class LiquidGlassSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!NativeGlass.isSupported) return _flutterGlass(context);
+    if (!native || !NativeGlass.isSupported) {
+      return _flutterGlass(context, child);
+    }
     return ValueListenableBuilder<bool>(
       valueListenable: NativeGlass.enabled,
-      builder: (context, native, _) =>
-          native ? _nativeGlass(context) : _flutterGlass(context),
+      builder: (context, enabled, _) => enabled
+          ? _HostedNativeGlass(surface: this)
+          : _flutterGlass(context, child),
     );
   }
 
-  Widget _nativeGlass(BuildContext context) {
-    return Stack(
-      fit: StackFit.passthrough,
-      children: [
-        Positioned.fill(
-          child: NativeGlassView(
-            params: NativeGlassParams.surface(
-              borderRadius: borderRadius,
-              brightness: Theme.of(context).brightness,
-              role: role,
-              tint: tint,
-            ),
-          ),
-        ),
-        child,
-      ],
-    );
-  }
-
-  Widget _flutterGlass(BuildContext context) {
+  Widget _flutterGlass(BuildContext context, Widget child) {
     final theme = Theme.of(context);
     final shaded = LiquidGlass._shaded;
     final material = AppLiquidGlass.material(
@@ -207,6 +322,92 @@ class LiquidGlassSurface extends StatelessWidget {
     return CustomPaint(
       painter: _GlassShadowPainter(borderRadius, material.shadow),
       child: glass,
+    );
+  }
+}
+
+class _HostedNativeGlass extends StatefulWidget {
+  const _HostedNativeGlass({required this.surface});
+
+  final LiquidGlassSurface surface;
+
+  @override
+  State<_HostedNativeGlass> createState() => _HostedNativeGlassState();
+}
+
+class _HostedNativeGlassState extends State<_HostedNativeGlass> {
+  static const _shaderKey = ValueKey<String>('shader');
+  static const _nativeKey = ValueKey<String>('native');
+
+  Animation<double>? _routeAnimation;
+  bool _routeSettled = true;
+  bool _requested = false;
+  bool _ready = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    final animation = route != null && NativeGlassHold.routeAnimates(route)
+        ? route.animation
+        : null;
+    if (identical(animation, _routeAnimation)) return;
+    _routeAnimation?.removeStatusListener(_onRouteStatus);
+    _routeAnimation = animation;
+    animation?.addStatusListener(_onRouteStatus);
+    _routeSettled = animation == null || animation.isCompleted;
+  }
+
+  @override
+  void dispose() {
+    _routeAnimation?.removeStatusListener(_onRouteStatus);
+    super.dispose();
+  }
+
+  void _onRouteStatus(AnimationStatus status) {
+    final settled = status == AnimationStatus.completed;
+    if (settled != _routeSettled) setState(() => _routeSettled = settled);
+  }
+
+  void _onCreated() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_ready) setState(() => _ready = true);
+    });
+    SchedulerBinding.instance.scheduleFrame();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = widget.surface;
+    final held = !_routeSettled || NativeGlassHold.isHeld(context);
+    if (!held) _requested = true;
+    final showNative = _ready && !held;
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        if (!showNative)
+          Positioned.fill(
+            key: _shaderKey,
+            child: surface._flutterGlass(context, const SizedBox.expand()),
+          ),
+        if (_requested)
+          Positioned.fill(
+            key: _nativeKey,
+            child: Offstage(
+              offstage: !showNative,
+              child: NativeGlassView(
+                params: NativeGlassParams.surface(
+                  borderRadius: surface.borderRadius,
+                  brightness: Theme.of(context).brightness,
+                  role: surface.role,
+                  tint: surface.tint,
+                ),
+                onCreated: _onCreated,
+              ),
+            ),
+          ),
+        surface.child,
+      ],
     );
   }
 }

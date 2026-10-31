@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/config/app_liquid_glass.dart';
 import '../../core/config/app_native_glass.dart';
+import 'motion_blur/motion_blur_box.dart';
 
 @immutable
 class NativeGlassParams {
@@ -80,9 +81,10 @@ class NativeGlassParams {
 }
 
 class NativeGlassView extends StatefulWidget {
-  const NativeGlassView({super.key, required this.params});
+  const NativeGlassView({super.key, required this.params, this.onCreated});
 
   final NativeGlassParams params;
+  final VoidCallback? onCreated;
 
   @override
   State<NativeGlassView> createState() => _NativeGlassViewState();
@@ -110,6 +112,7 @@ class _NativeGlassViewState extends State<NativeGlassView> {
     _channel = MethodChannel('${NativeGlass.glassViewType}/$id');
     _applied = _creationParams;
     _push();
+    widget.onCreated?.call();
   }
 
   Future<void> _push() async {
@@ -128,13 +131,15 @@ class _NativeGlassViewState extends State<NativeGlassView> {
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: UiKitView(
-        viewType: NativeGlass.glassViewType,
-        creationParams: _creationParams.toMap(),
-        creationParamsCodec: const StandardMessageCodec(),
-        hitTestBehavior: PlatformViewHitTestBehavior.transparent,
-        onPlatformViewCreated: _created,
+    return MotionBlurExclusion(
+      child: IgnorePointer(
+        child: UiKitView(
+          viewType: NativeGlass.glassViewType,
+          creationParams: _creationParams.toMap(),
+          creationParamsCodec: const StandardMessageCodec(),
+          hitTestBehavior: PlatformViewHitTestBehavior.transparent,
+          onPlatformViewCreated: _created,
+        ),
       ),
     );
   }

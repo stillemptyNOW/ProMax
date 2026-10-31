@@ -297,13 +297,8 @@ class _EditContactCardState extends State<_EditContactCard> {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Material(
           color: Colors.transparent,
-          child: Container(
+          child: BlurredCardSurface(
             width: width > 420 ? 380 : double.infinity,
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            clipBehavior: Clip.antiAlias,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
               child: Column(

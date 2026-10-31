@@ -41,6 +41,8 @@ import 'call_participants_sheet.dart';
 import 'promax_hub.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
+import '../../widgets/liquid_glass.dart';
 
 class CallScreen extends StatefulWidget {
   final String name;
@@ -1411,25 +1413,28 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   }
 
   Widget _statePill(ColorScheme cs, IconData icon, String label) {
-    return GlossyPill(
-      color: cs.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(100),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      depth: 5,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: cs.onSurfaceVariant, fill: 1),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: cs.onSurfaceVariant,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+    return ChromeGlassBuilder(
+      builder: (context, liquid) => GlossyPill(
+        liquid: liquid,
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(100),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        depth: 5,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: cs.onSurfaceVariant, fill: 1),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: cs.onSurfaceVariant,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1590,6 +1595,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
             label: l10n.callDecline,
             background: kDangerRed,
             foreground: Colors.white,
+            glass: false,
             onTap: _decline,
           ),
           _CallButton(
@@ -1597,6 +1603,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
             label: l10n.callAccept,
             background: kSuccessGreen,
             foreground: Colors.white,
+            glass: false,
             onTap: _accept,
           ),
         ],
@@ -1653,7 +1660,11 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _screenShareChip(ColorScheme cs, AppLocalizations l10n) {
+  Widget _screenShareChip(
+    ColorScheme cs,
+    AppLocalizations l10n, {
+    required bool liquid,
+  }) {
     final sharing = _session?.localScreen == true;
     final foreground = sharing ? cs.onPrimary : cs.onSurface;
     return Padding(
@@ -1671,8 +1682,25 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
           style: TextStyle(color: foreground),
         ),
         tooltip: sharing ? null : l10n.callScreenShareHint,
-        backgroundColor: sharing ? cs.primary : cs.surfaceContainerHigh,
+        backgroundColor: sharing
+            ? cs.primary
+            : (liquid ? Colors.transparent : cs.surfaceContainerHigh),
+        side: liquid && !sharing ? BorderSide.none : null,
         onPressed: _videoBusy ? null : _toggleScreen,
+      ),
+    );
+  }
+
+  Widget _glassChipRow(Widget chips) {
+    const radius = BorderRadius.all(Radius.circular(26));
+    return LiquidGlassSurface(
+      borderRadius: radius,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: chips,
+        ),
       ),
     );
   }
@@ -1680,6 +1708,18 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   Widget _activeControls(ColorScheme cs) {
     final l10n = AppLocalizations.of(context)!;
     final video = _session?.localVideo == true;
+    return ChromeGlassBuilder(
+      builder: (context, liquid) =>
+          _activeControlsLayout(cs, l10n, video, liquid),
+    );
+  }
+
+  Widget _activeControlsLayout(
+    ColorScheme cs,
+    AppLocalizations l10n,
+    bool video,
+    bool liquid,
+  ) {
     Widget action(
       IconData icon,
       String label,
@@ -1691,8 +1731,45 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       child: ActionChip(
         avatar: graphic ?? Icon(icon, size: 20, color: cs.onSurface),
         label: Text(label),
-        backgroundColor: cs.surfaceContainerHigh,
+        backgroundColor: liquid ? Colors.transparent : cs.surfaceContainerHigh,
+        side: liquid ? BorderSide.none : null,
         onPressed: busy ? null : onTap,
+      ),
+    );
+    final chips = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (video && (!_desktop || _cameraCount > 1))
+            action(
+              Symbols.cameraswitch,
+              'Камера',
+              _switchCamera,
+              busy: _videoBusy,
+            ),
+          if (video)
+            action(
+              Symbols.swap_horiz,
+              _selfOnMain ? 'Собеседник крупно' : 'Я крупно',
+              _swapVideo,
+            ),
+          if (video && _session?.effectsAvailable == true)
+            action(
+              Symbols.flash_on,
+              'Свет',
+              _toggleLight,
+              busy: _lightBusy,
+              graphic: LottieSlashIcon(
+                asset: 'assets/lottie/ic_flash_on_to_off.json',
+                slashed: !_lightOn,
+                color: cs.onSurface,
+                size: 20,
+              ),
+            ),
+          _screenShareChip(cs, l10n, liquid: liquid),
+          action(Symbols.more_horiz, 'Ещё', _showMoreControls),
+        ],
       ),
     );
     return Padding(
@@ -1700,42 +1777,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (video && (!_desktop || _cameraCount > 1))
-                  action(
-                    Symbols.cameraswitch,
-                    'Камера',
-                    _switchCamera,
-                    busy: _videoBusy,
-                  ),
-                if (video)
-                  action(
-                    Symbols.swap_horiz,
-                    _selfOnMain ? 'Собеседник крупно' : 'Я крупно',
-                    _swapVideo,
-                  ),
-                if (video && _session?.effectsAvailable == true)
-                  action(
-                    Symbols.flash_on,
-                    'Свет',
-                    _toggleLight,
-                    busy: _lightBusy,
-                    graphic: LottieSlashIcon(
-                      asset: 'assets/lottie/ic_flash_on_to_off.json',
-                      slashed: !_lightOn,
-                      color: cs.onSurface,
-                      size: 20,
-                    ),
-                  ),
-                _screenShareChip(cs, l10n),
-                action(Symbols.more_horiz, 'Ещё', _showMoreControls),
-              ],
-            ),
-          ),
+          liquid ? _glassChipRow(chips) : chips,
           const SizedBox(height: 12),
           Row(
             children: [
@@ -1747,6 +1789,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                     background: _isSpeaker
                         ? cs.primary
                         : cs.surfaceContainerHighest,
+                    glassTint: _isSpeaker ? cs.primary : null,
                     foreground: _isSpeaker ? cs.onPrimary : cs.onSurface,
                     onTap: _toggleSpeaker,
                   ),
@@ -1758,6 +1801,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                   slashed: !video,
                   label: l10n.callVideoLabel,
                   background: video ? cs.primary : cs.surfaceContainerHighest,
+                  glassTint: video ? cs.primary : null,
                   foreground: video ? cs.onPrimary : cs.onSurface,
                   busy: _videoBusy,
                   onTap: _toggleVideo,
@@ -1776,6 +1820,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                   background: _isMuted
                       ? cs.primary
                       : cs.surfaceContainerHighest,
+                  glassTint: _isMuted ? cs.primary : null,
                   foreground: _isMuted ? cs.onPrimary : cs.onSurface,
                   onTap: _toggleMute,
                   onLongPress: _showMicrophones,
@@ -1787,6 +1832,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                   label: l10n.callEndButton,
                   background: kDangerRed,
                   foreground: Colors.white,
+                  glass: false,
                   onTap: _hangup,
                 ),
               ),
@@ -1851,6 +1897,8 @@ class _CallButton extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final bool busy;
+  final bool glass;
+  final Color? glassTint;
 
   const _CallButton({
     required this.icon,
@@ -1862,6 +1910,8 @@ class _CallButton extends StatelessWidget {
     this.slashedIcon,
     this.slashed = false,
     this.busy = false,
+    this.glass = true,
+    this.glassTint,
   });
 
   Widget _buildIcon() {
@@ -1888,16 +1938,20 @@ class _CallButton extends StatelessWidget {
         SizedBox(
           width: 62,
           height: 62,
-          child: GlossyPill(
-            color: background,
-            borderRadius: BorderRadius.circular(31),
-            onTap: busy ? null : onTap,
-            onLongPress: busy ? null : onLongPress,
-            depth: 9,
-            child: Center(
-              child: busy
-                  ? SmallSpinner(size: 22, color: foreground)
-                  : _buildIcon(),
+          child: ChromeGlassBuilder(
+            builder: (context, liquid) => GlossyPill(
+              liquid: liquid && glass,
+              glassTint: glassTint,
+              color: background,
+              borderRadius: BorderRadius.circular(31),
+              onTap: busy ? null : onTap,
+              onLongPress: busy ? null : onLongPress,
+              depth: 9,
+              child: Center(
+                child: busy
+                    ? SmallSpinner(size: 22, color: foreground)
+                    : _buildIcon(),
+              ),
             ),
           ),
         ),

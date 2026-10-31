@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/utils/logger.dart';
 import '../../l10n/app_localizations.dart';
+import 'chrome_glass.dart';
+import 'liquid_glass.dart';
 import 'toast_placement.dart';
 
 const Duration _defaultUndoWindow = Duration(seconds: 5);
@@ -220,6 +222,7 @@ class _UndoToastState extends State<_UndoToast> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  static const BorderRadius _radius = BorderRadius.all(Radius.circular(18));
   static const double _ringSize = 28;
   static const double _ringGap = 14;
   static const double _messageMinWidth = 96;
@@ -251,18 +254,32 @@ class _UndoToastState extends State<_UndoToast> with TickerProviderStateMixin {
               child: Dismissible(
                 key: const ValueKey('undo-toast'),
                 onDismissed: (_) => widget.onSwiped(),
-                child: Material(
-                  color: cs.surfaceContainerHighest,
-                  elevation: 3,
-                  shadowColor: Colors.black54,
-                  borderRadius: BorderRadius.circular(18),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) =>
-                          _content(context, cs, constraints.maxWidth),
-                    ),
-                  ),
+                child: ChromeGlassBuilder(
+                  builder: (context, liquid) {
+                    final body = Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) =>
+                            _content(context, cs, constraints.maxWidth),
+                      ),
+                    );
+                    if (liquid) {
+                      return NativeGlassAnimationHold(
+                        animation: _appear,
+                        child: ChromeGlassPanel(
+                          borderRadius: _radius,
+                          child: body,
+                        ),
+                      );
+                    }
+                    return Material(
+                      color: cs.surfaceContainerHighest,
+                      elevation: 3,
+                      shadowColor: Colors.black54,
+                      borderRadius: _radius,
+                      child: body,
+                    );
+                  },
                 ),
               ),
             ),

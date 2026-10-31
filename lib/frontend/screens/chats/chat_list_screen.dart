@@ -41,6 +41,8 @@ import '../../widgets/informer_banner_tile.dart';
 import '../../../backend/modules/forward_sender.dart';
 import '../../../backend/modules/share_sender.dart';
 import '../../widgets/lottie_slash_icon.dart';
+import '../../widgets/motion_blur/motion_blur_box.dart';
+import '../../../core/plugins/motion_blur/motion_blur_settings.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/utils/format.dart';
 import '../../../models/shared_payload.dart';
@@ -123,6 +125,8 @@ import '../../widgets/media_playback_pill.dart';
 import '../../../core/config/app_fonts.dart';
 import '../lock/lock_glyph.dart';
 import '../../../core/security/app_lock.dart';
+import '../../widgets/chrome_glass.dart';
+import '../../widgets/liquid_glass.dart';
 
 const String _savedWelcomeKey = 'welcome.saved.dialog.message';
 
@@ -2132,60 +2136,74 @@ class _ChatListScreenState extends State<ChatListScreen>
                                   ),
                                 ),
                                 const SizedBox(width: 4),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (!widget.forwardMode &&
-                                        !widget.archiveMode &&
-                                        !_shareMode)
-                                      IconButton(
-                                        key: const ValueKey('downloads-button'),
-                                        tooltip: AppLocalizations.of(
-                                          context,
-                                        )!.downloadsTooltip,
+                                ChromeGlassBuilder(
+                                  builder: (context, liquid) {
+                                    final actions = <Widget>[
+                                      if (!widget.forwardMode &&
+                                          !widget.archiveMode &&
+                                          !_shareMode)
+                                        IconButton(
+                                          key: const ValueKey(
+                                            'downloads-button',
+                                          ),
+                                          tooltip: AppLocalizations.of(
+                                            context,
+                                          )!.downloadsTooltip,
+                                          icon: Icon(
+                                            Symbols.download_for_offline,
+                                            color: cs.outline,
+                                            weight: 400,
+                                          ),
+                                          onPressed: () =>
+                                              unawaited(_openDownloads()),
+                                        ),
+                                      if (!widget.forwardMode &&
+                                          !widget.archiveMode &&
+                                          !_shareMode)
+                                        const _LockNowButton(),
+                                      PopupMenuButton<int>(
                                         icon: Icon(
-                                          Symbols.download_for_offline,
+                                          Symbols.more_vert,
                                           color: cs.outline,
                                           weight: 400,
                                         ),
-                                        onPressed: () =>
-                                            unawaited(_openDownloads()),
-                                      ),
-                                    if (!widget.forwardMode &&
-                                        !widget.archiveMode &&
-                                        !_shareMode)
-                                      const _LockNowButton(),
-                                    PopupMenuButton<int>(
-                                      icon: Icon(
-                                        Symbols.more_vert,
-                                        color: cs.outline,
-                                        weight: 400,
-                                      ),
-                                      offset: const Offset(0, 48),
-                                      elevation: 4,
-                                      color: cs.surfaceContainerHigh,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      onSelected: _onOverflowMenuSelected,
-                                      itemBuilder: (context) => [
-                                        _buildPopupMenuItem(
-                                          1,
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.chatListSavedMessages,
-                                          Symbols.bookmark,
+                                        offset: const Offset(0, 48),
+                                        elevation: 4,
+                                        color: cs.surfaceContainerHigh,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
                                         ),
-                                        _buildPopupMenuItem(
-                                          2,
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.chatListReadAll,
-                                          Symbols.done_all,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                        onSelected: _onOverflowMenuSelected,
+                                        itemBuilder: (context) => [
+                                          _buildPopupMenuItem(
+                                            1,
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.chatListSavedMessages,
+                                            Symbols.bookmark,
+                                          ),
+                                          _buildPopupMenuItem(
+                                            2,
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.chatListReadAll,
+                                            Symbols.done_all,
+                                          ),
+                                        ],
+                                      ),
+                                    ];
+                                    if (liquid) {
+                                      return ChromeGlassToolbar(
+                                        children: actions,
+                                      );
+                                    }
+                                    return Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: actions,
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -2205,41 +2223,62 @@ class _ChatListScreenState extends State<ChatListScreen>
                               onTap: (widget.forwardMode || _shareMode)
                                   ? null
                                   : _openSearch,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: cs.onSurface.withValues(alpha: 0.075),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                child: SizedBox(
-                                  height: 40,
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Symbols.search,
-                                        color: cs.onSurfaceVariant,
-                                        size: 20,
-                                        weight: 500,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        widget.forwardMode
-                                            ? AppLocalizations.of(
-                                                context,
-                                              )!.chatListForwardingHint
-                                            : AppLocalizations.of(
-                                                context,
-                                              )!.chatInfoMembersSearchHint,
-                                        style: TextStyle(
+                              child: ChromeGlassBuilder(
+                                builder: (context, liquid) {
+                                  final field = SizedBox(
+                                    height: 40,
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Symbols.search,
                                           color: cs.onSurfaceVariant,
-                                          fontSize: 16,
+                                          size: 20,
+                                          weight: 500,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          widget.forwardMode
+                                              ? AppLocalizations.of(
+                                                  context,
+                                                )!.chatListForwardingHint
+                                              : AppLocalizations.of(
+                                                  context,
+                                                )!.chatInfoMembersSearchHint,
+                                          style: TextStyle(
+                                            color: cs.onSurfaceVariant,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (liquid) {
+                                    return SizedBox(
+                                      height: 40,
+                                      child: LiquidGlassSurface(
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                          ),
+                                          child: field,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
+                                    );
+                                  }
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: cs.onSurface.withValues(
+                                        alpha: 0.075,
+                                      ),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    child: field,
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -2852,41 +2891,46 @@ class _ChatListScreenState extends State<ChatListScreen>
                       },
                     ),
                   ),
-                ClipRect(
-                  child: SizedBox(
-                    width: pageW,
-                    height: pageH,
-                    child: OverflowBox(
-                      alignment: Alignment.topLeft,
-                      maxWidth: pageW * 4,
-                      maxHeight: pageH,
-                      child: SizedBox(
-                        width: pageW * 4,
-                        height: pageH,
-                        child: AnimatedBuilder(
-                          animation: Listenable.merge([
-                            _navPageAnimController,
-                            _navDragDx,
-                          ]),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              page(0, _getChatsBody()),
-                              page(1, const CallsTab()),
-                              page(2, const ContactsTab()),
-                              page(3, const SettingsTab()),
-                            ],
+                MotionBlurBox(
+                  target: MotionBlurTarget.pages,
+                  motion: [_navPageAnimController, _navDragDx],
+                  position: () => Offset(-pagePosition() * pageW, 0),
+                  child: ClipRect(
+                    child: SizedBox(
+                      width: pageW,
+                      height: pageH,
+                      child: OverflowBox(
+                        alignment: Alignment.topLeft,
+                        maxWidth: pageW * 4,
+                        maxHeight: pageH,
+                        child: SizedBox(
+                          width: pageW * 4,
+                          height: pageH,
+                          child: AnimatedBuilder(
+                            animation: Listenable.merge([
+                              _navPageAnimController,
+                              _navDragDx,
+                            ]),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                page(0, _getChatsBody()),
+                                page(1, const CallsTab()),
+                                page(2, const ContactsTab()),
+                                page(3, const SettingsTab()),
+                              ],
+                            ),
+                            builder: (context, child) {
+                              final pageDisplayT = _effectivePageNavRowT(
+                                inactiveWidth: inactiveWidth,
+                                bubbleLeftForIndex: bubbleLeftForPageT,
+                              );
+                              return Transform.translate(
+                                offset: Offset(-pageDisplayT * pageW, 0),
+                                child: child,
+                              );
+                            },
                           ),
-                          builder: (context, child) {
-                            final pageDisplayT = _effectivePageNavRowT(
-                              inactiveWidth: inactiveWidth,
-                              bubbleLeftForIndex: bubbleLeftForPageT,
-                            );
-                            return Transform.translate(
-                              offset: Offset(-pageDisplayT * pageW, 0),
-                              child: child,
-                            );
-                          },
                         ),
                       ),
                     ),
@@ -2935,9 +2979,12 @@ class _ChatListScreenState extends State<ChatListScreen>
                                 child: Transform.scale(
                                   scale: val,
                                   alignment: Alignment.bottomRight,
-                                  child: Opacity(
-                                    opacity: val > 0.5 ? (val - 0.5) * 2 : 0,
-                                    child: _buildFabMenu(),
+                                  child: NativeGlassHold(
+                                    held: _fabController.value < 1,
+                                    child: Opacity(
+                                      opacity: val > 0.5 ? (val - 0.5) * 2 : 0,
+                                      child: _buildFabMenu(),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -2948,47 +2995,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                             child: ToastObstruction(
                               child: GestureDetector(
                                 onTap: _toggleFab,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        Color.lerp(
-                                          cs.primary,
-                                          Colors.white,
-                                          0.14,
-                                        )!,
-                                        cs.primary,
-                                      ],
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: cs.primary.withValues(
-                                          alpha: 0.35,
-                                        ),
-                                        blurRadius: 18,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: SizedBox(
-                                    width: 56,
-                                    height: 56,
-                                    child: Center(
-                                      child: Transform.rotate(
-                                        angle: val * (pi / 4),
-                                        child: Icon(
-                                          Symbols.add,
-                                          color: cs.onPrimary,
-                                          size: 28,
-                                          weight: 600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                child: _buildFabButton(cs, val),
                               ),
                             ),
                           ),
@@ -3033,7 +3040,7 @@ class _ChatListScreenState extends State<ChatListScreen>
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Row(
           children: [
-            IconButton(
+            ChromeLeadingButton(
               icon: Icon(Symbols.arrow_back, color: cs.onSurface),
               onPressed: () => Navigator.of(context).maybePop(),
             ),
@@ -3187,68 +3194,92 @@ class _ChatListScreenState extends State<ChatListScreen>
       top: _isSelectionMode ? 0 : -80,
       left: 0,
       right: 0,
-      child: Container(
-        height: 52,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Builder(
+      child: ChromeGlassBuilder(
+        builder: (context, liquid) => Builder(
           builder: (_) {
             final selected = _selectedChatObjects();
             final deleteCategory = _selectionDeleteCategoryFor(selected);
             final anyMuted = selected.any((c) => c.isMuted);
             final anyPinned = selected.any((c) => (c.favIndex ?? 0) > 0);
-            return Row(
-              children: [
+            final back = IconButton(
+              icon: Icon(Symbols.arrow_back, color: cs.onSurface),
+              onPressed: _clearSelection,
+            );
+            final count = Text(
+              _selectedChats.length.toString(),
+              style: TextStyle(
+                color: cs.onSurface,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            );
+            final actions = [
+              if (deleteCategory != null)
                 IconButton(
-                  icon: Icon(Symbols.arrow_back, color: cs.onSurface),
-                  onPressed: _clearSelection,
+                  icon: Icon(Symbols.delete, color: cs.onSurface),
+                  onPressed: _onDeleteTap,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  _selectedChats.length.toString(),
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+              IconButton(
+                icon: Icon(
+                  widget.archiveMode ? Symbols.unarchive : Symbols.archive,
+                  color: cs.onSurface,
+                ),
+                onPressed: selected.isEmpty ? null : _onArchiveTap,
+              ),
+              IconButton(
+                icon: Icon(
+                  anyPinned ? Symbols.keep_off : Symbols.keep,
+                  color: cs.onSurface,
+                ),
+                onPressed: selected.isEmpty ? null : _onPinTap,
+              ),
+              IconButton(
+                icon: Icon(
+                  anyMuted ? Symbols.volume_up : Symbols.volume_off,
+                  color: cs.onSurface,
+                ),
+                onPressed: selected.isEmpty ? null : _onMuteTap,
+              ),
+            ];
+            if (liquid) {
+              return NativeGlassHold(
+                held: !_isSelectionMode,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
+                  child: Row(
+                    children: [
+                      ChromeGlassToolbar(
+                        children: [back, count, const SizedBox(width: 16)],
+                      ),
+                      const Spacer(),
+                      ChromeGlassToolbar(children: actions),
+                    ],
                   ),
                 ),
-                const Spacer(),
-                if (deleteCategory != null)
-                  IconButton(
-                    icon: Icon(Symbols.delete, color: cs.onSurface),
-                    onPressed: _onDeleteTap,
+              );
+            }
+            return Container(
+              height: 52,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: cs.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
-                IconButton(
-                  icon: Icon(
-                    widget.archiveMode ? Symbols.unarchive : Symbols.archive,
-                    color: cs.onSurface,
-                  ),
-                  onPressed: selected.isEmpty ? null : _onArchiveTap,
-                ),
-                IconButton(
-                  icon: Icon(
-                    anyPinned ? Symbols.keep_off : Symbols.keep,
-                    color: cs.onSurface,
-                  ),
-                  onPressed: selected.isEmpty ? null : _onPinTap,
-                ),
-                IconButton(
-                  icon: Icon(
-                    anyMuted ? Symbols.volume_up : Symbols.volume_off,
-                    color: cs.onSurface,
-                  ),
-                  onPressed: selected.isEmpty ? null : _onMuteTap,
-                ),
-              ],
+                ],
+              ),
+              child: Row(
+                children: [
+                  back,
+                  const SizedBox(width: 8),
+                  count,
+                  const Spacer(),
+                  ...actions,
+                ],
+              ),
             );
           },
         ),
@@ -4172,83 +4203,186 @@ class _ChatListScreenState extends State<ChatListScreen>
     );
   }
 
+  Widget _buildFabButton(ColorScheme cs, double val) {
+    final icon = SizedBox(
+      width: 56,
+      height: 56,
+      child: Center(
+        child: Transform.rotate(
+          angle: val * (pi / 4),
+          child: Icon(Symbols.add, color: cs.onPrimary, size: 28, weight: 600),
+        ),
+      ),
+    );
+    return ChromeGlassBuilder(
+      builder: (context, liquid) {
+        if (liquid) {
+          return GlassPressEffect(
+            borderRadius: BorderRadius.circular(28),
+            child: LiquidGlassSurface(
+              borderRadius: BorderRadius.circular(28),
+              tint: cs.primary,
+              child: icon,
+            ),
+          );
+        }
+        return Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color.lerp(cs.primary, Colors.white, 0.14)!, cs.primary],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: cs.primary.withValues(alpha: 0.35),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: icon,
+        );
+      },
+    );
+  }
+
   Widget _buildFabMenu() {
+    return ChromeGlassBuilder(
+      builder: (context, liquid) =>
+          liquid ? _buildGlassFabMenu() : _buildPillFabMenu(),
+    );
+  }
+
+  List<({IconData icon, String title, VoidCallback onTap})> _fabMenuEntries() {
     final l10n = AppLocalizations.of(context)!;
+    return [
+      (
+        icon: Symbols.edit_square,
+        title: l10n.chatListMessagePerson,
+        onTap: () {
+          _toggleFab();
+          unawaited(_messagePerson());
+        },
+      ),
+      (
+        icon: Symbols.group_add,
+        title: l10n.chatListCreateGroup,
+        onTap: () {
+          _toggleFab();
+          showCreateGroupFlow(context);
+        },
+      ),
+      (
+        icon: Symbols.campaign,
+        title: l10n.chatListCreateChannel,
+        onTap: () {
+          _toggleFab();
+          showCreateChannelFlow(context);
+        },
+      ),
+      (
+        icon: Symbols.call,
+        title: l10n.chatListCreateGroupCall,
+        onTap: () {
+          _toggleFab();
+          unawaited(createGroupCallFromContext(context));
+        },
+      ),
+      (
+        icon: Symbols.dialpad,
+        title: l10n.chatListSearchByPhone,
+        onTap: () {
+          _toggleFab();
+          unawaited(_searchByPhone());
+        },
+      ),
+      (
+        icon: Symbols.link,
+        title: l10n.chatListInviteByLink,
+        onTap: () {
+          _toggleFab();
+          unawaited(_shareInviteLink());
+        },
+      ),
+      (
+        icon: Symbols.person_add,
+        title: l10n.chatListCreateContact,
+        onTap: () {
+          _toggleFab();
+          showAddContactSheet(context);
+        },
+      ),
+      (
+        icon: Symbols.create_new_folder,
+        title: l10n.chatListCreateFolder,
+        onTap: () {
+          _toggleFab();
+          showFolderEditSheet(context);
+        },
+      ),
+    ];
+  }
+
+  Widget _buildGlassFabMenu() {
+    final cs = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 240,
+      child: ChromeGlassPanel(
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final entry in _fabMenuEntries())
+                InkWell(
+                  onTap: entry.onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(entry.icon, color: cs.onSurface, size: 22),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            entry.title,
+                            style: TextStyle(
+                              color: cs.onSurface,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPillFabMenu() {
+    final entries = _fabMenuEntries();
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        _buildFabMenuItem(
-          Symbols.edit_square,
-          l10n.chatListMessagePerson,
-          onTap: () {
-            _toggleFab();
-            unawaited(_messagePerson());
-          },
-        ),
-        const SizedBox(height: 4),
-        _buildFabMenuItem(
-          Symbols.group_add,
-          l10n.chatListCreateGroup,
-          onTap: () {
-            _toggleFab();
-            showCreateGroupFlow(context);
-          },
-        ),
-        const SizedBox(height: 4),
-        _buildFabMenuItem(
-          Symbols.campaign,
-          l10n.chatListCreateChannel,
-          onTap: () {
-            _toggleFab();
-            showCreateChannelFlow(context);
-          },
-        ),
-        const SizedBox(height: 4),
-        _buildFabMenuItem(
-          Symbols.call,
-          l10n.chatListCreateGroupCall,
-          onTap: () {
-            _toggleFab();
-            unawaited(createGroupCallFromContext(context));
-          },
-        ),
-        const SizedBox(height: 4),
-        _buildFabMenuItem(
-          Symbols.dialpad,
-          l10n.chatListSearchByPhone,
-          onTap: () {
-            _toggleFab();
-            unawaited(_searchByPhone());
-          },
-        ),
-        const SizedBox(height: 4),
-        _buildFabMenuItem(
-          Symbols.link,
-          l10n.chatListInviteByLink,
-          onTap: () {
-            _toggleFab();
-            unawaited(_shareInviteLink());
-          },
-        ),
-        const SizedBox(height: 4),
-        _buildFabMenuItem(
-          Symbols.person_add,
-          l10n.chatListCreateContact,
-          onTap: () {
-            _toggleFab();
-            showAddContactSheet(context);
-          },
-        ),
-        const SizedBox(height: 4),
-        _buildFabMenuItem(
-          Symbols.create_new_folder,
-          l10n.chatListCreateFolder,
-          onTap: () {
-            _toggleFab();
-            showFolderEditSheet(context);
-          },
-        ),
+        for (var i = 0; i < entries.length; i++) ...[
+          if (i > 0) const SizedBox(height: 4),
+          _buildFabMenuItem(
+            entries[i].icon,
+            entries[i].title,
+            onTap: entries[i].onTap,
+          ),
+        ],
       ],
     );
   }

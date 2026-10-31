@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/config/app_fonts.dart';
-import '../../core/config/app_shape.dart';
 import '../../l10n/app_localizations.dart';
+import 'confirm_dialog.dart';
 
 Future<String?> showTextInputDialog(
   BuildContext context, {
@@ -24,9 +24,7 @@ Future<String?> showTextInputDialog(
       context: context,
       builder: (dialogContext) {
         final cs = Theme.of(dialogContext).colorScheme;
-        return AlertDialog(
-          backgroundColor: cs.surfaceContainerHigh,
-          shape: AppShape.dialogBorder,
+        return ChromeAlertDialog(
           title: title == null
               ? null
               : Text(

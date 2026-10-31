@@ -20,6 +20,7 @@ import '../../widgets/error_view.dart';
 import '../../widgets/hint_bubble.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 String _documentLabel(AppLocalizations l10n, String type) {
   return switch (type) {
@@ -214,7 +215,7 @@ class _DigitalIdScreenState extends State<DigitalIdScreen>
         backgroundColor: cs.surface,
         surfaceTintColor: Colors.transparent,
         title: Text(l10n.digitalIdTitle),
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: const Icon(Symbols.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),

@@ -3,35 +3,25 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/config/app_nav_pill_style.dart';
 import '../../core/config/app_native_glass.dart';
 import '../../core/config/app_visual_style.dart';
+import 'motion_blur/motion_blur_box.dart';
 
 abstract final class NativeTabBarPolicy {
   static bool shouldUse({
     required bool nativeActive,
     required VisualStyle visualStyle,
-    required NavPillStyle navStyle,
   }) {
-    if (!nativeActive || visualStyle == VisualStyle.materialYou) return false;
-    return switch (navStyle) {
-      NavPillStyle.liquidGlass => true,
-      NavPillStyle.auto => visualStyle == VisualStyle.liquidGlass,
-      NavPillStyle.glossy || NavPillStyle.frostBlur => false,
-    };
+    return nativeActive && visualStyle != VisualStyle.materialYou;
   }
 
   static bool get current => shouldUse(
     nativeActive: NativeGlass.active,
     visualStyle: AppVisualStyle.current.value,
-    navStyle: AppNavPillStyle.current.value,
   );
 
-  static Listenable get listenable => Listenable.merge([
-    NativeGlass.enabled,
-    AppVisualStyle.current,
-    AppNavPillStyle.current,
-  ]);
+  static Listenable get listenable =>
+      Listenable.merge([NativeGlass.enabled, AppVisualStyle.current]);
 }
 
 @immutable
@@ -275,12 +265,14 @@ class _NativeTabBarState extends State<NativeTabBar> {
   Widget build(BuildContext context) {
     return SizedBox(
       height: _height,
-      child: UiKitView(
-        viewType: NativeGlass.tabBarViewType,
-        creationParams: _creation?.creationParams(),
-        creationParamsCodec: const StandardMessageCodec(),
-        gestureRecognizers: _gestures,
-        onPlatformViewCreated: _created,
+      child: MotionBlurExclusion(
+        child: UiKitView(
+          viewType: NativeGlass.tabBarViewType,
+          creationParams: _creation?.creationParams(),
+          creationParamsCodec: const StandardMessageCodec(),
+          gestureRecognizers: _gestures,
+          onPlatformViewCreated: _created,
+        ),
       ),
     );
   }
