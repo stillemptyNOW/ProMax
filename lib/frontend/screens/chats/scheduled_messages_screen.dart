@@ -21,6 +21,7 @@ import '../../widgets/small_spinner.dart';
 import 'deletion_feedback.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../../core/config/app_fonts.dart';
+import '../../widgets/chrome_glass.dart';
 
 class ScheduledMessagesScreen extends StatefulWidget {
   final int chatId;
@@ -252,6 +253,7 @@ class _ScheduledMessagesScreenState extends State<ScheduledMessagesScreen>
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
+        leading: const ChromeImpliedLeading(),
         backgroundColor: cs.surfaceContainerHigh,
         foregroundColor: cs.onSurface,
         surfaceTintColor: Colors.transparent,

@@ -20,6 +20,7 @@ import 'package:promax/frontend/screens/chats/chat/video_note_controller.dart';
 import 'package:promax/frontend/screens/chats/chat/voice_record_controller.dart';
 import 'package:promax/frontend/widgets/attachment_panel.dart';
 import 'package:promax/frontend/widgets/e2ee_banner.dart';
+import 'package:promax/frontend/widgets/liquid_glass.dart';
 import 'package:promax/frontend/widgets/rich_message_controller.dart';
 import 'package:promax/l10n/app_localizations.dart';
 
@@ -348,13 +349,16 @@ class ComposerArea extends StatelessWidget {
           },
           child: ValueListenableBuilder<Set<String>>(
             valueListenable: selectedIds,
-            builder: (context, selected, _) => SelectionBottomBar(
-              cs: cs,
-              selected: selected,
-              onReply: onReplySelected,
-              onForward: onForwardSelected,
-              allowForward: !forwardDisabled,
-              allowReply: !replyDisabled,
+            builder: (context, selected, _) => NativeGlassAnimationHold(
+              animation: selectionAnim,
+              child: SelectionBottomBar(
+                cs: cs,
+                selected: selected,
+                onReply: onReplySelected,
+                onForward: onForwardSelected,
+                allowForward: !forwardDisabled,
+                allowReply: !replyDisabled,
+              ),
             ),
           ),
         ),

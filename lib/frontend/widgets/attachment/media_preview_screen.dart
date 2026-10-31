@@ -13,6 +13,7 @@ import 'package:promax/l10n/app_localizations.dart';
 import 'editor_common.dart';
 import 'preview_chrome.dart';
 import '../small_spinner.dart';
+import '../chrome_glass.dart';
 
 class MediaPreviewScreen extends StatefulWidget {
   final GalleryItem item;
@@ -234,7 +235,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
         surfaceTintColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: const Icon(Symbols.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),

@@ -17,6 +17,7 @@ import '../../widgets/small_spinner.dart';
 import '../../widgets/swipe_route.dart';
 import '../contacts/open_contact_profile.dart';
 import 'chat_screen.dart';
+import '../../widgets/chrome_glass.dart';
 
 enum SearchScope { all, people, chats, messages }
 
@@ -498,7 +499,7 @@ class _SearchScreenState extends State<SearchScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),

@@ -66,6 +66,7 @@ import '../../widgets/media_playback_pill.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -1110,64 +1111,81 @@ class _SettingsTabState extends State<SettingsTab>
                 left: 8,
                 right: 8,
                 top: topPad + 8,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
+                child: ChromeGlassBuilder(
+                  builder: (context, liquid) {
+                    void openQr() => showProfileQrSheet(
+                      context,
+                      name: name,
+                      avatarUrl: _profile?.baseUrl,
+                    );
+                    void openEditor() => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfileScreen(),
+                      ),
+                    );
+                    final menuButton = IconButton(
+                      key: _avatarMenuKey,
                       icon: Icon(
-                        Symbols.qr_code_2,
+                        Symbols.more_vert,
                         color: iconColor,
-                        size: 26,
-                        weight: 400,
+                        size: 22,
+                        weight: liquid ? 500 : 400,
                       ),
-                      onPressed: () => showProfileQrSheet(
-                        context,
-                        name: name,
-                        avatarUrl: _profile?.baseUrl,
+                      onPressed: _currentAvatar == null
+                          ? null
+                          : _openAvatarMenu,
+                    );
+                    final editButton = IconButton(
+                      icon: Icon(
+                        Symbols.edit,
+                        color: iconColor,
+                        size: 22,
+                        weight: liquid ? 500 : 400,
                       ),
-                    ),
-                    Expanded(
-                      child: Opacity(
-                        opacity: 1 - pt,
-                        child: const ConnectionStatusLine(
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+                      onPressed: openEditor,
+                    );
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        IconButton(
-                          key: _avatarMenuKey,
-                          icon: Icon(
-                            Symbols.more_vert,
+                        if (liquid)
+                          ChromeGlassCircleButton(
+                            native: false,
                             color: iconColor,
-                            size: 22,
-                            weight: 400,
+                            icon: const Icon(Symbols.qr_code_2),
+                            onPressed: openQr,
+                          )
+                        else
+                          IconButton(
+                            icon: Icon(
+                              Symbols.qr_code_2,
+                              color: iconColor,
+                              size: 26,
+                              weight: 400,
+                            ),
+                            onPressed: openQr,
                           ),
-                          onPressed: _currentAvatar == null
-                              ? null
-                              : _openAvatarMenu,
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Symbols.edit,
-                            color: iconColor,
-                            size: 22,
-                            weight: 400,
+                        Expanded(
+                          child: Opacity(
+                            opacity: 1 - pt,
+                            child: const ConnectionStatusLine(
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const EditProfileScreen(),
-                              ),
-                            );
-                          },
                         ),
+                        if (liquid)
+                          ChromeGlassToolbar(
+                            native: false,
+                            children: [menuButton, editButton],
+                          )
+                        else
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [menuButton, editButton],
+                          ),
                       ],
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
               Positioned(

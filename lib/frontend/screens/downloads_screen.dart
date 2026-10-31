@@ -20,6 +20,7 @@ import '../widgets/sandbox_prompts.dart';
 import '../widgets/small_spinner.dart';
 import '../widgets/sheet_helpers.dart';
 import '../widgets/share_unopenable_file.dart';
+import '../widgets/chrome_glass.dart';
 
 class DownloadsScreen extends StatefulWidget {
   const DownloadsScreen({super.key});
@@ -229,6 +230,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
+        leading: const ChromeImpliedLeading(),
         backgroundColor: cs.surface,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 4,

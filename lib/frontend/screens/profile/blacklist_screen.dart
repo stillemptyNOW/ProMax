@@ -15,6 +15,7 @@ import '../../widgets/promax_avatar.dart';
 import '../../widgets/reload_on_reconnect.dart';
 import '../../widgets/small_spinner.dart';
 import '../contacts/open_contact_profile.dart';
+import '../../widgets/chrome_glass.dart';
 
 class BlacklistScreen extends StatefulWidget {
   const BlacklistScreen({super.key, this.initialContacts});
@@ -102,7 +103,7 @@ class _BlacklistScreenState extends State<BlacklistScreen>
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
-          IconButton(
+          ChromeLeadingButton(
             icon: Icon(
               Symbols.arrow_back,
               color: cs.onSurface,

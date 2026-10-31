@@ -24,6 +24,7 @@ import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../core/security/app_lock.dart';
+import '../../widgets/chrome_glass.dart';
 
 enum _EnvState { loading, notConfigured, ready }
 
@@ -377,7 +378,7 @@ class _CloudStorageScreenState extends State<CloudStorageScreen>
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface),
           onPressed: _onBack,
         ),

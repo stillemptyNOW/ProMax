@@ -11,6 +11,7 @@ import '../../widgets/animated_slash_icon.dart';
 import '../../widgets/connection_status.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../widgets/chrome_glass.dart';
 
 class WebQrScanScreen extends StatefulWidget {
   const WebQrScanScreen({super.key});
@@ -70,7 +71,7 @@ class _WebQrScanScreenState extends State<WebQrScanScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: const Icon(Symbols.chevron_left, size: 28),
           onPressed: () => Navigator.pop(context),
         ),

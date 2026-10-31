@@ -5,6 +5,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../widgets/custom_notification.dart';
 import 'web_push_screen.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 class NativePushScreen extends StatefulWidget {
   const NativePushScreen({super.key});
@@ -114,7 +115,10 @@ class _NativePushScreenState extends State<NativePushScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.proMaxNativePush)),
+      appBar: AppBar(
+        leading: const ChromeImpliedLeading(),
+        title: Text(l10n.proMaxNativePush),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

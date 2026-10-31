@@ -23,6 +23,7 @@ import 'package:promax/frontend/widgets/paste_media_scope.dart';
 import 'package:promax/frontend/widgets/reply_preview.dart';
 import 'package:promax/frontend/widgets/rich_message_controller.dart';
 import 'package:promax/l10n/app_localizations.dart';
+import 'package:promax/frontend/widgets/chrome_glass.dart';
 
 class ComposerInputBar extends StatelessWidget {
   const ComposerInputBar({
@@ -1533,41 +1534,47 @@ class ComposerPillBar extends StatelessWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: GlossyPill(
-          onTap: busy ? null : onTap,
-          color: primary
-              ? cs.primary
-              : Color.alphaBlend(
-                  cs.surfaceContainerHighest.withValues(alpha: 0.92),
-                  cs.surface,
-                ),
-          borderRadius: BorderRadius.circular(28),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          depth: 8,
-          borderSide: BorderSide(
-            color: cs.outlineVariant.withValues(alpha: 0.5),
-            width: 0.5,
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            child: Center(
-              child: busy
-                  ? SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: foreground,
+        child: ChromeGlassBuilder(
+          builder: (context, liquid) => GlossyPill(
+            liquid: liquid,
+            glassTint: primary ? cs.primary : null,
+            onTap: busy ? null : onTap,
+            color: primary
+                ? cs.primary
+                : Color.alphaBlend(
+                    cs.surfaceContainerHighest.withValues(alpha: 0.92),
+                    cs.surface,
+                  ),
+            borderRadius: BorderRadius.circular(28),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            depth: 8,
+            borderSide: BorderSide(
+              color: cs.outlineVariant.withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: Center(
+                child: busy
+                    ? SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: foreground,
+                        ),
+                      )
+                    : Text(
+                        label,
+                        style: TextStyle(
+                          color: foreground,
+                          fontSize: 16,
+                          fontWeight: primary
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                        ),
                       ),
-                    )
-                  : Text(
-                      label,
-                      style: TextStyle(
-                        color: foreground,
-                        fontSize: 16,
-                        fontWeight: primary ? FontWeight.w600 : FontWeight.w500,
-                      ),
-                    ),
+              ),
             ),
           ),
         ),

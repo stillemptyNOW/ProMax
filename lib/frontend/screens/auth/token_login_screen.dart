@@ -11,6 +11,7 @@ import '../../widgets/section_header.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 class TokenLoginScreen extends StatefulWidget {
   final int? returnToAccountId;
@@ -125,7 +126,11 @@ class _TokenLoginScreenState extends State<TokenLoginScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.tokenLoginTitle), centerTitle: true),
+      appBar: AppBar(
+        leading: const ChromeImpliedLeading(),
+        title: Text(l10n.tokenLoginTitle),
+        centerTitle: true,
+      ),
       body: AbsorbPointer(
         absorbing: _isLoading,
         child: SingleChildScrollView(

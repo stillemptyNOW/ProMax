@@ -9,6 +9,9 @@ import '../../../core/utils/haptics.dart';
 import '../../../l10n/app_localizations.dart';
 import '../contacts/contact_sheet_common.dart';
 import 'chat_screen.dart';
+import '../../widgets/chrome_glass.dart';
+import '../../widgets/glossy_pill.dart';
+import '../../widgets/liquid_glass.dart';
 
 Future<void> showChatPreview(
   BuildContext context, {
@@ -114,14 +117,17 @@ class _ChatPreviewCardState extends State<_ChatPreviewCard> {
                         context: context,
                         removeTop: true,
                         removeBottom: true,
-                        child: ChatScreen(
-                          chatId: widget.chatId,
-                          name: widget.name,
-                          imageUrl: widget.imageUrl,
-                          chatType: widget.chatType,
-                          embedded: true,
-                          preview: true,
-                          onClose: () => Navigator.of(context).pop(),
+                        child: NativeGlassHold(
+                          held: true,
+                          child: ChatScreen(
+                            chatId: widget.chatId,
+                            name: widget.name,
+                            imageUrl: widget.imageUrl,
+                            chatType: widget.chatType,
+                            embedded: true,
+                            preview: true,
+                            onClose: () => Navigator.of(context).pop(),
+                          ),
                         ),
                       ),
                     ),
@@ -151,6 +157,7 @@ class _ChatPreviewCardState extends State<_ChatPreviewCard> {
                             onTap: _open,
                             background: cs.primary,
                             foreground: cs.onPrimary,
+                            prominent: true,
                           ),
                         ),
                       ],
@@ -181,38 +188,58 @@ class _PreviewAction extends StatelessWidget {
     required this.background,
     required this.foreground,
     this.busy = false,
+    this.prominent = false,
   });
+
+  final bool prominent;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: background,
-      borderRadius: BorderRadius.circular(26),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(26),
-        onTap: busy ? null : onTap,
-        child: SizedBox(
-          height: 52,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 20, color: foreground),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: foreground,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+    return ChromeGlassBuilder(
+      builder: (context, liquid) {
+        if (liquid) {
+          return GlossyPill(
+            liquid: true,
+            glassTint: prominent ? background : null,
+            borderRadius: BorderRadius.circular(26),
+            onTap: busy ? null : onTap,
+            child: _content(),
+          );
+        }
+        return Material(
+          color: background,
+          borderRadius: BorderRadius.circular(26),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(26),
+            onTap: busy ? null : onTap,
+            child: _content(),
           ),
-        ),
+        );
+      },
+    );
+  }
+
+  Widget _content() {
+    return SizedBox(
+      height: 52,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20, color: foreground),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: foreground,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

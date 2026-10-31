@@ -14,6 +14,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/settings_card.dart';
 import '../../../core/security/app_lock.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 class PluginsScreen extends StatefulWidget {
   const PluginsScreen({super.key});
@@ -290,6 +291,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
+        leading: const ChromeImpliedLeading(),
         title: Text(l10n.pluginsScreenTitle),
         backgroundColor: cs.surface,
         actions: [

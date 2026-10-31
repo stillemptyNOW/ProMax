@@ -11,6 +11,7 @@ import '../../widgets/login_success_screen.dart';
 import '../../widgets/small_spinner.dart';
 import 'session_stale_recovery.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 class Password2FAScreen extends StatefulWidget {
   final String trackId;
@@ -154,7 +155,7 @@ class _Password2FAScreenState extends State<Password2FAScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurfaceVariant),
           onPressed: () => Navigator.pop(context),
         ),

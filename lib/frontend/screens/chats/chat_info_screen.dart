@@ -77,6 +77,8 @@ import 'chat_admin/admin_section.dart';
 import 'chat_admin/member_actions.dart';
 import 'chat_admin/chat_admin_state.dart';
 import 'chat_admin/ownership_transfer.dart';
+import '../../widgets/chrome_glass.dart';
+import '../../widgets/liquid_glass.dart';
 
 enum ChatInfoTab { media }
 
@@ -730,40 +732,62 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
                 left: 4,
                 right: 4,
                 top: topPad + 4,
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(Symbols.arrow_back, color: iconColor),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    Expanded(
-                      child: chipOpacity > 0 && unread.isNotEmpty
-                          ? Align(
-                              alignment: Alignment.centerLeft,
-                              child: Opacity(
-                                opacity: chipOpacity,
-                                child: _storyChip(unread),
+                child: ChromeGlassBuilder(
+                  builder: (context, liquid) => Row(
+                    children: [
+                      if (liquid)
+                        ChromeGlassCircleButton(
+                          native: false,
+                          color: iconColor,
+                          icon: const Icon(Symbols.arrow_back),
+                          onPressed: () => Navigator.pop(context),
+                        )
+                      else
+                        IconButton(
+                          icon: Icon(Symbols.arrow_back, color: iconColor),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      Expanded(
+                        child: chipOpacity > 0 && unread.isNotEmpty
+                            ? Align(
+                                alignment: Alignment.centerLeft,
+                                child: Opacity(
+                                  opacity: chipOpacity,
+                                  child: _storyChip(unread),
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                      if (chipOpacity > 0 && totalPhotos > 1)
+                        Opacity(
+                          opacity: chipOpacity,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Text(
+                              '${_avatarIndex + 1}/$totalPhotos',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                               ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                    if (chipOpacity > 0 && totalPhotos > 1)
-                      Opacity(
-                        opacity: chipOpacity,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Text(
-                            '${_avatarIndex + 1}/$totalPhotos',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
-                      ),
-                    _buildMoreButton(cs, iconColor),
-                  ],
+                      if (liquid)
+                        SizedBox.square(
+                          dimension: 44,
+                          child: LiquidGlassSurface(
+                            native: false,
+                            borderRadius: BorderRadius.circular(22),
+                            child: Center(
+                              child: _buildMoreButton(cs, iconColor),
+                            ),
+                          ),
+                        )
+                      else
+                        _buildMoreButton(cs, iconColor),
+                    ],
+                  ),
                 ),
               ),
               Positioned(
