@@ -44,6 +44,9 @@ jobs:
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined native/promax_effects/test/mask_pose_test.cpp -o /tmp/promax-mask-test
           /tmp/promax-mask-test
+      - name: Verify Android effects bridge
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -fsyntax-only -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" -Inative/promax_effects/ios/Classes native/promax_effects/android/src/main/cpp/promax_effects_jni.cpp
       - name: Dependencies
         run: flutter pub get
       - name: Analyze

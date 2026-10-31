@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 enum ProMaxVoice { normal, deep, helium, robot, radio }
@@ -33,6 +34,12 @@ enum ProMaxMask {
 
 class ProMaxEffects {
   static const _channel = MethodChannel('promax/effects');
+
+  static bool supportedOn(TargetPlatform platform, {required bool web}) =>
+      !web &&
+      (platform == TargetPlatform.iOS || platform == TargetPlatform.android);
+
+  static bool get supported => supportedOn(defaultTargetPlatform, web: kIsWeb);
 
   static Future<void> setVoice(ProMaxVoice voice) =>
       _channel.invokeMethod('setVoice', {'voice': voice.index});

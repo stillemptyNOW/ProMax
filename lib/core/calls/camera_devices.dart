@@ -57,6 +57,17 @@ class CameraDevices {
     return CameraFacing.external;
   }
 
+  static CameraFacing facingOfTrack(
+    String label,
+    Map<String, dynamic> settings,
+  ) {
+    return switch (settings['facingMode']) {
+      'user' => CameraFacing.front,
+      'environment' => CameraFacing.back,
+      _ => facingOf(label),
+    };
+  }
+
   static String? nextId(List<String> ids, String? current) {
     if (ids.length < 2) return null;
     final index = current == null ? 0 : ids.indexOf(current);
