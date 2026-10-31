@@ -206,12 +206,14 @@ class CallSession {
 
   bool get localVideo => _localVideo;
   bool get frontCamera => _frontCamera;
-  bool get effectsAvailable => defaultTargetPlatform == TargetPlatform.iOS;
+  bool get effectsAvailable => ProMaxEffects.supported;
   ProMaxVoice get voiceEffect => _voiceEffect;
   ProMaxMask get faceMask => _faceMask;
 
   Future<void> setVoiceEffect(ProMaxVoice voice) async {
-    if (!effectsAvailable) throw UnsupportedError('iOS call effects only');
+    if (!effectsAvailable) {
+      throw UnsupportedError('Call effects need iOS or Android');
+    }
     await ProMaxEffects.setVoice(voice);
     _voiceEffect = voice;
     _notifyInfo();
@@ -2310,7 +2312,10 @@ class CallSession {
 
     _localVideo = true;
     if (track != null) {
-      final facing = CameraDevices.facingOf(track.label ?? '');
+      final facing = CameraDevices.facingOfTrack(
+        track.label ?? '',
+        track.getSettings(),
+      );
       _frontCamera = facing != CameraFacing.back;
     }
     if (effectsAvailable && _faceMask != ProMaxMask.none) {

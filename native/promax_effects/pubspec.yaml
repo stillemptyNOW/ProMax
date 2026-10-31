@@ -1,5 +1,5 @@
 name: promax_effects
-description: Native iOS processing of outgoing WebRTC media for ProMax.
+description: Native iOS and Android processing of outgoing WebRTC media for ProMax.
 version: 0.1.0
 publish_to: none
 environment:
@@ -13,5 +13,8 @@ flutter:
     - ios/Resources/masks/
   plugin:
     platforms:
+      android:
+        package: promax.effects
+        pluginClass: ProMaxEffectsPlugin
       ios:
         pluginClass: ProMaxEffectsPlugin
