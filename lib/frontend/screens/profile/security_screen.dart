@@ -26,6 +26,7 @@ import '../../../core/security/app_lock.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 const bool _showFamilyProtection = false;
 
@@ -300,13 +301,14 @@ class _SecurityScreenState extends State<SecurityScreen>
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
-          IconButton(
+          ChromeLeadingButton(
             icon: Icon(
               Symbols.arrow_back,
               color: cs.onSurface,
               size: 24,
               weight: 400,
             ),
+            native: false,
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 4),

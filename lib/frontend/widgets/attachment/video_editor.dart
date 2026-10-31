@@ -10,6 +10,7 @@ import '../small_spinner.dart';
 import 'editor_common.dart';
 import 'photo_hero.dart';
 import 'video_edit.dart';
+import '../chrome_glass.dart';
 
 class VideoStill extends StatelessWidget {
   final ui.Image frame;
@@ -410,7 +411,7 @@ class _VideoQualityEditorState extends State<VideoQualityEditor> {
         surfaceTintColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: const Icon(Symbols.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),

@@ -32,6 +32,7 @@ import 'web_app_bridge.dart';
 import '../../../core/utils/user_facing_error.dart';
 import 'web_app_downloads.dart';
 import 'web_app_origin_policy.dart';
+import '../../widgets/chrome_glass.dart';
 
 class WebAppScreen extends StatefulWidget {
   final String title;
@@ -379,7 +380,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
           backgroundColor: cs.surface,
           surfaceTintColor: Colors.transparent,
           title: Text(widget.title),
-          leading: IconButton(
+          leading: ChromeLeadingButton(
             icon: const Icon(Symbols.close),
             onPressed: _closeByUser,
           ),

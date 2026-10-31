@@ -160,13 +160,8 @@ class _AddMembersCardState extends State<_AddMembersCard> {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Material(
           color: Colors.transparent,
-          child: Container(
+          child: BlurredCardSurface(
             width: width > 420 ? 380 : double.infinity,
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            clipBehavior: Clip.antiAlias,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -391,13 +386,8 @@ class _InviteLinkCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Material(
           color: Colors.transparent,
-          child: Container(
+          child: BlurredCardSurface(
             width: width > 420 ? 380 : double.infinity,
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            clipBehavior: Clip.antiAlias,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
               child: Column(
@@ -422,7 +412,11 @@ class _InviteLinkCard extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
                     child: Row(
                       children: [
-                        ProMaxAvatar(name: title, imageUrl: avatarUrl, size: 40),
+                        ProMaxAvatar(
+                          name: title,
+                          imageUrl: avatarUrl,
+                          size: 40,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(

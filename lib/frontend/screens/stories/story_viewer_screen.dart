@@ -24,6 +24,7 @@ import '../../../core/config/app_frost.dart';
 import '../../../core/config/promax_settings.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../widgets/chrome_glass.dart';
 
 const Duration _photoDuration = Duration(seconds: 5);
 
@@ -802,18 +803,35 @@ class _RoundIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        margin: const EdgeInsets.all(4),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: 0.14),
-        ),
-        child: Icon(icon, color: Colors.white, size: 22),
-      ),
+    return ChromeGlassBuilder(
+      builder: (context, liquid) {
+        if (liquid) {
+          return Padding(
+            padding: const EdgeInsets.all(4),
+            child: ChromeGlassCircleButton(
+              native: false,
+              size: 38,
+              iconSize: 22,
+              color: Colors.white,
+              icon: Icon(icon),
+              onPressed: onTap,
+            ),
+          );
+        }
+        return GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            margin: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.14),
+            ),
+            child: Icon(icon, color: Colors.white, size: 22),
+          ),
+        );
+      },
     );
   }
 }

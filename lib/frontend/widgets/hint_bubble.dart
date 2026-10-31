@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'animated_overlay_popup.dart';
+import 'chrome_glass.dart';
 import 'custom_notification.dart';
+import 'liquid_glass.dart';
 
 const Duration _defaultHintDuration = Duration(milliseconds: 2200);
 
@@ -212,23 +214,40 @@ class _HintLayerState extends State<_HintLayer>
           opacity: overlayAnimation,
           child: Material(
             type: MaterialType.transparency,
-            child: _HintBubbleBox(
-              anchor: _anchorRect,
-              pressX: pressDx == null ? null : _anchorRect.left + pressDx,
-              insets: media.padding + media.viewInsets,
-              fill: HintBubbleStyle.fill(cs),
-              outline: HintBubbleStyle.outline(cs),
-              growth: overlayAnimation,
-              child: Semantics(
-                liveRegion: true,
-                child: Padding(
-                  padding: HintBubbleStyle.padding,
-                  child: Text(
-                    widget.message,
-                    style: HintBubbleStyle.textStyle(cs),
+            child: ChromeGlassBuilder(
+              builder: (context, liquid) {
+                Widget body = Semantics(
+                  liveRegion: true,
+                  child: Padding(
+                    padding: HintBubbleStyle.padding,
+                    child: Text(
+                      widget.message,
+                      style: HintBubbleStyle.textStyle(cs),
+                    ),
                   ),
-                ),
-              ),
+                );
+                if (liquid) {
+                  body = LiquidGlassSurface(
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(HintBubbleStyle.radius),
+                    ),
+                    child: body,
+                  );
+                }
+                return NativeGlassAnimationHold(
+                  animation: overlayAnimation,
+                  child: _HintBubbleBox(
+                    anchor: _anchorRect,
+                    pressX: pressDx == null ? null : _anchorRect.left + pressDx,
+                    insets: media.padding + media.viewInsets,
+                    fill: HintBubbleStyle.fill(cs),
+                    outline: HintBubbleStyle.outline(cs),
+                    growth: overlayAnimation,
+                    shaped: !liquid,
+                    child: body,
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -252,8 +271,11 @@ class _HintBubbleBox extends SingleChildRenderObjectWidget {
     required this.fill,
     required this.outline,
     required this.growth,
+    required this.shaped,
     required super.child,
   });
+
+  final bool shaped;
 
   @override
   RenderObject createRenderObject(BuildContext context) => _RenderHintBubble(
@@ -263,6 +285,7 @@ class _HintBubbleBox extends SingleChildRenderObjectWidget {
     fill: fill,
     outline: outline,
     growth: growth,
+    shaped: shaped,
   );
 
   @override
@@ -276,7 +299,8 @@ class _HintBubbleBox extends SingleChildRenderObjectWidget {
       ..insets = insets
       ..fill = fill
       ..outline = outline
-      ..growth = growth;
+      ..growth = growth
+      ..shaped = shaped;
   }
 }
 
@@ -288,12 +312,14 @@ class _RenderHintBubble extends RenderShiftedBox {
     required Color fill,
     required Color outline,
     required Animation<double> growth,
+    required bool shaped,
   }) : _anchor = anchor,
        _pressX = pressX,
        _insets = insets,
        _fill = fill,
        _outline = outline,
        _growth = growth,
+       _shaped = shaped,
        super(null);
 
   static const double _restingScale = 0.92;
@@ -341,6 +367,13 @@ class _RenderHintBubble extends RenderShiftedBox {
     _growth = value;
     if (attached) _growth.addListener(markNeedsPaint);
     markNeedsPaint();
+  }
+
+  bool _shaped;
+  set shaped(bool value) {
+    if (value == _shaped) return;
+    _shaped = value;
+    markNeedsLayout();
   }
 
   VerticalDirection? _tailTowards;
@@ -441,6 +474,10 @@ class _RenderHintBubble extends RenderShiftedBox {
       context,
       offset,
     ) {
+      if (!_shaped) {
+        context.paintChild(bubble, bubbleOffset + offset);
+        return;
+      }
       final shape = _shape(body.shift(offset), _tipX + offset.dx);
       context.canvas
         ..drawPath(

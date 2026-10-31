@@ -98,6 +98,7 @@ class GlossyPill extends StatelessWidget {
   final BackdropKey? backdropKey;
   final bool keepInkLayer;
   final Color? glassTint;
+  final bool nativeGlass;
 
   const GlossyPill({
     super.key,
@@ -115,6 +116,7 @@ class GlossyPill extends StatelessWidget {
     this.backdropKey,
     this.keepInkLayer = false,
     this.glassTint,
+    this.nativeGlass = true,
   }) : borderRadius =
            borderRadius ?? const BorderRadius.all(Radius.circular(100));
 
@@ -144,6 +146,7 @@ class GlossyPill extends StatelessWidget {
       borderRadius: borderRadius,
       tint: glassTint,
       backdropKey: backdropKey,
+      native: nativeGlass,
       child: _inert
           ? content
           : Material(

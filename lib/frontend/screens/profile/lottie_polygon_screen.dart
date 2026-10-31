@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/config/app_animations.dart';
 import '../../../core/config/app_fonts.dart';
+import '../../widgets/chrome_glass.dart';
 
 class LottiePolygonScreen extends StatelessWidget {
   const LottiePolygonScreen({super.key});
@@ -26,7 +27,7 @@ class LottiePolygonScreen extends StatelessWidget {
         backgroundColor: cs.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: const Icon(Symbols.chevron_left, size: 28),
           onPressed: () => Navigator.pop(context),
         ),

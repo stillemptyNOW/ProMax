@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:promax/core/config/countries.dart';
 import 'package:promax/l10n/app_localizations.dart';
+import '../../widgets/chrome_glass.dart';
 
 class SelectCountryScreen extends StatefulWidget {
   final CountryName selectedCountry;
@@ -99,7 +100,7 @@ class _SelectCountryScreenState extends State<SelectCountryScreen> {
       appBar: AppBar(
         backgroundColor: cs.surface,
         surfaceTintColor: Colors.transparent,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           onPressed: () => Navigator.pop(context),
           icon: Icon(Symbols.arrow_back, color: cs.onSurface),
         ),

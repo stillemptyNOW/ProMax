@@ -81,9 +81,10 @@ class NativeGlassParams {
 }
 
 class NativeGlassView extends StatefulWidget {
-  const NativeGlassView({super.key, required this.params});
+  const NativeGlassView({super.key, required this.params, this.onCreated});
 
   final NativeGlassParams params;
+  final VoidCallback? onCreated;
 
   @override
   State<NativeGlassView> createState() => _NativeGlassViewState();
@@ -111,6 +112,7 @@ class _NativeGlassViewState extends State<NativeGlassView> {
     _channel = MethodChannel('${NativeGlass.glassViewType}/$id');
     _applied = _creationParams;
     _push();
+    widget.onCreated?.call();
   }
 
   Future<void> _push() async {

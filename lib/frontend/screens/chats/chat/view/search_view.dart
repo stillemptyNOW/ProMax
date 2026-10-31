@@ -20,6 +20,7 @@ class SearchTopBar extends StatelessWidget {
     super.key,
     required this.cs,
     required this.glossy,
+    this.liquid = false,
     required this.search,
     required this.focusNode,
     required this.onClose,
@@ -27,6 +28,7 @@ class SearchTopBar extends StatelessWidget {
 
   final ColorScheme cs;
   final bool glossy;
+  final bool liquid;
   final ChatSearchController search;
   final FocusNode focusNode;
   final VoidCallback onClose;
@@ -92,6 +94,7 @@ class SearchTopBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 4, 10, 6),
       child: GlossyPill(
+        liquid: liquid,
         padding: const EdgeInsets.symmetric(horizontal: 2),
         child: SizedBox(
           height: 44,

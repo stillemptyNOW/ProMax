@@ -11,6 +11,7 @@ import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/config/app_fonts.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../widgets/chrome_glass.dart';
 
 class ChatEncryptionScreen extends StatefulWidget {
   final int accountId;
@@ -100,7 +101,7 @@ class _ChatEncryptionScreenState extends State<ChatEncryptionScreen> {
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface, weight: 400),
           onPressed: () => Navigator.pop(context),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:promax/backend/modules/messages.dart';
+import 'package:promax/frontend/widgets/chrome_glass.dart';
 import 'package:promax/frontend/widgets/glossy_pill.dart';
 import '../../../../../core/config/app_fonts.dart';
 import '../../../../../l10n/app_localizations.dart';
@@ -9,6 +10,7 @@ class SelectionTopBar extends StatelessWidget {
   final ColorScheme cs;
   final Set<String> selected;
   final bool glossy;
+  final bool liquid;
   final List<CachedMessage> copyMsgs;
   final CachedMessage? editMsg;
   final VoidCallback onClear;
@@ -22,6 +24,7 @@ class SelectionTopBar extends StatelessWidget {
     required this.cs,
     required this.selected,
     required this.glossy,
+    this.liquid = false,
     required this.copyMsgs,
     required this.editMsg,
     required this.onClear,
@@ -98,6 +101,7 @@ class SelectionTopBar extends StatelessWidget {
             width: 56,
             height: 56,
             child: GlossyPill(
+              liquid: liquid,
               onTap: onClear,
               child: Center(
                 child: Icon(
@@ -112,6 +116,7 @@ class SelectionTopBar extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: GlossyPill(
+              liquid: liquid,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SizedBox(
                 height: 56,
@@ -134,6 +139,7 @@ class SelectionTopBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           GlossyPill(
+            liquid: liquid,
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: SizedBox(
               height: 56,
@@ -238,26 +244,29 @@ class SelectionBottomBar extends StatelessWidget {
       ),
     );
     final iconWidget = Icon(icon, color: cs.onSurface, size: 22, weight: 500);
-    return GlossyPill(
-      onTap: onTap,
-      color: Color.alphaBlend(
-        cs.surfaceContainerHighest.withValues(alpha: 0.92),
-        cs.surface,
-      ),
-      borderRadius: BorderRadius.circular(28),
-      depth: 8,
-      borderSide: BorderSide(
-        color: cs.outlineVariant.withValues(alpha: 0.5),
-        width: 0.5,
-      ),
-      child: SizedBox(
-        height: 54,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: iconLeading
-              ? [iconWidget, const SizedBox(width: 8), textWidget]
-              : [textWidget, const SizedBox(width: 8), iconWidget],
+    return ChromeGlassBuilder(
+      builder: (context, liquid) => GlossyPill(
+        liquid: liquid,
+        onTap: onTap,
+        color: Color.alphaBlend(
+          cs.surfaceContainerHighest.withValues(alpha: 0.92),
+          cs.surface,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        depth: 8,
+        borderSide: BorderSide(
+          color: cs.outlineVariant.withValues(alpha: 0.5),
+          width: 0.5,
+        ),
+        child: SizedBox(
+          height: 54,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: iconLeading
+                ? [iconWidget, const SizedBox(width: 8), textWidget]
+                : [textWidget, const SizedBox(width: 8), iconWidget],
+          ),
         ),
       ),
     );

@@ -5,6 +5,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../main.dart' show animojiModule;
 import '../../widgets/error_view.dart';
 import '../../widgets/small_spinner.dart';
+import '../../widgets/chrome_glass.dart';
 
 class QuickReactionScreen extends StatefulWidget {
   const QuickReactionScreen({super.key});
@@ -21,7 +22,10 @@ class _QuickReactionScreenState extends State<QuickReactionScreen> {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.proMaxQuickReaction)),
+      appBar: AppBar(
+        leading: const ChromeImpliedLeading(),
+        title: Text(l10n.proMaxQuickReaction),
+      ),
       body: FutureBuilder<void>(
         future: _loading,
         builder: (context, snapshot) {

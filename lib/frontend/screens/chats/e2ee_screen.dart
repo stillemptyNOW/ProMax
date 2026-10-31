@@ -17,6 +17,7 @@ import '../../widgets/primary_loading_button.dart';
 import '../../widgets/settings_card.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/security/app_lock.dart';
+import '../../widgets/chrome_glass.dart';
 
 class E2eeScreen extends StatefulWidget {
   final int accountId;
@@ -374,7 +375,7 @@ class _E2eeScreenState extends State<E2eeScreen> {
       appBar: AppBar(
         backgroundColor: cs.surface,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurface, weight: 400),
           onPressed: () => Navigator.pop(context),
         ),

@@ -10,6 +10,7 @@ import '../../widgets/custom_notification.dart';
 import '../../widgets/login_success_screen.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/utils/user_facing_error.dart';
+import '../../widgets/chrome_glass.dart';
 
 class RegistrationScreen extends StatefulWidget {
   final String phoneNumber;
@@ -105,7 +106,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: Icon(Symbols.arrow_back, color: cs.onSurfaceVariant),
           onPressed: _isSubmitting ? null : () => Navigator.pop(context),
         ),

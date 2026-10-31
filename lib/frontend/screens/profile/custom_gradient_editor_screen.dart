@@ -6,6 +6,7 @@ import '../../../core/config/app_shape.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/color_wheel_picker.dart';
 import '../../widgets/mesh_gradient_background.dart';
+import '../../widgets/chrome_glass.dart';
 
 class CustomGradientResult {
   final List<Color> colors;
@@ -93,7 +94,7 @@ class _CustomGradientEditorScreenState
       appBar: AppBar(
         backgroundColor: cs.surface,
         surfaceTintColor: Colors.transparent,
-        leading: IconButton(
+        leading: ChromeLeadingButton(
           icon: const Icon(Symbols.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
@@ -201,7 +202,11 @@ class _CustomGradientEditorScreenState
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                 child: Row(
                   children: [
-                    Icon(Symbols.rotate_right, color: cs.onSurfaceVariant, size: 20),
+                    Icon(
+                      Symbols.rotate_right,
+                      color: cs.onSurfaceVariant,
+                      size: 20,
+                    ),
                     Expanded(
                       child: Slider(
                         value: _rotation % 8,

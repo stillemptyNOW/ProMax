@@ -17,6 +17,9 @@ import 'custom_notification.dart';
 import 'promax_avatar.dart';
 import 'lottie_image.dart';
 import 'small_spinner.dart';
+import '../../core/config/app_chrome_glass.dart';
+import 'chrome_glass.dart';
+import 'liquid_glass.dart';
 
 class ReactionEmoji {
   final String emoji;
@@ -928,88 +931,94 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
         return GestureDetector(
           onTap: _close,
           behavior: HitTestBehavior.opaque,
-          child: Stack(
-            children: [
-              if (!isClick) ...[
+          child: NativeGlassHold(
+            held: t < 1 || (e > 0 && e < 1),
+            child: Stack(
+              children: [
+                if (!isClick) ...[
+                  Positioned.fill(
+                    child: ColoredBox(
+                      color: Colors.black.withValues(
+                        alpha: 0.22 * t + 0.28 * e,
+                      ),
+                    ),
+                  ),
+                  if (widget.snapshot != null)
+                    Positioned(
+                      left: widget.originRect.left,
+                      top: widget.originRect.top,
+                      width: widget.originRect.width,
+                      height: widget.originRect.height,
+                      child: Opacity(
+                        opacity: 1.0 - 0.35 * e,
+                        child: Transform.scale(
+                          scale: bubbleScale,
+                          child: RawImage(
+                            image: widget.snapshot,
+                            width: widget.originRect.width,
+                            height: widget.originRect.height,
+                            fit: BoxFit.fill,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
                 Positioned.fill(
-                  child: ColoredBox(
-                    color: Colors.black.withValues(alpha: 0.22 * t + 0.28 * e),
+                  child: IgnorePointer(
+                    ignoring: menuHidden,
+                    child: NativeGlassAnimatedOpacity(
+                      opacity: menuHidden ? 0.0 : 1.0,
+                      duration: const Duration(milliseconds: 150),
+                      curve: Curves.easeOut,
+                      child: Stack(
+                        children: [
+                          if (_effectiveStyle ==
+                              MessageActionsStyle.radial) ...[
+                            ..._buildButtons(t),
+                            _buildLabelBanner(t),
+                          ] else
+                            _buildListMenu(t),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                if (widget.snapshot != null)
-                  Positioned(
-                    left: widget.originRect.left,
-                    top: widget.originRect.top,
-                    width: widget.originRect.width,
-                    height: widget.originRect.height,
-                    child: Opacity(
-                      opacity: 1.0 - 0.35 * e,
-                      child: Transform.scale(
-                        scale: bubbleScale,
-                        child: RawImage(
-                          image: widget.snapshot,
-                          width: widget.originRect.width,
-                          height: widget.originRect.height,
-                          fit: BoxFit.fill,
-                        ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    ignoring: !_panelOpen,
+                    child: NativeGlassAnimatedOpacity(
+                      opacity: _panelOpen ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      child: Stack(
+                        children: [
+                          if (_showReport)
+                            _buildReportMenu()
+                          else if (_showHistory)
+                            _buildHistoryMenu()
+                          else if (_showInfo)
+                            _buildInfoMenu()
+                          else if (_showReadBy)
+                            _buildReadByMenu(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (showReactions)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      ignoring: _panelOpen,
+                      child: NativeGlassAnimatedOpacity(
+                        opacity: _panelOpen ? 0.0 : 1.0,
+                        duration: const Duration(milliseconds: 150),
+                        curve: Curves.easeOut,
+                        child: _buildReactionStrip(t, e),
                       ),
                     ),
                   ),
               ],
-              Positioned.fill(
-                child: IgnorePointer(
-                  ignoring: menuHidden,
-                  child: AnimatedOpacity(
-                    opacity: menuHidden ? 0.0 : 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    curve: Curves.easeOut,
-                    child: Stack(
-                      children: [
-                        if (_effectiveStyle == MessageActionsStyle.radial) ...[
-                          ..._buildButtons(t),
-                          _buildLabelBanner(t),
-                        ] else
-                          _buildListMenu(t),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  ignoring: !_panelOpen,
-                  child: AnimatedOpacity(
-                    opacity: _panelOpen ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOut,
-                    child: Stack(
-                      children: [
-                        if (_showReport)
-                          _buildReportMenu()
-                        else if (_showHistory)
-                          _buildHistoryMenu()
-                        else if (_showInfo)
-                          _buildInfoMenu()
-                        else if (_showReadBy)
-                          _buildReadByMenu(),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              if (showReactions)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    ignoring: _panelOpen,
-                    child: AnimatedOpacity(
-                      opacity: _panelOpen ? 0.0 : 1.0,
-                      duration: const Duration(milliseconds: 150),
-                      curve: Curves.easeOut,
-                      child: _buildReactionStrip(t, e),
-                    ),
-                  ),
-                ),
-            ],
+            ),
           ),
         );
       },
@@ -1176,61 +1185,69 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
       ),
     );
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHigh,
-        borderRadius: borderRadius,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: borderRadius,
-        child: GestureDetector(
-          onTap: () {},
-          behavior: HitTestBehavior.opaque,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (_reactionsPanelReady)
-                Positioned(
-                  left: 0,
-                  top: pillAbove ? 0 : null,
-                  bottom: pillAbove ? null : 0,
-                  width: expandedSize.width,
-                  height: expandedSize.height,
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 140),
-                    curve: Curves.easeOut,
-                    child: _pickerCache,
-                    builder: (_, value, child) =>
-                        Opacity(opacity: value, child: child),
+    final content = ClipRRect(
+      borderRadius: borderRadius,
+      child: GestureDetector(
+        onTap: () {},
+        behavior: HitTestBehavior.opaque,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_reactionsPanelReady)
+              Positioned(
+                left: 0,
+                top: pillAbove ? 0 : null,
+                bottom: pillAbove ? null : 0,
+                width: expandedSize.width,
+                height: expandedSize.height,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 140),
+                  curve: Curves.easeOut,
+                  child: _pickerCache,
+                  builder: (_, value, child) =>
+                      Opacity(opacity: value, child: child),
+                ),
+              ),
+            if (!_reactionsPanelReady)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: pillAbove ? 0 : null,
+                bottom: pillAbove ? null : 0,
+                height: 46,
+                child: Opacity(
+                  opacity: (1.0 - e).clamp(0.0, 1.0),
+                  child: IgnorePointer(
+                    ignoring: e > 0.05,
+                    child: _buildQuickRow(cs, cell, quick),
                   ),
                 ),
-              if (!_reactionsPanelReady)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: pillAbove ? 0 : null,
-                  bottom: pillAbove ? null : 0,
-                  height: 46,
-                  child: Opacity(
-                    opacity: (1.0 - e).clamp(0.0, 1.0),
-                    child: IgnorePointer(
-                      ignoring: e > 0.05,
-                      child: _buildQuickRow(cs, cell, quick),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
+    );
+    return ChromeGlassBuilder(
+      builder: (context, liquid) {
+        if (liquid) {
+          return LiquidGlassSurface(borderRadius: borderRadius, child: content);
+        }
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHigh,
+            borderRadius: borderRadius,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: content,
+        );
+      },
     );
   }
 
@@ -1323,19 +1340,24 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
       top: c.dy - r,
       width: r * 2,
       height: r * 2,
-      child: Container(
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHigh,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.28),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+      child: ChromeGlass.isLiquid
+          ? LiquidGlassSurface(
+              native: false,
+              borderRadius: BorderRadius.circular(r),
+            )
+          : Container(
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHigh,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.28),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1372,12 +1394,10 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
       width: panelWidth,
       child: GestureDetector(
         onTap: () {},
-        child: Material(
-          color: cs.surfaceContainerHigh,
+        child: ChromeMenuSurface(
           borderRadius: BorderRadius.circular(16),
-          clipBehavior: Clip.antiAlias,
           elevation: 8,
-          shadowColor: Colors.black.withValues(alpha: 0.4),
+          shadowOpacity: 0.4,
           child: ConstrainedBox(
             constraints: BoxConstraints(maxHeight: maxHeight),
             child: Column(
@@ -1738,12 +1758,10 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
 
   Widget _buildReadSlot(ColorScheme cs, MessageReadSummary summary) {
     final tappable = _readHeaderListsReaders;
-    return Material(
-      color: cs.surfaceContainerHigh,
+    return ChromeMenuSurface(
       borderRadius: BorderRadius.circular(_readSlotMinHeight / 2),
-      clipBehavior: Clip.antiAlias,
       elevation: 6,
-      shadowColor: Colors.black.withValues(alpha: 0.35),
+      shadowOpacity: 0.35,
       child: InkWell(
         onTap: tappable ? _openReadersFromHeader : null,
         child: ConstrainedBox(
@@ -1871,12 +1889,10 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
           alignment: tapAnchored
               ? Alignment(-1.0, _showBelow ? -1.0 : 1.0)
               : Alignment(widget.isMe ? 1.0 : -1.0, _showBelow ? -1.0 : 1.0),
-          child: Material(
-            color: cs.surfaceContainerHigh,
+          child: ChromeMenuSurface(
             borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
             elevation: 8,
-            shadowColor: Colors.black.withValues(alpha: 0.4),
+            shadowOpacity: 0.4,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
