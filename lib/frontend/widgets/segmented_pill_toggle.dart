@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'chrome_glass.dart';
+import 'liquid_glass.dart';
+
 class SegmentedPillToggle extends StatelessWidget {
   final List<String> labels;
   final int selected;
@@ -22,55 +25,73 @@ class SegmentedPillToggle extends StatelessWidget {
     const pad = 3.0;
     final sel = selected.clamp(0, labels.length - 1);
 
-    return Container(
-      height: height,
-      padding: const EdgeInsets.all(pad),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(height / 2),
-      ),
-      child: Stack(
-        children: [
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            left: sel * segmentWidth,
-            top: 0,
-            bottom: 0,
-            width: segmentWidth,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: cs.primary,
-                borderRadius: BorderRadius.circular((height - 2 * pad) / 2),
-              ),
+    final radius = BorderRadius.circular(height / 2);
+    return ChromeGlassBuilder(
+      builder: (context, liquid) {
+        final track = Padding(
+          padding: const EdgeInsets.all(pad),
+          child: _track(cs, pad, sel),
+        );
+        if (liquid) {
+          return SizedBox(
+            height: height,
+            child: LiquidGlassSurface(borderRadius: radius, child: track),
+          );
+        }
+        return Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
+            borderRadius: radius,
+          ),
+          child: track,
+        );
+      },
+    );
+  }
+
+  Widget _track(ColorScheme cs, double pad, int sel) {
+    return Stack(
+      children: [
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          left: sel * segmentWidth,
+          top: 0,
+          bottom: 0,
+          width: segmentWidth,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: cs.primary,
+              borderRadius: BorderRadius.circular((height - 2 * pad) / 2),
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(labels.length, (i) {
-              final active = i == sel;
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => onChanged(i),
-                child: SizedBox(
-                  width: segmentWidth,
-                  child: Center(
-                    child: AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 180),
-                      style: TextStyle(
-                        color: active ? cs.onPrimary : cs.onSurfaceVariant,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      child: Text(labels[i]),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(labels.length, (i) {
+            final active = i == sel;
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onChanged(i),
+              child: SizedBox(
+                width: segmentWidth,
+                child: Center(
+                  child: AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 180),
+                    style: TextStyle(
+                      color: active ? cs.onPrimary : cs.onSurfaceVariant,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
+                    child: Text(labels[i]),
                   ),
                 ),
-              );
-            }),
-          ),
-        ],
-      ),
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 }

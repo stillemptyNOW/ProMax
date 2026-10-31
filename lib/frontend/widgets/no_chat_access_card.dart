@@ -22,12 +22,8 @@ class _NoChatAccessCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Material(
           color: Colors.transparent,
-          child: Container(
+          child: BlurredCardSurface(
             width: width > 420 ? 340 : double.infinity,
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(22),
-            ),
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,

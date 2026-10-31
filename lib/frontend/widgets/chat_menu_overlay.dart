@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/utils/haptics.dart';
 import 'animated_overlay_popup.dart';
+import 'chrome_glass.dart';
 
 class ChatMenuItem {
   final IconData icon;
@@ -186,12 +187,9 @@ class _ChatMenuLayerState extends State<_ChatMenuLayer>
           ],
         );
       },
-      child: Material(
-        color: cs.surfaceContainerHigh,
+      child: ChromeMenuSurface(
         borderRadius: BorderRadius.circular(20),
-        clipBehavior: Clip.antiAlias,
-        elevation: 12,
-        shadowColor: Colors.black.withValues(alpha: 0.45),
+        animation: overlayAnimation,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
