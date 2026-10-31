@@ -104,7 +104,13 @@ jobs:
       - name: Build iPhone app
         run: |
           flutter config --no-enable-swift-package-manager
-          flutter build ios --release --no-codesign
+          mkdir -p build
+          if ! flutter build ios --release --no-codesign -v > build/ios-build.log 2>&1; then
+            grep -nE "error:|Error:|\*\* BUILD FAILED|Command .* failed|Exception|fatal" build/ios-build.log | grep -v "warning:" | tail -120
+            tail -60 build/ios-build.log
+            exit 1
+          fi
+          tail -20 build/ios-build.log
       - name: Package IPA for eSign
         run: |
           mkdir -p build/ios/Payload dist
