@@ -7,6 +7,7 @@ import '../../main.dart' show animojiModule;
 import '../../models/animoji.dart';
 import 'lottie_image.dart';
 import 'small_spinner.dart';
+import 'motion_blur/motion_blur_scroll_behavior.dart';
 
 class _DragScrollBehavior extends MaterialScrollBehavior {
   const _DragScrollBehavior();
@@ -158,7 +159,7 @@ class _EmojiPanelState extends State<EmojiPanel> {
     }
 
     return ScrollConfiguration(
-      behavior: const _DragScrollBehavior(),
+      behavior: const MotionBlurScrollBehavior(_DragScrollBehavior()),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;

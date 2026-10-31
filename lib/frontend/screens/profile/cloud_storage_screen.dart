@@ -24,6 +24,7 @@ import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../core/security/app_lock.dart';
+import '../../widgets/motion_blur/motion_blur_scroll_behavior.dart';
 
 enum _EnvState { loading, notConfigured, ready }
 
@@ -504,7 +505,9 @@ class _CloudStorageScreenState extends State<CloudStorageScreen>
                   height: cardSide,
                   width: availableWidth,
                   child: ScrollConfiguration(
-                    behavior: _MouseDragScrollBehavior(),
+                    behavior: const MotionBlurScrollBehavior(
+                      _MouseDragScrollBehavior(),
+                    ),
                     child: PageView.builder(
                       controller: _pageController,
                       itemCount: _files.length,
@@ -822,6 +825,8 @@ class _DragDownHintState extends State<_DragDownHint>
 }
 
 class _MouseDragScrollBehavior extends MaterialScrollBehavior {
+  const _MouseDragScrollBehavior();
+
   @override
   Set<PointerDeviceKind> get dragDevices => {
     PointerDeviceKind.touch,

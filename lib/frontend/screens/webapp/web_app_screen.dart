@@ -23,6 +23,7 @@ import '../../../main.dart' show api;
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/connection_status.dart';
 import '../../widgets/error_view.dart';
+import '../../widgets/motion_blur/motion_blur_box.dart';
 import '../../widgets/sandbox_prompts.dart';
 import '../../widgets/small_spinner.dart';
 import '../../widgets/webview_permission_prompt.dart';
@@ -415,7 +416,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
         _viewport = Size(constraints.maxWidth, constraints.maxHeight);
         return Listener(
           onPointerDown: (_) => bridge.registerGesture(),
-          child: _buildWebView(launch, bridge),
+          child: MotionBlurExclusion(child: _buildWebView(launch, bridge)),
         );
       },
     );

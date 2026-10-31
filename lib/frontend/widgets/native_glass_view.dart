@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/config/app_liquid_glass.dart';
 import '../../core/config/app_native_glass.dart';
+import 'motion_blur/motion_blur_box.dart';
 
 @immutable
 class NativeGlassParams {
@@ -128,13 +129,15 @@ class _NativeGlassViewState extends State<NativeGlassView> {
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: UiKitView(
-        viewType: NativeGlass.glassViewType,
-        creationParams: _creationParams.toMap(),
-        creationParamsCodec: const StandardMessageCodec(),
-        hitTestBehavior: PlatformViewHitTestBehavior.transparent,
-        onPlatformViewCreated: _created,
+    return MotionBlurExclusion(
+      child: IgnorePointer(
+        child: UiKitView(
+          viewType: NativeGlass.glassViewType,
+          creationParams: _creationParams.toMap(),
+          creationParamsCodec: const StandardMessageCodec(),
+          hitTestBehavior: PlatformViewHitTestBehavior.transparent,
+          onPlatformViewCreated: _created,
+        ),
       ),
     );
   }

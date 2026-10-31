@@ -41,6 +41,8 @@ import '../../widgets/informer_banner_tile.dart';
 import '../../../backend/modules/forward_sender.dart';
 import '../../../backend/modules/share_sender.dart';
 import '../../widgets/lottie_slash_icon.dart';
+import '../../widgets/motion_blur/motion_blur_box.dart';
+import '../../../core/plugins/motion_blur/motion_blur_settings.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/utils/format.dart';
 import '../../../models/shared_payload.dart';
@@ -2852,41 +2854,46 @@ class _ChatListScreenState extends State<ChatListScreen>
                       },
                     ),
                   ),
-                ClipRect(
-                  child: SizedBox(
-                    width: pageW,
-                    height: pageH,
-                    child: OverflowBox(
-                      alignment: Alignment.topLeft,
-                      maxWidth: pageW * 4,
-                      maxHeight: pageH,
-                      child: SizedBox(
-                        width: pageW * 4,
-                        height: pageH,
-                        child: AnimatedBuilder(
-                          animation: Listenable.merge([
-                            _navPageAnimController,
-                            _navDragDx,
-                          ]),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              page(0, _getChatsBody()),
-                              page(1, const CallsTab()),
-                              page(2, const ContactsTab()),
-                              page(3, const SettingsTab()),
-                            ],
+                MotionBlurBox(
+                  target: MotionBlurTarget.pages,
+                  motion: [_navPageAnimController, _navDragDx],
+                  position: () => Offset(-pagePosition() * pageW, 0),
+                  child: ClipRect(
+                    child: SizedBox(
+                      width: pageW,
+                      height: pageH,
+                      child: OverflowBox(
+                        alignment: Alignment.topLeft,
+                        maxWidth: pageW * 4,
+                        maxHeight: pageH,
+                        child: SizedBox(
+                          width: pageW * 4,
+                          height: pageH,
+                          child: AnimatedBuilder(
+                            animation: Listenable.merge([
+                              _navPageAnimController,
+                              _navDragDx,
+                            ]),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                page(0, _getChatsBody()),
+                                page(1, const CallsTab()),
+                                page(2, const ContactsTab()),
+                                page(3, const SettingsTab()),
+                              ],
+                            ),
+                            builder: (context, child) {
+                              final pageDisplayT = _effectivePageNavRowT(
+                                inactiveWidth: inactiveWidth,
+                                bubbleLeftForIndex: bubbleLeftForPageT,
+                              );
+                              return Transform.translate(
+                                offset: Offset(-pageDisplayT * pageW, 0),
+                                child: child,
+                              );
+                            },
                           ),
-                          builder: (context, child) {
-                            final pageDisplayT = _effectivePageNavRowT(
-                              inactiveWidth: inactiveWidth,
-                              bubbleLeftForIndex: bubbleLeftForPageT,
-                            );
-                            return Transform.translate(
-                              offset: Offset(-pageDisplayT * pageW, 0),
-                              child: child,
-                            );
-                          },
                         ),
                       ),
                     ),

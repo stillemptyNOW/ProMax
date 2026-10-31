@@ -19,6 +19,7 @@ import 'lottie_image.dart';
 import 'sticker_peek.dart';
 import '../../core/config/app_frost.dart';
 import 'liquid_glass.dart';
+import 'motion_blur/motion_blur_scroll_behavior.dart';
 
 class _DragScrollBehavior extends MaterialScrollBehavior {
   const _DragScrollBehavior();
@@ -307,7 +308,7 @@ class _StickerPanelState extends State<StickerPanel>
       );
     }
     return ScrollConfiguration(
-      behavior: const _DragScrollBehavior(),
+      behavior: const MotionBlurScrollBehavior(_DragScrollBehavior()),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;

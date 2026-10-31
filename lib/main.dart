@@ -12,6 +12,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'backend/api.dart';
 import 'core/cache/info_cache.dart';
+import 'core/plugins/native_plugin.dart';
 import 'core/plugins/plugin_store.dart';
 import 'core/config/build_profile.dart';
 import 'core/utils/app_foreground.dart';
@@ -119,6 +120,7 @@ import 'frontend/screens/auth/login_screen.dart';
 import 'frontend/widgets/adaptive_shell.dart';
 import 'frontend/screens/chats/deletion_feedback.dart';
 import 'frontend/widgets/custom_notification.dart';
+import 'frontend/widgets/motion_blur/motion_blur_scroll_behavior.dart';
 import 'frontend/widgets/undo_notification.dart';
 import 'frontend/widgets/hint_bubble.dart';
 import 'frontend/widgets/liquid_glass.dart';
@@ -364,6 +366,7 @@ void main(List<String> args) async {
   await PrivacySettings.load();
   await AppLock.instance.load();
   if (BuildProfile.plugins) await PluginStore.instance.load();
+  await NativePlugins.load();
   CommandRegistry.instance.initialize();
   if (ProMaxSettings.ghostMode.value) SelfPresence.markOffline();
   await ContactCache.load();
@@ -1234,6 +1237,9 @@ class ProMaxAppState extends State<ProMaxApp>
               locale: _locale,
               themeMode: _effectiveThemeMode,
               themeAnimationDuration: Duration.zero,
+              scrollBehavior: const MotionBlurScrollBehavior(
+                MaterialScrollBehavior(),
+              ),
               localizationsDelegates: AppLocalizations.localizationsDelegates,
               supportedLocales: AppLocalizations.supportedLocales,
               theme: _lightTheme,

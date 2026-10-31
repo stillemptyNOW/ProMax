@@ -292,12 +292,11 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   label: AppLocalizations.of(context)!.proMaxOpenChatExport,
                   onTap: () => _open(context, const ExportReaderScreen()),
                 ),
-                if (BuildProfile.plugins)
-                  SettingsNavTile(
-                    icon: Symbols.extension,
-                    label: AppLocalizations.of(context)!.pluginsScreenTitle,
-                    onTap: () => _open(context, const PluginsScreen()),
-                  ),
+                SettingsNavTile(
+                  icon: Symbols.extension,
+                  label: AppLocalizations.of(context)!.pluginsScreenTitle,
+                  onTap: () => _open(context, const PluginsScreen()),
+                ),
               ],
             ),
             ProMaxSectionTitle(

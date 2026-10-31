@@ -7709,4 +7709,137 @@ class AppLocalizationsEn extends AppLocalizations {
   String chatInfoIgnoreConfirmMessage(String name) {
     return '$name can still send you messages and will not know, but ProMax will delete them for you, show no notifications, never mark them read and decline calls. Only the MAX black list stops the sending itself.';
   }
+
+  @override
+  String get pluginsScreenNativeSection => 'Built-in native';
+
+  @override
+  String get pluginsScreenJsSection => 'Command plugins';
+
+  @override
+  String get pluginsScreenConfigure => 'Configure';
+
+  @override
+  String get motionBlurTitle => 'Motion Blur';
+
+  @override
+  String get motionBlurDescription =>
+      'Motion blur while scrolling, on screen transitions and tab switches';
+
+  @override
+  String get motionBlurEnabled => 'Motion blur';
+
+  @override
+  String get motionBlurEnabledSubtitle =>
+      'A streak along the direction of motion, its length follows the speed';
+
+  @override
+  String get motionBlurSectionPreview => 'Preview';
+
+  @override
+  String get motionBlurPreviewHint =>
+      'Scroll the list or play a transition: the preview shows the effect with the current settings even while the plugin is off';
+
+  @override
+  String get motionBlurPreviewPlay => 'Play transition';
+
+  @override
+  String motionBlurPreviewRow(int index) {
+    return 'Sample row $index';
+  }
+
+  @override
+  String get motionBlurPreviewCard => 'Screen';
+
+  @override
+  String get motionBlurSectionTuning => 'Settings';
+
+  @override
+  String get motionBlurStrength => 'Strength';
+
+  @override
+  String get motionBlurStrengthHint => 'Longest streak';
+
+  @override
+  String motionBlurStrengthValue(int value) {
+    return 'up to $value pt';
+  }
+
+  @override
+  String get motionBlurSensitivity => 'Sensitivity';
+
+  @override
+  String get motionBlurSensitivityHint =>
+      'At what speed the streak appears and how fast it grows';
+
+  @override
+  String motionBlurSensitivityValue(String value) {
+    return '×$value';
+  }
+
+  @override
+  String get motionBlurQuality => 'Quality';
+
+  @override
+  String get motionBlurQualityHint =>
+      'Samples along the streak: more is smoother but heavier on the GPU';
+
+  @override
+  String get motionBlurQualityLow => 'Saver';
+
+  @override
+  String get motionBlurQualityBalanced => 'Balanced';
+
+  @override
+  String get motionBlurQualityHigh => 'Maximum';
+
+  @override
+  String get motionBlurSectionTargets => 'Where to blur';
+
+  @override
+  String get motionBlurTargetScrolling => 'Scrolling';
+
+  @override
+  String get motionBlurTargetScrollingSubtitle =>
+      'Chats, messages, settings and other lists';
+
+  @override
+  String get motionBlurTargetTransitions => 'Screen transitions';
+
+  @override
+  String get motionBlurTargetTransitionsSubtitle =>
+      'Opening and closing screens, the back gesture';
+
+  @override
+  String get motionBlurTargetPages => 'Tabs and paging';
+
+  @override
+  String get motionBlurTargetPagesSubtitle =>
+      'Bottom tabs, chat folders and other swipeable pages';
+
+  @override
+  String get motionBlurTargetLens => 'Tab bar lens';
+
+  @override
+  String get motionBlurTargetLensSubtitle =>
+      'The selection moving in the floating tab bar';
+
+  @override
+  String get motionBlurLowEndNotice =>
+      'This device is treated as low-end: strength and quality are capped';
+
+  @override
+  String get motionBlurReduceMotionNotice =>
+      'Reduce motion is on in the system, so no blur is applied';
+
+  @override
+  String get motionBlurFallbackNotice =>
+      'Shader filters are unavailable, a simpler Gaussian blur along the motion axis is used';
+
+  @override
+  String get motionBlurPlatformViewsNote =>
+      'iOS 26 native glass, the system tab bar and mini apps are native views that Flutter cannot blur. Screens and lists that contain them move without a streak';
+
+  @override
+  String get motionBlurReset => 'Reset settings';
 }
