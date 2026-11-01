@@ -4,28 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/config/promax_settings.dart';
 
-class StreamerMask extends StatelessWidget {
-  const StreamerMask({super.key, required this.child, this.sigma = 6});
-
-  final Widget child;
-  final double sigma;
-
-  @override
-  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
-    valueListenable: ProMaxSettings.streamerMode,
-    child: child,
-    builder: (context, hidden, child) {
-      if (!hidden) return child!;
-      return ExcludeSemantics(
-        child: ImageFiltered(
-          imageFilter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-          child: child,
-        ),
-      );
-    },
-  );
-}
-
 class AppSwitcherCurtain extends StatefulWidget {
   const AppSwitcherCurtain({super.key});
 

@@ -33,7 +33,6 @@ class ProMaxArchive {
     'promax_no_typing',
     'promax_hide_story_views',
     'promax_atmosphere_triggers',
-    'promax_streamer_mode',
     'promax_chat_aura',
     'promax_nav_tabs',
     'promax_icon_tiles',

@@ -13136,18 +13136,6 @@ abstract class AppLocalizations {
   /// **'The author won\'t know you watched the story'**
   String get proMaxHideStoryViewsHint;
 
-  /// No description provided for @proMaxStreamerMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Streamer mode'**
-  String get proMaxStreamerMode;
-
-  /// No description provided for @proMaxStreamerModeHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Blurs numbers, IDs and message previews, hides notification text'**
-  String get proMaxStreamerModeHint;
-
   /// No description provided for @proMaxSwitcherBlur.
   ///
   /// In en, this message translates to:
@@ -13250,11 +13238,11 @@ abstract class AppLocalizations {
   /// **'Don\'t read'**
   String get proMaxAntiRead;
 
-  /// No description provided for @proMaxStreamer.
+  /// No description provided for @proMaxNoTypingShort.
   ///
   /// In en, this message translates to:
-  /// **'Streamer'**
-  String get proMaxStreamer;
+  /// **'No typing'**
+  String get proMaxNoTypingShort;
 
   /// No description provided for @proMaxOff.
   ///

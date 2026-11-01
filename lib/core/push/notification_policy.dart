@@ -49,7 +49,6 @@ class NotificationFacts {
     this.privacy,
     this.chat,
     this.senderName,
-    this.streamerMode = false,
     this.encrypted = false,
     this.readMark = 0,
   });
@@ -58,7 +57,6 @@ class NotificationFacts {
   final PrivacyConfig? privacy;
   final CachedChat? chat;
   final String? senderName;
-  final bool streamerMode;
   final bool encrypted;
   final int readMark;
 
@@ -83,7 +81,6 @@ class NotificationFacts {
       privacy: rawConfig == null ? null : PrivacyConfig.fromJson(rawConfig),
       chat: chat,
       senderName: senderId == null ? null : ContactCache.get(senderId),
-      streamerMode: ProMaxSettings.streamerMode.value,
       encrypted: E2eeService.instance.isOn(accountId, chatId),
       readMark: effectiveReadMark(
         accountId: accountId,
@@ -247,7 +244,7 @@ abstract final class NotificationPolicy {
         ? (chat.title ?? senderName)
         : senderName;
 
-    final textVisible = showPreview && !facts.streamerMode && !facts.encrypted;
+    final textVisible = showPreview && !facts.encrypted;
     final text = textVisible ? previewText(push.message) : hiddenPreview;
     final msgId = push.message['id'];
 

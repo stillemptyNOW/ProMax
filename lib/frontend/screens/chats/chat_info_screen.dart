@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import '../../widgets/privacy_shields.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
@@ -1087,7 +1086,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
             const SizedBox(height: 16),
             _buildPersistentInfo(cs),
             if (widget.chatType == 'DIALOG' && _otherId != null) ...[
-              StreamerMask(child: _profileMetadata(cs)),
+              _profileMetadata(cs),
               const SizedBox(height: 12),
             ],
             if (_chatAdmin case final admin?
@@ -2128,13 +2127,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
             : int.tryParse(phone?.toString() ?? '');
         if (phoneInt != null && phoneInt > 0) {
           items.add(
-            StreamerMask(
-              child: _simpleInfoCard(
-                cs,
-                l10n.loginPhoneNumber,
-                formatPhone(phoneInt)!,
-              ),
-            ),
+            _simpleInfoCard(cs, l10n.loginPhoneNumber, formatPhone(phoneInt)!),
           );
         }
         final bio =

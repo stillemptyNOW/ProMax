@@ -12,7 +12,6 @@ import '../../backend/modules/messages.dart';
 import '../../frontend/widgets/message_banner.dart';
 import '../../main.dart';
 import '../calls/call_controller.dart';
-import '../config/promax_settings.dart';
 import '../protocol/opcode_map.dart';
 import '../protocol/packet.dart';
 import '../push/notification_bridge.dart';
@@ -267,7 +266,6 @@ class DesktopNotifier {
     final accountId = await TokenStorage.getActiveAccountId();
     if (accountId == null) return;
     final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
-    if (ProMaxSettings.streamerMode.value) return;
     final text = NotificationPolicy.editedText(
       push.message,
       rawConfig == null ? null : PrivacyConfig.fromJson(rawConfig),

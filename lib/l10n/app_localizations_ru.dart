@@ -7521,13 +7521,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Автор истории не узнает, что вы её смотрели';
 
   @override
-  String get proMaxStreamerMode => 'Режим стримера';
-
-  @override
-  String get proMaxStreamerModeHint =>
-      'Размывает номера, ID и превью сообщений, прячет текст уведомлений';
-
-  @override
   String get proMaxSwitcherBlur => 'Размытие в переключателе';
 
   @override
@@ -7583,7 +7576,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get proMaxAntiRead => 'Не читать';
 
   @override
-  String get proMaxStreamer => 'Стример';
+  String get proMaxNoTypingShort => 'Не печатать';
 
   @override
   String get proMaxOff => 'Выкл';

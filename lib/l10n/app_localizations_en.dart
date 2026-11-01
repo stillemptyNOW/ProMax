@@ -7470,13 +7470,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The author won\'t know you watched the story';
 
   @override
-  String get proMaxStreamerMode => 'Streamer mode';
-
-  @override
-  String get proMaxStreamerModeHint =>
-      'Blurs numbers, IDs and message previews, hides notification text';
-
-  @override
   String get proMaxSwitcherBlur => 'Blur in the app switcher';
 
   @override
@@ -7532,7 +7525,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proMaxAntiRead => 'Don\'t read';
 
   @override
-  String get proMaxStreamer => 'Streamer';
+  String get proMaxNoTypingShort => 'No typing';
 
   @override
   String get proMaxOff => 'Off';

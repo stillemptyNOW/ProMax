@@ -136,18 +136,6 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   ),
                 ),
                 ValueListenableBuilder<bool>(
-                  valueListenable: ProMaxSettings.streamerMode,
-                  builder: (context, value, _) => SettingsToggleTile(
-                    icon: Symbols.cast,
-                    label: AppLocalizations.of(context)!.proMaxStreamerMode,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    )!.proMaxStreamerModeHint,
-                    value: value,
-                    onChanged: ProMaxSettings.setStreamerMode,
-                  ),
-                ),
-                ValueListenableBuilder<bool>(
                   valueListenable: ProMaxSettings.switcherBlur,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.blur_on,
@@ -490,12 +478,12 @@ class _ProMaxHero extends StatelessWidget {
                     ),
                   ),
                   ValueListenableBuilder<bool>(
-                    valueListenable: ProMaxSettings.streamerMode,
+                    valueListenable: ProMaxSettings.noTyping,
                     builder: (context, on, _) => _ControlTile(
-                      icon: Symbols.cast,
-                      label: AppLocalizations.of(context)!.proMaxStreamer,
+                      icon: Symbols.edit_off,
+                      label: AppLocalizations.of(context)!.proMaxNoTypingShort,
                       on: on,
-                      onTap: () => ProMaxSettings.setStreamerMode(!on),
+                      onTap: () => ProMaxSettings.setNoTyping(!on),
                     ),
                   ),
                   ValueListenableBuilder<AtmosphereEffect>(
