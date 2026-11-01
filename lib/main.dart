@@ -14,6 +14,7 @@ import 'backend/api.dart';
 import 'core/cache/info_cache.dart';
 import 'core/plugins/native_plugin.dart';
 import 'core/plugins/plugin_store.dart';
+import 'core/config/app_performance.dart';
 import 'core/config/build_profile.dart';
 import 'core/utils/app_foreground.dart';
 import 'core/utils/logger.dart';
@@ -130,7 +131,6 @@ import 'frontend/widgets/theme_reveal.dart';
 import 'frontend/widgets/floating_call_badge.dart';
 import 'frontend/widgets/floating_video_note.dart';
 import 'frontend/widgets/keyboard_dismissal.dart';
-import 'frontend/widgets/atmosphere_overlay.dart';
 import 'frontend/widgets/privacy_shields.dart';
 import 'core/config/promax_atmosphere.dart';
 import 'core/disappearing/disappearing_messages.dart';
@@ -331,6 +331,7 @@ void main(List<String> args) async {
   final digitalIdNativeFuture = AppDigitalIdNative.load();
   final showExtraInfoFuture = AppShowExtraInfo.load();
   final spectrumBackgroundFuture = AppSpectrumBackground.load();
+  final performanceFuture = AppPerformance.load();
   final badgeFuture = AppBadge.load();
   final trafficCaptureFuture = TrafficMonitor.instance.load();
   final debugLogFuture = DebugSessionLog.instance.init();
@@ -422,6 +423,7 @@ void main(List<String> args) async {
     digitalIdNativeFuture,
     showExtraInfoFuture,
     spectrumBackgroundFuture,
+    performanceFuture,
   ]);
   debugPrint('PROMAX-STARTUP: DeviceContactsService.loadFromStartup...');
   await DeviceContactsService.loadFromStartup();
@@ -1250,8 +1252,11 @@ class ProMaxAppState extends State<ProMaxApp>
                 PerfRouteObserver(),
                 KeyboardNavigatorObserver(),
               ],
-              builder: (context, child) {
-                return ValueListenableBuilder<double>(
+              builder: (context, child) => ValueListenableBuilder<EffectBudget>(
+                valueListenable: AppPerformance.budget,
+                builder: (context, budget, scoped) =>
+                    GlassQualityScope(quality: budget.glass, child: scoped!),
+                child: ValueListenableBuilder<double>(
                   valueListenable: fontScale,
                   child: child ?? const SizedBox.shrink(),
                   builder: (context, scale, appChild) {
@@ -1331,9 +1336,6 @@ class ProMaxAppState extends State<ProMaxApp>
                                     child: FloatingCallBadgeLayer(),
                                   ),
                                   const Positioned.fill(
-                                    child: GlobalAtmosphereOverlay(),
-                                  ),
-                                  const Positioned.fill(
                                     child: AppSwitcherCurtain(),
                                   ),
                                   if (fpsOn) const FpsOverlayLayer(),
@@ -1345,8 +1347,8 @@ class ProMaxAppState extends State<ProMaxApp>
                       },
                     );
                   },
-                );
-              },
+                ),
+              ),
               home: const _StartupScreen(),
             );
           },

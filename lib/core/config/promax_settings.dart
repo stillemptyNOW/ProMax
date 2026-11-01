@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/recents_privacy.dart';
 import 'build_profile.dart';
 
 // #***! фирменные настройки комета которых нет в оригинале
@@ -65,6 +68,7 @@ class ProMaxSettings {
     hideStoryViews.value = prefs.getBool(_kHideStoryViews) ?? false;
     streamerMode.value = prefs.getBool(_kStreamerMode) ?? false;
     switcherBlur.value = prefs.getBool(_kSwitcherBlur) ?? false;
+    unawaited(RecentsPrivacy.apply(switcherBlur.value));
     selfOnlineCheck.value = prefs.getBool(_kSelfOnlineCheck) ?? true;
     hideAllChatsFolder.value = prefs.getBool(_kHideAllChatsFolder) ?? false;
     showHiddenChats.value = prefs.getBool(_kShowHiddenChats) ?? false;
@@ -81,6 +85,7 @@ class ProMaxSettings {
 
   static Future<void> setSwitcherBlur(bool value) async {
     switcherBlur.value = value;
+    unawaited(RecentsPrivacy.apply(value));
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kSwitcherBlur, value);
   }

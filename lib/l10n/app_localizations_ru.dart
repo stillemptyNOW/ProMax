@@ -7532,7 +7532,45 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proMaxSwitcherBlurHint =>
-      'В списке открытых приложений iOS не видно содержимое';
+      'Содержимое скрыто в списке открытых приложений и в превью окон на всех платформах';
+
+  @override
+  String get performanceModeTitle => 'Производительность';
+
+  @override
+  String get performanceModeSubtitle =>
+      'Баланс между эффектами и плавностью интерфейса';
+
+  @override
+  String get performanceModeAuto => 'Авто';
+
+  @override
+  String get performanceModeSmooth => 'Максимум плавности';
+
+  @override
+  String get performanceModeBeauty => 'Максимум красоты';
+
+  @override
+  String performanceModeAutoHint(Object tier) {
+    return 'Устройство определено как $tier: стекло, фоны и атмосфера подстраиваются под его мощность';
+  }
+
+  @override
+  String get performanceModeSmoothHint =>
+      'Стекло без размытия, статичные фоны, меньше частиц атмосферы';
+
+  @override
+  String get performanceModeBeautyHint =>
+      'Преломление стекла и анимации без ограничения кадров даже на слабых устройствах';
+
+  @override
+  String get performanceTierLow => 'слабое';
+
+  @override
+  String get performanceTierMid => 'среднее';
+
+  @override
+  String get performanceTierHigh => 'мощное';
 
   @override
   String get proMaxSectionMessages => 'Сообщения';

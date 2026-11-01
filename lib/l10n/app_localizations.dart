@@ -13157,8 +13157,74 @@ abstract class AppLocalizations {
   /// No description provided for @proMaxSwitcherBlurHint.
   ///
   /// In en, this message translates to:
-  /// **'Content is hidden in the iOS app switcher'**
+  /// **'Content is hidden in the app switcher and window previews on every platform'**
   String get proMaxSwitcherBlurHint;
+
+  /// No description provided for @performanceModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get performanceModeTitle;
+
+  /// No description provided for @performanceModeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance between effects and interface smoothness'**
+  String get performanceModeSubtitle;
+
+  /// No description provided for @performanceModeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get performanceModeAuto;
+
+  /// No description provided for @performanceModeSmooth.
+  ///
+  /// In en, this message translates to:
+  /// **'Smoothest'**
+  String get performanceModeSmooth;
+
+  /// No description provided for @performanceModeBeauty.
+  ///
+  /// In en, this message translates to:
+  /// **'Most beautiful'**
+  String get performanceModeBeauty;
+
+  /// No description provided for @performanceModeAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is {tier}: glass, backgrounds and atmosphere adapt to its power'**
+  String performanceModeAutoHint(Object tier);
+
+  /// No description provided for @performanceModeSmoothHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass without blur, static backgrounds, fewer atmosphere particles'**
+  String get performanceModeSmoothHint;
+
+  /// No description provided for @performanceModeBeautyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass refraction and uncapped animations even on weaker devices'**
+  String get performanceModeBeautyHint;
+
+  /// No description provided for @performanceTierLow.
+  ///
+  /// In en, this message translates to:
+  /// **'entry-level'**
+  String get performanceTierLow;
+
+  /// No description provided for @performanceTierMid.
+  ///
+  /// In en, this message translates to:
+  /// **'mid-range'**
+  String get performanceTierMid;
+
+  /// No description provided for @performanceTierHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'high-end'**
+  String get performanceTierHigh;
 
   /// No description provided for @proMaxSectionMessages.
   ///

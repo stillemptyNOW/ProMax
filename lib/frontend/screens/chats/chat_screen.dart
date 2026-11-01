@@ -5228,6 +5228,7 @@ class _ChatScreenState extends State<ChatScreen>
                         ? const SizedBox.shrink()
                         : _composerAreaWidget(),
                     messagesArea: _buildMessagesArea(),
+                    atmosphere: ChatAtmosphereLayer(chatId: widget.chatId),
                     mentionPanel: _mentionPanel,
                     commandPanel: _commandPanel,
                     note: _note,
@@ -5346,7 +5347,6 @@ class _ChatScreenState extends State<ChatScreen>
             builder: (context, _, _) => _buildEmptyState(),
           ),
         ),
-        Positioned.fill(child: ChatAtmosphereOverlay(chatId: widget.chatId)),
       ],
     );
   }

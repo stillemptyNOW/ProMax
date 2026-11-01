@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:promax/backend/modules/chats.dart' show CachedChat;
 import 'package:promax/core/config/app_chat_chrome.dart';
 import 'package:promax/core/config/app_visual_style.dart';
-import 'package:promax/core/storage/chat_wallpaper_store.dart' show ChatWallpaper;
+import 'package:promax/core/storage/chat_wallpaper_store.dart'
+    show ChatWallpaper;
 import 'package:promax/frontend/screens/chats/chat/command_panel_controller.dart';
 import 'package:promax/frontend/screens/chats/chat/chat_search_controller.dart';
 import 'package:promax/frontend/screens/chats/chat/mention_panel_controller.dart';
@@ -36,6 +37,7 @@ class ChatBodyLayout extends StatelessWidget {
   final ValueNotifier<double> pinnedBannerHeight;
   final Widget Function(BuildContext) composerAreaBuilder;
   final Widget messagesArea;
+  final Widget atmosphere;
   final MentionPanelController mentionPanel;
   final CommandPanelController commandPanel;
   final VideoNoteController note;
@@ -66,6 +68,7 @@ class ChatBodyLayout extends StatelessWidget {
     required this.pinnedBannerHeight,
     required this.composerAreaBuilder,
     required this.messagesArea,
+    this.atmosphere = const SizedBox.shrink(),
     required this.mentionPanel,
     required this.commandPanel,
     required this.note,
@@ -143,9 +146,12 @@ class ChatBodyLayout extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 if (wallpaper != null)
-                  Positioned.fill(child: ChatWallpaperView(wallpaper: wallpaper!))
+                  Positioned.fill(
+                    child: ChatWallpaperView(wallpaper: wallpaper!),
+                  )
                 else
                   const Positioned.fill(child: ProMaxAuraBackground()),
+                Positioned.fill(child: atmosphere),
                 Positioned.fill(child: messagesArea),
                 ValueListenableBuilder<double>(
                   valueListenable: composerHeight,
@@ -184,6 +190,7 @@ class ChatBodyLayout extends StatelessWidget {
           Positioned.fill(child: ChatWallpaperView(wallpaper: wallpaper!))
         else
           const Positioned.fill(child: ProMaxAuraBackground()),
+        Positioned.fill(child: atmosphere),
         Positioned.fill(child: messagesArea),
         SearchOverlay(
           cs: cs,

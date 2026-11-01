@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:kolibri/kolibri.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -708,19 +709,28 @@ class Api {
   /// лог вёлся вручную из [sendRequest] по локальному счётчику, из-за чего
   /// хендшейк/пинги в дамп не попадали, а seq был смещён относительно провода.
   void _onWireLog(WireLogEvent e) {
-    // #***! в фоне и без монитора не тратим время на разбор
-    if (!AppForeground.value && !TrafficMonitor.instance.enabled) return;
+    final monitor = TrafficMonitor.instance.enabled;
+    final sessionLog =
+        ProMaxSettings.recordDebugLogs.value &&
+        (AppForeground.value || monitor);
+    if (!wireLogWanted(
+      monitor: monitor,
+      sessionLog: sessionLog,
+      push: e.cmd == 'push',
+    )) {
+      return;
+    }
     final payload = _decodeWireJson(e.json);
     final cmd = _wireCmdCode(e.cmd);
     if (e.direction == 'out') {
-      if (ProMaxSettings.recordDebugLogs.value) {
+      if (sessionLog) {
         DebugSessionLog.instance.recordRequest(e.opcode, e.seq, payload);
       }
       TrafficMonitor.instance.recordOutgoing(e.opcode, payload, e.seq, 0);
       return;
     }
     // Входящие: ответы матчатся по seq, пуши идут только в монитор трафика.
-    if (e.cmd != 'push' && ProMaxSettings.recordDebugLogs.value) {
+    if (e.cmd != 'push' && sessionLog) {
       DebugSessionLog.instance.recordResponse(e.seq, cmd, payload);
     }
     TrafficMonitor.instance.recordIncoming(
@@ -728,6 +738,13 @@ class Api {
       0,
     );
   }
+
+  @visibleForTesting
+  static bool wireLogWanted({
+    required bool monitor,
+    required bool sessionLog,
+    required bool push,
+  }) => monitor || (sessionLog && !push);
 
   static int _wireCmdCode(String cmd) {
     switch (cmd) {

@@ -46,15 +46,16 @@ void main() {
     expect(ProMaxAtmosphere.decodeChatEffects('not json'), {});
   });
 
-  test('chat layer respects scope and own overrides', () async {
+  test('every chat shows the default effect unless it has its own', () async {
     await ProMaxAtmosphere.load();
-    await ProMaxAtmosphere.setEffect(AtmosphereEffect.snow);
-    await ProMaxAtmosphere.setScope(AtmosphereScope.everywhere);
+    await ProMaxAtmosphere.setEffect(AtmosphereEffect.none);
     expect(ProMaxAtmosphere.chatLayerEffect(1), AtmosphereEffect.none);
-    await ProMaxAtmosphere.setScope(AtmosphereScope.chats);
+    await ProMaxAtmosphere.setEffect(AtmosphereEffect.snow);
     expect(ProMaxAtmosphere.chatLayerEffect(1), AtmosphereEffect.snow);
     await ProMaxAtmosphere.setChatEffect(1, AtmosphereEffect.hearts);
     expect(ProMaxAtmosphere.chatLayerEffect(1), AtmosphereEffect.hearts);
+    await ProMaxAtmosphere.setChatEffect(2, AtmosphereEffect.none);
+    expect(ProMaxAtmosphere.chatLayerEffect(2), AtmosphereEffect.none);
   });
 
   test('glass parameters are clamped to their range', () async {

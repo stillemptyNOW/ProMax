@@ -55,7 +55,6 @@ class ProMaxArchive {
       'bubbles',
       'fireflies',
     },
-    'promax_atmosphere_scope': {'everywhere', 'chats'},
     'promax_theme_preset': {
       'graphite',
       'aurora',

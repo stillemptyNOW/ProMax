@@ -30,6 +30,14 @@ object AppState {
     var resumed = false
 }
 
+object DisplayPrefs {
+    @Volatile
+    var maxRefreshRate = 0f
+
+    @Volatile
+    var hideInRecents = false
+}
+
 object CallEvents {
     @Volatile
     var sink: io.flutter.plugin.common.EventChannel.EventSink? = null

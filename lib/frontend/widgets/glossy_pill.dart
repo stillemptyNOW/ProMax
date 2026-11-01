@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../../core/config/app_performance.dart';
 import '../../core/config/app_pill_gradient.dart';
 import '../../core/config/app_visual_style.dart';
 import 'liquid_glass.dart';
@@ -122,8 +123,12 @@ class GlossyPill extends StatelessWidget {
 
   bool get _inert => !keepInkLayer && onTap == null && onLongPress == null;
 
-  double? _sigmaFor(Color base) =>
-      blurSigma != null && base.a < 1 ? blurSigma : null;
+  double? _sigmaFor(BuildContext context, Color base) =>
+      blurSigma != null &&
+          base.a < 1 &&
+          GlassQualityScope.of(context) != GlassQuality.flat
+      ? blurSigma
+      : null;
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +193,7 @@ class GlossyPill extends StatelessWidget {
           ? content
           : InkWell(onTap: onTap, onLongPress: onLongPress, child: content),
     );
-    final sigma = _sigmaFor(base);
+    final sigma = _sigmaFor(context, base);
     if (sigma == null) return material;
     return ClipRRect(
       borderRadius: borderRadius,
@@ -204,7 +209,7 @@ class GlossyPill extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final base = color ?? cs.surfaceContainerHigh;
     final content = Padding(padding: padding, child: child);
-    final sigma = _sigmaFor(base);
+    final sigma = _sigmaFor(context, base);
 
     return RepaintBoundary(
       child: DecoratedBox(

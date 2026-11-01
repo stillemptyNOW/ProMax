@@ -314,6 +314,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   late AnimationController _navPageAnimController;
   late AnimationController _fabController;
   final BackdropKey _frostBackdrop = BackdropKey();
+  final BackdropKey _headerBackdrop = BackdropKey();
   late PageController _folderPageController;
   late AnimationController _storiesRevealController;
 
@@ -2017,6 +2018,13 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   Widget _buildPinnedChatsHeader(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    return BackdropGroup(
+      backdropKey: _headerBackdrop,
+      child: _buildPinnedChatsHeaderBody(cs),
+    );
+  }
+
+  Widget _buildPinnedChatsHeaderBody(ColorScheme cs) {
     return ColoredBox(
       color: cs.surface,
       child: Column(
@@ -4222,6 +4230,7 @@ class _ChatListScreenState extends State<ChatListScreen>
             child: LiquidGlassSurface(
               borderRadius: BorderRadius.circular(28),
               tint: cs.primary,
+              backdropKey: _frostBackdrop,
               child: icon,
             ),
           );

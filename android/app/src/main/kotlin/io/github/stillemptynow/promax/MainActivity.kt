@@ -55,6 +55,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
         "MainActivity" to "$iconPackage.MainActivity",
     )
 
+    private var secureForRecents = false
     private var nfcAdapter: NfcAdapter? = null
     private var nfcEvents: EventChannel.EventSink? = null
     private val nfcHandler = Handler(Looper.getMainLooper())
@@ -338,6 +339,17 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
                     setKeepAwake(call.argument<Boolean>("enabled") == true)
                     result.success(null)
                 }
+                "setMaxRefreshRate" -> {
+                    DisplayPrefs.maxRefreshRate =
+                        call.argument<Number>("hz")?.toFloat() ?: 0f
+                    runOnUiThread { requestHighRefreshRate() }
+                    result.success(null)
+                }
+                "setRecentsPrivacy" -> {
+                    DisplayPrefs.hideInRecents = call.argument<Boolean>("enabled") == true
+                    runOnUiThread { applyRecentsPrivacy() }
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -358,6 +370,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
         super.onCreate(savedInstanceState)
         applyKeepAwake()
         requestHighRefreshRate()
+        applyRecentsPrivacy()
         intent?.let { if (it.hasExtra(CallConst.EXTRA_CALL)) stashCall(it, emit = false) }
         stashChatOpen(intent, emit = false)
         stashShare(intent, emit = false)
@@ -522,14 +535,30 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
             windowManager.defaultDisplay
         } ?: return
         val current = screen.mode
-        val fastest = screen.supportedModes
-            .filter {
-                it.physicalWidth == current.physicalWidth &&
-                    it.physicalHeight == current.physicalHeight
-            }
-            .maxByOrNull { it.refreshRate } ?: return
+        val sameSize = screen.supportedModes.filter {
+            it.physicalWidth == current.physicalWidth &&
+                it.physicalHeight == current.physicalHeight
+        }
+        val cap = DisplayPrefs.maxRefreshRate
+        val allowed = if (cap > 0f) {
+            sameSize.filter { it.refreshRate <= cap + 0.5f }
+        } else {
+            sameSize
+        }
+        val chosen = allowed.maxByOrNull { it.refreshRate }
+            ?: sameSize.minByOrNull { it.refreshRate }
+            ?: return
         window.attributes = window.attributes.apply {
-            preferredDisplayModeId = fastest.modeId
+            preferredDisplayModeId = chosen.modeId
+        }
+    }
+
+    private fun applyRecentsPrivacy() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setRecentsScreenshotEnabled(!DisplayPrefs.hideInRecents)
+        } else if (!DisplayPrefs.hideInRecents && secureForRecents) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            secureForRecents = false
         }
     }
 
@@ -863,12 +892,23 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
     override fun onResume() {
         super.onResume()
         AppState.resumed = true
+        if (secureForRecents) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            secureForRecents = false
+        }
         stashChatOpen(intent, emit = true)
     }
 
     override fun onPause() {
         super.onPause()
         AppState.resumed = false
+        if (DisplayPrefs.hideInRecents &&
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU &&
+            !secureForRecents
+        ) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            secureForRecents = true
+        }
         if (NfcExchange.active) {
             stopNfcExchange()
             nfcEvents?.success(mapOf("event" to "cancelled"))

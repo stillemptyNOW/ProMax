@@ -7481,7 +7481,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proMaxSwitcherBlurHint =>
-      'Content is hidden in the iOS app switcher';
+      'Content is hidden in the app switcher and window previews on every platform';
+
+  @override
+  String get performanceModeTitle => 'Performance';
+
+  @override
+  String get performanceModeSubtitle =>
+      'Balance between effects and interface smoothness';
+
+  @override
+  String get performanceModeAuto => 'Auto';
+
+  @override
+  String get performanceModeSmooth => 'Smoothest';
+
+  @override
+  String get performanceModeBeauty => 'Most beautiful';
+
+  @override
+  String performanceModeAutoHint(Object tier) {
+    return 'This device is $tier: glass, backgrounds and atmosphere adapt to its power';
+  }
+
+  @override
+  String get performanceModeSmoothHint =>
+      'Glass without blur, static backgrounds, fewer atmosphere particles';
+
+  @override
+  String get performanceModeBeautyHint =>
+      'Glass refraction and uncapped animations even on weaker devices';
+
+  @override
+  String get performanceTierLow => 'entry-level';
+
+  @override
+  String get performanceTierMid => 'mid-range';
+
+  @override
+  String get performanceTierHigh => 'high-end';
 
   @override
   String get proMaxSectionMessages => 'Messages';

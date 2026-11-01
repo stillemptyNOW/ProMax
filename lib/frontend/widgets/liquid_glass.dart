@@ -10,6 +10,7 @@ import 'package:flutter/scheduler.dart';
 
 import '../../core/config/app_frost.dart';
 import '../../core/config/app_liquid_glass.dart';
+import '../../core/config/app_performance.dart';
 import '../../core/config/app_native_glass.dart';
 import '../../core/config/promax_glass.dart';
 import 'native_glass_view.dart';
@@ -39,6 +40,32 @@ class LiquidGlass {
       _program = null;
     }
   }
+}
+
+class GlassQualityScope extends InheritedWidget {
+  const GlassQualityScope({
+    super.key,
+    required this.quality,
+    required super.child,
+  });
+
+  final GlassQuality quality;
+
+  static GlassQuality of(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<GlassQualityScope>()
+          ?.quality ??
+      AppPerformance.current.glass;
+
+  static Color flatFill(Color fill, {double minAlpha = flatAlpha}) =>
+      fill.a >= minAlpha ? fill : fill.withValues(alpha: minAlpha);
+
+  static const double flatAlpha = 0.94;
+  static const double flatOverlayAlpha = 0.6;
+
+  @override
+  bool updateShouldNotify(GlassQualityScope oldWidget) =>
+      oldWidget.quality != quality;
 }
 
 class GlassSurface extends StatelessWidget {
@@ -78,6 +105,17 @@ class GlassSurface extends StatelessWidget {
           decoration: BoxDecoration(border: border),
           child: child,
         ),
+      );
+    }
+    if (GlassQualityScope.of(context) == GlassQuality.flat) {
+      final base = Theme.of(context).colorScheme.surfaceContainerHigh;
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: GlassQualityScope.flatFill(Color.alphaBlend(frostTint, base)),
+          borderRadius: borderRadius,
+          border: border,
+        ),
+        child: child,
       );
     }
     return ClipRRect(
@@ -275,7 +313,8 @@ class LiquidGlassSurface extends StatelessWidget {
 
   Widget _flutterGlass(BuildContext context, Widget child) {
     final theme = Theme.of(context);
-    final shaded = LiquidGlass._shaded;
+    final quality = GlassQualityScope.of(context);
+    final shaded = LiquidGlass._shaded && quality == GlassQuality.refraction;
     final material = AppLiquidGlass.material(
       theme.colorScheme,
       role,
@@ -297,6 +336,19 @@ class LiquidGlassSurface extends StatelessWidget {
         material: material,
         backdropKey: key,
         devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+        child: rimmed,
+      );
+    } else if (quality == GlassQuality.flat) {
+      glass = DecoratedBox(
+        decoration: BoxDecoration(
+          color: GlassQualityScope.flatFill(
+            material.fill,
+            minAlpha: role == GlassRole.overlay
+                ? GlassQualityScope.flatOverlayAlpha
+                : GlassQualityScope.flatAlpha,
+          ),
+          borderRadius: borderRadius,
+        ),
         child: rimmed,
       );
     } else {

@@ -54,7 +54,7 @@ class AtmosphereScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
             const _AtmospherePreview(),
-            const ProMaxSectionTitle('Эффект'),
+            const ProMaxSectionTitle('Эффект за сообщениями в чатах'),
             SettingsPanel(
               child: ValueListenableBuilder<AtmosphereEffect>(
                 valueListenable: ProMaxAtmosphere.effect,
@@ -68,27 +68,6 @@ class AtmosphereScreen extends StatelessWidget {
                         label: effect.title,
                         selected: effect == current,
                         onTap: () => ProMaxAtmosphere.setEffect(effect),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const ProMaxSectionTitle('Где показывать'),
-            SettingsPanel(
-              child: ValueListenableBuilder<AtmosphereScope>(
-                valueListenable: ProMaxAtmosphere.scope,
-                builder: (context, current, _) => Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final scope in AtmosphereScope.values)
-                      ProMaxChoiceChip(
-                        icon: scope == AtmosphereScope.everywhere
-                            ? Symbols.fullscreen
-                            : Symbols.chat,
-                        label: scope.title,
-                        selected: scope == current,
-                        onTap: () => ProMaxAtmosphere.setScope(scope),
                       ),
                   ],
                 ),
