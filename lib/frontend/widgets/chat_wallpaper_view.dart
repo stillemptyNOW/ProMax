@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import 'package:promax/core/config/app_performance.dart';
 import 'package:promax/core/config/chat_wallpaper_themes.dart';
 import 'package:promax/core/storage/chat_wallpaper_store.dart';
 import 'package:promax/frontend/widgets/mesh_gradient_background.dart';
@@ -67,26 +68,40 @@ class _WallpaperImageLayerState extends State<WallpaperImageLayer> {
   static const double _motionScale = 1.16;
   static const double _blurSigma = 22;
   static const Duration _transition = Duration(milliseconds: 320);
+  static const double _motionDeadZone = 0.15;
 
   final ValueNotifier<Offset> _offset = ValueNotifier(Offset.zero);
   StreamSubscription<AccelerometerEvent>? _sub;
 
+  bool get _moves => widget.motion && AppPerformance.current.wallpaperMotion;
+
   @override
   void initState() {
     super.initState();
-    if (widget.motion) _startMotion();
+    AppPerformance.budget.addListener(_onBudget);
+    _syncMotion();
   }
 
   @override
   void didUpdateWidget(WallpaperImageLayer old) {
     super.didUpdateWidget(old);
-    if (widget.motion && !old.motion) _startMotion();
-    if (!widget.motion && old.motion) _stopMotion();
+    _syncMotion();
+  }
+
+  void _onBudget() => setState(_syncMotion);
+
+  void _syncMotion() {
+    if (_moves) {
+      _startMotion();
+    } else {
+      _stopMotion();
+    }
   }
 
   void _startMotion() {
+    if (_sub != null) return;
     _offset.value = Offset.zero;
-    _sub ??= accelerometerEventStream(
+    _sub = accelerometerEventStream(
       samplingPeriod: SensorInterval.gameInterval,
     ).listen(_onAccelerometer, onError: (_) {}, cancelOnError: false);
   }
@@ -100,14 +115,17 @@ class _WallpaperImageLayerState extends State<WallpaperImageLayer> {
     final targetX = (-event.x / 9.8).clamp(-1.0, 1.0) * _maxShift;
     final targetY = (event.y / 9.8).clamp(-1.0, 1.0) * _maxShift;
     final prev = _offset.value;
-    _offset.value = Offset(
+    final next = Offset(
       prev.dx + (targetX - prev.dx) * 0.12,
       prev.dy + (targetY - prev.dy) * 0.12,
     );
+    if ((next - prev).distance < _motionDeadZone) return;
+    _offset.value = next;
   }
 
   @override
   void dispose() {
+    AppPerformance.budget.removeListener(_onBudget);
     _sub?.cancel();
     _offset.dispose();
     super.dispose();
@@ -115,8 +133,20 @@ class _WallpaperImageLayerState extends State<WallpaperImageLayer> {
 
   @override
   Widget build(BuildContext context) {
+    final screen = MediaQuery.sizeOf(context);
+    final cacheSide =
+        (screen.longestSide *
+                _motionScale *
+                MediaQuery.devicePixelRatioOf(context))
+            .ceil()
+            .clamp(1, 2560);
     final image = Image(
-      image: widget.image,
+      image: ResizeImage(
+        widget.image,
+        width: cacheSide,
+        height: cacheSide,
+        policy: ResizeImagePolicy.fit,
+      ),
       fit: BoxFit.cover,
       alignment: Alignment(widget.offsetX.clamp(-1.0, 1.0), 0),
       width: double.infinity,
@@ -142,7 +172,7 @@ class _WallpaperImageLayerState extends State<WallpaperImageLayer> {
               )
             : blurChild!;
         return TweenAnimationBuilder<double>(
-          tween: Tween(end: widget.motion ? 1.0 : 0.0),
+          tween: Tween(end: _moves ? 1.0 : 0.0),
           duration: _transition,
           curve: Curves.easeInOut,
           child: blurred,

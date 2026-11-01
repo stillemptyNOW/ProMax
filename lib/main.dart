@@ -1,3 +1,6 @@
+import 'core/config/update_channel.dart';
+import 'core/hub/diagnostics.dart';
+import 'core/translation/translation_settings.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -14,6 +17,7 @@ import 'backend/api.dart';
 import 'core/cache/info_cache.dart';
 import 'core/plugins/native_plugin.dart';
 import 'core/plugins/plugin_store.dart';
+import 'core/config/app_performance.dart';
 import 'core/config/build_profile.dart';
 import 'core/utils/app_foreground.dart';
 import 'core/utils/logger.dart';
@@ -21,13 +25,14 @@ import 'core/cache/self_presence.dart';
 import 'core/storage/app_instance.dart';
 import 'core/storage/draft_store.dart';
 import 'core/storage/archived_chats_store.dart';
-import 'core/storage/ignored_senders.dart';
 import 'core/storage/local_contact_avatars.dart';
+import 'core/storage/retired_preferences.dart';
 import 'core/crypto/e2ee_service.dart';
 import 'core/storage/chat_encryption_store.dart';
 import 'core/config/app_accent.dart';
 import 'core/config/app_amoled.dart';
 import 'core/config/app_badge.dart';
+import 'core/config/app_icon.dart';
 import 'core/config/app_show_extra_info.dart';
 import 'core/config/app_spectrum_background.dart';
 import 'core/config/app_bubble_behavior.dart';
@@ -53,6 +58,7 @@ import 'core/config/app_link_preview.dart';
 import 'core/config/app_media_cache.dart';
 import 'core/config/app_video_note_quality.dart';
 import 'core/config/app_pill_gradient.dart';
+import 'core/config/call_pip_setting.dart';
 import 'core/config/app_visual_style.dart';
 import 'core/config/app_chat_chrome.dart';
 import 'core/config/app_composer_background.dart';
@@ -72,7 +78,6 @@ import 'backend/modules/chats.dart';
 import 'backend/modules/comments.dart';
 import 'backend/modules/contacts.dart';
 import 'backend/modules/deletion_gateway.dart';
-import 'backend/modules/deletion_policy.dart';
 import 'backend/modules/file_uploader.dart';
 import 'backend/modules/folders.dart';
 import 'backend/modules/messages.dart';
@@ -90,6 +95,7 @@ import 'backend/modules/digital_id.dart';
 import 'core/calls/call_bridge.dart';
 import 'core/calls/call_controller.dart';
 import 'core/calls/call_kit.dart';
+import 'core/calls/call_pip.dart';
 import 'core/calls/call_session.dart';
 import 'core/media/audio_playback_controller.dart';
 import 'core/media/media_kit_video_platform.dart';
@@ -127,10 +133,10 @@ import 'frontend/widgets/liquid_glass.dart';
 import 'frontend/widgets/mesh_gradient_background.dart';
 import 'frontend/widgets/small_spinner.dart';
 import 'frontend/widgets/theme_reveal.dart';
+import 'frontend/widgets/call_pip_layer.dart';
 import 'frontend/widgets/floating_call_badge.dart';
 import 'frontend/widgets/floating_video_note.dart';
 import 'frontend/widgets/keyboard_dismissal.dart';
-import 'frontend/widgets/atmosphere_overlay.dart';
 import 'frontend/widgets/privacy_shields.dart';
 import 'core/config/promax_atmosphere.dart';
 import 'core/disappearing/disappearing_messages.dart';
@@ -205,6 +211,7 @@ void _installLogCapture() {
 
   final previousFlutterOnError = FlutterError.onError;
   FlutterError.onError = (FlutterErrorDetails details) {
+    Diagnostics.record('flutter_error', details.exception, details.stack);
     DebugSessionLog.instance.recordLogLine(
       '  |         FlutterError: ${details.exceptionAsString()}',
     );
@@ -220,6 +227,7 @@ void _installLogCapture() {
 
   final previousPlatformOnError = ui.PlatformDispatcher.instance.onError;
   ui.PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    Diagnostics.record('uncaught_error', error, stack);
     DebugSessionLog.instance.recordLogLine('  |         Uncaught: $error');
     DebugSessionLog.instance.recordLogLine(stack.toString());
     if (previousPlatformOnError != null) {
@@ -251,7 +259,6 @@ void main(List<String> args) async {
   final activeAccountId = await TokenStorage.getActiveAccountId();
   if (activeAccountId != null) {
     await ContactsModule.primeCacheFromDb(activeAccountId);
-    await DeletionPolicy.instance.load(activeAccountId);
   }
   attachInfoCacheApi(api);
   unawaited(
@@ -294,7 +301,9 @@ void main(List<String> args) async {
   final quietFuture = QuietHours.instance.load();
   final remindersFuture = _startReminders();
   final notesFuture = ChatNotesStore.instance.load();
-  final quickRepliesFuture = QuickRepliesStore.instance.load();
+  final quickRepliesFuture = activeAccountId == null
+      ? Future<void>.value()
+      : QuickRepliesStore.instance.ensureLoaded(activeAccountId);
   final hapticsFuture = Haptics.load();
   final prefsFuture = SharedPreferences.getInstance();
   final accentFuture = AppAccent.load();
@@ -304,6 +313,7 @@ void main(List<String> args) async {
   final themeModeFuture = AppThemeModeConfig.load();
   final amoledFuture = AppAmoled.load();
   final pillGradientFuture = AppPillGradient.load();
+  final callPipFuture = CallPipSetting.load();
   final visualStyleFuture = AppVisualStyle.load();
   final liquidGlassFuture = LiquidGlass.load();
   final nativeGlassFuture = NativeGlass.load();
@@ -331,7 +341,12 @@ void main(List<String> args) async {
   final digitalIdNativeFuture = AppDigitalIdNative.load();
   final showExtraInfoFuture = AppShowExtraInfo.load();
   final spectrumBackgroundFuture = AppSpectrumBackground.load();
+  final performanceFuture = AppPerformance.load();
+  final translationFuture = TranslationSettings.instance.load();
+  final updateChannelFuture = UpdateChannel.load();
+  final diagnosticsFuture = Diagnostics.init().catchError((_) {});
   final badgeFuture = AppBadge.load();
+  unawaited(AppIconConfig.load());
   final trafficCaptureFuture = TrafficMonitor.instance.load();
   final debugLogFuture = DebugSessionLog.instance.init();
 
@@ -354,10 +369,10 @@ void main(List<String> args) async {
   await quickRepliesFuture;
 
   final prefs = await prefsFuture;
+  await RetiredPreferences.purge(prefs);
   await FileHistoryCache.load(prefs);
   await DraftStore.instance.load();
   await ArchivedChatsStore.instance.load();
-  await IgnoredSenders.instance.load();
   await LocalContactAvatars.instance.load();
   await badgeFuture;
   await ChatEncryptionStore.instance.load();
@@ -395,6 +410,7 @@ void main(List<String> args) async {
     themeModeFuture,
     amoledFuture,
     pillGradientFuture,
+    callPipFuture,
     visualStyleFuture,
     liquidGlassFuture,
     nativeGlassFuture,
@@ -422,6 +438,10 @@ void main(List<String> args) async {
     digitalIdNativeFuture,
     showExtraInfoFuture,
     spectrumBackgroundFuture,
+    performanceFuture,
+    translationFuture,
+    updateChannelFuture,
+    diagnosticsFuture,
   ]);
   debugPrint('PROMAX-STARTUP: DeviceContactsService.loadFromStartup...');
   await DeviceContactsService.loadFromStartup();
@@ -557,6 +577,9 @@ class ProMaxAppState extends State<ProMaxApp>
     _lastAppliedThemeMode = _effectiveThemeMode;
     _rescheduleSwitch();
     unawaited(_refreshWallpaperSeed());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => unawaited(AppIconConfig.refresh()),
+    );
 
     api.setReconnectCallback(() async {
       try {
@@ -606,6 +629,7 @@ class ProMaxAppState extends State<ProMaxApp>
     CallController.instance.appResumed = AppForeground.interactiveIn(lifecycle);
     CallBridge.instance.init();
     CallKitBridge.instance.init();
+    CallPip.instance.init();
     NotificationBridge.instance.init();
     unawaited(LauncherBadge.instance.init());
     AppExitHooks.add(PendingUndo.commitCurrent);
@@ -869,9 +893,11 @@ class ProMaxAppState extends State<ProMaxApp>
       DebugSessionLog.instance.flushNow();
       SelfCheckService.instance.pause();
       E2eeService.instance.lock();
+      unawaited(AppIconConfig.onBackground());
     }
     if (state != AppLifecycleState.resumed) return;
     api.wakeUp();
+    unawaited(AppIconConfig.refresh());
     unawaited(DesktopNotifier.instance.onWindowAttended());
     _presentIncomingCall();
     SelfCheckService.instance.resume();
@@ -1250,8 +1276,11 @@ class ProMaxAppState extends State<ProMaxApp>
                 PerfRouteObserver(),
                 KeyboardNavigatorObserver(),
               ],
-              builder: (context, child) {
-                return ValueListenableBuilder<double>(
+              builder: (context, child) => ValueListenableBuilder<EffectBudget>(
+                valueListenable: AppPerformance.budget,
+                builder: (context, budget, scoped) =>
+                    GlassQualityScope(quality: budget.glass, child: scoped!),
+                child: ValueListenableBuilder<double>(
                   valueListenable: fontScale,
                   child: child ?? const SizedBox.shrink(),
                   builder: (context, scale, appChild) {
@@ -1281,63 +1310,61 @@ class ProMaxAppState extends State<ProMaxApp>
                           value: overlayStyle.copyWith(
                             statusBarColor: Colors.transparent,
                           ),
-                          child: Listener(
-                            behavior: HitTestBehavior.translucent,
-                            onPointerDown: (_) =>
-                                AppLock.instance.noteInteraction(),
-                            child: AppLockLayer(
-                              child: Stack(
-                                fit: StackFit.expand,
-                                clipBehavior: Clip.none,
-                                children: [
-                                  if (gradientColors != null &&
-                                      gradientColors.isNotEmpty)
-                                    Positioned.fill(
-                                      child: MeshGradientBackground(
-                                        colors: gradientColors,
-                                        animate:
-                                            gradientWallpaper!.gradientAnimated,
-                                        rotation:
-                                            gradientWallpaper.gradientRotation,
-                                      ),
-                                    ),
-                                  RepaintBoundary(
-                                    key: _captureBoundaryKey,
-                                    child:
-                                        NotificationListener<
-                                          ScrollNotification
-                                        >(
-                                          onNotification: (notification) {
-                                            if (notification
-                                                is ScrollEndNotification) {
-                                              PerformanceMonitor.instance
-                                                  .markActivityEnd();
-                                            } else {
-                                              PerformanceMonitor.instance.mark(
-                                                'scroll',
-                                              );
-                                            }
-                                            return false;
-                                          },
-                                          child: KeyboardDismissal(
-                                            child: sChild!,
-                                          ),
+                          child: CallPipLayer(
+                            child: Listener(
+                              behavior: HitTestBehavior.translucent,
+                              onPointerDown: (_) =>
+                                  AppLock.instance.noteInteraction(),
+                              child: AppLockLayer(
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    if (gradientColors != null &&
+                                        gradientColors.isNotEmpty)
+                                      Positioned.fill(
+                                        child: MeshGradientBackground(
+                                          colors: gradientColors,
+                                          animate: gradientWallpaper!
+                                              .gradientAnimated,
+                                          rotation: gradientWallpaper
+                                              .gradientRotation,
                                         ),
-                                  ),
-                                  const Positioned.fill(
-                                    child: FloatingVideoNoteLayer(),
-                                  ),
-                                  const Positioned.fill(
-                                    child: FloatingCallBadgeLayer(),
-                                  ),
-                                  const Positioned.fill(
-                                    child: GlobalAtmosphereOverlay(),
-                                  ),
-                                  const Positioned.fill(
-                                    child: AppSwitcherCurtain(),
-                                  ),
-                                  if (fpsOn) const FpsOverlayLayer(),
-                                ],
+                                      ),
+                                    RepaintBoundary(
+                                      key: _captureBoundaryKey,
+                                      child:
+                                          NotificationListener<
+                                            ScrollNotification
+                                          >(
+                                            onNotification: (notification) {
+                                              if (notification
+                                                  is ScrollEndNotification) {
+                                                PerformanceMonitor.instance
+                                                    .markActivityEnd();
+                                              } else {
+                                                PerformanceMonitor.instance
+                                                    .mark('scroll');
+                                              }
+                                              return false;
+                                            },
+                                            child: KeyboardDismissal(
+                                              child: sChild!,
+                                            ),
+                                          ),
+                                    ),
+                                    const Positioned.fill(
+                                      child: FloatingVideoNoteLayer(),
+                                    ),
+                                    const Positioned.fill(
+                                      child: FloatingCallBadgeLayer(),
+                                    ),
+                                    const Positioned.fill(
+                                      child: AppSwitcherCurtain(),
+                                    ),
+                                    if (fpsOn) const FpsOverlayLayer(),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -1345,8 +1372,8 @@ class ProMaxAppState extends State<ProMaxApp>
                       },
                     );
                   },
-                );
-              },
+                ),
+              ),
               home: const _StartupScreen(),
             );
           },

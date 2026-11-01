@@ -54,7 +54,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "No release keystore in secrets: the APKs are signed with the debug key and are not published."
+            echo "::warning::No release keystore in secrets: the APKs are signed with the debug key and are not published."
             echo "signed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -88,10 +88,10 @@ jobs:
             "dist/ProMax-$version-$channel-universal.apk"
           ls -la dist
       - name: Publish release
-        if: env.RELEASE_TAG != ''
+        if: env.RELEASE_TAG != '' && steps.signing.outputs.signed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: .github/scripts/publish-release.sh "$RELEASE_TAG" dist/*.apk
+        run: .github/scripts/publish-release.sh "$RELEASE_TAG" dist/ProMax-*-promax-*.apk
       - uses: actions/upload-artifact@v4
         with:
           name: ProMax-android

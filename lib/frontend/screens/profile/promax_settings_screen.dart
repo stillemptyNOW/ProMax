@@ -1,3 +1,9 @@
+import '../../../core/config/update_channel.dart';
+import '../../../core/hub/diagnostics.dart';
+import 'translation_settings_screen.dart';
+import '../../../core/translation/translation_backend.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -20,9 +26,9 @@ import 'bookmarks_screen.dart';
 import 'reminders_screen.dart';
 import 'quick_replies_screen.dart';
 import '../../../core/storage/quick_replies_store.dart';
+import '../../../core/storage/token_storage.dart';
 import '../../../core/reminders/message_reminders.dart';
 import 'export_reader_screen.dart';
-import 'ignored_senders_screen.dart';
 import 'plugins_screen.dart';
 import 'privacy_sandbox_screen.dart';
 import 'promax_design_screen.dart';
@@ -53,6 +59,42 @@ class ProMaxSettingsScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
             _ProMaxHero(onGhostChanged: _setGhostMode),
+            SettingsCard(
+              children: [
+                if (BuildProfile.selfUpdate)
+                  ValueListenableBuilder<bool>(
+                    valueListenable: UpdateChannel.beta,
+                    builder: (context, beta, _) => SettingsToggleTile(
+                      icon: Symbols.science,
+                      label: l10n.updateReceiveBeta,
+                      subtitle: l10n.updateReceiveBetaHint,
+                      value: beta,
+                      onChanged: UpdateChannel.setBeta,
+                    ),
+                  ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: Diagnostics.enabled,
+                  builder: (context, enabled, _) => SettingsToggleTile(
+                    icon: Symbols.bug_report,
+                    label: l10n.diagnosticsTitle,
+                    subtitle: l10n.diagnosticsHint,
+                    value: enabled,
+                    onChanged: Diagnostics.setEnabled,
+                  ),
+                ),
+              ],
+            ),
+            if (MethodChannelTranslationBackend.platformSupported)
+              SettingsCard(
+                children: [
+                  SettingsNavTile(
+                    icon: Symbols.translate,
+                    label: l10n.translationSettingsTitle,
+                    onTap: () =>
+                        _open(context, const TranslationSettingsScreen()),
+                  ),
+                ],
+              ),
             ProMaxSectionTitle(
               AppLocalizations.of(context)!.proMaxSectionAppearance,
             ),
@@ -94,11 +136,6 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   label: l10n.privacySandboxTitle,
                   onTap: () => _open(context, const PrivacySandboxScreen()),
                 ),
-                SettingsNavTile(
-                  icon: Symbols.speaker_notes_off,
-                  label: l10n.ignoredSendersTitle,
-                  onTap: () => _open(context, const IgnoredSendersScreen()),
-                ),
                 ValueListenableBuilder<bool>(
                   valueListenable: ProMaxSettings.ghostMode,
                   builder: (context, value, _) => SettingsToggleTile(
@@ -139,18 +176,6 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     )!.proMaxHideStoryViewsHint,
                     value: value,
                     onChanged: ProMaxSettings.setHideStoryViews,
-                  ),
-                ),
-                ValueListenableBuilder<bool>(
-                  valueListenable: ProMaxSettings.streamerMode,
-                  builder: (context, value, _) => SettingsToggleTile(
-                    icon: Symbols.cast,
-                    label: AppLocalizations.of(context)!.proMaxStreamerMode,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    )!.proMaxStreamerModeHint,
-                    value: value,
-                    onChanged: ProMaxSettings.setStreamerMode,
                   ),
                 ),
                 ValueListenableBuilder<bool>(
@@ -278,15 +303,7 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     onTap: () => _open(context, const RemindersScreen()),
                   ),
                 ),
-                ValueListenableBuilder<List<String>>(
-                  valueListenable: QuickRepliesStore.instance.items,
-                  builder: (context, items, _) => SettingsNavTile(
-                    icon: Symbols.quickreply,
-                    label: AppLocalizations.of(context)!.proMaxQuickReplies,
-                    value: items.isEmpty ? null : '${items.length}',
-                    onTap: () => _open(context, const QuickRepliesScreen()),
-                  ),
-                ),
+                const _QuickRepliesTile(),
                 SettingsNavTile(
                   icon: Symbols.lock_open,
                   label: AppLocalizations.of(context)!.proMaxOpenChatExport,
@@ -496,12 +513,12 @@ class _ProMaxHero extends StatelessWidget {
                     ),
                   ),
                   ValueListenableBuilder<bool>(
-                    valueListenable: ProMaxSettings.streamerMode,
+                    valueListenable: ProMaxSettings.noTyping,
                     builder: (context, on, _) => _ControlTile(
-                      icon: Symbols.cast,
-                      label: AppLocalizations.of(context)!.proMaxStreamer,
+                      icon: Symbols.edit_off,
+                      label: AppLocalizations.of(context)!.proMaxNoTypingShort,
                       on: on,
-                      onTap: () => ProMaxSettings.setStreamerMode(!on),
+                      onTap: () => ProMaxSettings.setNoTyping(!on),
                     ),
                   ),
                   ValueListenableBuilder<AtmosphereEffect>(
@@ -705,6 +722,52 @@ class ProMaxBannerCard extends StatelessWidget {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+}
+
+class _QuickRepliesTile extends StatefulWidget {
+  const _QuickRepliesTile();
+
+  @override
+  State<_QuickRepliesTile> createState() => _QuickRepliesTileState();
+}
+
+class _QuickRepliesTileState extends State<_QuickRepliesTile> {
+  int _accountId = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_resolveAccount());
+  }
+
+  Future<void> _resolveAccount() async {
+    final accountId = await TokenStorage.getActiveAccountId() ?? 0;
+    await QuickRepliesStore.instance.ensureLoaded(accountId);
+    if (mounted) setState(() => _accountId = accountId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: QuickRepliesStore.instance,
+      builder: (context, _) {
+        final count = QuickRepliesStore.instance.repliesFor(_accountId).length;
+        return SettingsNavTile(
+          icon: Symbols.quickreply,
+          label: AppLocalizations.of(context)!.proMaxQuickReplies,
+          value: count == 0 ? null : '$count',
+          onTap: _accountId == 0
+              ? null
+              : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => QuickRepliesScreen(accountId: _accountId),
+                  ),
+                ),
         );
       },
     );

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../../../backend/modules/deletion_policy.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/format.dart';
@@ -24,7 +23,6 @@ class InfoScreen extends StatefulWidget {
 class _InfoScreenState extends State<InfoScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _info;
-  Map<String, Object?> _storedServerKeys = const {};
 
   @override
   void initState() {
@@ -40,14 +38,7 @@ class _InfoScreenState extends State<InfoScreen> {
         return;
       }
       final jsonStr = await AppDatabase.getLoginInfo(accountId);
-      final policy = DeletionPolicy.instance;
-      if (policy.accountId != accountId) await policy.load(accountId);
       if (!mounted) return;
-      _storedServerKeys = {
-        DeletionPolicy.deleteForAllKey: policy.deleteForAll,
-        if (policy.editTimeoutKnown)
-          DeletionPolicy.editTimeoutKey: policy.editTimeout.inSeconds,
-      };
       if (jsonStr != null) {
         setState(() => _info = jsonDecode(jsonStr) as Map<String, dynamic>);
       }
@@ -155,7 +146,7 @@ class _InfoScreenState extends State<InfoScreen> {
       'wud': l10n.infoWud,
       'video-msg-enabled': l10n.infoVideoMsgEnabled,
       'grse': l10n.infoGrse,
-      DeletionPolicy.deleteForAllKey: l10n.infoDeleteForAll,
+      'delete-for-all': l10n.infoDeleteForAll,
       'edit-timeout': l10n.infoEditTimeout,
       'image-quality': l10n.infoImageQuality,
       'unsafe-files-alert': l10n.infoUnsafeFilesAlert,
@@ -195,12 +186,8 @@ class _InfoScreenState extends State<InfoScreen> {
           const SizedBox(height: 16),
           SectionHeader(l10n.infoServerSection),
           ...serverKeys.entries.map(
-            (entry) => _buildDataRow(
-              entry.key,
-              entry.value,
-              server?[entry.key] ?? _storedServerKeys[entry.key],
-              cs,
-            ),
+            (entry) =>
+                _buildDataRow(entry.key, entry.value, server?[entry.key], cs),
           ),
           ..._buildDynamicRows(
             server,

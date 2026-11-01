@@ -240,6 +240,7 @@ class DebugSessionLog {
   bool _initialized = false;
   bool _compact = false;
   int _writtenChars = 0;
+  int _compactedChars = 0;
   Future<void> _writes = Future.value();
   Timer? _flushTimer;
 
@@ -336,7 +337,8 @@ class DebugSessionLog {
   Future<void> _writePending() async {
     final file = _currentFile;
     if (file == null) return;
-    final compact = _compact || _writtenChars > _compactAfterChars;
+    final compact =
+        _compact || _writtenChars - _compactedChars > _compactAfterChars;
     if (!compact && _pending.isEmpty) return;
     final records = compact ? _snapshotRecords() : List.of(_pending);
     _pending.clear();
@@ -352,6 +354,7 @@ class DebugSessionLog {
         mode: compact ? FileMode.write : FileMode.append,
       );
       _writtenChars = compact ? data.length : _writtenChars + data.length;
+      if (compact) _compactedChars = data.length;
     } catch (_) {
       _compact = true;
     }

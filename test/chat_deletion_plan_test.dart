@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/backend/modules/chat_deletion_plan.dart';
-import 'package:promax/backend/modules/deletion_policy.dart';
 import 'package:promax/backend/modules/server_outcome.dart';
 
 const _me = 41;
@@ -12,41 +11,25 @@ ChatDeletionPlan? _plan(
   bool forAll = true,
   int chatId = _chat,
   int? owner,
-  bool peerIsBot = false,
-  bool? deleteForAll = true,
 }) => ChatDeletionPlan.of(
   forAll: forAll,
   chatId: chatId,
   chatType: type,
   owner: owner,
   myId: _me,
-  peerIsBot: peerIsBot,
-  deleteForAll: deleteForAll,
 );
 
 void main() {
   group('who may delete a chat for everyone', () {
-    test('a dialog is deleted for both with one CHAT_DELETE forAll', () {
+    test('a dialog is only ever deleted for me', () {
       final plan = _plan('DIALOG');
 
-      expect(plan, ChatDeletionPlan.forEveryone);
+      expect(plan, ChatDeletionPlan.forMe);
       expect(plan!.payload(chatId: _chat, lastEventTime: 5000), {
         'chatId': _chat,
         'lastEventTime': 5000,
-        'forAll': true,
+        'forAll': false,
       });
-    });
-
-    test('without the server flag a dialog is deleted only for me', () {
-      expect(_plan('DIALOG', deleteForAll: false), ChatDeletionPlan.forMe);
-    });
-
-    test('an unknown flag leaves the decision to the server', () {
-      expect(_plan('DIALOG', deleteForAll: null), ChatDeletionPlan.forEveryone);
-    });
-
-    test('a bot dialog is never deleted for the bot', () {
-      expect(_plan('DIALOG', peerIsBot: true), ChatDeletionPlan.forMe);
     });
 
     test('saved messages are never deleted for anyone else', () {
@@ -62,13 +45,11 @@ void main() {
     test('a channel never goes out with forAll, even for its owner', () {
       expect(_plan('CHANNEL', owner: _me), ChatDeletionPlan.forMe);
       expect(
-        chatForAllAllowed(
+        ownerDeletesForAll(
           chatId: _chat,
           chatType: 'CHANNEL',
           owner: _me,
           myId: _me,
-          peerIsBot: false,
-          deleteForAll: true,
         ),
         isFalse,
       );

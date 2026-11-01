@@ -1,5 +1,6 @@
+import 'self_profile_preview_screen.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'dart:async';
-import '../../widgets/privacy_shields.dart';
 import '../../widgets/promax_ui.dart';
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
@@ -689,6 +690,33 @@ class _SettingsTabState extends State<SettingsTab>
                           context,
                           title: 'Сервисы',
                           items: [
+                            _SettingsItem(
+                              icon: Symbols.visibility,
+                              label: l10n.selfProfilePreview,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SelfProfilePreviewScreen(
+                                    profile: _profile!,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _SettingsItem(
+                              icon: Symbols.tag,
+                              label: '${l10n.selfProfileId}: ${_profile!.id}',
+                              onTap: () async {
+                                await Clipboard.setData(
+                                  ClipboardData(text: '${_profile!.id}'),
+                                );
+                                if (context.mounted) {
+                                  showCustomNotification(
+                                    context,
+                                    l10n.selfProfileIdCopied,
+                                  );
+                                }
+                              },
+                            ),
                             if (BuildProfile.digitalId)
                               _SettingsItem(
                                 icon: Symbols.badge,
@@ -1243,16 +1271,14 @@ class _SettingsTabState extends State<SettingsTab>
                                   ),
                                   child: MouseRegion(
                                     cursor: SystemMouseCursors.click,
-                                    child: StreamerMask(
-                                      child: _PhoneSpoiler(
-                                        text: phone,
-                                        isVisible: _isPhoneVisible,
-                                        style: TextStyle(
-                                          color: subColor,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                          letterSpacing: 0.5,
-                                        ),
+                                    child: _PhoneSpoiler(
+                                      text: phone,
+                                      isVisible: _isPhoneVisible,
+                                      style: TextStyle(
+                                        color: subColor,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
                                   ),

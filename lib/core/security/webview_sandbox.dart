@@ -11,7 +11,8 @@ import '../utils/logger.dart';
 abstract final class WebViewSandbox {
   static Future<WebViewEnvironment?>? _environment;
 
-  static bool get _usesEnvironment => !kIsWeb && Platform.isWindows;
+  static bool get _usesEnvironment =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
 
   static Future<WebViewEnvironment?> environment() {
     if (!_usesEnvironment) return Future.value();

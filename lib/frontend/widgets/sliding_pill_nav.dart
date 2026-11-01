@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../../core/config/app_frost.dart';
+import '../../core/config/app_performance.dart';
 import '../../core/config/app_liquid_glass.dart';
 import '../../core/config/app_nav_pill_style.dart';
 import '../../core/config/app_pill_gradient.dart';
@@ -136,11 +137,15 @@ class SlidingPillNav extends StatelessWidget {
   }) {
     final cs = Theme.of(context).colorScheme;
     final visualSel = position.round().clamp(0, items.length - 1);
+    final flat = GlassQualityScope.of(context) == GlassQuality.flat;
+    final frostTint = AppFrost.glassTint(cs);
     final base =
         backgroundColor ??
-        (frost ? AppFrost.glassTint(cs) : cs.surfaceContainerHigh);
+        (frost
+            ? (flat ? GlassQualityScope.flatFill(frostTint) : frostTint)
+            : cs.surfaceContainerHigh);
     final useGradient = glossy && gradient && !liquid;
-    final frosted = frost && !liquid && base.a < 1;
+    final frosted = frost && !liquid && base.a < 1 && !flat;
     final lensInset = liquid ? 4.0 : 8.0;
     final selectedForeground = liquid ? cs.primary : cs.onPrimary;
     final unselectedForeground = cs.onSurface;

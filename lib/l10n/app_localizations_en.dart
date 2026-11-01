@@ -1709,9 +1709,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'All messages in this chat will be deleted permanently.';
 
   @override
-  String get chatInfoClearHistoryForAll => 'For everyone';
-
-  @override
   String get chatInfoClearHistoryConfirm => 'Clear';
 
   @override
@@ -2457,9 +2454,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attachSheetLimitedAccessInfo => 'Not all photos are accessible';
 
   @override
-  String get attachSheetSectionInProgress => 'Section under development';
-
-  @override
   String get attachSheetContact => 'Contact';
 
   @override
@@ -2584,14 +2578,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photoEditorBlurLinear => 'Linear';
 
   @override
-  String get fontSettingsInvalidInput => 'Enter a font link or name';
-
-  @override
-  String fontSettingsFontNotFound(String name) {
-    return 'Font \"$name\" not found or no network';
-  }
-
-  @override
   String fontSettingsFontAdded(String name) {
     return 'Font \"$name\" added';
   }
@@ -2602,26 +2588,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fontSettingsAddFontTitle => 'Add font';
-
-  @override
-  String get fontSettingsAddFontDescription =>
-      'Paste a Google Fonts link or font name';
-
-  @override
-  String get fontSettingsAddFontConfirm => 'Add';
-
-  @override
-  String get fontSettingsPickFile => 'Choose file';
+  String get fontSettingsAddFontTitle => 'Add font from file';
 
   @override
   String get fontSettingsPickFileHint => 'A .ttf, .otf or .ttc font';
 
   @override
   String get fontSettingsNotAFont => 'This is not a font file';
-
-  @override
-  String get fontSettingsCancel => 'Cancel';
 
   @override
   String get fontSettingsTitle => 'Fonts';
@@ -3581,6 +3554,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Otherwise a video message starts with the front camera';
 
   @override
+  String get mediaDevicesCalls => 'Calls';
+
+  @override
+  String get mediaDevicesCallPip => 'Picture in picture in video calls';
+
+  @override
+  String get mediaDevicesCallPipHint =>
+      'The other person\'s video stays in a small window over other apps when you leave ProMax';
+
+  @override
   String get chatPreviewMarkRead => 'Mark as read';
 
   @override
@@ -3682,13 +3665,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelFollowersTitle => 'Followers';
-
-  @override
-  String get channelStatsTitle => 'Channel statistics';
-
-  @override
-  String get channelStatsUnavailable =>
-      'Channel statistics aren\'t available yet';
 
   @override
   String get adminsAdd => 'Add admin';
@@ -4233,11 +4209,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Are you sure you want to delete this message?';
 
   @override
-  String chatScreenDeleteAlsoFor(String name) {
-    return 'Also delete for $name';
-  }
-
-  @override
   String deleteMessagesFailedWithReason(String reason) {
     return 'Couldn\'t delete messages: $reason';
   }
@@ -4267,18 +4238,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteChatTypeUnknown =>
       'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again';
-
-  @override
-  String get chatForAllNotAllowedHint =>
-      'The MAX server doesn\'t allow deleting this chat for the other person, so it will be deleted only for you.';
-
-  @override
-  String get chatListForAllNotAllowedHint =>
-      'The MAX server doesn\'t allow deleting some of these chats for the other person, so they will be deleted only for you.';
-
-  @override
-  String get chatClearAlsoForPeer =>
-      'Also erase the history for the other person';
 
   @override
   String get chatDeleteForAllMembers => 'Delete for all members';
@@ -4311,101 +4270,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deleteMessagesPeerOnlyForMe =>
-      'MAX deletes the other person\'s messages only for you';
-
-  @override
-  String get deleteMessagesOthersOnlyForMe =>
-      'MAX deletes other people\'s messages only for you';
-
-  @override
-  String deleteMessagesTooOldForPeer(String age) {
-    return 'Only your own messages younger than $age can be deleted for the other person — a MAX server limit';
-  }
-
-  @override
-  String deleteMessagesTooOldForAll(String age) {
-    return 'Only your own messages younger than $age can be deleted for everyone — a MAX server limit';
-  }
-
-  @override
-  String get deleteMessagesScheduledOnlyForMe =>
-      'Scheduled messages are deleted for everyone only from the scheduled list';
-
-  @override
   String get deleteMessagesSelectionOnlyForMe =>
-      'So the selected messages will be deleted only for you';
-
-  @override
-  String deletionAgeLimitDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count days',
-      one: '$count day',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count hours',
-      one: '$count hour',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count minutes',
-      one: '$count minute',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String wipeForBothMessage(String age) {
-    return 'ProMax will delete your messages younger than $age for the other person and then ask MAX to delete the chat for both of you. This can\'t be undone.';
-  }
-
-  @override
-  String get wipeOwnForPeerTitle => 'Delete my messages for the other person?';
-
-  @override
-  String get wipeOwnForPeerAction => 'Delete mine for the other person';
-
-  @override
-  String wipeOwnForPeerMessage(String age) {
-    return 'The MAX server doesn\'t allow deleting this chat for the other person. ProMax will delete your messages younger than $age for them; the rest of the history stays with them and the chat is deleted only for you. This can\'t be undone.';
-  }
-
-  @override
-  String wipeSummaryForPeer(int count) {
-    return 'Your messages deleted for the other person: $count';
-  }
-
-  @override
-  String wipeSummaryNotConfirmed(int count) {
-    return 'MAX didn\'t delete for the other person: $count';
-  }
-
-  @override
-  String wipeSummaryKeptForPeer(int count, String age) {
-    return 'Left with the other person (their messages and yours older than $age): $count';
-  }
-
-  @override
-  String get wipeSummaryChatForAllAccepted =>
-      'MAX accepted the request to delete the chat for both of you';
-
-  @override
-  String get wipeSummaryChatRemovedForMe => 'The chat was deleted only for you';
+      'Some of the selected messages cannot be deleted for members, so all of them will be deleted only for you';
 
   @override
   String get infoDeleteForAll => 'delete-for-all';
@@ -4413,42 +4279,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chatActionProfileUnavailable =>
       'Your profile hasn\'t loaded yet, try again in a moment';
-
-  @override
-  String get chatDeleteAlsoForPeer =>
-      'Also delete the chat for the other person — the history disappears for them too';
-
-  @override
-  String get wipeForBothAction => 'Delete for both';
-
-  @override
-  String get wipeForBothTitle => 'Delete for both?';
-
-  @override
-  String get wipeCollecting => 'Collecting the history…';
-
-  @override
-  String wipeFound(int count) {
-    return 'Messages found: $count';
-  }
-
-  @override
-  String wipeDeleting(int done, int total) {
-    return 'Deleted $done of $total';
-  }
-
-  @override
-  String get wipeSummaryHistoryIncomplete =>
-      'The server didn\'t return the whole history';
-
-  @override
-  String get wipeSummaryInterrupted =>
-      'The connection dropped and deleting stopped — try again';
-
-  @override
-  String wipeSummaryChatKept(String reason) {
-    return 'The chat wasn\'t deleted: $reason';
-  }
 
   @override
   String get messageDeletedMark => 'deleted';
@@ -6065,7 +5895,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appIconScreenUnsupported =>
-      'Changing the icon is only available on Android and iOS';
+      'The app icon can\'t be changed in the web version';
 
   @override
   String appIconScreenChanged(String name) {
@@ -6085,10 +5915,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appIconScreenHint =>
-      'On Android the app will close so the launcher picks up the new icon. On iOS it changes instantly with a system dialog.';
+      'iOS changes the icon right away and shows a system notice about it.';
 
   @override
-  String get appIconScreenOnlyMobile => 'Only available on Android and iOS';
+  String get appIconScreenHintAndroid =>
+      'The launcher needs a few seconds to pick up the new icon. ProMax closes, chat shortcuts are removed, and on some launchers you have to put the icon back on the home screen.';
+
+  @override
+  String get appIconScreenHintDesktop =>
+      'The icon changes for the window, the taskbar and the Dock while ProMax runs and is restored on every launch. Start menu, desktop and Dock shortcuts keep the classic icon until ProMax starts.';
+
+  @override
+  String get appIconAndroidConfirmTitle => 'Change the icon?';
+
+  @override
+  String get appIconAndroidConfirmMessage =>
+      'ProMax will close and the launcher will update the icon in a few seconds. Chat shortcuts on the home screen are removed, and on some launchers you have to add the icon to the home screen again from the app list.';
+
+  @override
+  String get appIconAndroidConfirmAction => 'Change';
+
+  @override
+  String get appIconSeasonalTitle => 'Seasonal icon automatically';
+
+  @override
+  String get appIconSeasonalSubtitle =>
+      'Halloween from October 24 to November 2, New Year from December 20 to January 10. Your own icon comes back afterwards.';
+
+  @override
+  String appIconSeasonalActive(String name, DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.MMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return '“$name” is on until $dateString';
+  }
+
+  @override
+  String get appIconSeasonalPending => 'The icon changes once you leave ProMax';
+
+  @override
+  String get appIconSeasonalManual =>
+      'You picked the icon yourself, so it stays until the season ends';
 
   @override
   String get password2faConnectionDropped => 'Connection lost…';
@@ -7470,18 +7337,49 @@ class AppLocalizationsEn extends AppLocalizations {
       'The author won\'t know you watched the story';
 
   @override
-  String get proMaxStreamerMode => 'Streamer mode';
-
-  @override
-  String get proMaxStreamerModeHint =>
-      'Blurs numbers, IDs and message previews, hides notification text';
-
-  @override
   String get proMaxSwitcherBlur => 'Blur in the app switcher';
 
   @override
   String get proMaxSwitcherBlurHint =>
-      'Content is hidden in the iOS app switcher';
+      'Content is hidden in the app switcher and window previews on every platform';
+
+  @override
+  String get performanceModeTitle => 'Performance';
+
+  @override
+  String get performanceModeSubtitle =>
+      'Balance between effects and interface smoothness';
+
+  @override
+  String get performanceModeAuto => 'Auto';
+
+  @override
+  String get performanceModeSmooth => 'Smoothest';
+
+  @override
+  String get performanceModeBeauty => 'Most beautiful';
+
+  @override
+  String performanceModeAutoHint(Object tier) {
+    return 'This device is $tier: glass, backgrounds and atmosphere adapt to its power';
+  }
+
+  @override
+  String get performanceModeSmoothHint =>
+      'Glass without blur, static backgrounds, fewer atmosphere particles';
+
+  @override
+  String get performanceModeBeautyHint =>
+      'Glass refraction and uncapped animations even on weaker devices';
+
+  @override
+  String get performanceTierLow => 'entry-level';
+
+  @override
+  String get performanceTierMid => 'mid-range';
+
+  @override
+  String get performanceTierHigh => 'high-end';
 
   @override
   String get proMaxSectionMessages => 'Messages';
@@ -7532,7 +7430,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proMaxAntiRead => 'Don\'t read';
 
   @override
-  String get proMaxStreamer => 'Streamer';
+  String get proMaxNoTypingShort => 'No typing';
 
   @override
   String get proMaxOff => 'Off';
@@ -7636,79 +7534,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profilePhoneManualInvalid =>
       'That does not look like a phone number';
-
-  @override
-  String get ignoredSendersTitle => 'Don\'t let them write to me';
-
-  @override
-  String get ignoredSendersHowItWorks => 'How it works';
-
-  @override
-  String get ignoredSendersExplanation =>
-      'MAX has no \"who can message me\" setting. The only way to make sending fail is the MAX server black list, and the other person may notice it.\n\nThis mode works in ProMax only and blocks nobody on the server. Messages from the chosen people in private chats are deleted for you only, you get no notifications for them, no read mark is set, the chat does not jump up and the counter does not grow, and their calls are declined silently. They will not know: for them the message was sent as usual.';
-
-  @override
-  String get ignoredSendersCaveat =>
-      'Messages are deleted \"for me\" on the server, so they also disappear in your other MAX apps, although a notification may still show up there. Removing someone from the list does not bring deleted messages back. Group chats are not affected.';
-
-  @override
-  String get ignoredSendersEmpty => 'The list is empty';
-
-  @override
-  String get ignoredSendersEmptyHint =>
-      'Add someone by ID or from a private chat menu: \"Don\'t let them write to me\"';
-
-  @override
-  String get ignoredSendersAdd => 'Add by ID';
-
-  @override
-  String get ignoredSendersIdLabel => 'User ID';
-
-  @override
-  String get ignoredSendersIdHint => 'For example, 123456789';
-
-  @override
-  String get ignoredSendersConfirmAdd => 'Hide';
-
-  @override
-  String get ignoredSendersCancel => 'Cancel';
-
-  @override
-  String get ignoredSendersInvalidId => 'A numeric user ID is required';
-
-  @override
-  String get ignoredSendersSelfId => 'This is your own ID';
-
-  @override
-  String get ignoredSendersAlreadyAdded => 'This ID is already on the list';
-
-  @override
-  String get ignoredSendersAdded => 'Their messages will no longer be shown';
-
-  @override
-  String get ignoredSendersRemoved => 'Their new messages will be shown again';
-
-  @override
-  String get ignoredSendersRemove => 'Allow';
-
-  @override
-  String ignoredSendersUserId(int id) {
-    return 'ID $id';
-  }
-
-  @override
-  String get ignoredSendersNoAccount => 'Sign in to an account first';
-
-  @override
-  String get chatInfoMenuIgnore => 'Don\'t let them write to me';
-
-  @override
-  String get chatInfoMenuUnignore => 'Let them write to me';
-
-  @override
-  String chatInfoIgnoreConfirmMessage(String name) {
-    return '$name can still send you messages and will not know, but ProMax will delete them for you, show no notifications, never mark them read and decline calls. Only the MAX black list stops the sending itself.';
-  }
 
   @override
   String get pluginsScreenNativeSection => 'Built-in native';
@@ -7842,4 +7667,258 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get motionBlurReset => 'Reset settings';
+
+  @override
+  String get msgActionsTranslate => 'Translate';
+
+  @override
+  String get msgActionsShowOriginal => 'Show original';
+
+  @override
+  String get translationShowTranslation => 'Show translation';
+
+  @override
+  String get translationTranslating => 'Translating…';
+
+  @override
+  String get translationLabel => 'Translation';
+
+  @override
+  String translationLabelFrom(String language) {
+    return 'Translated from $language';
+  }
+
+  @override
+  String get chatScreenMenuTranslateChat => 'Translate chat';
+
+  @override
+  String get chatScreenMenuStopTranslateChat => 'Stop translating chat';
+
+  @override
+  String get translationChatEnabled =>
+      'Incoming messages will be translated on this device';
+
+  @override
+  String get translationChatDisabled => 'Chat auto-translation is off';
+
+  @override
+  String get translationSameLanguage =>
+      'The message is already in the target language';
+
+  @override
+  String get translationFailed => 'Couldn\'t translate the message';
+
+  @override
+  String get translationNeedsWifi =>
+      'The language model downloads over Wi-Fi. Connect to Wi-Fi or allow mobile data in translation settings';
+
+  @override
+  String get translationUnsupported =>
+      'This language isn\'t supported by the translator';
+
+  @override
+  String get translationUndetermined => 'Couldn\'t detect the message language';
+
+  @override
+  String get translationUnavailable =>
+      'Translation isn\'t available on this device';
+
+  @override
+  String get translationSettingsTitle => 'Message translation';
+
+  @override
+  String get translationSettingsPrivacy =>
+      'Translation runs on this device. Message text is never sent anywhere';
+
+  @override
+  String get translationSettingsTarget => 'Translate to';
+
+  @override
+  String translationSettingsTargetApp(String language) {
+    return 'App language ($language)';
+  }
+
+  @override
+  String get translationSettingsWifiOnly => 'Download models over Wi-Fi only';
+
+  @override
+  String get translationSettingsWifiOnlySubtitle =>
+      'Each language model is about 30 MB and downloads on first use';
+
+  @override
+  String get translationSettingsModels => 'Downloaded languages';
+
+  @override
+  String get translationSettingsModelsEmpty => 'No models downloaded yet';
+
+  @override
+  String get translationSettingsDeleteModel => 'Delete model';
+
+  @override
+  String get translationSettingsModelDeleted => 'Model deleted';
+
+  @override
+  String get translationSettingsModelDeleteFailed =>
+      'Couldn\'t delete the model';
+
+  @override
+  String get translationSettingsSystemModels =>
+      'Translation languages are downloaded by the system. Remove them in iOS Settings → Apps → Translate';
+
+  @override
+  String get stickerMakerAction => 'Make sticker';
+
+  @override
+  String get stickerMakerTitle => 'New sticker';
+
+  @override
+  String get stickerMakerProcessing => 'Cutting out the subject…';
+
+  @override
+  String get stickerMakerNoSubject => 'Couldn\'t find a subject in the photo';
+
+  @override
+  String get stickerMakerDownloading =>
+      'The model is still downloading, try again in a minute';
+
+  @override
+  String get stickerMakerUnavailable =>
+      'Making stickers isn\'t available on this device';
+
+  @override
+  String get stickerMakerUse => 'Done';
+
+  @override
+  String get stickerMakerHint =>
+      'The background was removed on this device. The sticker is sent as an image with a transparent background';
+
+  @override
+  String get appIconNameDefault => 'Classic';
+
+  @override
+  String get appIconNameLight => 'Light';
+
+  @override
+  String get appIconNameAurora => 'Aurora';
+
+  @override
+  String get appIconNameSunset => 'Sunset';
+
+  @override
+  String get appIconNameGlass => 'Glass';
+
+  @override
+  String get appIconNameHalloween => 'Halloween';
+
+  @override
+  String get appIconNameNewYear => 'New Year';
+
+  @override
+  String get selfProfilePreview => 'View profile as others see it';
+
+  @override
+  String get selfProfileId => 'My ID';
+
+  @override
+  String get selfProfileIdCopied => 'ID copied';
+
+  @override
+  String get selfProfilePreviewPrivacy =>
+      'This card shows your public name and bio. The phone number and status visible to another person depend on your privacy settings and contacts.';
+
+  @override
+  String get updateReceiveBeta => 'Receive beta updates';
+
+  @override
+  String get updateReceiveBetaHint =>
+      'Off: stable releases only. On: also beta versions and release candidates.';
+
+  @override
+  String get diagnosticsTitle => 'Send diagnostics';
+
+  @override
+  String get diagnosticsHint =>
+      'A random installation ID, error types, ProMax stack frames, version and OS are sent to the ProMax server. No chats, phone numbers or tokens. You can turn this off at any time.';
+
+  @override
+  String get hubAnnouncements => 'ProMax announcements';
+
+  @override
+  String get hubAdmin => 'Admin';
+
+  @override
+  String get hubPreview => 'Preview';
+
+  @override
+  String get hubServiceChat => 'ProMax service chat';
+
+  @override
+  String get hubActivationHint =>
+      'Activate admin access using a one-time code from your server. Your phone number opens this screen; the server verifies permission to broadcast.';
+
+  @override
+  String get hubActivationCode => 'One-time code';
+
+  @override
+  String get hubActivate => 'Activate';
+
+  @override
+  String get hubUnavailable => 'The ProMax service is unavailable';
+
+  @override
+  String get hubOffline =>
+      'Cannot reach the ProMax service. Showing saved announcements.';
+
+  @override
+  String get hubNoAnnouncements =>
+      'Announcements from the ProMax team will appear here';
+
+  @override
+  String get hubReadOnly =>
+      'Announcements are available only in ProMax. You cannot reply to this chat.';
+
+  @override
+  String get hubDraft => 'Draft';
+
+  @override
+  String get hubDraftEmpty => 'No draft yet';
+
+  @override
+  String get hubDraftChanged =>
+      'The draft changed on another device or is empty. Refresh it before publishing.';
+
+  @override
+  String get hubActionFailed =>
+      'Could not complete the action. Check your connection and admin activation.';
+
+  @override
+  String get hubPublish => 'Publish to everyone';
+
+  @override
+  String get hubPublishConfirm =>
+      'Every ProMax user will see this announcement. Send it?';
+
+  @override
+  String get hubPublished => 'Announcement published';
+
+  @override
+  String get hubPreviewHint =>
+      'Only the administrator can see this chat. Check the text and select Publish to everyone when ready.';
+
+  @override
+  String get hubAdminHint =>
+      'Write an announcement and send it to Preview. Users will not see it until you confirm publication.';
+
+  @override
+  String get hubCompose => 'Announcement text';
+
+  @override
+  String get hubSendToPreview => 'Send to preview';
+
+  @override
+  String get hubRefresh => 'Refresh';
+
+  @override
+  String get hubNewAnnouncement =>
+      'New announcement in the ProMax service chat';
 }

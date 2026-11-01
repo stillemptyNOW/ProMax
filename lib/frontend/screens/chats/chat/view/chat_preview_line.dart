@@ -1,5 +1,4 @@
 import 'dart:convert';
-import '../../../../widgets/privacy_shields.dart';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -135,13 +134,10 @@ class ChatPreviewLine extends StatelessWidget {
       );
     }
 
-    return StreamerMask(
-      sigma: 5,
-      child: Text.rich(
-        TextSpan(style: bodyStyle, children: spans),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+    return Text.rich(
+      TextSpan(style: bodyStyle, children: spans),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 

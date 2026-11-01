@@ -59,6 +59,10 @@ final class ProMaxNotifications: NSObject {
     case "cancelChat":
       dismissDelivered(chatId: Self.chatId(from: call.arguments), messagesOnly: true)
       result(nil)
+    case "pruneChat":
+      let args = call.arguments as? [String: Any]
+      pruneDelivered(chatId: Self.chatId(from: args), seen: (args?["seen"] as? NSNumber)?.int64Value ?? 0)
+      result(nil)
     case "notifiedChats":
       UNUserNotificationCenter.current().getDeliveredNotifications { delivered in
         let chats = Set(delivered
@@ -151,6 +155,27 @@ final class ProMaxNotifications: NSObject {
       guard !identifiers.isEmpty else { return }
       center.removeDeliveredNotifications(withIdentifiers: identifiers)
     }
+  }
+
+  private func pruneDelivered(chatId: Int64, seen: Int64) {
+    guard chatId != 0, seen > 0 else { return }
+    let center = UNUserNotificationCenter.current()
+    center.getDeliveredNotifications { delivered in
+      let identifiers = delivered
+        .filter { Self.isMessage($0.request) }
+        .filter { Self.chatId(from: $0.request.content.userInfo) == chatId }
+        .filter { Self.messageTime($0) <= seen }
+        .map { $0.request.identifier }
+      guard !identifiers.isEmpty else { return }
+      center.removeDeliveredNotifications(withIdentifiers: identifiers)
+    }
+  }
+
+  private static func messageTime(_ notification: UNNotification) -> Int64 {
+    if let stamp = notification.request.content.userInfo["ctime"], let time = optionalChatId(stamp), time > 0 {
+      return time
+    }
+    return Int64(notification.date.timeIntervalSince1970 * 1000)
   }
 
   private static func isMessage(_ request: UNNotificationRequest) -> Bool {

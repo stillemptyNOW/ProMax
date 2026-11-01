@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../../backend/api.dart';
 import '../../frontend/widgets/max_link_nav.dart';
 import '../../main.dart';
 import '../storage/app_database.dart';
-import '../storage/ignored_senders.dart';
 import '../storage/token_storage.dart';
 import '../utils/logger.dart';
 import 'native_event_stream.dart';
@@ -39,7 +39,11 @@ class NotificationBridge {
 
   int get activeChatId => _activeChats.isEmpty ? 0 : _activeChats.last;
 
+  @visibleForTesting
+  bool debugNative = false;
+
   bool get _native {
+    if (debugNative) return true;
     try {
       return Platform.isAndroid || Platform.isIOS;
     } catch (_) {
@@ -101,6 +105,18 @@ class NotificationBridge {
     }
   }
 
+  Future<void> pruneChat(int chatId, int seen) async {
+    if (!_native || chatId == 0 || seen <= 0) return;
+    try {
+      await _method.invokeMethod<void>('pruneChat', {
+        'chatId': chatId,
+        'seen': seen,
+      });
+    } catch (e) {
+      logger.w('NotificationBridge.pruneChat: $e');
+    }
+  }
+
   Future<void> dismissReadChats() async {
     if (!_native) return;
     final List<int> notified;
@@ -114,14 +130,11 @@ class NotificationBridge {
     if (notified.isEmpty) return;
     final accountId = await TokenStorage.getActiveAccountId();
     if (accountId == null) return;
-    await IgnoredSenders.instance.load();
     for (final chatId in notified) {
       final rows = await AppDatabase.loadChat(accountId, chatId);
       if (rows.isEmpty) continue;
       final read = (rows.first['unread_count'] as int? ?? 0) == 0;
-      final ignored =
-          IgnoredSenders.instance.ignoredPeer(accountId, chatId) != null;
-      if (read || ignored) await cancelChat(chatId);
+      if (read) await cancelChat(chatId);
     }
   }
 

@@ -1,3 +1,4 @@
+import '../../../core/media/sticker_maker.dart';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -53,6 +54,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
   );
   final TransformationController _zoom = TransformationController();
   final GlobalKey _stageKey = GlobalKey();
+  bool _makingSticker = false;
   File? _workingFile;
   File? _cropSource;
   CropState? _cropState;
@@ -226,6 +228,33 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
     await _flight(result);
   }
 
+  Future<void> _makeSticker() async {
+    final file = _workingFile;
+    if (file == null || _makingSticker) return;
+    setState(() => _makingSticker = true);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final result = await StickerMaker.make(file);
+      if (!mounted) {
+        if (result.file != null) await result.file!.delete();
+        return;
+      }
+      if (result.file case final output?) {
+        await _applyBaked(output);
+      } else {
+        showCustomNotification(context, switch (result.failure) {
+          StickerMakeFailure.unavailable => l10n.stickerMakerUnavailable,
+          StickerMakeFailure.modelDownloading => l10n.stickerMakerDownloading,
+          _ => l10n.stickerMakerNoSubject,
+        });
+      }
+    } catch (_) {
+      if (mounted) showCustomNotification(context, l10n.stickerMakerNoSubject);
+    } finally {
+      if (mounted) setState(() => _makingSticker = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -245,6 +274,14 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          if (StickerMaker.platformSupported)
+            IconButton(
+              tooltip: AppLocalizations.of(context)!.stickerMakerAction,
+              onPressed: _makingSticker ? null : _makeSticker,
+              icon: _makingSticker
+                  ? const SmallSpinner(size: 20, color: Colors.white)
+                  : const Icon(Symbols.auto_awesome),
+            ),
           Padding(
             padding: const EdgeInsets.only(right: 14),
             child: PreviewSelectionToggle(

@@ -363,6 +363,8 @@ class SelectableMessageRow extends StatefulWidget {
   final VoidCallback? onRemind;
   final bool Function()? hasReminder;
   final VoidCallback? onCopyLink;
+  final VoidCallback? onTranslate;
+  final bool Function()? isTranslated;
   final bool Function() isPinned;
   final Future<List<MessageReader>> Function()? loadReadBy;
   final void Function(int userId)? onReaderTap;
@@ -401,6 +403,8 @@ class SelectableMessageRow extends StatefulWidget {
     this.onRemind,
     this.hasReminder,
     this.onCopyLink,
+    this.onTranslate,
+    this.isTranslated,
     required this.isPinned,
     this.loadReadBy,
     this.onReaderTap,
@@ -489,6 +493,8 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       onRemind: widget.onRemind,
       hasReminder: widget.hasReminder?.call() ?? false,
       onCopyLink: widget.onCopyLink,
+      onTranslate: widget.onTranslate,
+      isTranslated: widget.isTranslated?.call() ?? false,
       isPinned: _isPinnedNow(),
       onReact: _reactionsOpen || _selectedReaction != null
           ? widget.onReact
@@ -611,6 +617,8 @@ class _SelectableMessageRowState extends State<SelectableMessageRow> {
       onRemind: widget.onRemind,
       hasReminder: widget.hasReminder?.call() ?? false,
       onCopyLink: widget.onCopyLink,
+      onTranslate: widget.onTranslate,
+      isTranslated: widget.isTranslated?.call() ?? false,
       isPinned: _isPinnedNow(),
       onDispose: controller.dispose,
     );

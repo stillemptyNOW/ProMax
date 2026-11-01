@@ -1,9 +1,12 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 
+import '../../core/config/app_performance.dart';
 import '../../core/config/promax_atmosphere.dart';
+import 'ambient_clock.dart';
 
 @immutable
 class AtmosphereStyle {
@@ -36,6 +39,16 @@ class AtmosphereStyle {
   final double wind;
   final int color;
 
+  AtmosphereStyle withBurstDefaults() => AtmosphereStyle(
+    effect: effect,
+    density: math.max(density, 1.6),
+    speed: speed,
+    size: size,
+    opacity: math.max(opacity, 0.85),
+    wind: wind,
+    color: color,
+  );
+
   @override
   bool operator ==(Object other) =>
       other is AtmosphereStyle &&
@@ -52,23 +65,10 @@ class AtmosphereStyle {
       Object.hash(effect, density, speed, size, opacity, wind, color);
 }
 
-class GlobalAtmosphereOverlay extends StatelessWidget {
-  const GlobalAtmosphereOverlay({super.key});
+class ChatAtmosphereLayer extends StatelessWidget {
+  const ChatAtmosphereLayer({super.key, required this.chatId});
 
-  @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: ProMaxAtmosphere.listenable,
-    builder: (context, _) {
-      if (!ProMaxAtmosphere.showsGlobally) return const SizedBox.shrink();
-      return AtmosphereLayer(
-        style: AtmosphereStyle.fromSettings(ProMaxAtmosphere.effect.value),
-      );
-    },
-  );
-}
-
-class ChatAtmosphereOverlay extends StatelessWidget {
-  const ChatAtmosphereOverlay({super.key, required this.chatId});
+  static const Duration burstDuration = Duration(milliseconds: 4200);
 
   final int chatId;
 
@@ -82,38 +82,26 @@ class ChatAtmosphereOverlay extends StatelessWidget {
     builder: (context, _) {
       final effect = ProMaxAtmosphere.chatLayerEffect(chatId);
       final burst = ProMaxAtmosphere.burst.value;
-      final showsAmbient =
-          effect != AtmosphereEffect.none &&
-          !(ProMaxAtmosphere.showsGlobally &&
-              ProMaxAtmosphere.chatEffect(chatId) == null);
+      final bursting = burst != null && burst.chatId == chatId;
+      if (effect == AtmosphereEffect.none && !bursting) {
+        return const SizedBox.shrink();
+      }
       return Stack(
         fit: StackFit.expand,
         children: [
-          if (showsAmbient)
+          if (effect != AtmosphereEffect.none)
             AtmosphereLayer(style: AtmosphereStyle.fromSettings(effect)),
-          if (burst != null && burst.chatId == chatId)
+          if (bursting)
             AtmosphereLayer(
               key: ValueKey('burst_${burst.serial}'),
               style: AtmosphereStyle.fromSettings(
                 burst.effect,
               ).withBurstDefaults(),
-              burst: const Duration(milliseconds: 4200),
+              burst: burstDuration,
             ),
         ],
       );
     },
-  );
-}
-
-extension on AtmosphereStyle {
-  AtmosphereStyle withBurstDefaults() => AtmosphereStyle(
-    effect: effect,
-    density: math.max(density, 1.6),
-    speed: speed,
-    size: size,
-    opacity: math.max(opacity, 0.85),
-    wind: wind,
-    color: color,
   );
 }
 
@@ -129,30 +117,64 @@ class AtmosphereLayer extends StatefulWidget {
 
 class _AtmosphereLayerState extends State<AtmosphereLayer>
     with SingleTickerProviderStateMixin {
-  late final Ticker _ticker = createTicker(_tick);
+  late final AmbientClock _clock = AmbientClock(
+    vsync: this,
+    onTick: _tick,
+    frameRate: AppPerformance.current.atmosphereFrameRate,
+  );
   final ValueNotifier<double> _seconds = ValueNotifier(0);
+  final AtmosphereField _field = AtmosphereField();
   bool _finished = false;
+  bool _frozen = false;
 
   @override
   void initState() {
     super.initState();
-    _ticker.start();
+    AppPerformance.budget.addListener(_onBudget);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _frozen = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    _syncClock();
+  }
+
+  @override
+  void didUpdateWidget(AtmosphereLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncClock();
+  }
+
+  void _onBudget() {
+    _clock.frameRate = AppPerformance.current.atmosphereFrameRate;
+    setState(() {});
+  }
+
+  void _syncClock() {
+    final animates =
+        !_finished && !_frozen && widget.style.effect != AtmosphereEffect.none;
+    if (animates) {
+      _clock.start();
+    } else {
+      _clock.stop();
+    }
   }
 
   void _tick(Duration elapsed) {
-    final seconds = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
     final burst = widget.burst;
     if (burst != null && elapsed >= burst) {
-      _ticker.stop();
+      _clock.stop();
       setState(() => _finished = true);
       return;
     }
-    _seconds.value = seconds;
+    _seconds.value = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
   }
 
   @override
   void dispose() {
-    _ticker.dispose();
+    AppPerformance.budget.removeListener(_onBudget);
+    _clock.dispose();
     _seconds.dispose();
     super.dispose();
   }
@@ -162,8 +184,7 @@ class _AtmosphereLayerState extends State<AtmosphereLayer>
     if (_finished || widget.style.effect == AtmosphereEffect.none) {
       return const SizedBox.shrink();
     }
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    if (reduceMotion && widget.burst != null) return const SizedBox.shrink();
+    if (_frozen && widget.burst != null) return const SizedBox.shrink();
     return IgnorePointer(
       child: RepaintBoundary(
         child: CustomPaint(
@@ -171,7 +192,9 @@ class _AtmosphereLayerState extends State<AtmosphereLayer>
           painter: AtmospherePainter(
             style: widget.style,
             seconds: _seconds,
-            frozen: reduceMotion,
+            field: _field,
+            budget: AppPerformance.current,
+            frozen: _frozen,
             burst: widget.burst,
           ),
         ),
@@ -199,20 +222,264 @@ class _Particle {
   final int tone;
 }
 
+@immutable
+class AtmosphereSprite {
+  const AtmosphereSprite(this.rect, this.extent);
+
+  final Rect rect;
+  final double extent;
+}
+
+class AtmosphereAtlas {
+  AtmosphereAtlas._(this.image, this.sprites);
+
+  static const int squashLevels = 4;
+  static const List<double> squashes = [1.0, 0.72, 0.45, 0.18];
+  static const double _shapeCell = 96;
+  static const double _shapeUnit = 86;
+
+  static AtmosphereAtlas? _instance;
+
+  static AtmosphereAtlas get instance => _instance ??= _build();
+
+  final ui.Image image;
+  final Map<String, AtmosphereSprite> sprites;
+
+  AtmosphereSprite operator [](String name) => sprites[name]!;
+
+  static String squashed(String shape, double squash) {
+    var best = 0;
+    for (var i = 1; i < squashLevels; i++) {
+      if ((squashes[i] - squash).abs() < (squashes[best] - squash).abs()) {
+        best = i;
+      }
+    }
+    return '$shape$best';
+  }
+
+  static AtmosphereAtlas _build() {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final sprites = <String, AtmosphereSprite>{};
+    final white = Paint()
+      ..isAntiAlias = true
+      ..color = Colors.white;
+    var x = 0.0;
+
+    Rect cell(double width, double height) {
+      final rect = Rect.fromLTWH(x, 0, width, height);
+      x += width + 2;
+      return rect;
+    }
+
+    final dot = cell(32, 32);
+    canvas.drawCircle(
+      dot.center,
+      12,
+      Paint()
+        ..color = Colors.white
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.2),
+    );
+    sprites['dot'] = AtmosphereSprite(dot, 26);
+
+    final glow = cell(64, 64);
+    canvas.drawCircle(
+      glow.center,
+      32,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          glow.center,
+          32,
+          const [Colors.white, Color(0x66FFFFFF), Color(0x00FFFFFF)],
+          const [0, 0.35, 1],
+        ),
+    );
+    sprites['glow'] = AtmosphereSprite(glow, 64);
+
+    final streak = cell(12, _shapeCell);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: streak.center, width: 6, height: _shapeUnit),
+        const Radius.circular(3),
+      ),
+      white,
+    );
+    sprites['streak'] = AtmosphereSprite(streak, _shapeUnit);
+
+    void shape(String name, Path path, double squash) {
+      final rect = cell(_shapeCell, _shapeCell);
+      canvas
+        ..save()
+        ..translate(rect.center.dx, rect.center.dy)
+        ..scale(_shapeUnit * squash, _shapeUnit)
+        ..drawPath(path, white)
+        ..restore();
+      sprites[name] = AtmosphereSprite(rect, _shapeUnit);
+    }
+
+    shape('heart', _heartPath, 1);
+    shape('sparkle', _sparklePath, 1);
+    for (var i = 0; i < squashLevels; i++) {
+      shape('leaf$i', _leafPath, squashes[i]);
+      shape('petal$i', _petalPath, squashes[i]);
+      final rect = cell(48, 48);
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: rect.center,
+          width: 40 * squashes[i],
+          height: 18,
+        ),
+        white,
+      );
+      sprites['confetti$i'] = AtmosphereSprite(rect, 40);
+    }
+
+    final ring = cell(_shapeCell, _shapeCell);
+    canvas
+      ..drawCircle(
+        ring.center,
+        40,
+        Paint()..color = Colors.white.withValues(alpha: 0.17),
+      )
+      ..drawCircle(
+        ring.center,
+        40,
+        Paint()
+          ..isAntiAlias = true
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 5
+          ..color = Colors.white,
+      );
+    sprites['ring'] = AtmosphereSprite(ring, 80);
+
+    final picture = recorder.endRecording();
+    final image = picture.toImageSync(x.ceil(), _shapeCell.ceil());
+    picture.dispose();
+    return AtmosphereAtlas._(image, Map.unmodifiable(sprites));
+  }
+
+  static final Path _heartPath = Path()
+    ..moveTo(0, 0.35)
+    ..cubicTo(-0.05, 0.3, -0.5, 0.05, -0.5, -0.2)
+    ..cubicTo(-0.5, -0.45, -0.2, -0.55, 0, -0.3)
+    ..cubicTo(0.2, -0.55, 0.5, -0.45, 0.5, -0.2)
+    ..cubicTo(0.5, 0.05, 0.05, 0.3, 0, 0.35)
+    ..close();
+
+  static final Path _leafPath = Path()
+    ..moveTo(0, -0.5)
+    ..quadraticBezierTo(0.42, -0.1, 0, 0.5)
+    ..quadraticBezierTo(-0.42, -0.1, 0, -0.5)
+    ..close();
+
+  static final Path _petalPath = Path()
+    ..moveTo(0, -0.45)
+    ..cubicTo(0.35, -0.35, 0.35, 0.3, 0, 0.45)
+    ..cubicTo(-0.35, 0.3, -0.35, -0.35, 0, -0.45)
+    ..close();
+
+  static final Path _sparklePath = Path()
+    ..moveTo(0, -0.5)
+    ..quadraticBezierTo(0.06, -0.06, 0.5, 0)
+    ..quadraticBezierTo(0.06, 0.06, 0, 0.5)
+    ..quadraticBezierTo(-0.06, 0.06, -0.5, 0)
+    ..quadraticBezierTo(-0.06, -0.06, 0, -0.5)
+    ..close();
+}
+
+class AtmosphereField {
+  static const int spritesPerParticle = 2;
+
+  List<_Particle> _particles = const [];
+  AtmosphereEffect? _effect;
+  int _count = -1;
+  Float32List _transforms = Float32List(0);
+  Float32List _rects = Float32List(0);
+  Int32List _colors = Int32List(0);
+  int _used = 0;
+
+  int get particleCount => _particles.length;
+
+  int get spriteCount => _used;
+
+  int get capacity => _colors.length;
+
+  void prepare(AtmosphereEffect effect, int count) {
+    if (_effect == effect && _count == count) return;
+    _effect = effect;
+    _count = count;
+    final random = math.Random(effect.index * 7919 + 17);
+    _particles = List.generate(count, (_) => _Particle(random));
+    final slots = count * spritesPerParticle + 1;
+    if (slots > _colors.length) {
+      _transforms = Float32List(slots * 4);
+      _rects = Float32List(slots * 4);
+      _colors = Int32List(slots);
+    }
+  }
+
+  void begin() => _used = 0;
+
+  void add(
+    AtmosphereSprite sprite,
+    double x,
+    double y,
+    double extent,
+    int argb, {
+    double rotation = 0,
+  }) {
+    if (_used >= _colors.length || extent <= 0 || (argb >>> 24) == 0) return;
+    final scale = extent / sprite.extent;
+    final scos = math.cos(rotation) * scale;
+    final ssin = math.sin(rotation) * scale;
+    final rect = sprite.rect;
+    final ax = rect.width / 2;
+    final ay = rect.height / 2;
+    final i = _used * 4;
+    _transforms[i] = scos;
+    _transforms[i + 1] = ssin;
+    _transforms[i + 2] = x - scos * ax + ssin * ay;
+    _transforms[i + 3] = y - ssin * ax - scos * ay;
+    _rects[i] = rect.left;
+    _rects[i + 1] = rect.top;
+    _rects[i + 2] = rect.right;
+    _rects[i + 3] = rect.bottom;
+    _colors[_used] = argb;
+    _used++;
+  }
+
+  void flush(Canvas canvas, ui.Image atlas, Paint paint) {
+    if (_used == 0) return;
+    canvas.drawRawAtlas(
+      atlas,
+      Float32List.sublistView(_transforms, 0, _used * 4),
+      Float32List.sublistView(_rects, 0, _used * 4),
+      Int32List.sublistView(_colors, 0, _used),
+      BlendMode.modulate,
+      null,
+      paint,
+    );
+  }
+}
+
 class AtmospherePainter extends CustomPainter {
   AtmospherePainter({
     required this.style,
     required this.seconds,
+    required this.field,
+    this.budget = EffectBudget.high,
     this.frozen = false,
     this.burst,
   }) : super(repaint: seconds);
 
   final AtmosphereStyle style;
   final ValueNotifier<double> seconds;
+  final AtmosphereField field;
+  final EffectBudget budget;
   final bool frozen;
   final Duration? burst;
 
-  static const Map<AtmosphereEffect, int> _baseCount = {
+  static const Map<AtmosphereEffect, int> baseCount = {
     AtmosphereEffect.snow: 70,
     AtmosphereEffect.rain: 90,
     AtmosphereEffect.stars: 60,
@@ -225,143 +492,90 @@ class AtmospherePainter extends CustomPainter {
     AtmosphereEffect.fireflies: 26,
   };
 
-  static const List<Color> _confettiPalette = [
-    Color(0xFFFF5D73),
-    Color(0xFFFFC23D),
-    Color(0xFF4FD1C5),
-    Color(0xFF7B5CFF),
-    Color(0xFF4F8EFF),
-    Color(0xFF7EE081),
+  static const List<int> _confettiPalette = [
+    0xFF5D73,
+    0xFFC23D,
+    0x4FD1C5,
+    0x7B5CFF,
+    0x4F8EFF,
+    0x7EE081,
   ];
-  static const List<Color> _leafPalette = [
-    Color(0xFFE8833A),
-    Color(0xFFD4572A),
-    Color(0xFFF2B33D),
-    Color(0xFFB5441F),
+  static const List<int> _leafPalette = [
+    0xE8833A,
+    0xD4572A,
+    0xF2B33D,
+    0xB5441F,
   ];
-  static const List<Color> _sakuraPalette = [
-    Color(0xFFFFC1D9),
-    Color(0xFFFFA8C8),
-    Color(0xFFFFD9E6),
-  ];
-  static const List<Color> _heartPalette = [
-    Color(0xFFFF4D6D),
-    Color(0xFFFF8FAB),
-    Color(0xFFE5383B),
-  ];
+  static const List<int> _sakuraPalette = [0xFFC1D9, 0xFFA8C8, 0xFFD9E6];
+  static const List<int> _heartPalette = [0xFF4D6D, 0xFF8FAB, 0xE5383B];
 
-  List<_Particle> _particles = const [];
-  AtmosphereEffect? _preparedFor;
-  int _preparedCount = 0;
-
-  final Paint _fill = Paint()..isAntiAlias = true;
-  final Paint _glow = Paint()
+  static final Paint _atlasPaint = Paint()
     ..isAntiAlias = true
-    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-  final Paint _stroke = Paint()
+    ..filterQuality = FilterQuality.low;
+  static final Paint _trail = Paint()
     ..isAntiAlias = true
     ..style = PaintingStyle.stroke
     ..strokeCap = StrokeCap.round;
 
-  static final Path _heartPath = _buildHeart();
-  static final Path _leafPath = _buildLeaf();
-  static final Path _petalPath = _buildPetal();
-  static final Path _sparklePath = _buildSparkle();
+  int get _count =>
+      budget.particleCount(baseCount[style.effect] ?? 0, style.density);
 
-  static Path _buildHeart() => Path()
-    ..moveTo(0, 0.35)
-    ..cubicTo(-0.05, 0.3, -0.5, 0.05, -0.5, -0.2)
-    ..cubicTo(-0.5, -0.45, -0.2, -0.55, 0, -0.3)
-    ..cubicTo(0.2, -0.55, 0.5, -0.45, 0.5, -0.2)
-    ..cubicTo(0.5, 0.05, 0.05, 0.3, 0, 0.35)
-    ..close();
+  int _rgb(int fallback) =>
+      style.color == 0 ? fallback : style.color & 0xFFFFFF;
 
-  static Path _buildLeaf() => Path()
-    ..moveTo(0, -0.5)
-    ..quadraticBezierTo(0.42, -0.1, 0, 0.5)
-    ..quadraticBezierTo(-0.42, -0.1, 0, -0.5)
-    ..close();
-
-  static Path _buildPetal() => Path()
-    ..moveTo(0, -0.45)
-    ..cubicTo(0.35, -0.35, 0.35, 0.3, 0, 0.45)
-    ..cubicTo(-0.35, 0.3, -0.35, -0.35, 0, -0.45)
-    ..close();
-
-  static Path _buildSparkle() {
-    final path = Path()..moveTo(0, -0.5);
-    path
-      ..quadraticBezierTo(0.06, -0.06, 0.5, 0)
-      ..quadraticBezierTo(0.06, 0.06, 0, 0.5)
-      ..quadraticBezierTo(-0.06, 0.06, -0.5, 0)
-      ..quadraticBezierTo(-0.06, -0.06, 0, -0.5)
-      ..close();
-    return path;
-  }
-
-  int get _count {
-    final base = _baseCount[style.effect] ?? 0;
-    return (base * style.density).round().clamp(0, 320);
-  }
-
-  void _prepare() {
-    final count = _count;
-    if (_preparedFor == style.effect && _preparedCount == count) return;
-    _preparedFor = style.effect;
-    _preparedCount = count;
-    final random = math.Random(style.effect.index * 7919 + 17);
-    _particles = List.generate(count, (_) => _Particle(random));
-  }
-
-  Color _tint(Color fallback) =>
-      style.color == 0 ? fallback : Color(style.color);
-
-  Color _pick(List<Color> palette, _Particle particle) => style.color == 0
+  int _pick(List<int> palette, _Particle particle) => style.color == 0
       ? palette[particle.tone % palette.length]
-      : _tint(palette[0]);
+      : style.color & 0xFFFFFF;
 
-  double _wrap(double value) => value - value.floorToDouble();
+  static int _argb(int rgb, double alpha) {
+    final a = (alpha.clamp(0.0, 1.0) * 255).round();
+    return (a << 24) | (rgb & 0xFFFFFF);
+  }
+
+  static double _wrap(double value) => value - value.floorToDouble();
+
+  static double _noise(double seed) {
+    final v = math.sin(seed * 12.9898) * 43758.5453;
+    return v - v.floorToDouble();
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty || style.effect == AtmosphereEffect.none) return;
-    _prepare();
+    field.prepare(style.effect, _count);
     final t = frozen ? 0.0 : seconds.value * style.speed;
     final alpha = style.opacity * _burstFade();
     if (alpha <= 0) return;
     final unit = style.size * math.min(size.width, size.height) / 400;
+    final atlas = AtmosphereAtlas.instance;
+    field.begin();
     switch (style.effect) {
       case AtmosphereEffect.none:
         return;
       case AtmosphereEffect.snow:
-        _paintSnow(canvas, size, t, unit, alpha);
+        _snow(atlas, size, t, unit, alpha);
       case AtmosphereEffect.rain:
-        _paintRain(canvas, size, t, unit, alpha);
+        _rain(atlas, size, t, unit, alpha);
       case AtmosphereEffect.stars:
-        _paintStars(canvas, size, t, unit, alpha);
+        _stars(atlas, size, t, unit, alpha);
       case AtmosphereEffect.leaves:
-        _paintFalling(canvas, size, t, unit, alpha, _leafPath, _leafPalette, 9);
+        _falling(atlas, size, t, unit, alpha, 'leaf', _leafPalette, 9);
       case AtmosphereEffect.sakura:
-        _paintFalling(
-          canvas,
-          size,
-          t,
-          unit,
-          alpha,
-          _petalPath,
-          _sakuraPalette,
-          7,
-        );
+        _falling(atlas, size, t, unit, alpha, 'petal', _sakuraPalette, 7);
       case AtmosphereEffect.hearts:
-        _paintHearts(canvas, size, t, unit, alpha);
+        _hearts(atlas, size, t, unit, alpha);
       case AtmosphereEffect.confetti:
-        _paintConfetti(canvas, size, t, unit, alpha);
+        _confetti(atlas, size, t, unit, alpha);
       case AtmosphereEffect.sparkles:
-        _paintSparkles(canvas, size, t, unit, alpha);
+        _sparkles(atlas, size, t, unit, alpha);
       case AtmosphereEffect.bubbles:
-        _paintBubbles(canvas, size, t, unit, alpha);
+        _bubbles(atlas, size, t, unit, alpha);
       case AtmosphereEffect.fireflies:
-        _paintFireflies(canvas, size, t, unit, alpha);
+        _fireflies(atlas, size, t, unit, alpha);
+    }
+    field.flush(canvas, atlas.image, _atlasPaint);
+    if (style.effect == AtmosphereEffect.stars) {
+      _shootingStar(canvas, size, t, unit, alpha);
     }
   }
 
@@ -374,239 +588,263 @@ class AtmospherePainter extends CustomPainter {
     return 1;
   }
 
-  double _burstProgress(_Particle particle, double rate) {
-    if (burst == null) return _wrap(particle.y + seconds.value * rate);
-    return particle.y * -0.6 + seconds.value * rate * 1.4;
+  double _progress(_Particle particle, double t, double ambient, double rate) {
+    if (burst == null) return _wrap(particle.y + t * ambient * particle.speed);
+    return particle.y * -0.6 + seconds.value * rate * particle.speed * 1.4;
   }
 
-  void _paintSnow(Canvas canvas, Size size, double t, double unit, double a) {
-    _fill.color = _tint(Colors.white).withValues(alpha: a * 0.85);
-    for (final p in _particles) {
+  void _snow(
+    AtmosphereAtlas atlas,
+    Size size,
+    double t,
+    double unit,
+    double a,
+  ) {
+    final dot = atlas['dot'];
+    final color = _argb(_rgb(0xFFFFFF), a * 0.85);
+    for (final p in field._particles) {
       final progress = _wrap(p.y + t * 0.05 * p.speed);
       final dy = progress * (size.height + 20) - 10;
       final sway = math.sin(t * 0.7 + p.phase) * 14 * unit;
       final dx = _wrap(p.x + style.wind * progress * 0.25) * size.width + sway;
-      canvas.drawCircle(Offset(dx, dy), (1.1 + p.scale * 1.6) * unit, _fill);
+      field.add(dot, dx, dy, 2 * (1.1 + p.scale * 1.6) * unit, color);
     }
   }
 
-  void _paintRain(Canvas canvas, Size size, double t, double unit, double a) {
-    _stroke
-      ..color = _tint(const Color(0xFFBFD7FF)).withValues(alpha: a * 0.55)
-      ..strokeWidth = 1.1 * unit;
+  void _rain(
+    AtmosphereAtlas atlas,
+    Size size,
+    double t,
+    double unit,
+    double a,
+  ) {
+    final streak = atlas['streak'];
+    final color = _argb(_rgb(0xBFD7FF), a * 0.55);
     final slant = style.wind * 10 * unit - 3 * unit;
-    for (final p in _particles) {
+    for (final p in field._particles) {
       final progress = _wrap(p.y + t * 0.75 * p.speed);
       final dy = progress * (size.height + 40) - 20;
       final dx = _wrap(p.x + style.wind * progress * 0.2) * size.width;
       final length = (10 + p.scale * 12) * unit;
-      canvas.drawLine(Offset(dx, dy), Offset(dx + slant, dy + length), _stroke);
+      field.add(
+        streak,
+        dx + slant / 2,
+        dy + length / 2,
+        math.sqrt(slant * slant + length * length),
+        color,
+        rotation: math.atan2(-slant, length),
+      );
     }
   }
 
-  void _paintStars(Canvas canvas, Size size, double t, double unit, double a) {
-    final base = _tint(const Color(0xFFFFF6D8));
-    for (final p in _particles) {
+  void _stars(
+    AtmosphereAtlas atlas,
+    Size size,
+    double t,
+    double unit,
+    double a,
+  ) {
+    final glow = atlas['glow'];
+    final dot = atlas['dot'];
+    final rgb = _rgb(0xFFF6D8);
+    for (final p in field._particles) {
       final twinkle =
           0.35 + 0.65 * (0.5 + 0.5 * math.sin(t * 1.6 * p.speed + p.phase));
-      final center = Offset(p.x * size.width, p.y * size.height);
+      final cx = p.x * size.width;
+      final cy = p.y * size.height;
       final radius = (0.7 + p.scale * 1.1) * unit;
-      _glow.color = base.withValues(alpha: a * twinkle * 0.45);
-      canvas.drawCircle(center, radius * 2.2, _glow);
-      _fill.color = base.withValues(alpha: a * twinkle);
-      canvas.drawCircle(center, radius, _fill);
-    }
-    final cycle = 7.0;
-    final shot = t % cycle;
-    if (shot < 0.9) {
-      final lane = ((t / cycle).floor() * 0.37) % 1;
-      final progress = shot / 0.9;
-      final start = Offset(
-        size.width * (0.15 + lane * 0.6),
-        size.height * 0.08,
-      );
-      final head = start + Offset(progress * 180 * unit, progress * 90 * unit);
-      final tail = head - Offset(46 * unit, 23 * unit);
-      _stroke
-        ..strokeWidth = 1.6 * unit
-        ..shader = LinearGradient(
-          colors: [
-            base.withValues(alpha: 0),
-            base.withValues(alpha: a),
-          ],
-        ).createShader(Rect.fromPoints(tail, head));
-      canvas.drawLine(tail, head, _stroke);
-      _stroke.shader = null;
+      field
+        ..add(glow, cx, cy, radius * 4.4 + 12, _argb(rgb, a * twinkle * 0.45))
+        ..add(dot, cx, cy, radius * 2, _argb(rgb, a * twinkle));
     }
   }
 
-  void _paintFalling(
+  void _shootingStar(
     Canvas canvas,
     Size size,
     double t,
     double unit,
     double a,
-    Path shape,
-    List<Color> palette,
+  ) {
+    const cycle = 7.0;
+    final shot = t % cycle;
+    if (shot >= 0.9) return;
+    final lane = ((t / cycle).floor() * 0.37) % 1;
+    final progress = shot / 0.9;
+    final start = Offset(size.width * (0.15 + lane * 0.6), size.height * 0.08);
+    final head = start + Offset(progress * 180 * unit, progress * 90 * unit);
+    final tail = head - Offset(46 * unit, 23 * unit);
+    final base = Color(_argb(_rgb(0xFFF6D8), 1));
+    _trail
+      ..strokeWidth = 1.6 * unit
+      ..shader = ui.Gradient.linear(tail, head, [
+        base.withValues(alpha: 0),
+        base.withValues(alpha: a),
+      ]);
+    canvas.drawLine(tail, head, _trail);
+    _trail.shader = null;
+  }
+
+  void _falling(
+    AtmosphereAtlas atlas,
+    Size size,
+    double t,
+    double unit,
+    double a,
+    String shape,
+    List<int> palette,
     double dimension,
   ) {
-    for (final p in _particles) {
-      final progress = burst == null
-          ? _wrap(p.y + t * 0.035 * p.speed)
-          : _burstProgress(p, 0.18 * p.speed);
+    for (final p in field._particles) {
+      final progress = _progress(p, t, 0.035, 0.18);
       if (progress > 1.1) continue;
       final dy = progress * (size.height + 40) - 20;
       final sway = math.sin(t * 0.9 + p.phase) * 30 * unit;
       final dx = _wrap(p.x + style.wind * progress * 0.3) * size.width + sway;
       final extent = dimension * (0.7 + p.scale) * unit * 1.6;
-      canvas.save();
-      canvas.translate(dx, dy);
-      canvas.rotate(t * p.spin * 0.6 + p.phase);
-      canvas.scale(
-        extent * (0.35 + 0.65 * math.cos(t * 1.3 + p.phase).abs()),
+      final squash = 0.35 + 0.65 * math.cos(t * 1.3 + p.phase).abs();
+      field.add(
+        atlas[AtmosphereAtlas.squashed(shape, squash)],
+        dx,
+        dy,
         extent,
+        _argb(_pick(palette, p), a * 0.9),
+        rotation: t * p.spin * 0.6 + p.phase,
       );
-      _fill.color = _pick(palette, p).withValues(alpha: a * 0.9);
-      canvas.drawPath(shape, _fill);
-      canvas.restore();
     }
   }
 
-  void _paintHearts(Canvas canvas, Size size, double t, double unit, double a) {
-    for (final p in _particles) {
-      final progress = burst == null
-          ? _wrap(p.y + t * 0.04 * p.speed)
-          : _burstProgress(p, 0.22 * p.speed);
+  void _hearts(
+    AtmosphereAtlas atlas,
+    Size size,
+    double t,
+    double unit,
+    double a,
+  ) {
+    final heart = atlas['heart'];
+    for (final p in field._particles) {
+      final progress = _progress(p, t, 0.04, 0.22);
       if (progress > 1.1) continue;
       final dy = size.height + 20 - progress * (size.height + 40);
       final dx =
           _wrap(p.x + style.wind * progress * 0.2) * size.width +
           math.sin(t * 1.2 + p.phase) * 18 * unit;
-      final extent = (12 + p.scale * 12) * unit;
       final fade = progress > 0.75 ? (1 - progress) / 0.25 : 1.0;
-      canvas.save();
-      canvas.translate(dx, dy);
-      canvas.rotate(math.sin(t + p.phase) * 0.25);
-      canvas.scale(extent);
-      _fill.color = _pick(
-        _heartPalette,
-        p,
-      ).withValues(alpha: (a * fade).clamp(0.0, 1.0).toDouble());
-      canvas.drawPath(_heartPath, _fill);
-      canvas.restore();
+      field.add(
+        heart,
+        dx,
+        dy,
+        (12 + p.scale * 12) * unit,
+        _argb(_pick(_heartPalette, p), a * fade),
+        rotation: math.sin(t + p.phase) * 0.25,
+      );
     }
   }
 
-  void _paintConfetti(
-    Canvas canvas,
+  void _confetti(
+    AtmosphereAtlas atlas,
     Size size,
     double t,
     double unit,
     double a,
   ) {
-    for (final p in _particles) {
-      final progress = burst == null
-          ? _wrap(p.y + t * 0.06 * p.speed)
-          : _burstProgress(p, 0.3 * p.speed);
+    for (final p in field._particles) {
+      final progress = _progress(p, t, 0.06, 0.3);
       if (progress > 1.1) continue;
       final dy = progress * (size.height + 40) - 20;
       final dx =
           _wrap(p.x + style.wind * progress * 0.3) * size.width +
           math.sin(t * 2 + p.phase) * 12 * unit;
-      final width = (5 + p.scale * 4) * unit;
-      final height = width * 0.45;
-      canvas.save();
-      canvas.translate(dx, dy);
-      canvas.rotate(t * p.spin + p.phase);
-      canvas.scale(math.cos(t * 3 * p.speed + p.phase), 1);
-      _fill.color = _pick(_confettiPalette, p).withValues(alpha: a);
-      canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: width, height: height),
-        _fill,
+      final flip = math.cos(t * 3 * p.speed + p.phase).abs();
+      field.add(
+        atlas[AtmosphereAtlas.squashed('confetti', flip)],
+        dx,
+        dy,
+        (5 + p.scale * 4) * unit,
+        _argb(_pick(_confettiPalette, p), a),
+        rotation: t * p.spin + p.phase,
       );
-      canvas.restore();
     }
   }
 
-  void _paintSparkles(
-    Canvas canvas,
+  void _sparkles(
+    AtmosphereAtlas atlas,
     Size size,
     double t,
     double unit,
     double a,
   ) {
-    for (final p in _particles) {
+    final sparkle = atlas['sparkle'];
+    final rgb = _rgb(0xFFF1B8);
+    for (final p in field._particles) {
       final pulse = math.sin(t * 1.4 * p.speed + p.phase);
       if (pulse <= 0) continue;
       final cycle = ((t * 1.4 * p.speed + p.phase) / (math.pi * 2)).floor();
-      final jitter = math.Random(p.tone + cycle * 31);
-      final center = Offset(
-        _wrap(p.x + jitter.nextDouble() * 0.3) * size.width,
-        _wrap(p.y + jitter.nextDouble() * 0.3) * size.height,
+      final seed = (p.tone + cycle * 31).toDouble();
+      field.add(
+        sparkle,
+        _wrap(p.x + _noise(seed) * 0.3) * size.width,
+        _wrap(p.y + _noise(seed + 0.5) * 0.3) * size.height,
+        (8 + p.scale * 10) * unit * pulse,
+        _argb(rgb, a * pulse),
+        rotation: t * 0.4 + p.phase,
       );
-      final extent = (8 + p.scale * 10) * unit * pulse;
-      canvas.save();
-      canvas.translate(center.dx, center.dy);
-      canvas.rotate(t * 0.4 + p.phase);
-      canvas.scale(extent);
-      _fill.color = _tint(const Color(0xFFFFF1B8)).withValues(alpha: a * pulse);
-      canvas.drawPath(_sparklePath, _fill);
-      canvas.restore();
     }
   }
 
-  void _paintBubbles(
-    Canvas canvas,
+  void _bubbles(
+    AtmosphereAtlas atlas,
     Size size,
     double t,
     double unit,
     double a,
   ) {
-    final base = _tint(const Color(0xFFBDE6FF));
-    for (final p in _particles) {
+    final ring = atlas['ring'];
+    final dot = atlas['dot'];
+    final color = _argb(_rgb(0xBDE6FF), a * 0.7);
+    final shine = _argb(0xFFFFFF, a * 0.7);
+    for (final p in field._particles) {
       final progress = _wrap(p.y + t * 0.03 * p.speed);
       final dy = size.height + 20 - progress * (size.height + 40);
       final dx =
           _wrap(p.x + style.wind * progress * 0.2) * size.width +
           math.sin(t * 0.8 + p.phase) * 16 * unit;
       final radius = (4 + p.scale * 9) * unit;
-      _stroke
-        ..strokeWidth = 1.1 * unit
-        ..color = base.withValues(alpha: a * 0.7);
-      canvas.drawCircle(Offset(dx, dy), radius, _stroke);
-      _fill.color = base.withValues(alpha: a * 0.12);
-      canvas.drawCircle(Offset(dx, dy), radius, _fill);
-      _fill.color = Colors.white.withValues(alpha: a * 0.7);
-      canvas.drawCircle(
-        Offset(dx - radius * 0.35, dy - radius * 0.35),
-        radius * 0.18,
-        _fill,
-      );
+      field
+        ..add(ring, dx, dy, radius * 2, color)
+        ..add(
+          dot,
+          dx - radius * 0.35,
+          dy - radius * 0.35,
+          radius * 0.36,
+          shine,
+        );
     }
   }
 
-  void _paintFireflies(
-    Canvas canvas,
+  void _fireflies(
+    AtmosphereAtlas atlas,
     Size size,
     double t,
     double unit,
     double a,
   ) {
-    final base = _tint(const Color(0xFFE6FF7A));
-    for (final p in _particles) {
+    final glow = atlas['glow'];
+    final dot = atlas['dot'];
+    final rgb = _rgb(0xE6FF7A);
+    for (final p in field._particles) {
       final dx =
           _wrap(p.x + math.sin(t * 0.25 * p.speed + p.phase) * 0.06) *
           size.width;
       final dy =
           _wrap(p.y + math.cos(t * 0.2 * p.speed + p.phase * 1.3) * 0.05) *
           size.height;
-      final glow =
+      final light =
           0.25 + 0.75 * (0.5 + 0.5 * math.sin(t * 2.2 * p.speed + p.phase));
       final radius = (1.6 + p.scale * 1.4) * unit;
-      _glow.color = base.withValues(alpha: a * glow * 0.5);
-      canvas.drawCircle(Offset(dx, dy), radius * 3.2, _glow);
-      _fill.color = base.withValues(alpha: a * glow);
-      canvas.drawCircle(Offset(dx, dy), radius, _fill);
+      field
+        ..add(glow, dx, dy, radius * 6.4 + 12, _argb(rgb, a * light * 0.5))
+        ..add(dot, dx, dy, radius * 2, _argb(rgb, a * light));
     }
   }
 
@@ -614,5 +852,7 @@ class AtmospherePainter extends CustomPainter {
   bool shouldRepaint(covariant AtmospherePainter oldDelegate) =>
       oldDelegate.style != style ||
       oldDelegate.frozen != frozen ||
+      oldDelegate.budget != budget ||
+      !identical(oldDelegate.field, field) ||
       oldDelegate.seconds != seconds;
 }

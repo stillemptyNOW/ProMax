@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -51,10 +52,17 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
 
     private val channelName = "io.github.stillemptynow.promax/vpn_bypass"
     private val iconPackage = MainActivity::class.java.name.substringBeforeLast('.')
-    private val iconComponents = mapOf(
-        "MainActivity" to "$iconPackage.MainActivity",
-    )
+    private val iconComponents = listOf(
+        "IconDefault",
+        "IconLight",
+        "IconAurora",
+        "IconSunset",
+        "IconGlass",
+        "IconHalloween",
+        "IconNewYear",
+    ).associateWith { "$iconPackage.$it" }
 
+    private var secureForRecents = false
     private var nfcAdapter: NfcAdapter? = null
     private var nfcEvents: EventChannel.EventSink? = null
     private val nfcHandler = Handler(Looper.getMainLooper())
@@ -71,6 +79,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
     private var pendingPeer: NfcExchange.Peer? = null
     @Volatile private var exchangingEmitted = false
 
+    private val callPip = CallPip(this)
     private var pendingCall: Map<String, Any?>? = null
     private var pendingChat: Long = 0L
     private var pendingShare: Map<String, Any?>? = null
@@ -94,25 +103,40 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
             NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK
     }
 
-    private fun applyIcon(name: String) {
+    private fun applyIcon(name: String, closeApp: Boolean) {
         val pm = packageManager
+        val target = iconComponents.getValue(name)
+        pm.setComponentEnabledSetting(
+            ComponentName(packageName, target),
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+            PackageManager.DONT_KILL_APP,
+        )
         for ((alias, className) in iconComponents) {
-            val component = ComponentName(packageName, className)
-            val state = if (alias == name) {
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            }
+            if (alias == name) continue
             pm.setComponentEnabledSetting(
-                component,
-                state,
+                ComponentName(packageName, className),
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP,
             )
         }
-        iconComponents[name]?.let { LauncherBadge.reapply(this, it) }
-        Handler(Looper.getMainLooper()).postDelayed({
-            finishAndRemoveTask()
-        }, 250L)
+        LauncherBadge.reapply(this, target)
+        if (closeApp) {
+            Handler(Looper.getMainLooper()).postDelayed({
+                finishAndRemoveTask()
+            }, 250L)
+        }
+    }
+
+    private fun appliedIcon(): String? {
+        val pm = packageManager
+        val states = iconComponents.mapValues { (_, className) ->
+            pm.getComponentEnabledSetting(ComponentName(packageName, className))
+        }
+        states.entries
+            .firstOrNull { it.value == PackageManager.COMPONENT_ENABLED_STATE_ENABLED }
+            ?.let { return it.key }
+        val fallback = iconComponents.keys.first()
+        return if (states[fallback] == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT) fallback else null
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -175,6 +199,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
             "io.github.stillemptynow.promax/app_icon",
         ).setMethodCallHandler { call, result ->
             when (call.method) {
+                "getAppIcon" -> result.success(appliedIcon())
                 "setAppIcon" -> {
                     val name = call.argument<String>("name")
                     if (name == null || !iconComponents.containsKey(name)) {
@@ -182,7 +207,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
                         return@setMethodCallHandler
                     }
                     try {
-                        applyIcon(name)
+                        applyIcon(name, call.argument<Boolean>("closeApp") ?: true)
                         result.success(null)
                     } catch (e: Exception) {
                         result.error("APPLY_FAILED", e.message, null)
@@ -338,13 +363,43 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
                     setKeepAwake(call.argument<Boolean>("enabled") == true)
                     result.success(null)
                 }
+                "setMaxRefreshRate" -> {
+                    DisplayPrefs.maxRefreshRate =
+                        call.argument<Number>("hz")?.toFloat() ?: 0f
+                    runOnUiThread { requestHighRefreshRate() }
+                    result.success(null)
+                }
+                "setRecentsPrivacy" -> {
+                    DisplayPrefs.hideInRecents = call.argument<Boolean>("enabled") == true
+                    runOnUiThread { applyRecentsPrivacy() }
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         }
 
         ClipboardMedia.attach(flutterEngine, this)
 
+        OnDeviceTranslation.attach(flutterEngine, this)
+
+        SubjectLift.attach(flutterEngine, this)
+
         MediaExport.attach(flutterEngine, this)
+
+        callPip.attach(flutterEngine.dartExecutor.binaryMessenger)
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        callPip.onUserLeaveHint()
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration,
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        callPip.onModeChanged(isInPictureInPictureMode)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -358,6 +413,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
         super.onCreate(savedInstanceState)
         applyKeepAwake()
         requestHighRefreshRate()
+        applyRecentsPrivacy()
         intent?.let { if (it.hasExtra(CallConst.EXTRA_CALL)) stashCall(it, emit = false) }
         stashChatOpen(intent, emit = false)
         stashShare(intent, emit = false)
@@ -522,14 +578,30 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
             windowManager.defaultDisplay
         } ?: return
         val current = screen.mode
-        val fastest = screen.supportedModes
-            .filter {
-                it.physicalWidth == current.physicalWidth &&
-                    it.physicalHeight == current.physicalHeight
-            }
-            .maxByOrNull { it.refreshRate } ?: return
+        val sameSize = screen.supportedModes.filter {
+            it.physicalWidth == current.physicalWidth &&
+                it.physicalHeight == current.physicalHeight
+        }
+        val cap = DisplayPrefs.maxRefreshRate
+        val allowed = if (cap > 0f) {
+            sameSize.filter { it.refreshRate <= cap + 0.5f }
+        } else {
+            sameSize
+        }
+        val chosen = allowed.maxByOrNull { it.refreshRate }
+            ?: sameSize.minByOrNull { it.refreshRate }
+            ?: return
         window.attributes = window.attributes.apply {
-            preferredDisplayModeId = fastest.modeId
+            preferredDisplayModeId = chosen.modeId
+        }
+    }
+
+    private fun applyRecentsPrivacy() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setRecentsScreenshotEnabled(!DisplayPrefs.hideInRecents)
+        } else if (!DisplayPrefs.hideInRecents && secureForRecents) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            secureForRecents = false
         }
     }
 
@@ -839,6 +911,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         activityChannels().forEach { messenger.setMessageHandler(it, null) }
         nfcEvents = null
+        callPip.detach()
         EngineHost.unbindActivity(this)
         super.cleanUpFlutterEngine(flutterEngine)
     }
@@ -853,6 +926,8 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
         "io.github.stillemptynow.promax/video",
         "io.github.stillemptynow.promax/screen",
         MediaExport.CHANNEL,
+        CallPip.METHODS,
+        CallPip.EVENTS,
     )
 
     override fun onDestroy() {
@@ -863,12 +938,23 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
     override fun onResume() {
         super.onResume()
         AppState.resumed = true
+        if (secureForRecents) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            secureForRecents = false
+        }
         stashChatOpen(intent, emit = true)
     }
 
     override fun onPause() {
         super.onPause()
         AppState.resumed = false
+        if (DisplayPrefs.hideInRecents &&
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU &&
+            !secureForRecents
+        ) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            secureForRecents = true
+        }
         if (NfcExchange.active) {
             stopNfcExchange()
             nfcEvents?.success(mapOf("event" to "cancelled"))

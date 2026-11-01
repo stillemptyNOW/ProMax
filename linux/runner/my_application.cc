@@ -2,6 +2,7 @@
 
 #include <flutter_linux/flutter_linux.h>
 
+#include "app_icon_channel.h"
 #include "clipboard_media_channel.h"
 #include "flutter/generated_plugin_registrant.h"
 
@@ -82,6 +83,7 @@ static void my_application_activate(GApplication* application) {
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
   clipboard_media_channel_register(FL_PLUGIN_REGISTRY(view));
+  app_icon_channel_register(FL_PLUGIN_REGISTRY(view), window);
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }

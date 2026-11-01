@@ -1,3 +1,4 @@
+import 'package:promax/core/storage/notified_messages.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -13,12 +14,15 @@ import 'package:promax/core/protocol/opcode_map.dart';
 import 'package:promax/core/protocol/packet.dart';
 import 'package:promax/core/push/fkm_bridge.dart';
 import 'package:promax/core/push/fkm_controller.dart';
+import 'package:promax/core/push/notification_bridge.dart';
 import 'package:promax/core/storage/app_database.dart';
-import 'package:promax/core/storage/ignored_senders.dart';
 import 'package:promax/core/storage/token_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _fkm = MethodChannel('io.github.stillemptynow.promax/fkm');
+const _notifications = MethodChannel(
+  'io.github.stillemptynow.promax/notifications',
+);
 const _localNotifications = MethodChannel(
   'dexterous.com/flutter/local_notifications',
 );
@@ -51,9 +55,7 @@ class _PushApi extends Api {
 
 const int _me = 820001;
 const int _peer = 820333;
-const int _ignored = 820999;
 const int _dialog = _me ^ _peer;
-const int _ignoredDialog = _me ^ _ignored;
 
 Map<String, Object> _chat(int chatId, int peer) => {
   'id': chatId,
@@ -104,7 +106,6 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    IgnoredSenders.instance.reset();
     shown = [];
     _messenger.setMockMethodCallHandler(_fkm, (call) async {
       if (call.method == 'showMessage') {
@@ -137,7 +138,6 @@ void main() {
     await AppDatabase.saveProfile(ProfileData.stub(_me));
     await TokenStorage.setActiveAccount(_me);
     await chats.cacheServerChat(_chat(_dialog, _peer), _me);
-    await chats.cacheServerChat(_chat(_ignoredDialog, _ignored), _me);
     await controller.init(api);
   });
 
@@ -168,9 +168,76 @@ void main() {
     expect(shownIds(), ['6000']);
   });
 
-  test('an ignored sender never reaches the notification shade', () async {
-    await IgnoredSenders.instance.add(_me, _ignored);
-    await deliver(_push(_ignoredDialog, _ignored, 7000));
-    expect(shown, isEmpty);
+  test('the notification carries the "don\'t read" watermark so native drops '
+      'messages the user already saw from the chat history', () async {
+    await chats.markRead(api, _me, _dialog, '5000', 5000);
+
+    await deliver(_push(_dialog, _peer, 6000));
+
+    expect(shownIds(), ['6000']);
+    expect(shown.single['seen'], '5000');
+  });
+
+  test('a message is not notified again after the engine restarts', () async {
+    await deliver(_push(_dialog, _peer, 6000));
+    controller.dispose();
+    controller = FkmController.withBridge(
+      FkmBridge.forTesting(isSupported: true),
+    );
+    await controller.init(api);
+
+    await deliver(_push(_dialog, _peer, 6000));
+    await deliver(_push(_dialog, _peer, 7000));
+
+    expect(shownIds(), ['6000', '7000']);
+  });
+
+  test('reading part of a chat prunes the seen messages from its '
+      'notification', () async {
+    final calls = <MethodCall>[];
+    NotificationBridge.instance.debugNative = true;
+    _messenger.setMockMethodCallHandler(_notifications, (call) async {
+      calls.add(call);
+      return null;
+    });
+    addTearDown(() {
+      NotificationBridge.instance.debugNative = false;
+      _messenger.setMockMethodCallHandler(_notifications, null);
+    });
+
+    await chats.markReadUpTo(api, _me, _dialog, '4000', 4000, remaining: 1);
+    await pumpEventQueue();
+
+    expect(
+      [
+        for (final call in calls)
+          if (call.method == 'pruneChat') call.arguments,
+      ],
+      [
+        {'chatId': _dialog, 'seen': 4000},
+      ],
+    );
+  });
+
+  test('concurrent notices retain every claimed id across restarts', () async {
+    final ids = [for (var i = 0; i < 20; i++) 'synthetic-$i'];
+    final first = await Future.wait([
+      for (final id in ids) NotifiedMessages.claim(_me, _dialog, id),
+    ]);
+    expect(first, everyElement(isTrue));
+    final repeated = await Future.wait([
+      for (final id in ids) NotifiedMessages.claim(_me, _dialog, id),
+    ]);
+    expect(repeated, everyElement(isFalse));
+    await AppDatabase.saveProfile(ProfileData.stub(_me + 1));
+    expect(await NotifiedMessages.claim(_me + 1, _dialog, ids.first), isTrue);
+  });
+
+  test('simultaneous delivery claims one notification only', () async {
+    final claimed = await Future.wait([
+      for (var i = 0; i < 10; i++)
+        NotifiedMessages.claim(_me, _dialog, 'synthetic-one'),
+    ]);
+    expect(claimed.where((value) => value).length, 1);
   });
 }

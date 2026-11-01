@@ -1,3 +1,4 @@
+import '../config/promax_settings.dart';
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io' show Platform;
@@ -12,7 +13,6 @@ import '../../backend/modules/messages.dart';
 import '../../frontend/widgets/message_banner.dart';
 import '../../main.dart';
 import '../calls/call_controller.dart';
-import '../config/promax_settings.dart';
 import '../protocol/opcode_map.dart';
 import '../protocol/packet.dart';
 import '../push/notification_bridge.dart';
@@ -21,6 +21,7 @@ import '../push/push_service.dart';
 import '../push/quiet_hours.dart';
 import '../security/double_bottom.dart';
 import '../storage/app_database.dart';
+import '../storage/notified_messages.dart';
 import '../storage/token_storage.dart';
 import '../utils/logger.dart';
 import 'desktop_identity.dart';
@@ -165,6 +166,16 @@ class DesktopNotifier {
     if (facts == null) return;
     final notification = NotificationPolicy.compose(push, facts);
     if (notification == null) return;
+    final messageId = notification.messageId;
+    if (ProMaxSettings.antiRead.value &&
+        messageId != null &&
+        !await NotifiedMessages.claim(
+          notification.accountId,
+          notification.chatId,
+          messageId,
+        )) {
+      return;
+    }
 
     final presence = await DesktopWindow.instance.presence();
     final alert = NotificationPolicy.desktopAlert(
@@ -267,7 +278,6 @@ class DesktopNotifier {
     final accountId = await TokenStorage.getActiveAccountId();
     if (accountId == null) return;
     final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
-    if (ProMaxSettings.streamerMode.value) return;
     final text = NotificationPolicy.editedText(
       push.message,
       rawConfig == null ? null : PrivacyConfig.fromJson(rawConfig),

@@ -27,46 +27,17 @@ CachedChat _chat(
   admins: admins ?? const {},
 );
 
-bool _forAll(
-  CachedChat chat, {
-  bool erasePeerChosen = true,
-  bool? deleteForAll = true,
-}) => chatListDeletesForAll(
-  chatListDeleteKind(chat, _me),
-  chat,
-  myId: _me,
-  deleteForAll: deleteForAll,
-  erasePeerChosen: erasePeerChosen,
-);
+bool _forAll(CachedChat chat) =>
+    chatListDeletesForAll(chatListDeleteKind(chat, _me), chat, myId: _me);
 
 void main() {
   group('what the chat list may delete', () {
-    test('a dialog is deleted for both only when chosen', () {
+    test('a dialog is only ever deleted for me', () {
       final dialog = _chat('DIALOG');
 
       expect(chatListDeleteKind(dialog, _me), ChatListDeleteKind.personal);
-      expect(_forAll(dialog), isTrue);
-      expect(_forAll(dialog, erasePeerChosen: false), isFalse);
-    });
-
-    test('a dialog stays for the peer when the server forbids it', () {
-      final dialog = _chat('DIALOG');
-
-      expect(_forAll(dialog, deleteForAll: false), isFalse);
-      expect(
-        chatListAllowsForAll(dialog, myId: _me, deleteForAll: false),
-        isFalse,
-      );
-    });
-
-    test('a bot dialog is never deleted for the bot', () {
-      final bot = _chat('DIALOG', options: {'BOT'});
-
-      expect(chatListAllowsForAll(bot, myId: _me, deleteForAll: true), isFalse);
-      expect(_forAll(bot), isFalse);
-    });
-
-    test('saved messages are never deleted for anyone else', () {
+      expect(_forAll(dialog), isFalse);
+      expect(_forAll(_chat('DIALOG', options: {'BOT'})), isFalse);
       expect(_forAll(_chat('DIALOG', id: 0)), isFalse);
     });
 
@@ -76,8 +47,8 @@ void main() {
 
       expect(chatListDeleteKind(group, _me), ChatListDeleteKind.ownedGroup);
       expect(chatListDeleteKind(channel, _me), ChatListDeleteKind.ownedGroup);
-      expect(_forAll(group, erasePeerChosen: false), isTrue);
-      expect(_forAll(channel, erasePeerChosen: false), isFalse);
+      expect(_forAll(group), isTrue);
+      expect(_forAll(channel), isFalse);
     });
 
     test('an admin who is not the owner cannot delete for members', () {

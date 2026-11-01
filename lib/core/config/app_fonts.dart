@@ -54,7 +54,6 @@ class AppFonts {
   static const double maxScale = 1.35;
   static const double defaultScale = 1.0;
 
-  // #***! встроенные в assets, остальное качается с гугла
   static const List<AppFont> builtIn = [
     AppFont(id: 'system', label: 'Системный'),
     AppFont(
@@ -111,24 +110,4 @@ class AppFonts {
 
   static double clampScale(double scale) =>
       scale.clamp(minScale, maxScale).toDouble();
-
-  // #***! принимаем и имя и ссылку на гугл фонтс
-  static String? familyFromInput(String input) {
-    var value = input.trim();
-    if (value.isEmpty) return null;
-
-    final uri = Uri.tryParse(value);
-    if (uri != null && uri.host.contains('fonts.google.com')) {
-      final idx = uri.pathSegments.indexOf('specimen');
-      if (idx != -1 && idx + 1 < uri.pathSegments.length) {
-        value = uri.pathSegments[idx + 1];
-      }
-    }
-
-    try {
-      value = Uri.decodeComponent(value);
-    } catch (_) {}
-    value = value.replaceAll('+', ' ').trim();
-    return value.isEmpty ? null : value;
-  }
 }

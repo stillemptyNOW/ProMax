@@ -1,17 +1,34 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/storage/quick_replies_store.dart';
 import '../../widgets/connection_status.dart';
+import '../chats/chat/quick_reply_panel_controller.dart';
 import '../chats/quick_replies_sheet.dart';
 
-class QuickRepliesScreen extends StatelessWidget {
-  const QuickRepliesScreen({super.key});
+class QuickRepliesScreen extends StatefulWidget {
+  const QuickRepliesScreen({super.key, required this.accountId});
+
+  final int accountId;
+
+  @override
+  State<QuickRepliesScreen> createState() => _QuickRepliesScreenState();
+}
+
+class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
+  final QuickRepliesStore _store = QuickRepliesStore.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_store.ensureLoaded(widget.accountId));
+  }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final store = QuickRepliesStore.instance;
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: ConnectionTitleBar(
@@ -19,58 +36,30 @@ class QuickRepliesScreen extends StatelessWidget {
         backgroundColor: cs.surface,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => addQuickReply(context),
+        onPressed: () => addQuickReply(context, widget.accountId),
         icon: const Icon(Symbols.add),
         label: const Text('Шаблон'),
       ),
       body: SafeArea(
         top: false,
-        child: ValueListenableBuilder<List<String>>(
-          valueListenable: store.items,
-          builder: (context, items, _) {
-            if (items.isEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Symbols.quickreply,
-                        size: 56,
-                        color: cs.onSurfaceVariant,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Шаблонов пока нет',
-                        style: TextStyle(
-                          color: cs.onSurface,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Они вставляются в сообщение из меню ProMax в любом чате',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: cs.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
+        child: ListenableBuilder(
+          listenable: _store,
+          builder: (context, _) {
+            final items = _store.repliesFor(widget.accountId);
+            if (items.isEmpty) return const _EmptyQuickReplies();
             return ReorderableListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
               itemCount: items.length,
-              onReorderItem: store.move,
+              footer: const _TriggerHint(),
+              onReorderItem: (from, to) =>
+                  _store.move(widget.accountId, from, to),
               itemBuilder: (context, index) {
-                final text = items[index];
+                final reply = items[index];
                 return Padding(
-                  key: ValueKey(text),
+                  key: ValueKey(reply.id),
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Dismissible(
-                    key: ValueKey('dismiss-$text'),
+                    key: ValueKey('dismiss-${reply.id}'),
                     direction: DismissDirection.endToStart,
                     background: Container(
                       alignment: Alignment.centerRight,
@@ -81,29 +70,20 @@ class QuickRepliesScreen extends StatelessWidget {
                       ),
                       child: Icon(Symbols.delete, color: cs.onError),
                     ),
-                    onDismissed: (_) => store.removeAt(index),
+                    onDismissed: (_) =>
+                        _store.remove(widget.accountId, reply.id),
                     child: Material(
                       color: cs.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(18),
                       clipBehavior: Clip.antiAlias,
-                      child: ListTile(
-                        leading: const Icon(Symbols.quickreply),
-                        title: Text(
-                          text,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      child: QuickReplyTile(
+                        reply: reply,
                         trailing: ReorderableDragStartListener(
                           index: index,
                           child: const Icon(Symbols.drag_indicator),
                         ),
-                        onTap: () async {
-                          final edited = await editQuickReply(
-                            context,
-                            initial: text,
-                          );
-                          if (edited != null) await store.update(index, edited);
-                        },
+                        onTap: () =>
+                            changeQuickReply(context, widget.accountId, reply),
                       ),
                     ),
                   ),
@@ -112,6 +92,61 @@ class QuickRepliesScreen extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyQuickReplies extends StatelessWidget {
+  const _EmptyQuickReplies();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Symbols.quickreply, size: 56, color: cs.onSurfaceVariant),
+            const SizedBox(height: 12),
+            Text(
+              'Шаблонов пока нет',
+              style: TextStyle(
+                color: cs.onSurface,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Начни слово с «$quickReplyTrigger» в поле ввода, чтобы найти '
+              'шаблон по названию или тексту, или открой его из меню ProMax в чате',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: cs.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TriggerHint extends StatelessWidget {
+  const _TriggerHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+      child: Text(
+        'В поле ввода напиши «$quickReplyTrigger» и начало названия, например '
+        '«$quickReplyTriggerперезвоню», и выбери шаблон из списка: он '
+        'вставится туда, где стоит курсор. Шаблоны свои у каждого аккаунта. '
+        'Смахни влево, чтобы удалить, потяни за ручку, чтобы переставить.',
+        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
       ),
     );
   }

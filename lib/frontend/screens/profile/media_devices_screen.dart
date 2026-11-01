@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/calls/audio_devices.dart';
+import '../../../core/calls/call_pip.dart';
 import '../../../core/calls/camera_devices.dart';
 import '../../../core/config/app_camera.dart';
 import '../../../core/config/app_microphone.dart';
 import '../../../core/config/app_video_note_quality.dart';
+import '../../../core/config/call_pip_setting.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/connection_status.dart';
@@ -199,6 +201,24 @@ class _MediaDevicesScreenState extends State<MediaDevicesScreen> {
                 ],
               ),
             ),
+            if (CallPip.platformSupported) ...[
+              const SizedBox(height: 22),
+              _Section(title: l10n.mediaDevicesCalls, hint: null),
+              ValueListenableBuilder<bool>(
+                valueListenable: CallPipSetting.current,
+                builder: (context, enabled, _) => SettingsCard(
+                  children: [
+                    SettingsToggleTile(
+                      icon: Symbols.picture_in_picture_alt,
+                      label: l10n.mediaDevicesCallPip,
+                      subtitle: l10n.mediaDevicesCallPipHint,
+                      value: enabled,
+                      onChanged: CallPipSetting.save,
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (_videoNotesAvailable) ...[
               const SizedBox(height: 22),
               _Section(title: l10n.mediaDevicesVideoNotes, hint: null),

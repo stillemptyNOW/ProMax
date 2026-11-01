@@ -3260,12 +3260,6 @@ abstract class AppLocalizations {
   /// **'All messages in this chat will be deleted permanently.'**
   String get chatInfoClearHistoryMessage;
 
-  /// No description provided for @chatInfoClearHistoryForAll.
-  ///
-  /// In en, this message translates to:
-  /// **'For everyone'**
-  String get chatInfoClearHistoryForAll;
-
   /// No description provided for @chatInfoClearHistoryConfirm.
   ///
   /// In en, this message translates to:
@@ -4664,12 +4658,6 @@ abstract class AppLocalizations {
   /// **'Not all photos are accessible'**
   String get attachSheetLimitedAccessInfo;
 
-  /// No description provided for @attachSheetSectionInProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'Section under development'**
-  String get attachSheetSectionInProgress;
-
   /// No description provided for @attachSheetContact.
   ///
   /// In en, this message translates to:
@@ -4916,18 +4904,6 @@ abstract class AppLocalizations {
   /// **'Linear'**
   String get photoEditorBlurLinear;
 
-  /// No description provided for @fontSettingsInvalidInput.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a font link or name'**
-  String get fontSettingsInvalidInput;
-
-  /// No description provided for @fontSettingsFontNotFound.
-  ///
-  /// In en, this message translates to:
-  /// **'Font \"{name}\" not found or no network'**
-  String fontSettingsFontNotFound(String name);
-
   /// No description provided for @fontSettingsFontAdded.
   ///
   /// In en, this message translates to:
@@ -4943,26 +4919,8 @@ abstract class AppLocalizations {
   /// No description provided for @fontSettingsAddFontTitle.
   ///
   /// In en, this message translates to:
-  /// **'Add font'**
+  /// **'Add font from file'**
   String get fontSettingsAddFontTitle;
-
-  /// No description provided for @fontSettingsAddFontDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Paste a Google Fonts link or font name'**
-  String get fontSettingsAddFontDescription;
-
-  /// No description provided for @fontSettingsAddFontConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Add'**
-  String get fontSettingsAddFontConfirm;
-
-  /// No description provided for @fontSettingsPickFile.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose file'**
-  String get fontSettingsPickFile;
 
   /// No description provided for @fontSettingsPickFileHint.
   ///
@@ -4975,12 +4933,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is not a font file'**
   String get fontSettingsNotAFont;
-
-  /// No description provided for @fontSettingsCancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get fontSettingsCancel;
 
   /// No description provided for @fontSettingsTitle.
   ///
@@ -6620,6 +6572,24 @@ abstract class AppLocalizations {
   /// **'Otherwise a video message starts with the front camera'**
   String get mediaDevicesVideoNoteRearHint;
 
+  /// No description provided for @mediaDevicesCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get mediaDevicesCalls;
+
+  /// No description provided for @mediaDevicesCallPip.
+  ///
+  /// In en, this message translates to:
+  /// **'Picture in picture in video calls'**
+  String get mediaDevicesCallPip;
+
+  /// No description provided for @mediaDevicesCallPipHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The other person\'s video stays in a small window over other apps when you leave ProMax'**
+  String get mediaDevicesCallPipHint;
+
   /// No description provided for @chatPreviewMarkRead.
   ///
   /// In en, this message translates to:
@@ -6739,18 +6709,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Followers'**
   String get channelFollowersTitle;
-
-  /// No description provided for @channelStatsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Channel statistics'**
-  String get channelStatsTitle;
-
-  /// No description provided for @channelStatsUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Channel statistics aren\'t available yet'**
-  String get channelStatsUnavailable;
 
   /// No description provided for @adminsAdd.
   ///
@@ -7724,12 +7682,6 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to delete this message?'**
   String get chatScreenDeleteMessageConfirm;
 
-  /// No description provided for @chatScreenDeleteAlsoFor.
-  ///
-  /// In en, this message translates to:
-  /// **'Also delete for {name}'**
-  String chatScreenDeleteAlsoFor(String name);
-
   /// No description provided for @deleteMessagesFailedWithReason.
   ///
   /// In en, this message translates to:
@@ -7771,24 +7723,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again'**
   String get deleteChatTypeUnknown;
-
-  /// No description provided for @chatForAllNotAllowedHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The MAX server doesn\'t allow deleting this chat for the other person, so it will be deleted only for you.'**
-  String get chatForAllNotAllowedHint;
-
-  /// No description provided for @chatListForAllNotAllowedHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The MAX server doesn\'t allow deleting some of these chats for the other person, so they will be deleted only for you.'**
-  String get chatListForAllNotAllowedHint;
-
-  /// No description provided for @chatClearAlsoForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Also erase the history for the other person'**
-  String get chatClearAlsoForPeer;
 
   /// No description provided for @chatDeleteForAllMembers.
   ///
@@ -7832,113 +7766,11 @@ abstract class AppLocalizations {
   /// **'MAX didn\'t confirm deleting {count} messages. They are still in the chat'**
   String deleteMessagesNotConfirmed(int count);
 
-  /// No description provided for @deleteMessagesPeerOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX deletes the other person\'s messages only for you'**
-  String get deleteMessagesPeerOnlyForMe;
-
-  /// No description provided for @deleteMessagesOthersOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX deletes other people\'s messages only for you'**
-  String get deleteMessagesOthersOnlyForMe;
-
-  /// No description provided for @deleteMessagesTooOldForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Only your own messages younger than {age} can be deleted for the other person — a MAX server limit'**
-  String deleteMessagesTooOldForPeer(String age);
-
-  /// No description provided for @deleteMessagesTooOldForAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Only your own messages younger than {age} can be deleted for everyone — a MAX server limit'**
-  String deleteMessagesTooOldForAll(String age);
-
-  /// No description provided for @deleteMessagesScheduledOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'Scheduled messages are deleted for everyone only from the scheduled list'**
-  String get deleteMessagesScheduledOnlyForMe;
-
   /// No description provided for @deleteMessagesSelectionOnlyForMe.
   ///
   /// In en, this message translates to:
-  /// **'So the selected messages will be deleted only for you'**
+  /// **'Some of the selected messages cannot be deleted for members, so all of them will be deleted only for you'**
   String get deleteMessagesSelectionOnlyForMe;
-
-  /// No description provided for @deletionAgeLimitDays.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} day} other{{count} days}}'**
-  String deletionAgeLimitDays(int count);
-
-  /// No description provided for @deletionAgeLimitHours.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} hour} other{{count} hours}}'**
-  String deletionAgeLimitHours(int count);
-
-  /// No description provided for @deletionAgeLimitMinutes.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} minute} other{{count} minutes}}'**
-  String deletionAgeLimitMinutes(int count);
-
-  /// No description provided for @wipeForBothMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'ProMax will delete your messages younger than {age} for the other person and then ask MAX to delete the chat for both of you. This can\'t be undone.'**
-  String wipeForBothMessage(String age);
-
-  /// No description provided for @wipeOwnForPeerTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete my messages for the other person?'**
-  String get wipeOwnForPeerTitle;
-
-  /// No description provided for @wipeOwnForPeerAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete mine for the other person'**
-  String get wipeOwnForPeerAction;
-
-  /// No description provided for @wipeOwnForPeerMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'The MAX server doesn\'t allow deleting this chat for the other person. ProMax will delete your messages younger than {age} for them; the rest of the history stays with them and the chat is deleted only for you. This can\'t be undone.'**
-  String wipeOwnForPeerMessage(String age);
-
-  /// No description provided for @wipeSummaryForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Your messages deleted for the other person: {count}'**
-  String wipeSummaryForPeer(int count);
-
-  /// No description provided for @wipeSummaryNotConfirmed.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX didn\'t delete for the other person: {count}'**
-  String wipeSummaryNotConfirmed(int count);
-
-  /// No description provided for @wipeSummaryKeptForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Left with the other person (their messages and yours older than {age}): {count}'**
-  String wipeSummaryKeptForPeer(int count, String age);
-
-  /// No description provided for @wipeSummaryChatForAllAccepted.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX accepted the request to delete the chat for both of you'**
-  String get wipeSummaryChatForAllAccepted;
-
-  /// No description provided for @wipeSummaryChatRemovedForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'The chat was deleted only for you'**
-  String get wipeSummaryChatRemovedForMe;
 
   /// No description provided for @infoDeleteForAll.
   ///
@@ -7951,60 +7783,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your profile hasn\'t loaded yet, try again in a moment'**
   String get chatActionProfileUnavailable;
-
-  /// No description provided for @chatDeleteAlsoForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Also delete the chat for the other person — the history disappears for them too'**
-  String get chatDeleteAlsoForPeer;
-
-  /// No description provided for @wipeForBothAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete for both'**
-  String get wipeForBothAction;
-
-  /// No description provided for @wipeForBothTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete for both?'**
-  String get wipeForBothTitle;
-
-  /// No description provided for @wipeCollecting.
-  ///
-  /// In en, this message translates to:
-  /// **'Collecting the history…'**
-  String get wipeCollecting;
-
-  /// No description provided for @wipeFound.
-  ///
-  /// In en, this message translates to:
-  /// **'Messages found: {count}'**
-  String wipeFound(int count);
-
-  /// No description provided for @wipeDeleting.
-  ///
-  /// In en, this message translates to:
-  /// **'Deleted {done} of {total}'**
-  String wipeDeleting(int done, int total);
-
-  /// No description provided for @wipeSummaryHistoryIncomplete.
-  ///
-  /// In en, this message translates to:
-  /// **'The server didn\'t return the whole history'**
-  String get wipeSummaryHistoryIncomplete;
-
-  /// No description provided for @wipeSummaryInterrupted.
-  ///
-  /// In en, this message translates to:
-  /// **'The connection dropped and deleting stopped — try again'**
-  String get wipeSummaryInterrupted;
-
-  /// No description provided for @wipeSummaryChatKept.
-  ///
-  /// In en, this message translates to:
-  /// **'The chat wasn\'t deleted: {reason}'**
-  String wipeSummaryChatKept(String reason);
 
   /// No description provided for @messageDeletedMark.
   ///
@@ -10727,7 +10505,7 @@ abstract class AppLocalizations {
   /// No description provided for @appIconScreenUnsupported.
   ///
   /// In en, this message translates to:
-  /// **'Changing the icon is only available on Android and iOS'**
+  /// **'The app icon can\'t be changed in the web version'**
   String get appIconScreenUnsupported;
 
   /// No description provided for @appIconScreenChanged.
@@ -10757,14 +10535,68 @@ abstract class AppLocalizations {
   /// No description provided for @appIconScreenHint.
   ///
   /// In en, this message translates to:
-  /// **'On Android the app will close so the launcher picks up the new icon. On iOS it changes instantly with a system dialog.'**
+  /// **'iOS changes the icon right away and shows a system notice about it.'**
   String get appIconScreenHint;
 
-  /// No description provided for @appIconScreenOnlyMobile.
+  /// No description provided for @appIconScreenHintAndroid.
   ///
   /// In en, this message translates to:
-  /// **'Only available on Android and iOS'**
-  String get appIconScreenOnlyMobile;
+  /// **'The launcher needs a few seconds to pick up the new icon. ProMax closes, chat shortcuts are removed, and on some launchers you have to put the icon back on the home screen.'**
+  String get appIconScreenHintAndroid;
+
+  /// No description provided for @appIconScreenHintDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'The icon changes for the window, the taskbar and the Dock while ProMax runs and is restored on every launch. Start menu, desktop and Dock shortcuts keep the classic icon until ProMax starts.'**
+  String get appIconScreenHintDesktop;
+
+  /// No description provided for @appIconAndroidConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the icon?'**
+  String get appIconAndroidConfirmTitle;
+
+  /// No description provided for @appIconAndroidConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax will close and the launcher will update the icon in a few seconds. Chat shortcuts on the home screen are removed, and on some launchers you have to add the icon to the home screen again from the app list.'**
+  String get appIconAndroidConfirmMessage;
+
+  /// No description provided for @appIconAndroidConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get appIconAndroidConfirmAction;
+
+  /// No description provided for @appIconSeasonalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seasonal icon automatically'**
+  String get appIconSeasonalTitle;
+
+  /// No description provided for @appIconSeasonalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Halloween from October 24 to November 2, New Year from December 20 to January 10. Your own icon comes back afterwards.'**
+  String get appIconSeasonalSubtitle;
+
+  /// No description provided for @appIconSeasonalActive.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” is on until {date}'**
+  String appIconSeasonalActive(String name, DateTime date);
+
+  /// No description provided for @appIconSeasonalPending.
+  ///
+  /// In en, this message translates to:
+  /// **'The icon changes once you leave ProMax'**
+  String get appIconSeasonalPending;
+
+  /// No description provided for @appIconSeasonalManual.
+  ///
+  /// In en, this message translates to:
+  /// **'You picked the icon yourself, so it stays until the season ends'**
+  String get appIconSeasonalManual;
 
   /// No description provided for @password2faConnectionDropped.
   ///
@@ -13136,18 +12968,6 @@ abstract class AppLocalizations {
   /// **'The author won\'t know you watched the story'**
   String get proMaxHideStoryViewsHint;
 
-  /// No description provided for @proMaxStreamerMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Streamer mode'**
-  String get proMaxStreamerMode;
-
-  /// No description provided for @proMaxStreamerModeHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Blurs numbers, IDs and message previews, hides notification text'**
-  String get proMaxStreamerModeHint;
-
   /// No description provided for @proMaxSwitcherBlur.
   ///
   /// In en, this message translates to:
@@ -13157,8 +12977,74 @@ abstract class AppLocalizations {
   /// No description provided for @proMaxSwitcherBlurHint.
   ///
   /// In en, this message translates to:
-  /// **'Content is hidden in the iOS app switcher'**
+  /// **'Content is hidden in the app switcher and window previews on every platform'**
   String get proMaxSwitcherBlurHint;
+
+  /// No description provided for @performanceModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get performanceModeTitle;
+
+  /// No description provided for @performanceModeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance between effects and interface smoothness'**
+  String get performanceModeSubtitle;
+
+  /// No description provided for @performanceModeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get performanceModeAuto;
+
+  /// No description provided for @performanceModeSmooth.
+  ///
+  /// In en, this message translates to:
+  /// **'Smoothest'**
+  String get performanceModeSmooth;
+
+  /// No description provided for @performanceModeBeauty.
+  ///
+  /// In en, this message translates to:
+  /// **'Most beautiful'**
+  String get performanceModeBeauty;
+
+  /// No description provided for @performanceModeAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is {tier}: glass, backgrounds and atmosphere adapt to its power'**
+  String performanceModeAutoHint(Object tier);
+
+  /// No description provided for @performanceModeSmoothHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass without blur, static backgrounds, fewer atmosphere particles'**
+  String get performanceModeSmoothHint;
+
+  /// No description provided for @performanceModeBeautyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass refraction and uncapped animations even on weaker devices'**
+  String get performanceModeBeautyHint;
+
+  /// No description provided for @performanceTierLow.
+  ///
+  /// In en, this message translates to:
+  /// **'entry-level'**
+  String get performanceTierLow;
+
+  /// No description provided for @performanceTierMid.
+  ///
+  /// In en, this message translates to:
+  /// **'mid-range'**
+  String get performanceTierMid;
+
+  /// No description provided for @performanceTierHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'high-end'**
+  String get performanceTierHigh;
 
   /// No description provided for @proMaxSectionMessages.
   ///
@@ -13250,11 +13136,11 @@ abstract class AppLocalizations {
   /// **'Don\'t read'**
   String get proMaxAntiRead;
 
-  /// No description provided for @proMaxStreamer.
+  /// No description provided for @proMaxNoTypingShort.
   ///
   /// In en, this message translates to:
-  /// **'Streamer'**
-  String get proMaxStreamer;
+  /// **'No typing'**
+  String get proMaxNoTypingShort;
 
   /// No description provided for @proMaxOff.
   ///
@@ -13447,138 +13333,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That does not look like a phone number'**
   String get profilePhoneManualInvalid;
-
-  /// No description provided for @ignoredSendersTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Don\'t let them write to me'**
-  String get ignoredSendersTitle;
-
-  /// No description provided for @ignoredSendersHowItWorks.
-  ///
-  /// In en, this message translates to:
-  /// **'How it works'**
-  String get ignoredSendersHowItWorks;
-
-  /// No description provided for @ignoredSendersExplanation.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX has no \"who can message me\" setting. The only way to make sending fail is the MAX server black list, and the other person may notice it.\n\nThis mode works in ProMax only and blocks nobody on the server. Messages from the chosen people in private chats are deleted for you only, you get no notifications for them, no read mark is set, the chat does not jump up and the counter does not grow, and their calls are declined silently. They will not know: for them the message was sent as usual.'**
-  String get ignoredSendersExplanation;
-
-  /// No description provided for @ignoredSendersCaveat.
-  ///
-  /// In en, this message translates to:
-  /// **'Messages are deleted \"for me\" on the server, so they also disappear in your other MAX apps, although a notification may still show up there. Removing someone from the list does not bring deleted messages back. Group chats are not affected.'**
-  String get ignoredSendersCaveat;
-
-  /// No description provided for @ignoredSendersEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'The list is empty'**
-  String get ignoredSendersEmpty;
-
-  /// No description provided for @ignoredSendersEmptyHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Add someone by ID or from a private chat menu: \"Don\'t let them write to me\"'**
-  String get ignoredSendersEmptyHint;
-
-  /// No description provided for @ignoredSendersAdd.
-  ///
-  /// In en, this message translates to:
-  /// **'Add by ID'**
-  String get ignoredSendersAdd;
-
-  /// No description provided for @ignoredSendersIdLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'User ID'**
-  String get ignoredSendersIdLabel;
-
-  /// No description provided for @ignoredSendersIdHint.
-  ///
-  /// In en, this message translates to:
-  /// **'For example, 123456789'**
-  String get ignoredSendersIdHint;
-
-  /// No description provided for @ignoredSendersConfirmAdd.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide'**
-  String get ignoredSendersConfirmAdd;
-
-  /// No description provided for @ignoredSendersCancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get ignoredSendersCancel;
-
-  /// No description provided for @ignoredSendersInvalidId.
-  ///
-  /// In en, this message translates to:
-  /// **'A numeric user ID is required'**
-  String get ignoredSendersInvalidId;
-
-  /// No description provided for @ignoredSendersSelfId.
-  ///
-  /// In en, this message translates to:
-  /// **'This is your own ID'**
-  String get ignoredSendersSelfId;
-
-  /// No description provided for @ignoredSendersAlreadyAdded.
-  ///
-  /// In en, this message translates to:
-  /// **'This ID is already on the list'**
-  String get ignoredSendersAlreadyAdded;
-
-  /// No description provided for @ignoredSendersAdded.
-  ///
-  /// In en, this message translates to:
-  /// **'Their messages will no longer be shown'**
-  String get ignoredSendersAdded;
-
-  /// No description provided for @ignoredSendersRemoved.
-  ///
-  /// In en, this message translates to:
-  /// **'Their new messages will be shown again'**
-  String get ignoredSendersRemoved;
-
-  /// No description provided for @ignoredSendersRemove.
-  ///
-  /// In en, this message translates to:
-  /// **'Allow'**
-  String get ignoredSendersRemove;
-
-  /// No description provided for @ignoredSendersUserId.
-  ///
-  /// In en, this message translates to:
-  /// **'ID {id}'**
-  String ignoredSendersUserId(int id);
-
-  /// No description provided for @ignoredSendersNoAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in to an account first'**
-  String get ignoredSendersNoAccount;
-
-  /// No description provided for @chatInfoMenuIgnore.
-  ///
-  /// In en, this message translates to:
-  /// **'Don\'t let them write to me'**
-  String get chatInfoMenuIgnore;
-
-  /// No description provided for @chatInfoMenuUnignore.
-  ///
-  /// In en, this message translates to:
-  /// **'Let them write to me'**
-  String get chatInfoMenuUnignore;
-
-  /// No description provided for @chatInfoIgnoreConfirmMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'{name} can still send you messages and will not know, but ProMax will delete them for you, show no notifications, never mark them read and decline calls. Only the MAX black list stops the sending itself.'**
-  String chatInfoIgnoreConfirmMessage(String name);
 
   /// No description provided for @pluginsScreenNativeSection.
   ///
@@ -13807,6 +13561,456 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset settings'**
   String get motionBlurReset;
+
+  /// No description provided for @msgActionsTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate'**
+  String get msgActionsTranslate;
+
+  /// No description provided for @msgActionsShowOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Show original'**
+  String get msgActionsShowOriginal;
+
+  /// No description provided for @translationShowTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show translation'**
+  String get translationShowTranslation;
+
+  /// No description provided for @translationTranslating.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating…'**
+  String get translationTranslating;
+
+  /// No description provided for @translationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get translationLabel;
+
+  /// No description provided for @translationLabelFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Translated from {language}'**
+  String translationLabelFrom(String language);
+
+  /// No description provided for @chatScreenMenuTranslateChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate chat'**
+  String get chatScreenMenuTranslateChat;
+
+  /// No description provided for @chatScreenMenuStopTranslateChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop translating chat'**
+  String get chatScreenMenuStopTranslateChat;
+
+  /// No description provided for @translationChatEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming messages will be translated on this device'**
+  String get translationChatEnabled;
+
+  /// No description provided for @translationChatDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat auto-translation is off'**
+  String get translationChatDisabled;
+
+  /// No description provided for @translationSameLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'The message is already in the target language'**
+  String get translationSameLanguage;
+
+  /// No description provided for @translationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t translate the message'**
+  String get translationFailed;
+
+  /// No description provided for @translationNeedsWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'The language model downloads over Wi-Fi. Connect to Wi-Fi or allow mobile data in translation settings'**
+  String get translationNeedsWifi;
+
+  /// No description provided for @translationUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This language isn\'t supported by the translator'**
+  String get translationUnsupported;
+
+  /// No description provided for @translationUndetermined.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t detect the message language'**
+  String get translationUndetermined;
+
+  /// No description provided for @translationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation isn\'t available on this device'**
+  String get translationUnavailable;
+
+  /// No description provided for @translationSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Message translation'**
+  String get translationSettingsTitle;
+
+  /// No description provided for @translationSettingsPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation runs on this device. Message text is never sent anywhere'**
+  String get translationSettingsPrivacy;
+
+  /// No description provided for @translationSettingsTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate to'**
+  String get translationSettingsTarget;
+
+  /// No description provided for @translationSettingsTargetApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App language ({language})'**
+  String translationSettingsTargetApp(String language);
+
+  /// No description provided for @translationSettingsWifiOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Download models over Wi-Fi only'**
+  String get translationSettingsWifiOnly;
+
+  /// No description provided for @translationSettingsWifiOnlySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Each language model is about 30 MB and downloads on first use'**
+  String get translationSettingsWifiOnlySubtitle;
+
+  /// No description provided for @translationSettingsModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded languages'**
+  String get translationSettingsModels;
+
+  /// No description provided for @translationSettingsModelsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No models downloaded yet'**
+  String get translationSettingsModelsEmpty;
+
+  /// No description provided for @translationSettingsDeleteModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete model'**
+  String get translationSettingsDeleteModel;
+
+  /// No description provided for @translationSettingsModelDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Model deleted'**
+  String get translationSettingsModelDeleted;
+
+  /// No description provided for @translationSettingsModelDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the model'**
+  String get translationSettingsModelDeleteFailed;
+
+  /// No description provided for @translationSettingsSystemModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation languages are downloaded by the system. Remove them in iOS Settings → Apps → Translate'**
+  String get translationSettingsSystemModels;
+
+  /// No description provided for @stickerMakerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sticker'**
+  String get stickerMakerAction;
+
+  /// No description provided for @stickerMakerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New sticker'**
+  String get stickerMakerTitle;
+
+  /// No description provided for @stickerMakerProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Cutting out the subject…'**
+  String get stickerMakerProcessing;
+
+  /// No description provided for @stickerMakerNoSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find a subject in the photo'**
+  String get stickerMakerNoSubject;
+
+  /// No description provided for @stickerMakerDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'The model is still downloading, try again in a minute'**
+  String get stickerMakerDownloading;
+
+  /// No description provided for @stickerMakerUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Making stickers isn\'t available on this device'**
+  String get stickerMakerUnavailable;
+
+  /// No description provided for @stickerMakerUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get stickerMakerUse;
+
+  /// No description provided for @stickerMakerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The background was removed on this device. The sticker is sent as an image with a transparent background'**
+  String get stickerMakerHint;
+
+  /// No description provided for @appIconNameDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get appIconNameDefault;
+
+  /// No description provided for @appIconNameLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get appIconNameLight;
+
+  /// No description provided for @appIconNameAurora.
+  ///
+  /// In en, this message translates to:
+  /// **'Aurora'**
+  String get appIconNameAurora;
+
+  /// No description provided for @appIconNameSunset.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunset'**
+  String get appIconNameSunset;
+
+  /// No description provided for @appIconNameGlass.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass'**
+  String get appIconNameGlass;
+
+  /// No description provided for @appIconNameHalloween.
+  ///
+  /// In en, this message translates to:
+  /// **'Halloween'**
+  String get appIconNameHalloween;
+
+  /// No description provided for @appIconNameNewYear.
+  ///
+  /// In en, this message translates to:
+  /// **'New Year'**
+  String get appIconNameNewYear;
+
+  /// No description provided for @selfProfilePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'View profile as others see it'**
+  String get selfProfilePreview;
+
+  /// No description provided for @selfProfileId.
+  ///
+  /// In en, this message translates to:
+  /// **'My ID'**
+  String get selfProfileId;
+
+  /// No description provided for @selfProfileIdCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'ID copied'**
+  String get selfProfileIdCopied;
+
+  /// No description provided for @selfProfilePreviewPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'This card shows your public name and bio. The phone number and status visible to another person depend on your privacy settings and contacts.'**
+  String get selfProfilePreviewPrivacy;
+
+  /// No description provided for @updateReceiveBeta.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive beta updates'**
+  String get updateReceiveBeta;
+
+  /// No description provided for @updateReceiveBetaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off: stable releases only. On: also beta versions and release candidates.'**
+  String get updateReceiveBetaHint;
+
+  /// No description provided for @diagnosticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send diagnostics'**
+  String get diagnosticsTitle;
+
+  /// No description provided for @diagnosticsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A random installation ID, error types, ProMax stack frames, version and OS are sent to the ProMax server. No chats, phone numbers or tokens. You can turn this off at any time.'**
+  String get diagnosticsHint;
+
+  /// No description provided for @hubAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax announcements'**
+  String get hubAnnouncements;
+
+  /// No description provided for @hubAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get hubAdmin;
+
+  /// No description provided for @hubPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get hubPreview;
+
+  /// No description provided for @hubServiceChat.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax service chat'**
+  String get hubServiceChat;
+
+  /// No description provided for @hubActivationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate admin access using a one-time code from your server. Your phone number opens this screen; the server verifies permission to broadcast.'**
+  String get hubActivationHint;
+
+  /// No description provided for @hubActivationCode.
+  ///
+  /// In en, this message translates to:
+  /// **'One-time code'**
+  String get hubActivationCode;
+
+  /// No description provided for @hubActivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate'**
+  String get hubActivate;
+
+  /// No description provided for @hubUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The ProMax service is unavailable'**
+  String get hubUnavailable;
+
+  /// No description provided for @hubOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot reach the ProMax service. Showing saved announcements.'**
+  String get hubOffline;
+
+  /// No description provided for @hubNoAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements from the ProMax team will appear here'**
+  String get hubNoAnnouncements;
+
+  /// No description provided for @hubReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements are available only in ProMax. You cannot reply to this chat.'**
+  String get hubReadOnly;
+
+  /// No description provided for @hubDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get hubDraft;
+
+  /// No description provided for @hubDraftEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No draft yet'**
+  String get hubDraftEmpty;
+
+  /// No description provided for @hubDraftChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The draft changed on another device or is empty. Refresh it before publishing.'**
+  String get hubDraftChanged;
+
+  /// No description provided for @hubActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete the action. Check your connection and admin activation.'**
+  String get hubActionFailed;
+
+  /// No description provided for @hubPublish.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish to everyone'**
+  String get hubPublish;
+
+  /// No description provided for @hubPublishConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Every ProMax user will see this announcement. Send it?'**
+  String get hubPublishConfirm;
+
+  /// No description provided for @hubPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement published'**
+  String get hubPublished;
+
+  /// No description provided for @hubPreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the administrator can see this chat. Check the text and select Publish to everyone when ready.'**
+  String get hubPreviewHint;
+
+  /// No description provided for @hubAdminHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write an announcement and send it to Preview. Users will not see it until you confirm publication.'**
+  String get hubAdminHint;
+
+  /// No description provided for @hubCompose.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement text'**
+  String get hubCompose;
+
+  /// No description provided for @hubSendToPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to preview'**
+  String get hubSendToPreview;
+
+  /// No description provided for @hubRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get hubRefresh;
+
+  /// No description provided for @hubNewAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'New announcement in the ProMax service chat'**
+  String get hubNewAnnouncement;
 }
 
 class _AppLocalizationsDelegate

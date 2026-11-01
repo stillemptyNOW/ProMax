@@ -9,7 +9,6 @@ import '../../backend/modules/messages.dart';
 import '../config/promax_settings.dart';
 import '../crypto/e2ee_service.dart';
 import '../storage/app_database.dart';
-import '../storage/ignored_senders.dart';
 import '../storage/local_read_state.dart';
 import '../storage/token_storage.dart';
 
@@ -50,20 +49,18 @@ class NotificationFacts {
     this.privacy,
     this.chat,
     this.senderName,
-    this.streamerMode = false,
     this.encrypted = false,
     this.readMark = 0,
-    this.senderIgnored = false,
+    this.seenMark = 0,
   });
 
   final int accountId;
   final PrivacyConfig? privacy;
   final CachedChat? chat;
   final String? senderName;
-  final bool streamerMode;
   final bool encrypted;
   final int readMark;
-  final bool senderIgnored;
+  final int seenMark;
 
   static int effectiveReadMark({
     required int accountId,
@@ -77,29 +74,24 @@ class NotificationFacts {
     final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
     final rows = await AppDatabase.loadChat(accountId, chatId);
     final chat = rows.isEmpty ? null : CachedChat.fromDbRow(rows.first);
-    final local = ProMaxSettings.antiRead.value
+    final antiRead = ProMaxSettings.antiRead.value;
+    final local = antiRead
         ? await LocalReadState.load(accountId, chatId)
         : const LocalReadState();
-    await IgnoredSenders.instance.load();
+    final readMark = effectiveReadMark(
+      accountId: accountId,
+      chat: chat,
+      local: local,
+    );
     await E2eeService.instance.ensureLoaded(accountId);
     return NotificationFacts(
       accountId: accountId,
       privacy: rawConfig == null ? null : PrivacyConfig.fromJson(rawConfig),
       chat: chat,
       senderName: senderId == null ? null : ContactCache.get(senderId),
-      streamerMode: ProMaxSettings.streamerMode.value,
       encrypted: E2eeService.instance.isOn(accountId, chatId),
-      readMark: effectiveReadMark(
-        accountId: accountId,
-        chat: chat,
-        local: local,
-      ),
-      senderIgnored: IgnoredSenders.instance.hidesFromDialog(
-        accountId: accountId,
-        chatId: chatId,
-        senderId: senderId,
-        isDialog: chat?.type == 'DIALOG',
-      ),
+      readMark: readMark,
+      seenMark: antiRead ? readMark : 0,
     );
   }
 }
@@ -118,6 +110,7 @@ class MessageNotification {
     required this.textVisible,
     required this.sound,
     this.messageId,
+    this.seenUpTo = 0,
   });
 
   final int chatId;
@@ -131,6 +124,7 @@ class MessageNotification {
   final bool textVisible;
   final bool sound;
   final String? messageId;
+  final int seenUpTo;
 
   Map<String, String> toFkmData() => {
     'mc': '$chatId',
@@ -142,6 +136,7 @@ class MessageNotification {
     'ctime': '$time',
     'sound': '$sound',
     'msgid': ?messageId,
+    if (seenUpTo > 0) 'seen': '$seenUpTo',
   };
 }
 
@@ -241,7 +236,6 @@ abstract final class NotificationPolicy {
   }) {
     final senderId = push.senderId;
     if (senderId == null || senderId == facts.accountId) return null;
-    if (facts.senderIgnored) return null;
     final time = push.message['time'];
     if (time is int && time <= facts.readMark) return null;
 
@@ -258,7 +252,7 @@ abstract final class NotificationPolicy {
         ? (chat.title ?? senderName)
         : senderName;
 
-    final textVisible = showPreview && !facts.streamerMode && !facts.encrypted;
+    final textVisible = showPreview && !facts.encrypted;
     final text = textVisible ? previewText(push.message) : hiddenPreview;
     final msgId = push.message['id'];
 
@@ -276,6 +270,7 @@ abstract final class NotificationPolicy {
       textVisible: textVisible && text != hiddenPreview,
       sound: soundEnabled(privacy),
       messageId: msgId == null ? null : '$msgId',
+      seenUpTo: facts.seenMark,
     );
   }
 

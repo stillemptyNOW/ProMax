@@ -14,6 +14,7 @@ import '../../core/storage/account_phone_store.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/utils/parse.dart';
 import '../../core/storage/profile_deletion_store.dart';
+import '../../core/storage/quick_replies_store.dart';
 import '../../core/storage/spoofing_service.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
@@ -23,7 +24,6 @@ import 'banners.dart';
 import 'chats.dart';
 import 'complaints.dart';
 import 'contacts.dart';
-import 'deletion_policy.dart';
 import 'folders.dart';
 import 'messages.dart';
 import 'pending_deletions.dart';
@@ -673,7 +673,6 @@ class AccountModule {
     banners.clear();
     chats.resetForAccountSwitch();
     await ContactsModule.primeCacheFromDb(accountId);
-    await DeletionPolicy.instance.load(accountId);
 
     await _api.connect(authenticated: true);
     if (_api.state != SessionState.online) {
@@ -703,6 +702,7 @@ class AccountModule {
     await TokenStorage.deleteAccount(accountId);
     await SpoofingService.clearAccountSpoof(accountId);
     await ProfileDeletionStore.clear(accountId);
+    await QuickRepliesStore.instance.forget(accountId);
     logger.i('Аккаунт $accountId удалён локально');
   }
 
@@ -1085,18 +1085,6 @@ class AccountModule {
         parseIntList(serverConfig['welcome-sticker-ids']),
       );
       await _persistEntryBannerApps(accountId, serverConfig);
-      await DeletionPolicy.instance.applyServerConfig(
-        accountId,
-        serverConfig,
-        complete: true,
-      );
-      logger.i('Сервер прислал конфиг: ${DeletionPolicy.instance.describe()}');
-    } else {
-      await DeletionPolicy.instance.load(accountId);
-      logger.i(
-        'Конфиг сервера пришёл хэшем, сохранённые значения: '
-        '${DeletionPolicy.instance.describe()}',
-      );
     }
     final info = LoginInfo.fromPayload(data);
 

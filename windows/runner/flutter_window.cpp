@@ -2,6 +2,7 @@
 
 #include <flutter/method_result_functions.h>
 #include <flutter/standard_method_codec.h>
+#include <flutter_windows.h>
 #include <shellapi.h>
 #include <wchar.h>
 
@@ -22,6 +23,37 @@ constexpr UINT_PTR kTrayOpenCommand = 1001;
 constexpr UINT_PTR kTrayExitCommand = 1002;
 constexpr UINT_PTR kQuitTimerId = 0x5051;
 constexpr UINT kQuitTimeoutMs = 5000;
+
+constexpr int kBigIconSize = 32;
+constexpr int kSmallIconSize = 16;
+constexpr int kBaseDpi = 96;
+
+struct AppIconResource {
+  const char* name;
+  int resource;
+};
+
+constexpr AppIconResource kAppIcons[] = {
+    {"IconDefault", IDI_APP_ICON},     {"IconLight", IDI_ICON_LIGHT},
+    {"IconAurora", IDI_ICON_AURORA},   {"IconSunset", IDI_ICON_SUNSET},
+    {"IconGlass", IDI_ICON_GLASS},     {"IconHalloween", IDI_ICON_HALLOWEEN},
+    {"IconNewYear", IDI_ICON_NEWYEAR},
+};
+
+int FindAppIconResource(const std::string& name) {
+  for (const auto& icon : kAppIcons) {
+    if (name == icon.name) {
+      return icon.resource;
+    }
+  }
+  return 0;
+}
+
+HICON LoadAppIcon(int resource, int size) {
+  return static_cast<HICON>(LoadImageW(GetModuleHandle(nullptr),
+                                       MAKEINTRESOURCEW(resource), IMAGE_ICON,
+                                       size, size, LR_DEFAULTCOLOR));
+}
 
 constexpr const wchar_t kRunKey[] =
     L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
@@ -118,7 +150,9 @@ bool SetAutostartEnabled(bool enabled) {
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
 
-FlutterWindow::~FlutterWindow() {}
+FlutterWindow::~FlutterWindow() {
+  ReleaseWindowIcons();
+}
 
 void FlutterWindow::SetStartHidden(bool start_hidden) {
   start_hidden_ = start_hidden;
@@ -165,6 +199,7 @@ void FlutterWindow::OnDestroy() {
   window_channel_ = nullptr;
   badge_channel_ = nullptr;
   screen_channel_ = nullptr;
+  app_icon_channel_ = nullptr;
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -196,6 +231,13 @@ void FlutterWindow::RegisterChannels() {
   screen_channel_->SetMethodCallHandler(
       [this](const Call& call, std::unique_ptr<Result> result) {
         HandleScreenCall(call, std::move(result));
+      });
+
+  app_icon_channel_ = std::make_unique<Channel>(
+      messenger, "io.github.stillemptynow.promax/app_icon", codec);
+  app_icon_channel_->SetMethodCallHandler(
+      [this](const Call& call, std::unique_ptr<Result> result) {
+        HandleAppIconCall(call, std::move(result));
       });
 }
 
@@ -280,6 +322,70 @@ void FlutterWindow::HandleScreenCall(const Call& call,
   result->Success();
 }
 
+void FlutterWindow::HandleAppIconCall(const Call& call,
+                                      std::unique_ptr<Result> result) {
+  if (call.method_name() != "setAppIcon") {
+    result->NotImplemented();
+    return;
+  }
+  const auto* value = FindArgument(call.arguments(), "name");
+  const auto* name = value == nullptr ? nullptr : std::get_if<std::string>(value);
+  const int resource = name == nullptr ? 0 : FindAppIconResource(*name);
+  if (resource == 0) {
+    result->Error("INVALID_ICON", "Unknown icon");
+    return;
+  }
+  const int previous = icon_resource_;
+  icon_resource_ = resource;
+  if (!ApplyWindowIcon()) {
+    icon_resource_ = previous;
+    result->Error("APPLY_FAILED", "The icon resource could not be loaded");
+    return;
+  }
+  UpdateTrayIcon();
+  result->Success();
+}
+
+bool FlutterWindow::ApplyWindowIcon() {
+  HWND hwnd = GetHandle();
+  if (hwnd == nullptr) {
+    return false;
+  }
+  const int dpi = static_cast<int>(FlutterDesktopGetDpiForHWND(hwnd));
+  HICON loaded_big =
+      LoadAppIcon(icon_resource_, MulDiv(kBigIconSize, dpi, kBaseDpi));
+  HICON loaded_small =
+      LoadAppIcon(icon_resource_, MulDiv(kSmallIconSize, dpi, kBaseDpi));
+  if (loaded_big == nullptr || loaded_small == nullptr) {
+    if (loaded_big != nullptr) {
+      DestroyIcon(loaded_big);
+    }
+    if (loaded_small != nullptr) {
+      DestroyIcon(loaded_small);
+    }
+    return false;
+  }
+  SendMessageW(hwnd, WM_SETICON, ICON_BIG,
+               reinterpret_cast<LPARAM>(loaded_big));
+  SendMessageW(hwnd, WM_SETICON, ICON_SMALL,
+               reinterpret_cast<LPARAM>(loaded_small));
+  ReleaseWindowIcons();
+  big_icon_ = loaded_big;
+  small_icon_ = loaded_small;
+  return true;
+}
+
+void FlutterWindow::ReleaseWindowIcons() {
+  if (big_icon_ != nullptr) {
+    DestroyIcon(big_icon_);
+    big_icon_ = nullptr;
+  }
+  if (small_icon_ != nullptr) {
+    DestroyIcon(small_icon_);
+    small_icon_ = nullptr;
+  }
+}
+
 void FlutterWindow::Reveal() {
   HWND hwnd = GetHandle();
   if (hwnd == nullptr) {
@@ -354,7 +460,7 @@ void FlutterWindow::UpdateTrayIcon() {
   data.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
   data.uCallbackMessage = kTrayCallbackMessage;
   data.hIcon = static_cast<HICON>(LoadImageW(
-      GetModuleHandle(nullptr), MAKEINTRESOURCEW(IDI_APP_ICON), IMAGE_ICON,
+      GetModuleHandle(nullptr), MAKEINTRESOURCEW(icon_resource_), IMAGE_ICON,
       GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
       LR_DEFAULTCOLOR | LR_SHARED));
   wcsncpy_s(data.szTip, ARRAYSIZE(data.szTip), tray_tooltip_.c_str(),
@@ -440,6 +546,12 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   switch (message) {
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
+      break;
+
+    case WM_DPICHANGED:
+      if (big_icon_ != nullptr) {
+        ApplyWindowIcon();
+      }
       break;
 
     case kTrayCallbackMessage:

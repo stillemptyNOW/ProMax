@@ -1,8 +1,8 @@
-import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
+import '../../core/config/app_performance.dart';
+import 'ambient_clock.dart';
 
 // #***! анимированный mesh-градиент, портировано с нативного generateGradient
 // Telegram (свёрл-дисторсия + радиальное смешение цветов по опорным точкам)
@@ -46,14 +46,17 @@ class MeshGradientBackground extends StatefulWidget {
   });
 
   @override
-  State<MeshGradientBackground> createState() =>
-      _MeshGradientBackgroundState();
+  State<MeshGradientBackground> createState() => _MeshGradientBackgroundState();
 }
 
 class _MeshGradientBackgroundState extends State<MeshGradientBackground>
     with SingleTickerProviderStateMixin {
   ui.FragmentShader? _shader;
-  Ticker? _ticker;
+  late final AmbientClock _clock = AmbientClock(
+    vsync: this,
+    onTick: _onTick,
+    frameRate: AppPerformance.current.ambientFrameRate,
+  );
   int _phase = 0;
   double _progress = 0;
   Duration _lastTick = Duration.zero;
@@ -62,26 +65,31 @@ class _MeshGradientBackgroundState extends State<MeshGradientBackground>
   void initState() {
     super.initState();
     _shader = MeshGradient.newShader();
-    if (_shader != null && widget.animate && widget.colors.length > 1) {
-      _startTicker();
+    AppPerformance.budget.addListener(_onBudget);
+    _syncClock();
+  }
+
+  bool get _animates =>
+      _shader != null &&
+      widget.animate &&
+      widget.colors.length > 1 &&
+      AppPerformance.current.animatedBackgrounds;
+
+  void _syncClock() {
+    _clock.frameRate = AppPerformance.current.ambientFrameRate;
+    if (_animates) {
+      _clock.start();
+    } else {
+      _clock.stop();
     }
   }
 
-  void _startTicker() {
-    _lastTick = Duration.zero;
-    _ticker = createTicker(_onTick)..start();
-  }
+  void _onBudget() => setState(_syncClock);
 
   @override
   void didUpdateWidget(covariant MeshGradientBackground oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final shouldAnimate = widget.animate && widget.colors.length > 1;
-    if (shouldAnimate && _ticker == null) {
-      _startTicker();
-    } else if (!shouldAnimate && _ticker != null) {
-      _ticker!.dispose();
-      _ticker = null;
-    }
+    _syncClock();
   }
 
   void _onTick(Duration elapsed) {
@@ -101,7 +109,8 @@ class _MeshGradientBackgroundState extends State<MeshGradientBackground>
 
   @override
   void dispose() {
-    _ticker?.dispose();
+    AppPerformance.budget.removeListener(_onBudget);
+    _clock.dispose();
     super.dispose();
   }
 
@@ -126,7 +135,7 @@ class _MeshGradientBackgroundState extends State<MeshGradientBackground>
     }
     int phase;
     double progress;
-    if (widget.animate) {
+    if (_animates) {
       phase = _phase;
       progress = _progress;
     } else {

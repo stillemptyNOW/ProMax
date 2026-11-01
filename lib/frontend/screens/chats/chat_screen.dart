@@ -1,3 +1,7 @@
+import '../../../core/translation/message_translator.dart';
+import '../../../core/translation/translation_settings.dart';
+import '../../../core/translation/translation_backend.dart';
+import '../../widgets/message_translation.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show File;
@@ -28,7 +32,6 @@ import 'package:promax/frontend/screens/chats/poll_create_screen.dart';
 import 'package:promax/frontend/widgets/custom_notification.dart';
 import 'package:promax/frontend/widgets/hint_bubble.dart';
 import 'package:promax/frontend/widgets/undo_notification.dart';
-import 'package:promax/backend/modules/deletion_policy.dart';
 import 'package:promax/backend/modules/pending_deletions.dart';
 import 'package:promax/backend/modules/read_receipts.dart';
 import 'package:promax/frontend/screens/chats/chat_removal_undo.dart';
@@ -62,7 +65,6 @@ import '../../../core/storage/archived_chats_store.dart';
 import '../../../core/cache/info_cache.dart';
 import '../../../core/links/message_link_token.dart';
 import '../../../core/cache/message_session_cache.dart';
-import '../../../core/utils/server_clock.dart';
 import '../../../core/utils/app_exit_hooks.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/utils/emoji_keyword_index.dart';
@@ -88,6 +90,7 @@ import 'chat/typing_label.dart';
 import 'chat/view/chat_intro_cards.dart';
 import 'chat/upload_status.dart';
 import 'chat/mention_panel_controller.dart';
+import 'chat/quick_reply_panel_controller.dart';
 import 'chat/chat_media_send_controller.dart';
 import 'chat/chat_text_send_controller.dart';
 import '../../../backend/modules/forward_sender.dart';
@@ -103,8 +106,8 @@ import 'chat/view/composer_input.dart' show BotStartPrompt;
 import 'chat/view/chat_body_layout.dart';
 import 'chat/view/shimmer_loading.dart';
 import '../../../core/config/app_visual_style.dart';
-import 'chat/chat_wipe_flow.dart';
 import 'chat/message_deletion.dart';
+import '../../../backend/modules/chat_deletion_plan.dart';
 import 'deletion_feedback.dart';
 import '../../../core/security/double_bottom.dart';
 import '../../../core/config/promax_atmosphere.dart';
@@ -566,6 +569,7 @@ class _ChatScreenState extends State<ChatScreen>
   late final AnimationController _attachAnim;
   late final CommandPanelController _commandPanel;
   late final MentionPanelController _mentionPanel;
+  late final QuickReplyPanelController _quickReplyPanel;
 
   late AnimationController _shimmerController;
   Timer? _shimmerStartTimer;
@@ -768,6 +772,13 @@ class _ChatScreenState extends State<ChatScreen>
       selfId: () => _myId,
       valueOf: () => _messageController.value,
       onSelected: _onMentionSelected,
+    );
+    _quickReplyPanel = QuickReplyPanelController(
+      vsync: this,
+      accountId: () => _myId,
+      enabled: () => !widget.preview && _selectedCommand == null,
+      valueOf: () => _messageController.value,
+      onSelected: _onQuickReplySelected,
     );
     _selectionAnim = AnimationController(
       vsync: this,
@@ -2599,6 +2610,7 @@ class _ChatScreenState extends State<ChatScreen>
     _attachAnim.dispose();
     _commandPanel.dispose();
     _mentionPanel.dispose();
+    _quickReplyPanel.dispose();
     _selectionAnim.dispose();
     _searchAnim.dispose();
     _searchFocusNode.dispose();
@@ -2638,6 +2650,7 @@ class _ChatScreenState extends State<ChatScreen>
     }
     _commandPanel.update();
     _mentionPanel.update();
+    _quickReplyPanel.update();
   }
 
   void _broadcastActivity(ChatActivity activity) {
@@ -2688,6 +2701,16 @@ class _ChatScreenState extends State<ChatScreen>
       end: query.end,
     );
     _mentionPanel.update();
+    _messageFocusNode.requestFocus();
+  }
+
+  void _onQuickReplySelected(QuickReply reply, QuickReplyQuery query) {
+    _messageController.value = insertQuickReplyText(
+      _messageController.value,
+      reply.text,
+      replacing: query,
+    );
+    _quickReplyPanel.update();
     _messageFocusNode.requestFocus();
   }
 
@@ -3001,41 +3024,29 @@ class _ChatScreenState extends State<ChatScreen>
       return;
     }
 
-    final forEveryone = await showDeleteMessagesDialog(
-      context,
-      plan: plan,
-      peerName: widget.name,
-    );
-    if (forEveryone == null || !mounted) return;
+    final forMembers = await showDeleteMessagesDialog(context, plan: plan);
+    if (forMembers == null || !mounted) return;
 
     _cancelSending(sending);
-    _deleteWithUndo(plan, forEveryone: forEveryone);
+    _deleteWithUndo(plan, forMembers: forMembers);
     _clearSelection();
   }
 
   MessageDeletionPlan _deletionPlan(List<CachedMessage> messages) {
-    final policy = DeletionPolicy.instance;
-    final kind = switch (chat?.type ?? widget.chatType) {
-      'DIALOG' when widget.chatId != 0 => MessageDeletionChat.dialog,
-      'CHAT' => MessageDeletionChat.group,
-      'CHANNEL' => MessageDeletionChat.channel,
-      _ => MessageDeletionChat.none,
+    final moderated = switch (_chatTypeNow) {
+      'CHAT' || 'CHANNEL' => widget.chatId != 0,
+      _ => false,
     };
-    final canDeleteAny =
-        kind != MessageDeletionChat.dialog &&
-        (_hasRight(AdminRight.deleteMessages) ||
-            (_isChannel && _hasRight(AdminRight.deletePosts)));
     return MessageDeletionPlan(
       messages: messages,
-      rules: MessageDeletionRules(
-        chat: kind,
+      moderation: MessageModeration(
         myId: _myId,
-        nowMs: ServerClock.now(),
-        editTimeout: _commentsMode
-            ? policy.editCommentTimeout
-            : policy.editTimeout,
-        canDeleteAny: canDeleteAny,
-        canDeleteOwn: _isChannel && _hasRight(AdminRight.createPosts),
+        canDeleteAny:
+            moderated &&
+            (_hasRight(AdminRight.deleteMessages) ||
+                (_isChannel && _hasRight(AdminRight.deletePosts))),
+        canDeleteOwnPosts:
+            moderated && _isChannel && _hasRight(AdminRight.createPosts),
       ),
     );
   }
@@ -3395,21 +3406,17 @@ class _ChatScreenState extends State<ChatScreen>
     }
 
     final plan = _deletionPlan([message]);
-    final forEveryone = await showDeleteMessagesDialog(
-      context,
-      plan: plan,
-      peerName: widget.name,
-    );
-    if (forEveryone == null || !mounted) return;
-    _deleteWithUndo(plan, forEveryone: forEveryone);
+    final forMembers = await showDeleteMessagesDialog(context, plan: plan);
+    if (forMembers == null || !mounted) return;
+    _deleteWithUndo(plan, forMembers: forMembers);
   }
 
-  void _deleteWithUndo(MessageDeletionPlan plan, {required bool forEveryone}) {
+  void _deleteWithUndo(MessageDeletionPlan plan, {required bool forMembers}) {
     final pending = PendingDeletions.instance;
     final keys = pending.holdMessages(
       accountId: _myId,
       chatId: widget.chatId,
-      parts: plan.parts(forEveryone: forEveryone),
+      parts: plan.parts(forMembers: forMembers),
     );
     if (keys.isEmpty) return;
     final ids = plan.messages.map((m) => m.id).toList();
@@ -3649,6 +3656,14 @@ class _ChatScreenState extends State<ChatScreen>
           label: l10n.chatInfoMembersSearchHint,
           onTap: _openSearch,
         ),
+        if (MethodChannelTranslationBackend.platformSupported)
+          ChatMenuItem(
+            icon: Symbols.translate,
+            label: TranslationSettings.instance.isAuto(_myId, widget.chatId)
+                ? l10n.chatScreenMenuStopTranslateChat
+                : l10n.chatScreenMenuTranslateChat,
+            onTap: _toggleTranslation,
+          ),
         ChatMenuItem(
           icon: Symbols.wallpaper,
           label: l10n.chatScreenMenuChangeWallpaper,
@@ -3679,32 +3694,63 @@ class _ChatScreenState extends State<ChatScreen>
     );
   }
 
-  Future<void> _insertQuickReply() async {
-    final reply = await pickQuickReply(context);
-    if (reply == null || !mounted) return;
-    final value = _messageController.value;
-    final selection = value.selection.isValid
-        ? value.selection
-        : TextSelection.collapsed(offset: value.text.length);
-    _messageController.value = TextEditingValue(
-      text: value.text.replaceRange(selection.start, selection.end, reply),
-      selection: TextSelection.collapsed(
-        offset: selection.start + reply.length,
+  Future<void> _toggleTranslation() async {
+    final l10n = AppLocalizations.of(context)!;
+    final translator = MessageTranslator.instance;
+    final caps = await translator.loadCapabilities();
+    if (!mounted) return;
+    if (!caps.available) {
+      showCustomNotification(context, l10n.translationUnavailable);
+      return;
+    }
+    final enabled = !TranslationSettings.instance.isAuto(_myId, widget.chatId);
+    await TranslationSettings.instance.setAuto(_myId, widget.chatId, enabled);
+    if (!enabled) translator.resetAutoInChat(_myId, widget.chatId);
+    if (!mounted) return;
+    showCustomNotification(
+      context,
+      enabled ? l10n.translationChatEnabled : l10n.translationChatDisabled,
+    );
+  }
+
+  void _translateMessage(CachedMessage message) {
+    final translator = MessageTranslator.instance;
+    final key = MessageTranslator.keyOf(_myId, widget.chatId, message.id);
+    if (translator.stateOf(key).showsTranslation) {
+      translator.showOriginal(key);
+      return;
+    }
+    final text = MessageDecryptionCache.instance.readableText(message);
+    if (text == null || text.trim().isEmpty) return;
+    unawaited(
+      translateMessageFromMenu(
+        context,
+        accountId: _myId,
+        chatId: widget.chatId,
+        messageId: message.id,
+        text: text,
       ),
+    );
+  }
+
+  Future<void> _insertQuickReply() async {
+    final reply = await pickQuickReply(context, accountId: _myId);
+    if (reply == null || !mounted) return;
+    _messageController.value = insertQuickReplyText(
+      _messageController.value,
+      reply.text,
     );
     _messageFocusNode.requestFocus();
   }
 
   void _openProMaxTools() {
-    final isDialog =
-        (chat?.type ?? widget.chatType) == 'DIALOG' && widget.chatId != 0;
     final canHide =
         AppLock.instance.decoyConfigured.value && !DoubleBottom.active.value;
     final atmosphere = ProMaxAtmosphere.chatEffect(widget.chatId);
     final timer = DisappearingMessages.instance.timerFor(widget.chatId);
     final quiet = QuietHours.instance.windowFor(widget.chatId);
     final note = ChatNotesStore.instance.noteFor(widget.chatId);
-    final templates = QuickRepliesStore.instance.items.value.length;
+    final templates = QuickRepliesStore.instance.repliesFor(_myId).length;
     final secret = DoubleBottom.isSecret(widget.chatId);
     final l10n = AppLocalizations.of(context)!;
     void then(VoidCallback action) {
@@ -3832,42 +3878,12 @@ class _ChatScreenState extends State<ChatScreen>
                   ),
                   children: tiles,
                 ),
-                if (isDialog) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 50,
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: cs.error.withValues(alpha: 0.14),
-                        foregroundColor: cs.error,
-                      ),
-                      onPressed: () => then(_wipeForBoth),
-                      icon: const Icon(Symbols.delete_forever),
-                      label: Text(
-                        wipeActionLabel(
-                          AppLocalizations.of(sheetContext)!,
-                          removeForAll: _canActForAll,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
         );
       },
     );
-  }
-
-  Future<void> _wipeForBoth() async {
-    final removed = await wipeDialogForBoth(
-      context,
-      myId: _myId,
-      chatId: widget.chatId,
-      removeForAll: _canActForAll,
-    );
-    if (removed && mounted) _leaveChat();
   }
 
   Future<void> _subscribeChannel() async {
@@ -4076,14 +4092,11 @@ class _ChatScreenState extends State<ChatScreen>
 
   String get _chatTypeNow => chat?.type ?? widget.chatType;
 
-  bool get _isDialogWithPeer => _chatTypeNow == 'DIALOG' && widget.chatId != 0;
-
-  bool get _canActForAll => DeletionPolicy.instance.allowsChatForAll(
+  bool get _ownsGroup => ownerDeletesForAll(
     chatId: widget.chatId,
     chatType: _chatTypeNow,
     owner: chat?.owner,
     myId: _myId,
-    peerIsBot: _peerIsBot,
   );
 
   int _newestKnownTime() {
@@ -4095,36 +4108,20 @@ class _ChatScreenState extends State<ChatScreen>
     return 0;
   }
 
-  String _withForAllHint(String message, {required bool forAllAllowed}) {
-    if (forAllAllowed || !_isDialogWithPeer) return message;
-    final l10n = AppLocalizations.of(context)!;
-    return '$message\n\n${l10n.chatForAllNotAllowedHint}';
-  }
-
   Future<void> _clearHistory() async {
-    final canClearForAll = _canActForAll;
     final l10n = AppLocalizations.of(context)!;
     final choice = await showBlurredConfirm(
       context,
       title: l10n.chatInfoClearHistoryTitle,
-      message: _withForAllHint(
-        l10n.chatInfoClearHistoryMessage,
-        forAllAllowed: canClearForAll,
-      ),
+      message: l10n.chatInfoClearHistoryMessage,
       confirmLabel: l10n.chatInfoClearHistoryConfirm,
       cancelLabel: l10n.chatInfoActionCancel,
       destructive: true,
-      checkboxLabel: canClearForAll
-          ? (_isDialogWithPeer
-                ? l10n.chatClearAlsoForPeer
-                : l10n.chatInfoClearHistoryForAll)
-          : null,
     );
     if (!mounted || !choice.confirmed) return;
     final outcome = await chats.clearHistory(
       api,
       chatId: widget.chatId,
-      forAll: canClearForAll && choice.checked,
       seenEventTime: _newestKnownTime(),
     );
     if (!mounted) return;
@@ -4153,31 +4150,22 @@ class _ChatScreenState extends State<ChatScreen>
       showCustomNotification(context, l10n.chatActionProfileUnavailable);
       return;
     }
-    final canDeleteForAll = _canActForAll;
+    final ownsGroup = _ownsGroup;
     final choice = await showBlurredConfirm(
       context,
       title: l10n.chatInfoDeleteChatTitle,
-      message: _withForAllHint(
-        l10n.chatInfoDeleteChatMessage,
-        forAllAllowed: canDeleteForAll,
-      ),
+      message: l10n.chatInfoDeleteChatMessage,
       confirmLabel: l10n.chatInfoDeleteChatConfirm,
       cancelLabel: l10n.chatInfoActionCancel,
       destructive: true,
-      checkboxLabel: canDeleteForAll
-          ? (_isDialogWithPeer
-                ? l10n.chatDeleteAlsoForPeer
-                : l10n.chatDeleteForAllMembers)
-          : null,
+      checkboxLabel: ownsGroup ? l10n.chatDeleteForAllMembers : null,
     );
     if (!mounted || !choice.confirmed) return;
     removeChatsWithUndo(
       context,
       message: l10n.undoChatsDeleted(1),
       accountId: _myId,
-      chats: [
-        (chatId: widget.chatId, forAll: canDeleteForAll && choice.checked),
-      ],
+      chats: [(chatId: widget.chatId, forAll: ownsGroup && choice.checked)],
     );
     _leaveChat();
   }
@@ -5228,8 +5216,10 @@ class _ChatScreenState extends State<ChatScreen>
                         ? const SizedBox.shrink()
                         : _composerAreaWidget(),
                     messagesArea: _buildMessagesArea(),
+                    atmosphere: ChatAtmosphereLayer(chatId: widget.chatId),
                     mentionPanel: _mentionPanel,
                     commandPanel: _commandPanel,
+                    quickReplyPanel: _quickReplyPanel,
                     note: _note,
                     searchAnim: _searchAnim,
                     search: _search,
@@ -5346,7 +5336,6 @@ class _ChatScreenState extends State<ChatScreen>
             builder: (context, _, _) => _buildEmptyState(),
           ),
         ),
-        Positioned.fill(child: ChatAtmosphereOverlay(chatId: widget.chatId)),
       ],
     );
   }
@@ -5594,6 +5583,26 @@ class _ChatScreenState extends State<ChatScreen>
                                   (chat?.forwardDisabled ?? false)
                               ? null
                               : () => _forwardMessages([message]),
+                          onTranslate:
+                              !message.isControl &&
+                                  MethodChannelTranslationBackend
+                                      .platformSupported &&
+                                  (MessageDecryptionCache.instance
+                                          .readableText(message)
+                                          ?.trim()
+                                          .isNotEmpty ??
+                                      false)
+                              ? () => _translateMessage(message)
+                              : null,
+                          isTranslated: () => MessageTranslator.instance
+                              .stateOf(
+                                MessageTranslator.keyOf(
+                                  _myId,
+                                  widget.chatId,
+                                  message.id,
+                                ),
+                              )
+                              .showsTranslation,
                           allowCopy: !(chat?.copyDisabled ?? false),
                           onMarkUnread: message.isControl
                               ? null

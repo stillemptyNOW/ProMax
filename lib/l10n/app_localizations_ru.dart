@@ -1716,9 +1716,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Все сообщения в этом чате будут удалены без возможности восстановления.';
 
   @override
-  String get chatInfoClearHistoryForAll => 'Для всех';
-
-  @override
   String get chatInfoClearHistoryConfirm => 'Очистить';
 
   @override
@@ -2471,9 +2468,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get attachSheetLimitedAccessInfo => 'Доступны не все фото';
 
   @override
-  String get attachSheetSectionInProgress => 'Раздел в разработке';
-
-  @override
   String get attachSheetContact => 'Контакт';
 
   @override
@@ -2598,14 +2592,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get photoEditorBlurLinear => 'Линейное';
 
   @override
-  String get fontSettingsInvalidInput => 'Введите ссылку или название шрифта';
-
-  @override
-  String fontSettingsFontNotFound(String name) {
-    return 'Шрифт «$name» не найден или нет сети';
-  }
-
-  @override
   String fontSettingsFontAdded(String name) {
     return 'Шрифт «$name» добавлен';
   }
@@ -2616,26 +2602,13 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get fontSettingsAddFontTitle => 'Добавить шрифт';
-
-  @override
-  String get fontSettingsAddFontDescription =>
-      'Вставьте ссылку Google Fonts или название шрифта';
-
-  @override
-  String get fontSettingsAddFontConfirm => 'Добавить';
-
-  @override
-  String get fontSettingsPickFile => 'Выбрать файл';
+  String get fontSettingsAddFontTitle => 'Добавить шрифт из файла';
 
   @override
   String get fontSettingsPickFileHint => 'Шрифт в формате .ttf, .otf или .ttc';
 
   @override
   String get fontSettingsNotAFont => 'Это не файл шрифта';
-
-  @override
-  String get fontSettingsCancel => 'Отмена';
 
   @override
   String get fontSettingsTitle => 'Шрифты';
@@ -3599,6 +3572,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Иначе кружок открывается с фронтальной';
 
   @override
+  String get mediaDevicesCalls => 'Звонки';
+
+  @override
+  String get mediaDevicesCallPip => 'Картинка в картинке в видеозвонках';
+
+  @override
+  String get mediaDevicesCallPipHint =>
+      'Видео собеседника остаётся в окошке поверх других приложений, когда вы сворачиваете ProMax';
+
+  @override
   String get chatPreviewMarkRead => 'Пометить прочитанным';
 
   @override
@@ -3710,12 +3693,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get channelFollowersTitle => 'Подписчики';
-
-  @override
-  String get channelStatsTitle => 'Статистика канала';
-
-  @override
-  String get channelStatsUnavailable => 'Статистика канала пока недоступна';
 
   @override
   String get adminsAdd => 'Добавить администратора';
@@ -4268,11 +4245,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Вы точно хотите удалить это сообщение?';
 
   @override
-  String chatScreenDeleteAlsoFor(String name) {
-    return 'Также удалить для $name';
-  }
-
-  @override
   String deleteMessagesFailedWithReason(String reason) {
     return 'Не удалось удалить сообщения: $reason';
   }
@@ -4302,17 +4274,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get deleteChatTypeUnknown =>
       'Чат не удалён для всех: не удалось узнать, личный это чат или группа. Попробуйте ещё раз';
-
-  @override
-  String get chatForAllNotAllowedHint =>
-      'Сервер MAX не разрешает удалять этот чат у собеседника — он удалится только у вас.';
-
-  @override
-  String get chatListForAllNotAllowedHint =>
-      'Сервер MAX не разрешает удалять некоторые из этих чатов у собеседника — они удалятся только у вас.';
-
-  @override
-  String get chatClearAlsoForPeer => 'Стереть историю и у собеседника';
 
   @override
   String get chatDeleteForAllMembers => 'Удалить у всех участников';
@@ -4345,107 +4306,8 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get deleteMessagesPeerOnlyForMe =>
-      'Сообщения собеседника сервер MAX удаляет только у вас';
-
-  @override
-  String get deleteMessagesOthersOnlyForMe =>
-      'Чужие сообщения сервер MAX удаляет только у вас';
-
-  @override
-  String deleteMessagesTooOldForPeer(String age) {
-    return 'Удалить у собеседника можно только свои сообщения не старше $age — это ограничение сервера MAX';
-  }
-
-  @override
-  String deleteMessagesTooOldForAll(String age) {
-    return 'Удалить у всех можно только свои сообщения не старше $age — это ограничение сервера MAX';
-  }
-
-  @override
-  String get deleteMessagesScheduledOnlyForMe =>
-      'Отложенные сообщения удаляются у всех только из списка отложенных';
-
-  @override
   String get deleteMessagesSelectionOnlyForMe =>
-      'Поэтому выбранные сообщения удалятся только у вас';
-
-  @override
-  String deletionAgeLimitDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count дня',
-      many: '$count дней',
-      few: '$count дней',
-      one: '$count дня',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count часа',
-      many: '$count часов',
-      few: '$count часов',
-      one: '$count часа',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count минуты',
-      many: '$count минут',
-      few: '$count минут',
-      one: '$count минуты',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String wipeForBothMessage(String age) {
-    return 'ProMax удалит у собеседника ваши сообщения не старше $age, а затем попросит сервер MAX удалить чат у обоих. Отменить это нельзя.';
-  }
-
-  @override
-  String get wipeOwnForPeerTitle => 'Удалить мои сообщения у собеседника?';
-
-  @override
-  String get wipeOwnForPeerAction => 'Удалить мои у собеседника';
-
-  @override
-  String wipeOwnForPeerMessage(String age) {
-    return 'Сервер MAX не разрешает удалять этот чат у собеседника. ProMax удалит у него ваши сообщения не старше $age, остальная переписка у собеседника останется, а чат удалится только у вас. Отменить это нельзя.';
-  }
-
-  @override
-  String wipeSummaryForPeer(int count) {
-    return 'Удалено у собеседника ваших сообщений: $count';
-  }
-
-  @override
-  String wipeSummaryNotConfirmed(int count) {
-    return 'Сервер MAX не удалил у собеседника: $count';
-  }
-
-  @override
-  String wipeSummaryKeptForPeer(int count, String age) {
-    return 'Остались у собеседника (его сообщения и ваши старше $age): $count';
-  }
-
-  @override
-  String get wipeSummaryChatForAllAccepted =>
-      'Сервер MAX принял запрос на удаление чата у обоих';
-
-  @override
-  String get wipeSummaryChatRemovedForMe => 'Чат удалён только у вас';
+      'Часть выбранных сообщений нельзя удалить у участников, поэтому все они удалятся только у вас';
 
   @override
   String get infoDeleteForAll =>
@@ -4454,42 +4316,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get chatActionProfileUnavailable =>
       'Профиль ещё не загрузился, попробуйте через пару секунд';
-
-  @override
-  String get chatDeleteAlsoForPeer =>
-      'Удалить чат и у собеседника — переписка пропадёт и у него';
-
-  @override
-  String get wipeForBothAction => 'Удалить у обоих';
-
-  @override
-  String get wipeForBothTitle => 'Удалить у обоих?';
-
-  @override
-  String get wipeCollecting => 'Собираю историю…';
-
-  @override
-  String wipeFound(int count) {
-    return 'Найдено сообщений: $count';
-  }
-
-  @override
-  String wipeDeleting(int done, int total) {
-    return 'Удалено $done из $total';
-  }
-
-  @override
-  String get wipeSummaryHistoryIncomplete =>
-      'Сервер отдал историю не полностью';
-
-  @override
-  String get wipeSummaryInterrupted =>
-      'Связь пропала, удаление прервано — попробуйте ещё раз';
-
-  @override
-  String wipeSummaryChatKept(String reason) {
-    return 'Чат не удалён: $reason';
-  }
 
   @override
   String get messageDeletedMark => 'удалено';
@@ -6116,7 +5942,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appIconScreenUnsupported =>
-      'Смена иконки доступна только на Android и iOS';
+      'В веб-версии иконку приложения сменить нельзя';
 
   @override
   String appIconScreenChanged(String name) {
@@ -6136,10 +5962,48 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appIconScreenHint =>
-      'На Android приложение закроется — лаунчер подхватит новую иконку. На iOS — мгновенно с системным диалогом.';
+      'iOS сменит иконку сразу и покажет системное уведомление об этом.';
 
   @override
-  String get appIconScreenOnlyMobile => 'Доступно только на Android и iOS';
+  String get appIconScreenHintAndroid =>
+      'Лаунчеру нужно несколько секунд, чтобы подхватить новую иконку. ProMax при этом закроется, ярлыки чатов пропадут, а на некоторых оболочках значок придётся заново вынести на рабочий стол.';
+
+  @override
+  String get appIconScreenHintDesktop =>
+      'Иконка меняется у окна, на панели задач и в Dock, пока ProMax запущен, и восстанавливается при каждом запуске. Ярлыки в меню «Пуск», на рабочем столе и в Dock до запуска остаются классическими.';
+
+  @override
+  String get appIconAndroidConfirmTitle => 'Сменить иконку?';
+
+  @override
+  String get appIconAndroidConfirmMessage =>
+      'ProMax закроется, а лаунчер обновит значок через несколько секунд. Ярлыки чатов на рабочем столе пропадут, а на некоторых оболочках значок придётся заново вынести на рабочий стол из списка приложений.';
+
+  @override
+  String get appIconAndroidConfirmAction => 'Сменить';
+
+  @override
+  String get appIconSeasonalTitle => 'Сезонная иконка автоматически';
+
+  @override
+  String get appIconSeasonalSubtitle =>
+      'Хэллоуин с 24 октября по 2 ноября, Новый год с 20 декабря по 10 января. Потом вернётся выбранная вами иконка.';
+
+  @override
+  String appIconSeasonalActive(String name, DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.MMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Сейчас действует «$name» по $dateString';
+  }
+
+  @override
+  String get appIconSeasonalPending =>
+      'Иконка сменится, когда вы свернёте ProMax';
+
+  @override
+  String get appIconSeasonalManual =>
+      'Вы выбрали иконку сами — до конца сезона она не поменяется';
 
   @override
   String get password2faConnectionDropped => 'Соединение прервалось…';
@@ -7521,18 +7385,49 @@ class AppLocalizationsRu extends AppLocalizations {
       'Автор истории не узнает, что вы её смотрели';
 
   @override
-  String get proMaxStreamerMode => 'Режим стримера';
-
-  @override
-  String get proMaxStreamerModeHint =>
-      'Размывает номера, ID и превью сообщений, прячет текст уведомлений';
-
-  @override
   String get proMaxSwitcherBlur => 'Размытие в переключателе';
 
   @override
   String get proMaxSwitcherBlurHint =>
-      'В списке открытых приложений iOS не видно содержимое';
+      'Содержимое скрыто в списке открытых приложений и в превью окон на всех платформах';
+
+  @override
+  String get performanceModeTitle => 'Производительность';
+
+  @override
+  String get performanceModeSubtitle =>
+      'Баланс между эффектами и плавностью интерфейса';
+
+  @override
+  String get performanceModeAuto => 'Авто';
+
+  @override
+  String get performanceModeSmooth => 'Максимум плавности';
+
+  @override
+  String get performanceModeBeauty => 'Максимум красоты';
+
+  @override
+  String performanceModeAutoHint(Object tier) {
+    return 'Устройство определено как $tier: стекло, фоны и атмосфера подстраиваются под его мощность';
+  }
+
+  @override
+  String get performanceModeSmoothHint =>
+      'Стекло без размытия, статичные фоны, меньше частиц атмосферы';
+
+  @override
+  String get performanceModeBeautyHint =>
+      'Преломление стекла и анимации без ограничения кадров даже на слабых устройствах';
+
+  @override
+  String get performanceTierLow => 'слабое';
+
+  @override
+  String get performanceTierMid => 'среднее';
+
+  @override
+  String get performanceTierHigh => 'мощное';
 
   @override
   String get proMaxSectionMessages => 'Сообщения';
@@ -7583,7 +7478,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get proMaxAntiRead => 'Не читать';
 
   @override
-  String get proMaxStreamer => 'Стример';
+  String get proMaxNoTypingShort => 'Не печатать';
 
   @override
   String get proMaxOff => 'Выкл';
@@ -7686,81 +7581,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get profilePhoneManualInvalid => 'Не похоже на номер телефона';
-
-  @override
-  String get ignoredSendersTitle => 'Запрет писать мне';
-
-  @override
-  String get ignoredSendersHowItWorks => 'Как это работает';
-
-  @override
-  String get ignoredSendersExplanation =>
-      'В MAX нет настройки «кто может мне писать». Единственный способ, при котором отправка сообщения не проходит, — чёрный список (ЧС) на сервере MAX, и об этом собеседник может догадаться.\n\nЭтот режим работает только в ProMax и на сервере никого не блокирует. Сообщения выбранных людей в личных чатах удаляются только у вас, уведомления о них не приходят, отметка о прочтении не ставится, чат не поднимается и счётчик не растёт, а звонки молча отклоняются. Они ничего не узнают: для них сообщение отправлено как обычно.';
-
-  @override
-  String get ignoredSendersCaveat =>
-      'Сообщения удаляются «у себя» на сервере, поэтому пропадут и в других ваших приложениях MAX, но уведомление там может успеть прийти. Если убрать человека из списка, удалённые сообщения не вернутся. Групповые чаты режим не затрагивает.';
-
-  @override
-  String get ignoredSendersEmpty => 'Список пуст';
-
-  @override
-  String get ignoredSendersEmptyHint =>
-      'Добавьте человека по ID или из меню личного чата: «Запретить писать мне»';
-
-  @override
-  String get ignoredSendersAdd => 'Добавить по ID';
-
-  @override
-  String get ignoredSendersIdLabel => 'ID пользователя';
-
-  @override
-  String get ignoredSendersIdHint => 'Например, 123456789';
-
-  @override
-  String get ignoredSendersConfirmAdd => 'Запретить';
-
-  @override
-  String get ignoredSendersCancel => 'Отмена';
-
-  @override
-  String get ignoredSendersInvalidId => 'Нужен числовой ID пользователя';
-
-  @override
-  String get ignoredSendersSelfId => 'Это ваш собственный ID';
-
-  @override
-  String get ignoredSendersAlreadyAdded => 'Этот ID уже в списке';
-
-  @override
-  String get ignoredSendersAdded =>
-      'Сообщения от него больше не будут показываться';
-
-  @override
-  String get ignoredSendersRemoved =>
-      'Новые сообщения от него снова будут показываться';
-
-  @override
-  String get ignoredSendersRemove => 'Разрешить';
-
-  @override
-  String ignoredSendersUserId(int id) {
-    return 'ID $id';
-  }
-
-  @override
-  String get ignoredSendersNoAccount => 'Сначала войдите в аккаунт';
-
-  @override
-  String get chatInfoMenuIgnore => 'Запретить писать мне';
-
-  @override
-  String get chatInfoMenuUnignore => 'Разрешить писать мне';
-
-  @override
-  String chatInfoIgnoreConfirmMessage(String name) {
-    return '$name сможет отправлять вам сообщения и не узнает об этом, но ProMax будет удалять их у вас, не покажет уведомления, не отметит прочитанными и отклонит звонки. Остановить саму отправку может только чёрный список MAX.';
-  }
 
   @override
   String get pluginsScreenNativeSection => 'Встроенные нативные';
@@ -7894,4 +7714,254 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get motionBlurReset => 'Сбросить параметры';
+
+  @override
+  String get msgActionsTranslate => 'Перевести';
+
+  @override
+  String get msgActionsShowOriginal => 'Показать оригинал';
+
+  @override
+  String get translationShowTranslation => 'Показать перевод';
+
+  @override
+  String get translationTranslating => 'Перевод…';
+
+  @override
+  String get translationLabel => 'Перевод';
+
+  @override
+  String translationLabelFrom(String language) {
+    return 'Перевод с языка: $language';
+  }
+
+  @override
+  String get chatScreenMenuTranslateChat => 'Переводить чат';
+
+  @override
+  String get chatScreenMenuStopTranslateChat => 'Не переводить чат';
+
+  @override
+  String get translationChatEnabled =>
+      'Входящие сообщения будут переводиться на устройстве';
+
+  @override
+  String get translationChatDisabled => 'Автоперевод чата выключен';
+
+  @override
+  String get translationSameLanguage => 'Сообщение уже на языке перевода';
+
+  @override
+  String get translationFailed => 'Не удалось перевести сообщение';
+
+  @override
+  String get translationNeedsWifi =>
+      'Языковая модель скачается по Wi-Fi. Подключитесь к Wi-Fi или разрешите загрузку по мобильной сети в настройках перевода';
+
+  @override
+  String get translationUnsupported =>
+      'Этот язык не поддерживается переводчиком';
+
+  @override
+  String get translationUndetermined => 'Не удалось определить язык сообщения';
+
+  @override
+  String get translationUnavailable => 'Перевод недоступен на этом устройстве';
+
+  @override
+  String get translationSettingsTitle => 'Перевод сообщений';
+
+  @override
+  String get translationSettingsPrivacy =>
+      'Перевод выполняется на устройстве. Текст сообщений никуда не отправляется';
+
+  @override
+  String get translationSettingsTarget => 'Язык перевода';
+
+  @override
+  String translationSettingsTargetApp(String language) {
+    return 'Как в приложении ($language)';
+  }
+
+  @override
+  String get translationSettingsWifiOnly => 'Скачивать модели только по Wi-Fi';
+
+  @override
+  String get translationSettingsWifiOnlySubtitle =>
+      'Модель каждого языка весит около 30 МБ и скачивается при первом переводе';
+
+  @override
+  String get translationSettingsModels => 'Скачанные языки';
+
+  @override
+  String get translationSettingsModelsEmpty => 'Модели ещё не скачаны';
+
+  @override
+  String get translationSettingsDeleteModel => 'Удалить модель';
+
+  @override
+  String get translationSettingsModelDeleted => 'Модель удалена';
+
+  @override
+  String get translationSettingsModelDeleteFailed =>
+      'Не удалось удалить модель';
+
+  @override
+  String get translationSettingsSystemModels =>
+      'Языки для перевода скачиваются системой. Удалить их можно в Настройках iOS → Приложения → Перевод';
+
+  @override
+  String get stickerMakerAction => 'Сделать стикер';
+
+  @override
+  String get stickerMakerTitle => 'Новый стикер';
+
+  @override
+  String get stickerMakerProcessing => 'Вырезаем объект…';
+
+  @override
+  String get stickerMakerNoSubject => 'Не удалось найти объект на фото';
+
+  @override
+  String get stickerMakerDownloading =>
+      'Модель ещё загружается, попробуйте через минуту';
+
+  @override
+  String get stickerMakerUnavailable =>
+      'Создание стикеров недоступно на этом устройстве';
+
+  @override
+  String get stickerMakerUse => 'Готово';
+
+  @override
+  String get stickerMakerHint =>
+      'Фон удалён на устройстве. Стикер отправится как изображение с прозрачным фоном';
+
+  @override
+  String get appIconNameDefault => 'Классическая';
+
+  @override
+  String get appIconNameLight => 'Светлая';
+
+  @override
+  String get appIconNameAurora => 'Аврора';
+
+  @override
+  String get appIconNameSunset => 'Закат';
+
+  @override
+  String get appIconNameGlass => 'Стекло';
+
+  @override
+  String get appIconNameHalloween => 'Хэллоуин';
+
+  @override
+  String get appIconNameNewYear => 'Новый год';
+
+  @override
+  String get selfProfilePreview => 'Посмотреть профиль со стороны';
+
+  @override
+  String get selfProfileId => 'Мой ID';
+
+  @override
+  String get selfProfileIdCopied => 'ID скопирован';
+
+  @override
+  String get selfProfilePreviewPrivacy =>
+      'Так выглядит карточка с вашим публичным именем и описанием. Видимость телефона и статуса для другого человека зависит от настроек приватности и ваших контактов.';
+
+  @override
+  String get updateReceiveBeta => 'Получать бета-версии';
+
+  @override
+  String get updateReceiveBetaHint =>
+      'Выключено — только стабильные выпуски. Включено — также бета-версии и кандидаты в релиз.';
+
+  @override
+  String get diagnosticsTitle => 'Отправлять диагностику';
+
+  @override
+  String get diagnosticsHint =>
+      'Случайный ID установки, типы ошибок, стек ProMax, версия и ОС отправляются на сервер ProMax. Без переписки, телефона и токенов. Можно выключить в любой момент.';
+
+  @override
+  String get hubAnnouncements => 'Объявления ProMax';
+
+  @override
+  String get hubAdmin => 'Админка';
+
+  @override
+  String get hubPreview => 'Превью';
+
+  @override
+  String get hubServiceChat => 'Служебный чат ProMax';
+
+  @override
+  String get hubActivationHint =>
+      'Активируйте админку одноразовым кодом с вашего сервера. Номер телефона открывает этот экран, а право рассылки подтверждается сервером.';
+
+  @override
+  String get hubActivationCode => 'Одноразовый код';
+
+  @override
+  String get hubActivate => 'Активировать';
+
+  @override
+  String get hubUnavailable => 'Сервис ProMax пока недоступен';
+
+  @override
+  String get hubOffline =>
+      'Нет связи с сервисом ProMax. Показаны сохранённые объявления.';
+
+  @override
+  String get hubNoAnnouncements => 'Здесь появятся объявления команды ProMax';
+
+  @override
+  String get hubReadOnly =>
+      'Объявления доступны только в ProMax. Ответы в этот чат не отправляются.';
+
+  @override
+  String get hubDraft => 'Черновик';
+
+  @override
+  String get hubDraftEmpty => 'Черновик пока пуст';
+
+  @override
+  String get hubDraftChanged =>
+      'Черновик изменён на другом устройстве или пуст. Обновите его перед отправкой.';
+
+  @override
+  String get hubActionFailed =>
+      'Не удалось выполнить действие. Проверьте соединение и активацию админки.';
+
+  @override
+  String get hubPublish => 'Опубликовать всем';
+
+  @override
+  String get hubPublishConfirm =>
+      'Это объявление увидят все пользователи ProMax. Отправить?';
+
+  @override
+  String get hubPublished => 'Объявление опубликовано';
+
+  @override
+  String get hubPreviewHint =>
+      'Этот чат виден только администратору. Проверьте текст и нажмите «Опубликовать всем», когда он готов.';
+
+  @override
+  String get hubAdminHint =>
+      'Напишите объявление и отправьте его в «Превью». До подтверждения публикации пользователи его не увидят.';
+
+  @override
+  String get hubCompose => 'Текст объявления';
+
+  @override
+  String get hubSendToPreview => 'Отправить в превью';
+
+  @override
+  String get hubRefresh => 'Обновить';
+
+  @override
+  String get hubNewAnnouncement => 'Новое объявление в служебном чате ProMax';
 }

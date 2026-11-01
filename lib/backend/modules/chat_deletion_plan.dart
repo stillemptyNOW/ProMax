@@ -1,4 +1,3 @@
-import 'deletion_policy.dart';
 import 'server_outcome.dart';
 
 enum ChatDeletionRefusal {
@@ -34,6 +33,13 @@ final class ChatDeletionResult {
   bool get ok => outcome.ok;
 }
 
+bool ownerDeletesForAll({
+  required int chatId,
+  required String? chatType,
+  required int? owner,
+  required int myId,
+}) => chatId != 0 && chatType == 'CHAT' && owner != null && owner == myId;
+
 class ChatDeletionPlan {
   const ChatDeletionPlan._(this.forAll);
 
@@ -48,20 +54,17 @@ class ChatDeletionPlan {
     required String? chatType,
     required int? owner,
     required int myId,
-    required bool peerIsBot,
-    required bool? deleteForAll,
   }) {
     if (!forAll || chatId == 0) return forMe;
     if (chatType == null) return null;
-    final allowed = chatForAllAllowed(
-      chatId: chatId,
-      chatType: chatType,
-      owner: owner,
-      myId: myId,
-      peerIsBot: peerIsBot,
-      deleteForAll: deleteForAll,
-    );
-    return allowed ? forEveryone : forMe;
+    return ownerDeletesForAll(
+          chatId: chatId,
+          chatType: chatType,
+          owner: owner,
+          myId: myId,
+        )
+        ? forEveryone
+        : forMe;
   }
 
   Map<String, Object> payload({
