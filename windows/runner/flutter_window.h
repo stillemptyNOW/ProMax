@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 
+#include "resource.h"
 #include "win32_window.h"
 
 inline constexpr ULONG_PTR kActivateInstanceMessage = 0x50524D41;
@@ -42,6 +43,9 @@ class FlutterWindow : public Win32Window {
   void HandleWindowCall(const Call& call, std::unique_ptr<Result> result);
   void HandleBadgeCall(const Call& call, std::unique_ptr<Result> result);
   void HandleScreenCall(const Call& call, std::unique_ptr<Result> result);
+  void HandleAppIconCall(const Call& call, std::unique_ptr<Result> result);
+  bool ApplyWindowIcon();
+  void ReleaseWindowIcons();
 
   void Reveal();
   void HideToTray();
@@ -60,11 +64,15 @@ class FlutterWindow : public Win32Window {
   std::unique_ptr<Channel> window_channel_;
   std::unique_ptr<Channel> badge_channel_;
   std::unique_ptr<Channel> screen_channel_;
+  std::unique_ptr<Channel> app_icon_channel_;
 
   bool start_hidden_ = false;
   bool close_to_tray_ = true;
   bool tray_added_ = false;
   HWND tray_window_ = nullptr;
+  int icon_resource_ = IDI_APP_ICON;
+  HICON big_icon_ = nullptr;
+  HICON small_icon_ = nullptr;
   UINT taskbar_created_message_ = 0;
   std::wstring tray_tooltip_ = L"ProMax";
   std::wstring tray_open_label_ = L"Open ProMax";

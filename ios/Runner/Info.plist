@@ -54,6 +54,24 @@
 				<key>UIPrerenderedIcon</key>
 				<false/>
 			</dict>
+			<key>IconHalloween</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>IconHalloween</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>IconNewYear</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>IconNewYear</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
 		</dict>
 	</dict>
 	<key>CFBundleIdentifier</key>

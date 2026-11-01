@@ -6116,7 +6116,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appIconScreenUnsupported =>
-      'Смена иконки доступна только на Android и iOS';
+      'В веб-версии иконку приложения сменить нельзя';
 
   @override
   String appIconScreenChanged(String name) {
@@ -6136,10 +6136,48 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appIconScreenHint =>
-      'На Android приложение закроется — лаунчер подхватит новую иконку. На iOS — мгновенно с системным диалогом.';
+      'iOS сменит иконку сразу и покажет системное уведомление об этом.';
 
   @override
-  String get appIconScreenOnlyMobile => 'Доступно только на Android и iOS';
+  String get appIconScreenHintAndroid =>
+      'Лаунчеру нужно несколько секунд, чтобы подхватить новую иконку. ProMax при этом закроется, ярлыки чатов пропадут, а на некоторых оболочках значок придётся заново вынести на рабочий стол.';
+
+  @override
+  String get appIconScreenHintDesktop =>
+      'Иконка меняется у окна, на панели задач и в Dock, пока ProMax запущен, и восстанавливается при каждом запуске. Ярлыки в меню «Пуск», на рабочем столе и в Dock до запуска остаются классическими.';
+
+  @override
+  String get appIconAndroidConfirmTitle => 'Сменить иконку?';
+
+  @override
+  String get appIconAndroidConfirmMessage =>
+      'ProMax закроется, а лаунчер обновит значок через несколько секунд. Ярлыки чатов на рабочем столе пропадут, а на некоторых оболочках значок придётся заново вынести на рабочий стол из списка приложений.';
+
+  @override
+  String get appIconAndroidConfirmAction => 'Сменить';
+
+  @override
+  String get appIconSeasonalTitle => 'Сезонная иконка автоматически';
+
+  @override
+  String get appIconSeasonalSubtitle =>
+      'Хэллоуин с 24 октября по 2 ноября, Новый год с 20 декабря по 10 января. Потом вернётся выбранная вами иконка.';
+
+  @override
+  String appIconSeasonalActive(String name, DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.MMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Сейчас действует «$name» по $dateString';
+  }
+
+  @override
+  String get appIconSeasonalPending =>
+      'Иконка сменится, когда вы свернёте ProMax';
+
+  @override
+  String get appIconSeasonalManual =>
+      'Вы выбрали иконку сами — до конца сезона она не поменяется';
 
   @override
   String get password2faConnectionDropped => 'Соединение прервалось…';

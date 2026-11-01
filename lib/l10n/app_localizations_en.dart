@@ -6065,7 +6065,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appIconScreenUnsupported =>
-      'Changing the icon is only available on Android and iOS';
+      'The app icon can\'t be changed in the web version';
 
   @override
   String appIconScreenChanged(String name) {
@@ -6085,10 +6085,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appIconScreenHint =>
-      'On Android the app will close so the launcher picks up the new icon. On iOS it changes instantly with a system dialog.';
+      'iOS changes the icon right away and shows a system notice about it.';
 
   @override
-  String get appIconScreenOnlyMobile => 'Only available on Android and iOS';
+  String get appIconScreenHintAndroid =>
+      'The launcher needs a few seconds to pick up the new icon. ProMax closes, chat shortcuts are removed, and on some launchers you have to put the icon back on the home screen.';
+
+  @override
+  String get appIconScreenHintDesktop =>
+      'The icon changes for the window, the taskbar and the Dock while ProMax runs and is restored on every launch. Start menu, desktop and Dock shortcuts keep the classic icon until ProMax starts.';
+
+  @override
+  String get appIconAndroidConfirmTitle => 'Change the icon?';
+
+  @override
+  String get appIconAndroidConfirmMessage =>
+      'ProMax will close and the launcher will update the icon in a few seconds. Chat shortcuts on the home screen are removed, and on some launchers you have to add the icon to the home screen again from the app list.';
+
+  @override
+  String get appIconAndroidConfirmAction => 'Change';
+
+  @override
+  String get appIconSeasonalTitle => 'Seasonal icon automatically';
+
+  @override
+  String get appIconSeasonalSubtitle =>
+      'Halloween from October 24 to November 2, New Year from December 20 to January 10. Your own icon comes back afterwards.';
+
+  @override
+  String appIconSeasonalActive(String name, DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.MMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return '“$name” is on until $dateString';
+  }
+
+  @override
+  String get appIconSeasonalPending => 'The icon changes once you leave ProMax';
+
+  @override
+  String get appIconSeasonalManual =>
+      'You picked the icon yourself, so it stays until the season ends';
 
   @override
   String get password2faConnectionDropped => 'Connection lost…';

@@ -28,6 +28,7 @@ import 'core/storage/chat_encryption_store.dart';
 import 'core/config/app_accent.dart';
 import 'core/config/app_amoled.dart';
 import 'core/config/app_badge.dart';
+import 'core/config/app_icon.dart';
 import 'core/config/app_show_extra_info.dart';
 import 'core/config/app_spectrum_background.dart';
 import 'core/config/app_bubble_behavior.dart';
@@ -332,6 +333,7 @@ void main(List<String> args) async {
   final showExtraInfoFuture = AppShowExtraInfo.load();
   final spectrumBackgroundFuture = AppSpectrumBackground.load();
   final badgeFuture = AppBadge.load();
+  unawaited(AppIconConfig.load());
   final trafficCaptureFuture = TrafficMonitor.instance.load();
   final debugLogFuture = DebugSessionLog.instance.init();
 
@@ -557,6 +559,9 @@ class ProMaxAppState extends State<ProMaxApp>
     _lastAppliedThemeMode = _effectiveThemeMode;
     _rescheduleSwitch();
     unawaited(_refreshWallpaperSeed());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => unawaited(AppIconConfig.refresh()),
+    );
 
     api.setReconnectCallback(() async {
       try {
@@ -869,9 +874,11 @@ class ProMaxAppState extends State<ProMaxApp>
       DebugSessionLog.instance.flushNow();
       SelfCheckService.instance.pause();
       E2eeService.instance.lock();
+      unawaited(AppIconConfig.onBackground());
     }
     if (state != AppLifecycleState.resumed) return;
     api.wakeUp();
+    unawaited(AppIconConfig.refresh());
     unawaited(DesktopNotifier.instance.onWindowAttended());
     _presentIncomingCall();
     SelfCheckService.instance.resume();
