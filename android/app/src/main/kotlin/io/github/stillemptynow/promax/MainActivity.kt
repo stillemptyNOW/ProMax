@@ -378,6 +378,10 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
 
         ClipboardMedia.attach(flutterEngine, this)
 
+        OnDeviceTranslation.attach(flutterEngine, this)
+
+        SubjectLift.attach(flutterEngine, this)
+
         MediaExport.attach(flutterEngine, this)
     }
 

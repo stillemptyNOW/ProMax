@@ -7657,4 +7657,128 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get motionBlurReset => 'Reset settings';
+
+  @override
+  String get msgActionsTranslate => 'Translate';
+
+  @override
+  String get msgActionsShowOriginal => 'Show original';
+
+  @override
+  String get translationShowTranslation => 'Show translation';
+
+  @override
+  String get translationTranslating => 'Translating…';
+
+  @override
+  String get translationLabel => 'Translation';
+
+  @override
+  String translationLabelFrom(String language) {
+    return 'Translated from $language';
+  }
+
+  @override
+  String get chatScreenMenuTranslateChat => 'Translate chat';
+
+  @override
+  String get chatScreenMenuStopTranslateChat => 'Stop translating chat';
+
+  @override
+  String get translationChatEnabled =>
+      'Incoming messages will be translated on this device';
+
+  @override
+  String get translationChatDisabled => 'Chat auto-translation is off';
+
+  @override
+  String get translationSameLanguage =>
+      'The message is already in the target language';
+
+  @override
+  String get translationFailed => 'Couldn\'t translate the message';
+
+  @override
+  String get translationNeedsWifi =>
+      'The language model downloads over Wi-Fi. Connect to Wi-Fi or allow mobile data in translation settings';
+
+  @override
+  String get translationUnsupported =>
+      'This language isn\'t supported by the translator';
+
+  @override
+  String get translationUndetermined => 'Couldn\'t detect the message language';
+
+  @override
+  String get translationUnavailable =>
+      'Translation isn\'t available on this device';
+
+  @override
+  String get translationSettingsTitle => 'Message translation';
+
+  @override
+  String get translationSettingsPrivacy =>
+      'Translation runs on this device. Message text is never sent anywhere';
+
+  @override
+  String get translationSettingsTarget => 'Translate to';
+
+  @override
+  String translationSettingsTargetApp(String language) {
+    return 'App language ($language)';
+  }
+
+  @override
+  String get translationSettingsWifiOnly => 'Download models over Wi-Fi only';
+
+  @override
+  String get translationSettingsWifiOnlySubtitle =>
+      'Each language model is about 30 MB and downloads on first use';
+
+  @override
+  String get translationSettingsModels => 'Downloaded languages';
+
+  @override
+  String get translationSettingsModelsEmpty => 'No models downloaded yet';
+
+  @override
+  String get translationSettingsDeleteModel => 'Delete model';
+
+  @override
+  String get translationSettingsModelDeleted => 'Model deleted';
+
+  @override
+  String get translationSettingsModelDeleteFailed =>
+      'Couldn\'t delete the model';
+
+  @override
+  String get translationSettingsSystemModels =>
+      'Translation languages are downloaded by the system. Remove them in iOS Settings → Apps → Translate';
+
+  @override
+  String get stickerMakerAction => 'Make sticker';
+
+  @override
+  String get stickerMakerTitle => 'New sticker';
+
+  @override
+  String get stickerMakerProcessing => 'Cutting out the subject…';
+
+  @override
+  String get stickerMakerNoSubject => 'Couldn\'t find a subject in the photo';
+
+  @override
+  String get stickerMakerDownloading =>
+      'The model is still downloading, try again in a minute';
+
+  @override
+  String get stickerMakerUnavailable =>
+      'Making stickers isn\'t available on this device';
+
+  @override
+  String get stickerMakerUse => 'Done';
+
+  @override
+  String get stickerMakerHint =>
+      'The background was removed on this device. The sticker is sent as an image with a transparent background';
 }

@@ -154,6 +154,8 @@ void showMessageActions({
   VoidCallback? onRemind,
   bool hasReminder = false,
   VoidCallback? onCopyLink,
+  VoidCallback? onTranslate,
+  bool isTranslated = false,
   bool isPinned = false,
   void Function(String emoji)? onReact,
   String? selectedReaction,
@@ -209,6 +211,8 @@ void showMessageActions({
       onRemind: onRemind,
       hasReminder: hasReminder,
       onCopyLink: onCopyLink,
+      onTranslate: onTranslate,
+      isTranslated: isTranslated,
       isPinned: isPinned,
       onReact: onReact,
       selectedReaction: selectedReaction,
@@ -277,6 +281,8 @@ class _MessageActionsLayer extends StatefulWidget {
   final VoidCallback? onRemind;
   final bool hasReminder;
   final VoidCallback? onCopyLink;
+  final VoidCallback? onTranslate;
+  final bool isTranslated;
   final bool isPinned;
   final void Function(String emoji)? onReact;
   final String? selectedReaction;
@@ -318,6 +324,8 @@ class _MessageActionsLayer extends StatefulWidget {
     this.onRemind,
     this.hasReminder = false,
     this.onCopyLink,
+    this.onTranslate,
+    this.isTranslated = false,
     this.isPinned = false,
     this.onReact,
     this.selectedReaction,
@@ -678,6 +686,14 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
       if (canCopy) _Action(Symbols.content_copy, l10n.msgActionsCopy, _copy),
       if (widget.onCopyLink != null)
         _Action(Symbols.link, l10n.msgActionsCopyLink, _copyLink),
+      if (widget.onTranslate != null)
+        _Action(
+          Symbols.translate,
+          widget.isTranslated
+              ? l10n.msgActionsShowOriginal
+              : l10n.msgActionsTranslate,
+          _translate,
+        ),
       if (widget.isMe && widget.onEdit != null)
         _Action(Symbols.edit, l10n.msgActionsEdit, _edit),
       if (widget.onPin != null)
@@ -908,6 +924,12 @@ class _MessageActionsLayerState extends State<_MessageActionsLayer>
     final onPin = widget.onPin;
     await _close();
     onPin?.call();
+  }
+
+  Future<void> _translate() async {
+    final onTranslate = widget.onTranslate;
+    await _close();
+    onTranslate?.call();
   }
 
   Future<void> _copyLink() async {

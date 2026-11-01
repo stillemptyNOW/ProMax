@@ -7704,4 +7704,126 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get motionBlurReset => 'Сбросить параметры';
+
+  @override
+  String get msgActionsTranslate => 'Перевести';
+
+  @override
+  String get msgActionsShowOriginal => 'Показать оригинал';
+
+  @override
+  String get translationShowTranslation => 'Показать перевод';
+
+  @override
+  String get translationTranslating => 'Перевод…';
+
+  @override
+  String get translationLabel => 'Перевод';
+
+  @override
+  String translationLabelFrom(String language) {
+    return 'Перевод с языка: $language';
+  }
+
+  @override
+  String get chatScreenMenuTranslateChat => 'Переводить чат';
+
+  @override
+  String get chatScreenMenuStopTranslateChat => 'Не переводить чат';
+
+  @override
+  String get translationChatEnabled =>
+      'Входящие сообщения будут переводиться на устройстве';
+
+  @override
+  String get translationChatDisabled => 'Автоперевод чата выключен';
+
+  @override
+  String get translationSameLanguage => 'Сообщение уже на языке перевода';
+
+  @override
+  String get translationFailed => 'Не удалось перевести сообщение';
+
+  @override
+  String get translationNeedsWifi =>
+      'Языковая модель скачается по Wi-Fi. Подключитесь к Wi-Fi или разрешите загрузку по мобильной сети в настройках перевода';
+
+  @override
+  String get translationUnsupported =>
+      'Этот язык не поддерживается переводчиком';
+
+  @override
+  String get translationUndetermined => 'Не удалось определить язык сообщения';
+
+  @override
+  String get translationUnavailable => 'Перевод недоступен на этом устройстве';
+
+  @override
+  String get translationSettingsTitle => 'Перевод сообщений';
+
+  @override
+  String get translationSettingsPrivacy =>
+      'Перевод выполняется на устройстве. Текст сообщений никуда не отправляется';
+
+  @override
+  String get translationSettingsTarget => 'Язык перевода';
+
+  @override
+  String translationSettingsTargetApp(String language) {
+    return 'Как в приложении ($language)';
+  }
+
+  @override
+  String get translationSettingsWifiOnly => 'Скачивать модели только по Wi-Fi';
+
+  @override
+  String get translationSettingsWifiOnlySubtitle =>
+      'Модель каждого языка весит около 30 МБ и скачивается при первом переводе';
+
+  @override
+  String get translationSettingsModels => 'Скачанные языки';
+
+  @override
+  String get translationSettingsModelsEmpty => 'Модели ещё не скачаны';
+
+  @override
+  String get translationSettingsDeleteModel => 'Удалить модель';
+
+  @override
+  String get translationSettingsModelDeleted => 'Модель удалена';
+
+  @override
+  String get translationSettingsModelDeleteFailed =>
+      'Не удалось удалить модель';
+
+  @override
+  String get translationSettingsSystemModels =>
+      'Языки для перевода скачиваются системой. Удалить их можно в Настройках iOS → Приложения → Перевод';
+
+  @override
+  String get stickerMakerAction => 'Сделать стикер';
+
+  @override
+  String get stickerMakerTitle => 'Новый стикер';
+
+  @override
+  String get stickerMakerProcessing => 'Вырезаем объект…';
+
+  @override
+  String get stickerMakerNoSubject => 'Не удалось найти объект на фото';
+
+  @override
+  String get stickerMakerDownloading =>
+      'Модель ещё загружается, попробуйте через минуту';
+
+  @override
+  String get stickerMakerUnavailable =>
+      'Создание стикеров недоступно на этом устройстве';
+
+  @override
+  String get stickerMakerUse => 'Готово';
+
+  @override
+  String get stickerMakerHint =>
+      'Фон удалён на устройстве. Стикер отправится как изображение с прозрачным фоном';
 }
