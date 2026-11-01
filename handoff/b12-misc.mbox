@@ -1,0 +1,2915 @@
+From d1d1e05255fbce7a7a0e48480589267987b8c4e4 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 1 Nov 2026 12:15:35 +0000
+Subject: [PATCH] WIP b12-misc (handoff)
+
+---
+ .github/scripts/publish-release.sh            |  47 ++-
+ .github/workflows/promax-platforms.yml        |   6 +-
+ CLAUDE.md                                     |  11 +-
+ README.md                                     |   2 +-
+ lib/backend/modules/account.dart              |   2 +
+ lib/core/storage/quick_replies_store.dart     | 252 ++++++++++++--
+ lib/core/utils/release_notes_markdown.dart    | 288 ++++++++++++++++
+ lib/core/utils/update_checker.dart            | 215 ++++++++----
+ .../chat/quick_reply_panel_controller.dart    | 147 ++++++++
+ .../chats/chat/view/chat_body_layout.dart     |  12 +-
+ .../chat/view/quick_reply_panel_view.dart     | 143 ++++++++
+ lib/frontend/screens/chats/chat_screen.dart   |  38 +-
+ .../screens/chats/quick_replies_sheet.dart    | 325 ++++++++++++------
+ .../profile/promax_settings_screen.dart       |  59 +++-
+ .../screens/profile/quick_replies_screen.dart | 151 ++++----
+ lib/frontend/widgets/release_notes_view.dart  | 164 +++++++++
+ lib/frontend/widgets/update_dialog.dart       |  32 +-
+ lib/main.dart                                 |   4 +-
+ test/chat_notes_and_quick_replies_test.dart   |  32 --
+ test/quick_replies_test.dart                  | 237 +++++++++++++
+ test/release_notes_test.dart                  | 207 +++++++++++
+ 21 files changed, 2043 insertions(+), 331 deletions(-)
+ create mode 100644 lib/core/utils/release_notes_markdown.dart
+ create mode 100644 lib/frontend/screens/chats/chat/quick_reply_panel_controller.dart
+ create mode 100644 lib/frontend/screens/chats/chat/view/quick_reply_panel_view.dart
+ create mode 100644 lib/frontend/widgets/release_notes_view.dart
+ create mode 100644 test/quick_replies_test.dart
+ create mode 100644 test/release_notes_test.dart
+
+diff --git a/.github/scripts/publish-release.sh b/.github/scripts/publish-release.sh
+index 109653c..898931c 100755
+--- a/.github/scripts/publish-release.sh
++++ b/.github/scripts/publish-release.sh
+@@ -16,16 +16,59 @@ if [ -f "$notes_file" ]; then
+   notes_args=(--notes-file "$RUNNER_TEMP/release-notes.md")
+ fi
+ 
++preview_apk='^ProMax-.+-preview-[^/]+\.apk$'
++signed_apk='^ProMax-.+-promax-[^/]+\.apk$'
++
++uploads_matching() {
++  local file
++  for file in "$@"; do
++    if [[ "$(basename "$file")" =~ $pattern ]]; then
++      return 0
++    fi
++  done
++  return 1
++}
++
++release_assets() {
++  gh release view "$tag" --json assets --jq '.assets[].name'
++}
++
++pattern="$preview_apk"
++if uploads_matching "$@"; then
++  if gh release view "$tag" >/dev/null 2>&1 && release_assets | grep -Eq "$signed_apk"; then
++    echo "$tag already has signed APKs: refusing to add debug-signed preview APKs" >&2
++    exit 1
++  fi
++fi
++
++drop_preview_apks() {
++  pattern="$signed_apk"
++  uploads_matching "$@" || return 0
++  local name
++  release_assets | { grep -E "$preview_apk" || true; } | while IFS= read -r name; do
++    echo "Removing preview APK $name from $tag"
++    gh release delete-asset "$tag" "$name" --yes
++  done
++}
++
++published=false
+ for attempt in 1 2 3 4 5; do
+   if gh release view "$tag" >/dev/null 2>&1; then
+     gh release upload "$tag" "$@" --clobber
+-    exit 0
++    published=true
++    break
+   fi
+   if gh release create "$tag" "$@" --target "$GITHUB_SHA" --title "$title" "${notes_args[@]}"; then
+-    exit 0
++    published=true
++    break
+   fi
+   sleep $((attempt * 5))
+ done
+ 
++if [ "$published" = true ]; then
++  drop_preview_apks "$@"
++  exit 0
++fi
++
+ echo "Could not publish $* to $tag" >&2
+ exit 1
+diff --git a/.github/workflows/promax-platforms.yml b/.github/workflows/promax-platforms.yml
+index e492bb5..bada383 100644
+--- a/.github/workflows/promax-platforms.yml
++++ b/.github/workflows/promax-platforms.yml
+@@ -54,7 +54,7 @@ jobs:
+           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD }}
+         run: |
+           if [ -z "$KEYSTORE_BASE64" ]; then
+-            echo "No release keystore in secrets: the APKs are signed with the debug key and are not published."
++            echo "::warning::No release keystore in secrets: the APKs are signed with the debug key and are not published."
+             echo "signed=false" >> "$GITHUB_OUTPUT"
+             exit 0
+           fi
+@@ -88,10 +88,10 @@ jobs:
+             "dist/ProMax-$version-$channel-universal.apk"
+           ls -la dist
+       - name: Publish release
+-        if: env.RELEASE_TAG != ''
++        if: env.RELEASE_TAG != '' && steps.signing.outputs.signed == 'true'
+         env:
+           GH_TOKEN: ${{ github.token }}
+-        run: .github/scripts/publish-release.sh "$RELEASE_TAG" dist/*.apk
++        run: .github/scripts/publish-release.sh "$RELEASE_TAG" dist/ProMax-*-promax-*.apk
+       - uses: actions/upload-artifact@v4
+         with:
+           name: ProMax-android
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 45b028c..b759752 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -194,9 +194,14 @@ and the Linux bundle. Pushing a `v*` tag publishes everything — IPA, `.pmx`
+ tools package, APKs, desktop archives — into one public GitHub Release through
+ `.github/scripts/publish-release.sh`. APKs are named `ProMax-<version>-promax-<abi>.apk`
+ because the in-app updater picks them by the `-promax-<abi>.apk` suffix. Without the
+-`ANDROID_KEYSTORE_*` secrets each build is signed with a throwaway debug key, so those APKs are
+-published as `ProMax-<version>-preview-<abi>.apk`: the updater never installs them over an existing
+-copy, and moving between preview builds needs a reinstall. The in-app updater reads
++`ANDROID_KEYSTORE_*` secrets a build is signed with a throwaway debug key, its APKs are named
++`ProMax-<version>-preview-<abi>.apk` and only kept as workflow artifacts: they are never published.
++Releases carry only the signed `ProMax-<version>-promax-<abi>.apk`; `publish-release.sh` deletes any
++`ProMax-*-preview-*.apk` already attached to the release (`gh release delete-asset`) once signed APKs
++are uploaded, and refuses to add preview APKs to a release that has signed ones. The in-app updater
++shows «Что нового» before «Обновить»: the Markdown bodies of every release newer than the running
++build, newest first (`releaseNotesNewerThan`, rendered by `ReleaseNotesView`; a link opens only after
++a confirmation). The in-app updater reads
+ the 20 most recent releases of the public ProMax repository and takes the newest by the version and
+ build in the tag (`newestRelease`), because GitHub's list order does not follow them. It verifies
+ downloaded files by their published size and SHA-256 digest. iOS sends the IPA to the share sheet so
+diff --git a/README.md b/README.md
+index c88a644..13e6c69 100644
+--- a/README.md
++++ b/README.md
+@@ -45,7 +45,7 @@
+ 
+ [GitHub Actions](https://github.com/stillemptyNOW/ProMax/actions/workflows/promax-ios.yml) проверяет криптографическое ядро, анализатор и тесты, затем собирает IPA на macOS. [Второй воркфлоу](https://github.com/stillemptyNOW/ProMax/actions/workflows/promax-platforms.yml) собирает APK для Android, установщик и архив для Windows и версию для Linux. Тег `v*` публикует всё в один релиз.
+ 
+-Если в секретах репозитория лежит ключ подписи (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`), APK выходят как `ProMax-…-promax-<abi>.apk` и обновляются прямо из приложения. Без ключа каждая сборка подписывается временным ключом и выходит как `ProMax-…-preview-<abi>.apk`: такую версию ставят начисто, а для перехода на следующую preview-сборку старую нужно удалить.
++Если в секретах репозитория лежит ключ подписи (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`), APK выходят как `ProMax-…-promax-<abi>.apk` и обновляются прямо из приложения. Без ключа сборка подписывается временным ключом, её APK (`ProMax-…-preview-<abi>.apk`) остаются только в артефактах workflow и в релиз не попадают; подписанные APK при публикации удаляют из релиза оставшиеся preview-файлы.
+ 
+ ## Лицензия
+ 
+diff --git a/lib/backend/modules/account.dart b/lib/backend/modules/account.dart
+index baabf5e..886e8ae 100644
+--- a/lib/backend/modules/account.dart
++++ b/lib/backend/modules/account.dart
+@@ -14,6 +14,7 @@ import '../../core/storage/account_phone_store.dart';
+ import '../../core/storage/app_database.dart';
+ import '../../core/utils/parse.dart';
+ import '../../core/storage/profile_deletion_store.dart';
++import '../../core/storage/quick_replies_store.dart';
+ import '../../core/storage/spoofing_service.dart';
+ import '../../core/storage/token_storage.dart';
+ import '../../core/utils/logger.dart';
+@@ -703,6 +704,7 @@ class AccountModule {
+     await TokenStorage.deleteAccount(accountId);
+     await SpoofingService.clearAccountSpoof(accountId);
+     await ProfileDeletionStore.clear(accountId);
++    await QuickRepliesStore.instance.forget(accountId);
+     logger.i('Аккаунт $accountId удалён локально');
+   }
+ 
+diff --git a/lib/core/storage/quick_replies_store.dart b/lib/core/storage/quick_replies_store.dart
+index 61ff8dd..b4b2622 100644
+--- a/lib/core/storage/quick_replies_store.dart
++++ b/lib/core/storage/quick_replies_store.dart
+@@ -1,56 +1,210 @@
++import 'dart:convert';
++
+ import 'package:flutter/foundation.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
+ 
+-class QuickRepliesStore {
++@immutable
++class QuickReply {
++  const QuickReply({required this.id, required this.title, required this.text});
++
++  final String id;
++  final String title;
++  final String text;
++
++  String get label => title.isEmpty ? text : title;
++
++  bool matches(String query) {
++    if (query.isEmpty) return true;
++    final needle = query.toLowerCase();
++    return title.toLowerCase().contains(needle) ||
++        text.toLowerCase().contains(needle);
++  }
++
++  int rankFor(String query) {
++    final needle = query.toLowerCase();
++    bool wordStarts(String source) => source
++        .toLowerCase()
++        .split(RegExp(r'\s+'))
++        .any((word) => word.startsWith(needle));
++    if (wordStarts(title)) return 0;
++    if (wordStarts(text)) return 1;
++    return 2;
++  }
++
++  QuickReply copyWith({String? title, String? text}) =>
++      QuickReply(id: id, title: title ?? this.title, text: text ?? this.text);
++
++  Map<String, String> toJson() => {
++    'id': id,
++    if (title.isNotEmpty) 'title': title,
++    'text': text,
++  };
++
++  static QuickReply? fromJson(Object? raw) {
++    if (raw is! Map) return null;
++    final id = raw['id'];
++    final text = raw['text'];
++    if (id is! String || id.isEmpty || text is! String) return null;
++    if (text.trim().isEmpty) return null;
++    final title = raw['title'];
++    return QuickReply(
++      id: id,
++      title: title is String ? title.trim() : '',
++      text: text,
++    );
++  }
++
++  @override
++  bool operator ==(Object other) =>
++      other is QuickReply &&
++      other.id == id &&
++      other.title == title &&
++      other.text == text;
++
++  @override
++  int get hashCode => Object.hash(id, title, text);
++}
++
++enum QuickReplySaveResult { saved, empty, limitReached }
++
++List<QuickReply> matchQuickReplies(List<QuickReply> replies, String query) {
++  final trimmed = query.trim();
++  if (trimmed.isEmpty) return replies;
++  final ranked =
++      [
++        for (final (index, reply) in replies.indexed)
++          if (reply.matches(trimmed))
++            (rank: reply.rankFor(trimmed), index: index),
++      ]..sort((a, b) {
++        final byRank = a.rank.compareTo(b.rank);
++        return byRank != 0 ? byRank : a.index.compareTo(b.index);
++      });
++  return [for (final entry in ranked) replies[entry.index]];
++}
++
++class QuickRepliesStore extends ChangeNotifier {
+   QuickRepliesStore._();
+ 
+   static final QuickRepliesStore instance = QuickRepliesStore._();
+ 
+-  static const prefKey = 'promax_quick_replies';
++  static const legacyPrefKey = 'promax_quick_replies';
++  static const prefKeyPrefix = 'promax_quick_replies_v2_';
+   static const int maxCount = 50;
+   static const int maxLength = 2000;
++  static const int maxTitleLength = 64;
+ 
+-  final ValueNotifier<List<String>> items = ValueNotifier(const []);
++  final Map<int, List<QuickReply>> _replies = {};
++  final Map<int, Future<void>> _loading = {};
++  int _idCounter = 0;
+ 
+-  Future<void> load() async {
+-    final prefs = await SharedPreferences.getInstance();
+-    items.value = List.unmodifiable([
+-      for (final text in prefs.getStringList(prefKey) ?? const <String>[])
+-        if (text.trim().isNotEmpty) text,
+-    ]);
+-  }
++  static String prefKeyFor(int accountId) => '$prefKeyPrefix$accountId';
+ 
+-  Future<bool> add(String text) async {
+-    final clean = _clean(text);
+-    if (clean == null || items.value.length >= maxCount) return false;
+-    if (items.value.contains(clean)) return true;
+-    await _save([...items.value, clean]);
+-    return true;
++  List<QuickReply> repliesFor(int accountId) => _replies[accountId] ?? const [];
++
++  Future<void> ensureLoaded(int accountId) {
++    if (accountId == 0 || _replies.containsKey(accountId)) {
++      return Future.value();
++    }
++    return _loading[accountId] ??= load(accountId);
+   }
+ 
+-  Future<void> update(int index, String text) async {
+-    if (index < 0 || index >= items.value.length) return;
+-    final clean = _clean(text);
+-    final next = [...items.value];
+-    if (clean == null) {
+-      next.removeAt(index);
+-    } else {
+-      next[index] = clean;
++  Future<void> load(int accountId) async {
++    if (accountId == 0) return;
++    try {
++      final prefs = await SharedPreferences.getInstance();
++      final raw = prefs.getString(prefKeyFor(accountId));
++      final legacy = prefs.getStringList(legacyPrefKey);
++      if (raw == null && legacy != null) {
++        final migrated = [
++          for (final text in legacy)
++            if (_cleanText(text) case final clean?)
++              QuickReply(id: _newId(), title: '', text: clean),
++        ];
++        await prefs.setString(prefKeyFor(accountId), _encode(migrated));
++        await prefs.remove(legacyPrefKey);
++        _set(accountId, migrated);
++        return;
++      }
++      _set(accountId, _decode(raw));
++    } finally {
++      _loading.remove(accountId);
+     }
+-    await _save(next);
+   }
+ 
+-  Future<void> removeAt(int index) => update(index, '');
++  Future<QuickReplySaveResult> add(
++    int accountId, {
++    String title = '',
++    required String text,
++  }) async {
++    final clean = _cleanText(text);
++    if (accountId == 0 || clean == null) return QuickReplySaveResult.empty;
++    await ensureLoaded(accountId);
++    final current = repliesFor(accountId);
++    if (current.length >= maxCount) return QuickReplySaveResult.limitReached;
++    await _save(accountId, [
++      ...current,
++      QuickReply(id: _newId(), title: _cleanTitle(title), text: clean),
++    ]);
++    return QuickReplySaveResult.saved;
++  }
++
++  Future<QuickReplySaveResult> update(
++    int accountId,
++    String id, {
++    String title = '',
++    required String text,
++  }) async {
++    final clean = _cleanText(text);
++    if (clean == null) return QuickReplySaveResult.empty;
++    final current = repliesFor(accountId);
++    final index = current.indexWhere((reply) => reply.id == id);
++    if (index < 0) return QuickReplySaveResult.empty;
++    final next = [...current];
++    next[index] = current[index].copyWith(
++      title: _cleanTitle(title),
++      text: clean,
++    );
++    await _save(accountId, next);
++    return QuickReplySaveResult.saved;
++  }
+ 
+-  Future<void> move(int from, int to) async {
+-    final next = [...items.value];
++  Future<void> remove(int accountId, String id) async {
++    final current = repliesFor(accountId);
++    if (!current.any((reply) => reply.id == id)) return;
++    await _save(accountId, [
++      for (final reply in current)
++        if (reply.id != id) reply,
++    ]);
++  }
++
++  Future<void> move(int accountId, int from, int to) async {
++    final next = [...repliesFor(accountId)];
+     if (from < 0 || from >= next.length) return;
+     final item = next.removeAt(from);
+     next.insert(to.clamp(0, next.length), item);
+-    await _save(next);
++    await _save(accountId, next);
++  }
++
++  Future<void> forget(int accountId) async {
++    _replies.remove(accountId);
++    final prefs = await SharedPreferences.getInstance();
++    await prefs.remove(prefKeyFor(accountId));
++    notifyListeners();
++  }
++
++  @visibleForTesting
++  void resetForTest() {
++    _replies.clear();
++    _loading.clear();
++  }
++
++  String _newId() {
++    _idCounter++;
++    return '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}'
++        '-${_idCounter.toRadixString(36)}';
+   }
+ 
+-  String? _clean(String text) {
++  static String? _cleanText(String text) {
+     final trimmed = text.trim();
+     if (trimmed.isEmpty) return null;
+     return trimmed.length > maxLength
+@@ -58,9 +212,41 @@ class QuickRepliesStore {
+         : trimmed;
+   }
+ 
+-  Future<void> _save(List<String> next) async {
+-    items.value = List.unmodifiable(next);
++  static String _cleanTitle(String title) {
++    final single = title.replaceAll(RegExp(r'\s+'), ' ').trim();
++    return single.length > maxTitleLength
++        ? single.substring(0, maxTitleLength)
++        : single;
++  }
++
++  static List<QuickReply> _decode(String? raw) {
++    if (raw == null) return const [];
++    try {
++      final decoded = jsonDecode(raw);
++      if (decoded is! List) return const [];
++      final seen = <String>{};
++      return [
++        for (final entry in decoded)
++          if (QuickReply.fromJson(entry) case final reply?
++              when seen.add(reply.id))
++            reply,
++      ];
++    } catch (_) {
++      return const [];
++    }
++  }
++
++  static String _encode(List<QuickReply> replies) =>
++      jsonEncode([for (final reply in replies) reply.toJson()]);
++
++  void _set(int accountId, List<QuickReply> replies) {
++    _replies[accountId] = List.unmodifiable(replies);
++    notifyListeners();
++  }
++
++  Future<void> _save(int accountId, List<QuickReply> next) async {
++    _set(accountId, next);
+     final prefs = await SharedPreferences.getInstance();
+-    await prefs.setStringList(prefKey, next);
++    await prefs.setString(prefKeyFor(accountId), _encode(next));
+   }
+ }
+diff --git a/lib/core/utils/release_notes_markdown.dart b/lib/core/utils/release_notes_markdown.dart
+new file mode 100644
+index 0000000..931d498
+--- /dev/null
++++ b/lib/core/utils/release_notes_markdown.dart
+@@ -0,0 +1,288 @@
++import 'package:flutter/foundation.dart';
++
++@immutable
++class NotesSpan {
++  const NotesSpan(
++    this.text, {
++    this.bold = false,
++    this.italic = false,
++    this.code = false,
++    this.link,
++  });
++
++  final String text;
++  final bool bold;
++  final bool italic;
++  final bool code;
++  final String? link;
++
++  @override
++  bool operator ==(Object other) =>
++      other is NotesSpan &&
++      other.text == text &&
++      other.bold == bold &&
++      other.italic == italic &&
++      other.code == code &&
++      other.link == link;
++
++  @override
++  int get hashCode => Object.hash(text, bold, italic, code, link);
++
++  @override
++  String toString() =>
++      'NotesSpan($text${bold ? ', bold' : ''}${italic ? ', italic' : ''}'
++      '${code ? ', code' : ''}${link == null ? '' : ', link: $link'})';
++}
++
++enum NotesBlockKind { heading, bullet, numbered, paragraph }
++
++@immutable
++class NotesBlock {
++  const NotesBlock({
++    required this.kind,
++    required this.spans,
++    this.level = 0,
++    this.number,
++  });
++
++  final NotesBlockKind kind;
++  final List<NotesSpan> spans;
++  final int level;
++  final int? number;
++
++  String get plainText => spans.map((span) => span.text).join();
++}
++
++final RegExp _heading = RegExp(r'^(#{1,6})\s+(.*?)\s*#*\s*$');
++final RegExp _bullet = RegExp(r'^(\s*)[-*+]\s+(.*)$');
++final RegExp _numbered = RegExp(r'^(\s*)(\d{1,4})[.)]\s+(.*)$');
++final RegExp _rule = RegExp(r'^\s*([-*_])(\s*\1){2,}\s*$');
++final RegExp _htmlComment = RegExp(r'<!--.*?-->', dotAll: true);
++final RegExp _bareUrl = RegExp(r'https?://[^\s<>]+');
++final RegExp _trailingPunctuation = RegExp(r'[.,;:!?)\]]+$');
++
++List<NotesBlock> parseReleaseNotes(String markdown) {
++  final source = markdown
++      .replaceAll('\r\n', '\n')
++      .replaceAll('\r', '\n')
++      .replaceAll(_htmlComment, '');
++  final blocks = <NotesBlock>[];
++  final paragraph = <String>[];
++  NotesBlock? openItem;
++  final itemLines = <String>[];
++
++  void flushParagraph() {
++    if (paragraph.isEmpty) return;
++    blocks.add(
++      NotesBlock(
++        kind: NotesBlockKind.paragraph,
++        spans: parseInlineMarkdown(paragraph.join(' ')),
++      ),
++    );
++    paragraph.clear();
++  }
++
++  void flushItem() {
++    final item = openItem;
++    if (item == null) return;
++    blocks.add(
++      NotesBlock(
++        kind: item.kind,
++        level: item.level,
++        number: item.number,
++        spans: parseInlineMarkdown(itemLines.join(' ')),
++      ),
++    );
++    openItem = null;
++    itemLines.clear();
++  }
++
++  void flush() {
++    flushParagraph();
++    flushItem();
++  }
++
++  var inFence = false;
++  for (final rawLine in source.split('\n')) {
++    final line = rawLine.trimRight();
++    if (line.trimLeft().startsWith('```')) {
++      flush();
++      inFence = !inFence;
++      continue;
++    }
++    if (inFence) {
++      if (line.trim().isNotEmpty) {
++        blocks.add(
++          NotesBlock(
++            kind: NotesBlockKind.paragraph,
++            spans: [NotesSpan(line.trim(), code: true)],
++          ),
++        );
++      }
++      continue;
++    }
++    if (line.trim().isEmpty || _rule.hasMatch(line)) {
++      flush();
++      continue;
++    }
++    final heading = _heading.firstMatch(line.trimLeft());
++    if (heading != null) {
++      flush();
++      final text = heading.group(2)!;
++      if (text.isNotEmpty) {
++        blocks.add(
++          NotesBlock(
++            kind: NotesBlockKind.heading,
++            level: heading.group(1)!.length,
++            spans: parseInlineMarkdown(text),
++          ),
++        );
++      }
++      continue;
++    }
++    final bullet = _bullet.firstMatch(line);
++    final numbered = bullet == null ? _numbered.firstMatch(line) : null;
++    if (bullet != null || numbered != null) {
++      flush();
++      final indent = (bullet ?? numbered)!.group(1)!.length;
++      openItem = NotesBlock(
++        kind: bullet != null ? NotesBlockKind.bullet : NotesBlockKind.numbered,
++        level: (indent ~/ 2).clamp(0, 3),
++        number: numbered == null ? null : int.parse(numbered.group(2)!),
++        spans: const [],
++      );
++      itemLines.add(bullet != null ? bullet.group(2)! : numbered!.group(3)!);
++      continue;
++    }
++    final text = line.trim().replaceFirst(RegExp(r'^>\s?'), '');
++    if (openItem != null && rawLine.startsWith(RegExp(r'\s'))) {
++      itemLines.add(text);
++      continue;
++    }
++    flushItem();
++    paragraph.add(text);
++  }
++  flush();
++  return blocks;
++}
++
++String? _safeLink(String raw) {
++  final uri = Uri.tryParse(raw.trim());
++  if (uri == null || !uri.hasAuthority) return null;
++  final scheme = uri.scheme.toLowerCase();
++  if (scheme != 'https' && scheme != 'http') return null;
++  return uri.toString();
++}
++
++List<NotesSpan> parseInlineMarkdown(String text) {
++  final spans = <NotesSpan>[];
++  final buffer = StringBuffer();
++  var bold = false;
++  var italic = false;
++
++  void emit({bool code = false, String? link, String? content}) {
++    final value = content ?? buffer.toString();
++    if (content == null) buffer.clear();
++    if (value.isEmpty) return;
++    final span = NotesSpan(
++      value,
++      bold: bold,
++      italic: italic,
++      code: code,
++      link: link,
++    );
++    if (spans.isNotEmpty) {
++      final last = spans.last;
++      if (last.bold == span.bold &&
++          last.italic == span.italic &&
++          !last.code &&
++          !span.code &&
++          last.link == null &&
++          span.link == null) {
++        spans[spans.length - 1] = NotesSpan(
++          last.text + span.text,
++          bold: bold,
++          italic: italic,
++        );
++        return;
++      }
++    }
++    spans.add(span);
++  }
++
++  var i = 0;
++  while (i < text.length) {
++    final char = text[i];
++    if (char == r'\' && i + 1 < text.length) {
++      buffer.write(text[i + 1]);
++      i += 2;
++      continue;
++    }
++    if (char == '`') {
++      final close = text.indexOf('`', i + 1);
++      if (close > i + 1) {
++        emit();
++        emit(code: true, content: text.substring(i + 1, close));
++        i = close + 1;
++        continue;
++      }
++    }
++    final pair = i + 1 < text.length ? text.substring(i, i + 2) : '';
++    if (pair == '**' || pair == '__') {
++      if (bold || text.indexOf(pair, i + 2) > i + 2) {
++        emit();
++        bold = !bold;
++        i += 2;
++        continue;
++      }
++    }
++    if (char == '*' && (italic || text.indexOf('*', i + 1) > i + 1)) {
++      emit();
++      italic = !italic;
++      i += 1;
++      continue;
++    }
++    if (char == '[') {
++      final labelEnd = text.indexOf('](', i + 1);
++      final urlEnd = labelEnd < 0 ? -1 : text.indexOf(')', labelEnd + 2);
++      if (labelEnd > i && urlEnd > labelEnd) {
++        final label = text.substring(i + 1, labelEnd);
++        final link = _safeLink(text.substring(labelEnd + 2, urlEnd));
++        emit();
++        final shown = label.replaceAll(RegExp(r'[*_`]'), '');
++        emit(link: link, content: shown.isEmpty ? (link ?? '') : shown);
++        i = urlEnd + 1;
++        continue;
++      }
++    }
++    if (char == '<') {
++      final close = text.indexOf('>', i + 1);
++      if (close > i) {
++        final link = _safeLink(text.substring(i + 1, close));
++        if (link != null) {
++          emit();
++          emit(link: link, content: text.substring(i + 1, close));
++          i = close + 1;
++          continue;
++        }
++      }
++    }
++    if (char == 'h' && (i == 0 || !RegExp(r'\w').hasMatch(text[i - 1]))) {
++      final match = _bareUrl.matchAsPrefix(text, i);
++      if (match != null) {
++        final raw = match[0]!.replaceFirst(_trailingPunctuation, '');
++        final link = _safeLink(raw);
++        if (link != null) {
++          emit();
++          emit(link: link, content: raw);
++          i += raw.length;
++          continue;
++        }
++      }
++    }
++    buffer.write(char);
++    i += 1;
++  }
++  emit();
++  return spans;
++}
+diff --git a/lib/core/utils/update_checker.dart b/lib/core/utils/update_checker.dart
+index d82c3fe..6141c6e 100644
+--- a/lib/core/utils/update_checker.dart
++++ b/lib/core/utils/update_checker.dart
+@@ -37,6 +37,24 @@ class UpdateAsset {
+   }
+ }
+ 
++class ReleaseNotes {
++  final String tag;
++  final String version;
++  final int? build;
++  final String title;
++  final String body;
++
++  const ReleaseNotes({
++    required this.tag,
++    required this.version,
++    required this.build,
++    required this.title,
++    required this.body,
++  });
++
++  bool get isEmpty => body.trim().isEmpty;
++}
++
+ // #***! манифест с бакета
+ class AppUpdateInfo {
+   final String version;
+@@ -45,6 +63,7 @@ class AppUpdateInfo {
+   final String url;
+   final String notes;
+   final List<UpdateAsset> assets;
++  final List<ReleaseNotes> releaseNotes;
+ 
+   const AppUpdateInfo({
+     required this.version,
+@@ -53,8 +72,19 @@ class AppUpdateInfo {
+     required this.url,
+     required this.notes,
+     required this.assets,
++    this.releaseNotes = const [],
+   });
+ 
++  AppUpdateInfo withReleaseNotes(List<ReleaseNotes> notes) => AppUpdateInfo(
++    version: version,
++    build: build,
++    tag: tag,
++    url: url,
++    notes: this.notes,
++    assets: assets,
++    releaseNotes: List.unmodifiable(notes),
++  );
++
+   // #***! APK выбираем по суффиксу имени
+   UpdateAsset? assetWithSuffix(String suffix) => assetMatching(suffix: suffix);
+ 
+@@ -125,23 +155,130 @@ class UpdateCheckResult {
+   return (version: match.group(1)!, build: int.tryParse(match.group(2) ?? ''));
+ }
+ 
+-Map<Object?, Object?>? newestRelease(Object? releases) {
++typedef _PublishedRelease = ({
++  Map<Object?, Object?> release,
++  ({String version, int? build}) version,
++});
++
++Iterable<_PublishedRelease> _publishedReleases(Object? releases) sync* {
+   final candidates = releases is List ? releases : [releases];
+-  Map<Object?, Object?>? newest;
+-  ({String version, int? build})? newestVersion;
+   for (final release in candidates.whereType<Map<Object?, Object?>>()) {
+     if (release['draft'] == true) continue;
+     final tag = release['tag_name'];
+     if (tag is! String) continue;
+     final version = parseReleaseTag(tag);
+     if (version == null) continue;
+-    if (newestVersion == null ||
+-        UpdateChecker._compareRelease(version, newestVersion) > 0) {
+-      newest = release;
+-      newestVersion = version;
++    yield (release: release, version: version);
++  }
++}
++
++Map<Object?, Object?>? newestRelease(Object? releases) {
++  _PublishedRelease? newest;
++  for (final entry in _publishedReleases(releases)) {
++    if (newest == null ||
++        UpdateChecker._compareRelease(entry.version, newest.version) > 0) {
++      newest = entry;
+     }
+   }
+-  return newest;
++  return newest?.release;
++}
++
++List<ReleaseNotes> releaseNotesNewerThan(
++  Object? releases, {
++  required String currentVersion,
++  required int? currentBuild,
++}) {
++  final newer = [
++    for (final entry in _publishedReleases(releases))
++      if (UpdateChecker._isNewer(
++        currentBase: currentVersion,
++        currentBuild: UpdateChecker._normalizeBuild(currentBuild),
++        remoteBase: entry.version.version,
++        remoteBuild: UpdateChecker._normalizeBuild(entry.version.build),
++      ))
++        entry,
++  ]..sort((a, b) => UpdateChecker._compareRelease(b.version, a.version));
++  final seenTags = <String>{};
++  final notes = <ReleaseNotes>[];
++  for (final entry in newer) {
++    final tag = entry.release['tag_name'] as String;
++    if (!seenTags.add(tag)) continue;
++    final name = entry.release['name'];
++    final body = entry.release['body'];
++    notes.add(
++      ReleaseNotes(
++        tag: tag,
++        version: entry.version.version,
++        build: entry.version.build,
++        title: name is String && name.trim().isNotEmpty ? name.trim() : tag,
++        body: body is String
++            ? body.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim()
++            : '',
++      ),
++    );
++  }
++  return notes;
++}
++
++Map<String, dynamic> _manifestFromRelease(Map<Object?, Object?> release) {
++  final tag = release['tag_name'] as String;
++  final parsed = parseReleaseTag(tag)!;
++  final rawAssets = release['assets'];
++  final assets = <Map<String, Object?>>[];
++  if (rawAssets is List) {
++    for (final value in rawAssets.whereType<Map>()) {
++      final name = value['name'];
++      final url = value['browser_download_url'];
++      if (name is! String || url is! String) continue;
++      final digest = value['digest'];
++      assets.add({
++        'name': name,
++        'url': url,
++        'size': value['size'] is int ? value['size'] : 0,
++        'sha256': digest is String
++            ? digest.replaceFirst(RegExp(r'^sha256:'), '').toLowerCase()
++            : '',
++      });
++    }
++  }
++  return {
++    'version': parsed.version,
++    'build': parsed.build,
++    'tag': tag,
++    'url': release['html_url'] is String
++        ? release['html_url']
++        : UpdateConfig.downloadsPage,
++    'notes': release['body'] is String ? release['body'] : '',
++    'assets': assets,
++  };
++}
++
++AppUpdateInfo? updateFromReleases(
++  Object? releases, {
++  required String currentVersion,
++  required int? currentBuild,
++}) {
++  final release = newestRelease(releases);
++  if (release == null) {
++    throw const FormatException('No GitHub release has an app version');
++  }
++  final remote = AppUpdateInfo.tryParse(_manifestFromRelease(release));
++  if (remote == null) return null;
++  if (!UpdateChecker._isNewer(
++    currentBase: currentVersion,
++    currentBuild: UpdateChecker._normalizeBuild(currentBuild),
++    remoteBase: remote.version,
++    remoteBuild: UpdateChecker._normalizeBuild(remote.build),
++  )) {
++    return null;
++  }
++  return remote.withReleaseNotes(
++    releaseNotesNewerThan(
++      releases,
++      currentVersion: currentVersion,
++      currentBuild: currentBuild,
++    ),
++  );
+ }
+ 
+ // #***! проверка последнего публичного GitHub-релиза
+@@ -159,25 +296,12 @@ abstract class UpdateChecker {
+     if (!UpdateConfig.isConfigured) return null;
+ 
+     final info = await PackageInfo.fromPlatform();
+-    final currentBase = info.version;
+-    final currentBuild = _normalizeBuild(int.tryParse(info.buildNumber));
+-
+-    final manifest = await _fetchManifest();
+-    if (manifest == null) return null;
+-
+-    final remote = AppUpdateInfo.tryParse(manifest);
+-    if (remote == null) return null;
+-
+-    if (!_isNewer(
+-      currentBase: currentBase,
+-      currentBuild: currentBuild,
+-      remoteBase: remote.version,
+-      remoteBuild: _normalizeBuild(remote.build),
+-    )) {
+-      return null;
+-    }
+-
+-    return remote;
++    final releases = await _fetchReleases();
++    return updateFromReleases(
++      releases,
++      currentVersion: info.version,
++      currentBuild: int.tryParse(info.buildNumber),
++    );
+   }
+ 
+   // #***! автопроверка, уважает интервал и пропустить эту версию
+@@ -238,7 +362,7 @@ abstract class UpdateChecker {
+   }
+ 
+   // #***! манифест с no-cache иначе CDN отдаст старый
+-  static Future<Map<String, dynamic>?> _fetchManifest() async {
++  static Future<Object?> _fetchReleases() async {
+     final uri = UpdateConfig.manifestUri;
+     final client = HttpClient()..connectionTimeout = _timeout;
+     try {
+@@ -260,40 +384,7 @@ abstract class UpdateChecker {
+           .transform(const Utf8Decoder())
+           .join()
+           .timeout(_timeout);
+-      final release = newestRelease(jsonDecode(body));
+-      if (release == null) {
+-        throw const FormatException('No GitHub release has an app version');
+-      }
+-      final tag = release['tag_name'] as String;
+-      final parsed = parseReleaseTag(tag)!;
+-      final rawAssets = release['assets'];
+-      final assets = <Map<String, Object?>>[];
+-      if (rawAssets is List) {
+-        for (final value in rawAssets.whereType<Map>()) {
+-          final name = value['name'];
+-          final url = value['browser_download_url'];
+-          if (name is! String || url is! String) continue;
+-          final digest = value['digest'];
+-          assets.add({
+-            'name': name,
+-            'url': url,
+-            'size': value['size'] is int ? value['size'] : 0,
+-            'sha256': digest is String
+-                ? digest.replaceFirst(RegExp(r'^sha256:'), '').toLowerCase()
+-                : '',
+-          });
+-        }
+-      }
+-      return {
+-        'version': parsed.version,
+-        'build': parsed.build,
+-        'tag': tag,
+-        'url': release['html_url'] is String
+-            ? release['html_url']
+-            : UpdateConfig.downloadsPage,
+-        'notes': release['body'] is String ? release['body'] : '',
+-        'assets': assets,
+-      };
++      return jsonDecode(body);
+     } finally {
+       client.close(force: true);
+     }
+diff --git a/lib/frontend/screens/chats/chat/quick_reply_panel_controller.dart b/lib/frontend/screens/chats/chat/quick_reply_panel_controller.dart
+new file mode 100644
+index 0000000..bc791b0
+--- /dev/null
++++ b/lib/frontend/screens/chats/chat/quick_reply_panel_controller.dart
+@@ -0,0 +1,147 @@
++import 'dart:async';
++
++import 'package:flutter/foundation.dart';
++import 'package:flutter/widgets.dart';
++
++import '../../../../core/storage/quick_replies_store.dart';
++
++const String quickReplyTrigger = ';';
++
++class QuickReplyQuery {
++  const QuickReplyQuery({
++    required this.start,
++    required this.end,
++    required this.text,
++  });
++
++  final int start;
++  final int end;
++  final String text;
++
++  @override
++  bool operator ==(Object other) =>
++      other is QuickReplyQuery &&
++      other.start == start &&
++      other.end == end &&
++      other.text == text;
++
++  @override
++  int get hashCode => Object.hash(start, end, text);
++}
++
++final RegExp _queryCharacters = RegExp(r'^[\p{L}\p{N}_-]*$', unicode: true);
++final RegExp _whitespace = RegExp(r'\s');
++
++QuickReplyQuery? quickReplyQueryAt(String text, int cursor) {
++  if (cursor <= 0 || cursor > text.length) return null;
++  const maxQueryLength = 32;
++  final tokenStart = text.lastIndexOf(quickReplyTrigger, cursor - 1);
++  if (tokenStart < 0) return null;
++  if (tokenStart > 0 && !_whitespace.hasMatch(text[tokenStart - 1])) {
++    return null;
++  }
++  final query = text.substring(tokenStart + 1, cursor);
++  if (query.length > maxQueryLength) return null;
++  if (!_queryCharacters.hasMatch(query)) return null;
++  if (cursor < text.length && !_whitespace.hasMatch(text[cursor])) {
++    return null;
++  }
++  return QuickReplyQuery(start: tokenStart, end: cursor, text: query);
++}
++
++TextEditingValue insertQuickReplyText(
++  TextEditingValue value,
++  String reply, {
++  QuickReplyQuery? replacing,
++}) {
++  final text = value.text;
++  final int start;
++  final int end;
++  if (replacing != null && replacing.end <= text.length) {
++    start = replacing.start;
++    end = replacing.end;
++  } else if (value.selection.isValid) {
++    start = value.selection.start.clamp(0, text.length);
++    end = value.selection.end.clamp(start, text.length);
++  } else {
++    start = text.length;
++    end = text.length;
++  }
++  return TextEditingValue(
++    text: text.replaceRange(start, end, reply),
++    selection: TextSelection.collapsed(offset: start + reply.length),
++  );
++}
++
++class QuickReplyPanelController {
++  QuickReplyPanelController({
++    required TickerProvider vsync,
++    required this.accountId,
++    required this.enabled,
++    required this.valueOf,
++    required this.onSelected,
++  }) {
++    anim = AnimationController(
++      vsync: vsync,
++      duration: const Duration(milliseconds: 200),
++    );
++    QuickRepliesStore.instance.addListener(update);
++  }
++
++  final int Function() accountId;
++  final bool Function() enabled;
++  final TextEditingValue Function() valueOf;
++  final void Function(QuickReply reply, QuickReplyQuery query) onSelected;
++
++  late final AnimationController anim;
++  final ValueNotifier<List<QuickReply>> matches = ValueNotifier(const []);
++  QuickReplyQuery? _query;
++  bool _visible = false;
++
++  void update() {
++    final query = enabled() ? _queryAt(valueOf()) : null;
++    _query = query;
++    final account = accountId();
++    if (query != null) {
++      unawaited(QuickRepliesStore.instance.ensureLoaded(account));
++    }
++    final found = query == null
++        ? const <QuickReply>[]
++        : matchQuickReplies(
++            QuickRepliesStore.instance.repliesFor(account),
++            query.text,
++          );
++    if (found.isNotEmpty && !listEquals(matches.value, found)) {
++      matches.value = found;
++    }
++    _setVisible(found.isNotEmpty);
++  }
++
++  void select(QuickReply reply) {
++    final query = _query;
++    if (query == null) return;
++    onSelected(reply, query);
++  }
++
++  QuickReplyQuery? _queryAt(TextEditingValue value) {
++    final selection = value.selection;
++    if (!selection.isValid || !selection.isCollapsed) return null;
++    return quickReplyQueryAt(value.text, selection.baseOffset);
++  }
++
++  void _setVisible(bool show) {
++    if (show == _visible) return;
++    _visible = show;
++    if (show) {
++      anim.forward();
++    } else {
++      anim.reverse();
++    }
++  }
++
++  void dispose() {
++    QuickRepliesStore.instance.removeListener(update);
++    anim.dispose();
++    matches.dispose();
++  }
++}
+diff --git a/lib/frontend/screens/chats/chat/view/chat_body_layout.dart b/lib/frontend/screens/chats/chat/view/chat_body_layout.dart
+index 6f15969..53cce3e 100644
+--- a/lib/frontend/screens/chats/chat/view/chat_body_layout.dart
++++ b/lib/frontend/screens/chats/chat/view/chat_body_layout.dart
+@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
+ import 'package:promax/backend/modules/chats.dart' show CachedChat;
+ import 'package:promax/core/config/app_chat_chrome.dart';
+ import 'package:promax/core/config/app_visual_style.dart';
+-import 'package:promax/core/storage/chat_wallpaper_store.dart' show ChatWallpaper;
++import 'package:promax/core/storage/chat_wallpaper_store.dart'
++    show ChatWallpaper;
+ import 'package:promax/frontend/screens/chats/chat/command_panel_controller.dart';
+ import 'package:promax/frontend/screens/chats/chat/chat_search_controller.dart';
+ import 'package:promax/frontend/screens/chats/chat/mention_panel_controller.dart';
++import 'package:promax/frontend/screens/chats/chat/quick_reply_panel_controller.dart';
+ import 'package:promax/frontend/screens/chats/chat/video_note_controller.dart';
+ import 'package:promax/frontend/screens/chats/chat/message_search_result.dart';
+ import 'package:promax/frontend/widgets/chat_wallpaper_view.dart';
+@@ -18,6 +20,7 @@ import 'measure_size.dart';
+ import 'mention_panel_view.dart';
+ import 'message_list_decorations.dart';
+ import 'pinned_banner_pill.dart';
++import 'quick_reply_panel_view.dart';
+ import 'search_view.dart';
+ import '../../../../../core/config/ios_release.dart';
+ 
+@@ -38,6 +41,7 @@ class ChatBodyLayout extends StatelessWidget {
+   final Widget messagesArea;
+   final MentionPanelController mentionPanel;
+   final CommandPanelController commandPanel;
++  final QuickReplyPanelController quickReplyPanel;
+   final VideoNoteController note;
+   final Animation<double> searchAnim;
+   final ChatSearchController search;
+@@ -68,6 +72,7 @@ class ChatBodyLayout extends StatelessWidget {
+     required this.messagesArea,
+     required this.mentionPanel,
+     required this.commandPanel,
++    required this.quickReplyPanel,
+     required this.note,
+     required this.searchAnim,
+     required this.search,
+@@ -116,6 +121,7 @@ class ChatBodyLayout extends StatelessWidget {
+         children: [
+           MentionPanelView(mentionPanel: mentionPanel),
+           CommandPanelView(commandPanel: commandPanel),
++          QuickReplyPanelView(quickReplyPanel: quickReplyPanel),
+         ],
+       ),
+     );
+@@ -143,7 +149,9 @@ class ChatBodyLayout extends StatelessWidget {
+               fit: StackFit.expand,
+               children: [
+                 if (wallpaper != null)
+-                  Positioned.fill(child: ChatWallpaperView(wallpaper: wallpaper!))
++                  Positioned.fill(
++                    child: ChatWallpaperView(wallpaper: wallpaper!),
++                  )
+                 else
+                   const Positioned.fill(child: ProMaxAuraBackground()),
+                 Positioned.fill(child: messagesArea),
+diff --git a/lib/frontend/screens/chats/chat/view/quick_reply_panel_view.dart b/lib/frontend/screens/chats/chat/view/quick_reply_panel_view.dart
+new file mode 100644
+index 0000000..97fcee6
+--- /dev/null
++++ b/lib/frontend/screens/chats/chat/view/quick_reply_panel_view.dart
+@@ -0,0 +1,143 @@
++import 'package:flutter/material.dart';
++import 'package:material_symbols_icons/symbols.dart';
++
++import 'package:promax/core/storage/quick_replies_store.dart';
++import 'package:promax/frontend/screens/chats/chat/quick_reply_panel_controller.dart';
++
++class QuickReplyPanelView extends StatelessWidget {
++  const QuickReplyPanelView({super.key, required this.quickReplyPanel});
++
++  final QuickReplyPanelController quickReplyPanel;
++
++  @override
++  Widget build(BuildContext context) {
++    return AnimatedBuilder(
++      animation: quickReplyPanel.anim,
++      child: ValueListenableBuilder<List<QuickReply>>(
++        valueListenable: quickReplyPanel.matches,
++        builder: (context, matches, _) => QuickReplySuggestionsPanel(
++          replies: matches,
++          onSelected: quickReplyPanel.select,
++        ),
++      ),
++      builder: (context, child) {
++        final t = quickReplyPanel.anim.value;
++        if (t == 0) return const SizedBox.shrink();
++        return Padding(
++          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
++          child: IgnorePointer(
++            ignoring: t < 1,
++            child: Opacity(opacity: t, child: child),
++          ),
++        );
++      },
++    );
++  }
++}
++
++class QuickReplySuggestionsPanel extends StatelessWidget {
++  const QuickReplySuggestionsPanel({
++    super.key,
++    required this.replies,
++    required this.onSelected,
++    this.maxHeight = 220,
++  });
++
++  final List<QuickReply> replies;
++  final ValueChanged<QuickReply> onSelected;
++  final double maxHeight;
++
++  @override
++  Widget build(BuildContext context) {
++    final cs = Theme.of(context).colorScheme;
++    return Material(
++      type: MaterialType.transparency,
++      child: Container(
++        constraints: BoxConstraints(maxHeight: maxHeight),
++        decoration: BoxDecoration(
++          color: cs.surfaceContainerHighest,
++          borderRadius: BorderRadius.circular(20),
++          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
++        ),
++        clipBehavior: Clip.antiAlias,
++        child: ListView.separated(
++          shrinkWrap: true,
++          padding: const EdgeInsets.symmetric(vertical: 6),
++          itemCount: replies.length,
++          separatorBuilder: (_, _) => Divider(
++            height: 1,
++            thickness: 1,
++            indent: 14,
++            endIndent: 14,
++            color: cs.outlineVariant.withValues(alpha: 0.18),
++          ),
++          itemBuilder: (context, i) {
++            final reply = replies[i];
++            return _QuickReplyRow(
++              key: ValueKey(reply.id),
++              reply: reply,
++              onTap: () => onSelected(reply),
++            );
++          },
++        ),
++      ),
++    );
++  }
++}
++
++class _QuickReplyRow extends StatelessWidget {
++  const _QuickReplyRow({super.key, required this.reply, required this.onTap});
++
++  final QuickReply reply;
++  final VoidCallback onTap;
++
++  @override
++  Widget build(BuildContext context) {
++    final cs = Theme.of(context).colorScheme;
++    final hasTitle = reply.title.isNotEmpty;
++    return InkWell(
++      onTap: onTap,
++      child: Padding(
++        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
++        child: Row(
++          crossAxisAlignment: CrossAxisAlignment.start,
++          children: [
++            Padding(
++              padding: const EdgeInsets.only(top: 1),
++              child: Icon(Symbols.quickreply, size: 20, color: cs.primary),
++            ),
++            const SizedBox(width: 12),
++            Expanded(
++              child: Column(
++                crossAxisAlignment: CrossAxisAlignment.start,
++                mainAxisSize: MainAxisSize.min,
++                children: [
++                  if (hasTitle)
++                    Text(
++                      reply.title,
++                      maxLines: 1,
++                      overflow: TextOverflow.ellipsis,
++                      style: TextStyle(
++                        color: cs.onSurface,
++                        fontSize: 15,
++                        fontWeight: FontWeight.w600,
++                      ),
++                    ),
++                  Text(
++                    reply.text,
++                    maxLines: hasTitle ? 1 : 2,
++                    overflow: TextOverflow.ellipsis,
++                    style: TextStyle(
++                      color: hasTitle ? cs.onSurfaceVariant : cs.onSurface,
++                      fontSize: hasTitle ? 13.5 : 15,
++                    ),
++                  ),
++                ],
++              ),
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++}
+diff --git a/lib/frontend/screens/chats/chat_screen.dart b/lib/frontend/screens/chats/chat_screen.dart
+index bd9de18..730fd00 100644
+--- a/lib/frontend/screens/chats/chat_screen.dart
++++ b/lib/frontend/screens/chats/chat_screen.dart
+@@ -88,6 +88,7 @@ import 'chat/typing_label.dart';
+ import 'chat/view/chat_intro_cards.dart';
+ import 'chat/upload_status.dart';
+ import 'chat/mention_panel_controller.dart';
++import 'chat/quick_reply_panel_controller.dart';
+ import 'chat/chat_media_send_controller.dart';
+ import 'chat/chat_text_send_controller.dart';
+ import '../../../backend/modules/forward_sender.dart';
+@@ -566,6 +567,7 @@ class _ChatScreenState extends State<ChatScreen>
+   late final AnimationController _attachAnim;
+   late final CommandPanelController _commandPanel;
+   late final MentionPanelController _mentionPanel;
++  late final QuickReplyPanelController _quickReplyPanel;
+ 
+   late AnimationController _shimmerController;
+   Timer? _shimmerStartTimer;
+@@ -769,6 +771,13 @@ class _ChatScreenState extends State<ChatScreen>
+       valueOf: () => _messageController.value,
+       onSelected: _onMentionSelected,
+     );
++    _quickReplyPanel = QuickReplyPanelController(
++      vsync: this,
++      accountId: () => _myId,
++      enabled: () => !widget.preview && _selectedCommand == null,
++      valueOf: () => _messageController.value,
++      onSelected: _onQuickReplySelected,
++    );
+     _selectionAnim = AnimationController(
+       vsync: this,
+       duration: const Duration(milliseconds: 260),
+@@ -2599,6 +2608,7 @@ class _ChatScreenState extends State<ChatScreen>
+     _attachAnim.dispose();
+     _commandPanel.dispose();
+     _mentionPanel.dispose();
++    _quickReplyPanel.dispose();
+     _selectionAnim.dispose();
+     _searchAnim.dispose();
+     _searchFocusNode.dispose();
+@@ -2638,6 +2648,7 @@ class _ChatScreenState extends State<ChatScreen>
+     }
+     _commandPanel.update();
+     _mentionPanel.update();
++    _quickReplyPanel.update();
+   }
+ 
+   void _broadcastActivity(ChatActivity activity) {
+@@ -2691,6 +2702,16 @@ class _ChatScreenState extends State<ChatScreen>
+     _messageFocusNode.requestFocus();
+   }
+ 
++  void _onQuickReplySelected(QuickReply reply, QuickReplyQuery query) {
++    _messageController.value = insertQuickReplyText(
++      _messageController.value,
++      reply.text,
++      replacing: query,
++    );
++    _quickReplyPanel.update();
++    _messageFocusNode.requestFocus();
++  }
++
+   void _onCommandSelected(SlashCommand c) {
+     final oldControllers = _commandArgumentControllers;
+     final oldFocusNodes = _commandArgumentFocusNodes;
+@@ -3680,17 +3701,11 @@ class _ChatScreenState extends State<ChatScreen>
+   }
+ 
+   Future<void> _insertQuickReply() async {
+-    final reply = await pickQuickReply(context);
++    final reply = await pickQuickReply(context, accountId: _myId);
+     if (reply == null || !mounted) return;
+-    final value = _messageController.value;
+-    final selection = value.selection.isValid
+-        ? value.selection
+-        : TextSelection.collapsed(offset: value.text.length);
+-    _messageController.value = TextEditingValue(
+-      text: value.text.replaceRange(selection.start, selection.end, reply),
+-      selection: TextSelection.collapsed(
+-        offset: selection.start + reply.length,
+-      ),
++    _messageController.value = insertQuickReplyText(
++      _messageController.value,
++      reply.text,
+     );
+     _messageFocusNode.requestFocus();
+   }
+@@ -3704,7 +3719,7 @@ class _ChatScreenState extends State<ChatScreen>
+     final timer = DisappearingMessages.instance.timerFor(widget.chatId);
+     final quiet = QuietHours.instance.windowFor(widget.chatId);
+     final note = ChatNotesStore.instance.noteFor(widget.chatId);
+-    final templates = QuickRepliesStore.instance.items.value.length;
++    final templates = QuickRepliesStore.instance.repliesFor(_myId).length;
+     final secret = DoubleBottom.isSecret(widget.chatId);
+     final l10n = AppLocalizations.of(context)!;
+     void then(VoidCallback action) {
+@@ -5230,6 +5245,7 @@ class _ChatScreenState extends State<ChatScreen>
+                     messagesArea: _buildMessagesArea(),
+                     mentionPanel: _mentionPanel,
+                     commandPanel: _commandPanel,
++                    quickReplyPanel: _quickReplyPanel,
+                     note: _note,
+                     searchAnim: _searchAnim,
+                     search: _search,
+diff --git a/lib/frontend/screens/chats/quick_replies_sheet.dart b/lib/frontend/screens/chats/quick_replies_sheet.dart
+index a3f4508..0296d96 100644
+--- a/lib/frontend/screens/chats/quick_replies_sheet.dart
++++ b/lib/frontend/screens/chats/quick_replies_sheet.dart
+@@ -1,125 +1,244 @@
++import 'dart:async';
++
+ import 'package:flutter/material.dart';
+ import 'package:material_symbols_icons/symbols.dart';
+ 
+ import '../../../core/storage/quick_replies_store.dart';
+ import '../../widgets/custom_notification.dart';
+-import '../../widgets/with_text_controller.dart';
+-
+-Future<String?> editQuickReply(BuildContext context, {String? initial}) =>
+-    showDialog<String>(
+-      context: context,
+-      builder: (_) => WithTextController(
+-        initialText: initial,
+-        builder: (dialogContext, controller) => AlertDialog(
+-          title: Text(initial == null ? 'Новый шаблон' : 'Шаблон'),
+-          content: TextField(
+-            controller: controller,
+-            autofocus: true,
+-            minLines: 2,
+-            maxLines: 6,
+-            maxLength: QuickRepliesStore.maxLength,
+-            textCapitalization: TextCapitalization.sentences,
+-            decoration: const InputDecoration(
+-              hintText: 'Например: «Сейчас не могу, перезвоню»',
+-              counterText: '',
+-            ),
+-          ),
+-          actions: [
+-            TextButton(
+-              onPressed: () => Navigator.pop(dialogContext),
+-              child: const Text('Отмена'),
++import 'chat/quick_reply_panel_controller.dart';
++
++typedef QuickReplyDraft = ({String title, String text});
++
++Future<QuickReplyDraft?> editQuickReply(
++  BuildContext context, {
++  QuickReply? initial,
++}) => showDialog<QuickReplyDraft>(
++  context: context,
++  builder: (_) => _QuickReplyEditor(initial: initial),
++);
++
++class _QuickReplyEditor extends StatefulWidget {
++  const _QuickReplyEditor({this.initial});
++
++  final QuickReply? initial;
++
++  @override
++  State<_QuickReplyEditor> createState() => _QuickReplyEditorState();
++}
++
++class _QuickReplyEditorState extends State<_QuickReplyEditor> {
++  late final TextEditingController _title = TextEditingController(
++    text: widget.initial?.title,
++  );
++  late final TextEditingController _text = TextEditingController(
++    text: widget.initial?.text,
++  );
++
++  @override
++  void dispose() {
++    _title.dispose();
++    _text.dispose();
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return AlertDialog(
++      title: Text(widget.initial == null ? 'Новый шаблон' : 'Шаблон'),
++      content: SingleChildScrollView(
++        child: Column(
++          mainAxisSize: MainAxisSize.min,
++          children: [
++            TextField(
++              controller: _title,
++              maxLength: QuickRepliesStore.maxTitleLength,
++              textCapitalization: TextCapitalization.sentences,
++              textInputAction: TextInputAction.next,
++              decoration: const InputDecoration(
++                labelText: 'Название (необязательно)',
++                hintText: 'Например: «Перезвоню»',
++                counterText: '',
++              ),
+             ),
+-            FilledButton(
+-              onPressed: () => Navigator.pop(dialogContext, controller.text),
+-              child: const Text('Сохранить'),
++            const SizedBox(height: 12),
++            TextField(
++              controller: _text,
++              autofocus: widget.initial == null,
++              minLines: 2,
++              maxLines: 6,
++              maxLength: QuickRepliesStore.maxLength,
++              textCapitalization: TextCapitalization.sentences,
++              decoration: const InputDecoration(
++                labelText: 'Текст',
++                hintText: 'Сейчас не могу, перезвоню',
++                counterText: '',
++              ),
+             ),
+           ],
+         ),
+       ),
++      actions: [
++        TextButton(
++          onPressed: () => Navigator.pop(context),
++          child: const Text('Отмена'),
++        ),
++        FilledButton(
++          onPressed: () =>
++              Navigator.pop(context, (title: _title.text, text: _text.text)),
++          child: const Text('Сохранить'),
++        ),
++      ],
+     );
++  }
++}
+ 
+-Future<void> addQuickReply(BuildContext context) async {
+-  final text = await editQuickReply(context);
+-  if (text == null || text.trim().isEmpty || !context.mounted) return;
+-  final added = await QuickRepliesStore.instance.add(text);
+-  if (!added && context.mounted) {
+-    showCustomNotification(
+-      context,
+-      'Можно хранить до ${QuickRepliesStore.maxCount} шаблонов',
+-    );
++void _reportSaveResult(BuildContext context, QuickReplySaveResult result) {
++  if (!context.mounted) return;
++  switch (result) {
++    case QuickReplySaveResult.saved:
++      return;
++    case QuickReplySaveResult.empty:
++      showCustomNotification(context, 'Шаблон без текста не сохранён');
++    case QuickReplySaveResult.limitReached:
++      showCustomNotification(
++        context,
++        'Можно хранить до ${QuickRepliesStore.maxCount} шаблонов',
++      );
+   }
+ }
+ 
+-Future<String?> pickQuickReply(
++Future<void> addQuickReply(BuildContext context, int accountId) async {
++  final draft = await editQuickReply(context);
++  if (draft == null || !context.mounted) return;
++  final result = await QuickRepliesStore.instance.add(
++    accountId,
++    title: draft.title,
++    text: draft.text,
++  );
++  if (context.mounted) _reportSaveResult(context, result);
++}
++
++Future<void> changeQuickReply(
+   BuildContext context,
+-) => showModalBottomSheet<String>(
+-  context: context,
+-  showDragHandle: true,
+-  isScrollControlled: true,
+-  builder: (sheetContext) {
+-    final cs = Theme.of(sheetContext).colorScheme;
+-    return SafeArea(
+-      child: ConstrainedBox(
+-        constraints: BoxConstraints(
+-          maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.7,
+-        ),
+-        child: ValueListenableBuilder<List<String>>(
+-          valueListenable: QuickRepliesStore.instance.items,
+-          builder: (context, items, _) => ListView(
+-            shrinkWrap: true,
+-            padding: const EdgeInsets.only(bottom: 12),
+-            children: [
+-              Padding(
+-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+-                child: Text(
+-                  'Шаблоны ответов',
+-                  style: TextStyle(
+-                    color: cs.onSurface,
+-                    fontSize: 20,
+-                    fontWeight: FontWeight.w700,
++  int accountId,
++  QuickReply reply,
++) async {
++  final draft = await editQuickReply(context, initial: reply);
++  if (draft == null || !context.mounted) return;
++  final result = await QuickRepliesStore.instance.update(
++    accountId,
++    reply.id,
++    title: draft.title,
++    text: draft.text,
++  );
++  if (context.mounted) _reportSaveResult(context, result);
++}
++
++Future<QuickReply?> pickQuickReply(
++  BuildContext context, {
++  required int accountId,
++}) {
++  final store = QuickRepliesStore.instance;
++  unawaited(store.ensureLoaded(accountId));
++  return showModalBottomSheet<QuickReply>(
++    context: context,
++    showDragHandle: true,
++    isScrollControlled: true,
++    builder: (sheetContext) {
++      final cs = Theme.of(sheetContext).colorScheme;
++      return SafeArea(
++        child: ConstrainedBox(
++          constraints: BoxConstraints(
++            maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.7,
++          ),
++          child: ListenableBuilder(
++            listenable: store,
++            builder: (context, _) {
++              final items = store.repliesFor(accountId);
++              return ListView(
++                shrinkWrap: true,
++                padding: const EdgeInsets.only(bottom: 12),
++                children: [
++                  Padding(
++                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
++                    child: Text(
++                      'Шаблоны ответов',
++                      style: TextStyle(
++                        color: cs.onSurface,
++                        fontSize: 20,
++                        fontWeight: FontWeight.w700,
++                      ),
++                    ),
+                   ),
+-                ),
+-              ),
+-              Padding(
+-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+-                child: Text(
+-                  items.isEmpty
+-                      ? 'Сохрани фразы, которые часто пишешь, и вставляй их в одно касание'
+-                      : 'Нажми, чтобы вставить. Удержи, чтобы изменить',
+-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13.5),
+-                ),
+-              ),
+-              for (final (index, text) in items.indexed)
+-                ListTile(
+-                  key: ValueKey(text),
+-                  leading: const Icon(Symbols.quickreply),
+-                  title: Text(
+-                    text,
+-                    maxLines: 2,
+-                    overflow: TextOverflow.ellipsis,
++                  Padding(
++                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
++                    child: Text(
++                      items.isEmpty
++                          ? 'Сохрани фразы, которые часто пишешь, и вставляй их в одно касание'
++                          : 'Нажми, чтобы вставить. Удержи, чтобы изменить. '
++                                'В поле ввода шаблоны находятся по «$quickReplyTrigger»',
++                      style: TextStyle(
++                        color: cs.onSurfaceVariant,
++                        fontSize: 13.5,
++                      ),
++                    ),
+                   ),
+-                  onTap: () => Navigator.pop(sheetContext, text),
+-                  onLongPress: () async {
+-                    final edited = await editQuickReply(
+-                      sheetContext,
+-                      initial: text,
+-                    );
+-                    if (edited == null) return;
+-                    await QuickRepliesStore.instance.update(index, edited);
+-                  },
+-                ),
+-              ListTile(
+-                leading: Icon(Symbols.add, color: cs.primary),
+-                title: Text(
+-                  'Новый шаблон',
+-                  style: TextStyle(color: cs.primary),
+-                ),
+-                onTap: () => addQuickReply(sheetContext),
+-              ),
+-            ],
++                  for (final reply in items)
++                    QuickReplyTile(
++                      key: ValueKey(reply.id),
++                      reply: reply,
++                      onTap: () => Navigator.pop(sheetContext, reply),
++                      onLongPress: () =>
++                          changeQuickReply(sheetContext, accountId, reply),
++                    ),
++                  ListTile(
++                    leading: Icon(Symbols.add, color: cs.primary),
++                    title: Text(
++                      'Новый шаблон',
++                      style: TextStyle(color: cs.primary),
++                    ),
++                    onTap: () => addQuickReply(sheetContext, accountId),
++                  ),
++                ],
++              );
++            },
+           ),
+         ),
++      );
++    },
++  );
++}
++
++class QuickReplyTile extends StatelessWidget {
++  const QuickReplyTile({
++    super.key,
++    required this.reply,
++    this.onTap,
++    this.onLongPress,
++    this.trailing,
++  });
++
++  final QuickReply reply;
++  final VoidCallback? onTap;
++  final VoidCallback? onLongPress;
++  final Widget? trailing;
++
++  @override
++  Widget build(BuildContext context) {
++    final hasTitle = reply.title.isNotEmpty;
++    return ListTile(
++      leading: const Icon(Symbols.quickreply),
++      title: Text(
++        hasTitle ? reply.title : reply.text,
++        maxLines: hasTitle ? 1 : 3,
++        overflow: TextOverflow.ellipsis,
+       ),
++      subtitle: hasTitle
++          ? Text(reply.text, maxLines: 2, overflow: TextOverflow.ellipsis)
++          : null,
++      trailing: trailing,
++      onTap: onTap,
++      onLongPress: onLongPress,
+     );
+-  },
+-);
++  }
++}
+diff --git a/lib/frontend/screens/profile/promax_settings_screen.dart b/lib/frontend/screens/profile/promax_settings_screen.dart
+index 4e377d6..439afde 100644
+--- a/lib/frontend/screens/profile/promax_settings_screen.dart
++++ b/lib/frontend/screens/profile/promax_settings_screen.dart
+@@ -1,3 +1,5 @@
++import 'dart:async';
++
+ import 'package:flutter/material.dart';
+ import 'package:material_symbols_icons/symbols.dart';
+ import 'package:package_info_plus/package_info_plus.dart';
+@@ -20,6 +22,7 @@ import 'bookmarks_screen.dart';
+ import 'reminders_screen.dart';
+ import 'quick_replies_screen.dart';
+ import '../../../core/storage/quick_replies_store.dart';
++import '../../../core/storage/token_storage.dart';
+ import '../../../core/reminders/message_reminders.dart';
+ import 'export_reader_screen.dart';
+ import 'ignored_senders_screen.dart';
+@@ -278,15 +281,7 @@ class ProMaxSettingsScreen extends StatelessWidget {
+                     onTap: () => _open(context, const RemindersScreen()),
+                   ),
+                 ),
+-                ValueListenableBuilder<List<String>>(
+-                  valueListenable: QuickRepliesStore.instance.items,
+-                  builder: (context, items, _) => SettingsNavTile(
+-                    icon: Symbols.quickreply,
+-                    label: AppLocalizations.of(context)!.proMaxQuickReplies,
+-                    value: items.isEmpty ? null : '${items.length}',
+-                    onTap: () => _open(context, const QuickRepliesScreen()),
+-                  ),
+-                ),
++                const _QuickRepliesTile(),
+                 SettingsNavTile(
+                   icon: Symbols.lock_open,
+                   label: AppLocalizations.of(context)!.proMaxOpenChatExport,
+@@ -710,3 +705,49 @@ class ProMaxBannerCard extends StatelessWidget {
+     );
+   }
+ }
++
++class _QuickRepliesTile extends StatefulWidget {
++  const _QuickRepliesTile();
++
++  @override
++  State<_QuickRepliesTile> createState() => _QuickRepliesTileState();
++}
++
++class _QuickRepliesTileState extends State<_QuickRepliesTile> {
++  int _accountId = 0;
++
++  @override
++  void initState() {
++    super.initState();
++    unawaited(_resolveAccount());
++  }
++
++  Future<void> _resolveAccount() async {
++    final accountId = await TokenStorage.getActiveAccountId() ?? 0;
++    await QuickRepliesStore.instance.ensureLoaded(accountId);
++    if (mounted) setState(() => _accountId = accountId);
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return ListenableBuilder(
++      listenable: QuickRepliesStore.instance,
++      builder: (context, _) {
++        final count = QuickRepliesStore.instance.repliesFor(_accountId).length;
++        return SettingsNavTile(
++          icon: Symbols.quickreply,
++          label: AppLocalizations.of(context)!.proMaxQuickReplies,
++          value: count == 0 ? null : '$count',
++          onTap: _accountId == 0
++              ? null
++              : () => Navigator.push(
++                  context,
++                  MaterialPageRoute(
++                    builder: (_) => QuickRepliesScreen(accountId: _accountId),
++                  ),
++                ),
++        );
++      },
++    );
++  }
++}
+diff --git a/lib/frontend/screens/profile/quick_replies_screen.dart b/lib/frontend/screens/profile/quick_replies_screen.dart
+index 6b1b1a1..e5a043f 100644
+--- a/lib/frontend/screens/profile/quick_replies_screen.dart
++++ b/lib/frontend/screens/profile/quick_replies_screen.dart
+@@ -1,17 +1,34 @@
++import 'dart:async';
++
+ import 'package:flutter/material.dart';
+ import 'package:material_symbols_icons/symbols.dart';
+ 
+ import '../../../core/storage/quick_replies_store.dart';
+ import '../../widgets/connection_status.dart';
++import '../chats/chat/quick_reply_panel_controller.dart';
+ import '../chats/quick_replies_sheet.dart';
+ 
+-class QuickRepliesScreen extends StatelessWidget {
+-  const QuickRepliesScreen({super.key});
++class QuickRepliesScreen extends StatefulWidget {
++  const QuickRepliesScreen({super.key, required this.accountId});
++
++  final int accountId;
++
++  @override
++  State<QuickRepliesScreen> createState() => _QuickRepliesScreenState();
++}
++
++class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
++  final QuickRepliesStore _store = QuickRepliesStore.instance;
++
++  @override
++  void initState() {
++    super.initState();
++    unawaited(_store.ensureLoaded(widget.accountId));
++  }
+ 
+   @override
+   Widget build(BuildContext context) {
+     final cs = Theme.of(context).colorScheme;
+-    final store = QuickRepliesStore.instance;
+     return Scaffold(
+       backgroundColor: cs.surface,
+       appBar: ConnectionTitleBar(
+@@ -19,58 +36,30 @@ class QuickRepliesScreen extends StatelessWidget {
+         backgroundColor: cs.surface,
+       ),
+       floatingActionButton: FloatingActionButton.extended(
+-        onPressed: () => addQuickReply(context),
++        onPressed: () => addQuickReply(context, widget.accountId),
+         icon: const Icon(Symbols.add),
+         label: const Text('Шаблон'),
+       ),
+       body: SafeArea(
+         top: false,
+-        child: ValueListenableBuilder<List<String>>(
+-          valueListenable: store.items,
+-          builder: (context, items, _) {
+-            if (items.isEmpty) {
+-              return Center(
+-                child: Padding(
+-                  padding: const EdgeInsets.all(32),
+-                  child: Column(
+-                    mainAxisSize: MainAxisSize.min,
+-                    children: [
+-                      Icon(
+-                        Symbols.quickreply,
+-                        size: 56,
+-                        color: cs.onSurfaceVariant,
+-                      ),
+-                      const SizedBox(height: 12),
+-                      Text(
+-                        'Шаблонов пока нет',
+-                        style: TextStyle(
+-                          color: cs.onSurface,
+-                          fontSize: 17,
+-                          fontWeight: FontWeight.w600,
+-                        ),
+-                      ),
+-                      const SizedBox(height: 6),
+-                      Text(
+-                        'Они вставляются в сообщение из меню ProMax в любом чате',
+-                        textAlign: TextAlign.center,
+-                        style: TextStyle(color: cs.onSurfaceVariant),
+-                      ),
+-                    ],
+-                  ),
+-                ),
+-              );
+-            }
++        child: ListenableBuilder(
++          listenable: _store,
++          builder: (context, _) {
++            final items = _store.repliesFor(widget.accountId);
++            if (items.isEmpty) return const _EmptyQuickReplies();
+             return ReorderableListView.builder(
+               padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+               itemCount: items.length,
+-              onReorderItem: store.move,
++              footer: const _TriggerHint(),
++              onReorderItem: (from, to) =>
++                  _store.move(widget.accountId, from, to),
+               itemBuilder: (context, index) {
+-                final text = items[index];
++                final reply = items[index];
+                 return Padding(
+-                  key: ValueKey(text),
++                  key: ValueKey(reply.id),
+                   padding: const EdgeInsets.only(bottom: 10),
+                   child: Dismissible(
+-                    key: ValueKey('dismiss-$text'),
++                    key: ValueKey('dismiss-${reply.id}'),
+                     direction: DismissDirection.endToStart,
+                     background: Container(
+                       alignment: Alignment.centerRight,
+@@ -81,29 +70,20 @@ class QuickRepliesScreen extends StatelessWidget {
+                       ),
+                       child: Icon(Symbols.delete, color: cs.onError),
+                     ),
+-                    onDismissed: (_) => store.removeAt(index),
++                    onDismissed: (_) =>
++                        _store.remove(widget.accountId, reply.id),
+                     child: Material(
+                       color: cs.surfaceContainerHigh,
+                       borderRadius: BorderRadius.circular(18),
+                       clipBehavior: Clip.antiAlias,
+-                      child: ListTile(
+-                        leading: const Icon(Symbols.quickreply),
+-                        title: Text(
+-                          text,
+-                          maxLines: 3,
+-                          overflow: TextOverflow.ellipsis,
+-                        ),
++                      child: QuickReplyTile(
++                        reply: reply,
+                         trailing: ReorderableDragStartListener(
+                           index: index,
+                           child: const Icon(Symbols.drag_indicator),
+                         ),
+-                        onTap: () async {
+-                          final edited = await editQuickReply(
+-                            context,
+-                            initial: text,
+-                          );
+-                          if (edited != null) await store.update(index, edited);
+-                        },
++                        onTap: () =>
++                            changeQuickReply(context, widget.accountId, reply),
+                       ),
+                     ),
+                   ),
+@@ -116,3 +96,58 @@ class QuickRepliesScreen extends StatelessWidget {
+     );
+   }
+ }
++
++class _EmptyQuickReplies extends StatelessWidget {
++  const _EmptyQuickReplies();
++
++  @override
++  Widget build(BuildContext context) {
++    final cs = Theme.of(context).colorScheme;
++    return Center(
++      child: Padding(
++        padding: const EdgeInsets.all(32),
++        child: Column(
++          mainAxisSize: MainAxisSize.min,
++          children: [
++            Icon(Symbols.quickreply, size: 56, color: cs.onSurfaceVariant),
++            const SizedBox(height: 12),
++            Text(
++              'Шаблонов пока нет',
++              style: TextStyle(
++                color: cs.onSurface,
++                fontSize: 17,
++                fontWeight: FontWeight.w600,
++              ),
++            ),
++            const SizedBox(height: 6),
++            Text(
++              'Начни слово с «$quickReplyTrigger» в поле ввода, чтобы найти '
++              'шаблон по названию или тексту, или открой его из меню ProMax в чате',
++              textAlign: TextAlign.center,
++              style: TextStyle(color: cs.onSurfaceVariant),
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++}
++
++class _TriggerHint extends StatelessWidget {
++  const _TriggerHint();
++
++  @override
++  Widget build(BuildContext context) {
++    final cs = Theme.of(context).colorScheme;
++    return Padding(
++      padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
++      child: Text(
++        'В поле ввода напиши «$quickReplyTrigger» и начало названия, например '
++        '«$quickReplyTriggerперезвоню», и выбери шаблон из списка: он '
++        'вставится туда, где стоит курсор. Шаблоны свои у каждого аккаунта. '
++        'Смахни влево, чтобы удалить, потяни за ручку, чтобы переставить.',
++        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
++      ),
++    );
++  }
++}
+diff --git a/lib/frontend/widgets/release_notes_view.dart b/lib/frontend/widgets/release_notes_view.dart
+new file mode 100644
+index 0000000..b40485a
+--- /dev/null
++++ b/lib/frontend/widgets/release_notes_view.dart
+@@ -0,0 +1,164 @@
++import 'package:flutter/gestures.dart';
++import 'package:flutter/material.dart';
++
++import '../../core/utils/link_opener.dart';
++import '../../core/utils/release_notes_markdown.dart';
++import '../../core/utils/update_checker.dart';
++import 'confirm_dialog.dart';
++
++class ReleaseNotesView extends StatefulWidget {
++  const ReleaseNotesView({super.key, required this.releases});
++
++  final List<ReleaseNotes> releases;
++
++  @override
++  State<ReleaseNotesView> createState() => _ReleaseNotesViewState();
++}
++
++class _ReleaseNotesViewState extends State<ReleaseNotesView> {
++  final Map<String, TapGestureRecognizer> _recognizers = {};
++  late List<(ReleaseNotes, List<NotesBlock>)> _parsed;
++
++  @override
++  void initState() {
++    super.initState();
++    _parse();
++  }
++
++  @override
++  void didUpdateWidget(covariant ReleaseNotesView oldWidget) {
++    super.didUpdateWidget(oldWidget);
++    if (!identical(oldWidget.releases, widget.releases)) _parse();
++  }
++
++  void _parse() {
++    _parsed = [
++      for (final release in widget.releases)
++        (release, parseReleaseNotes(release.body)),
++    ];
++  }
++
++  @override
++  void dispose() {
++    for (final recognizer in _recognizers.values) {
++      recognizer.dispose();
++    }
++    super.dispose();
++  }
++
++  Future<void> _confirmOpen(String url) async {
++    final confirmed = await showConfirmDialog(
++      context,
++      title: 'Открыть ссылку?',
++      message: url,
++      confirmLabel: 'Открыть',
++    );
++    if (!confirmed || !mounted) return;
++    await openExternalUrl(context, url);
++  }
++
++  TextSpan _inline(List<NotesSpan> spans, TextStyle base, ColorScheme cs) {
++    return TextSpan(
++      style: base,
++      children: [
++        for (final span in spans)
++          TextSpan(
++            text: span.text,
++            style: TextStyle(
++              fontWeight: span.bold ? FontWeight.w600 : null,
++              fontStyle: span.italic ? FontStyle.italic : null,
++              fontFamily: span.code ? 'monospace' : null,
++              backgroundColor: span.code ? cs.surfaceContainerHighest : null,
++              color: span.link != null ? cs.primary : null,
++              decoration: span.link != null ? TextDecoration.underline : null,
++              decorationColor: span.link != null ? cs.primary : null,
++            ),
++            recognizer: span.link == null ? null : _recognizerFor(span.link!),
++          ),
++      ],
++    );
++  }
++
++  TapGestureRecognizer _recognizerFor(String url) => _recognizers.putIfAbsent(
++    url,
++    () => TapGestureRecognizer()..onTap = () => _confirmOpen(url),
++  );
++
++  Widget _block(NotesBlock block, ColorScheme cs) {
++    final body = TextStyle(
++      color: cs.onSurfaceVariant,
++      fontSize: 13,
++      height: 1.4,
++    );
++    switch (block.kind) {
++      case NotesBlockKind.heading:
++        return Padding(
++          padding: const EdgeInsets.only(top: 8, bottom: 2),
++          child: Text.rich(
++            _inline(
++              block.spans,
++              TextStyle(
++                color: cs.onSurface,
++                fontSize: block.level <= 2 ? 15 : 14,
++                fontWeight: FontWeight.w600,
++                height: 1.3,
++              ),
++              cs,
++            ),
++          ),
++        );
++      case NotesBlockKind.bullet:
++      case NotesBlockKind.numbered:
++        return Padding(
++          padding: EdgeInsets.only(left: 4.0 + block.level * 14, top: 2),
++          child: Row(
++            crossAxisAlignment: CrossAxisAlignment.start,
++            children: [
++              SizedBox(
++                width: block.kind == NotesBlockKind.bullet ? 14 : 22,
++                child: Text(
++                  block.kind == NotesBlockKind.bullet
++                      ? (block.level == 0 ? '•' : '◦')
++                      : '${block.number}.',
++                  style: body,
++                ),
++              ),
++              Expanded(child: Text.rich(_inline(block.spans, body, cs))),
++            ],
++          ),
++        );
++      case NotesBlockKind.paragraph:
++        return Padding(
++          padding: const EdgeInsets.only(top: 4),
++          child: Text.rich(_inline(block.spans, body, cs)),
++        );
++    }
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final cs = Theme.of(context).colorScheme;
++    final showTitles = _parsed.length > 1;
++    return Column(
++      crossAxisAlignment: CrossAxisAlignment.stretch,
++      mainAxisSize: MainAxisSize.min,
++      children: [
++        for (final (index, (release, blocks)) in _parsed.indexed) ...[
++          if (showTitles)
++            Padding(
++              padding: EdgeInsets.only(top: index == 0 ? 0 : 14, bottom: 2),
++              child: Text(
++                release.title,
++                style: TextStyle(
++                  color: cs.primary,
++                  fontSize: 13,
++                  fontWeight: FontWeight.w600,
++                ),
++              ),
++            ),
++          for (final block in blocks) _block(block, cs),
++        ],
++      ],
++    );
++  }
++}
+diff --git a/lib/frontend/widgets/update_dialog.dart b/lib/frontend/widgets/update_dialog.dart
+index bd5452d..4692396 100644
+--- a/lib/frontend/widgets/update_dialog.dart
++++ b/lib/frontend/widgets/update_dialog.dart
+@@ -6,6 +6,7 @@ import '../../core/utils/update_installer.dart';
+ import '../../core/utils/link_opener.dart';
+ import '../../l10n/app_localizations.dart';
+ import 'custom_notification.dart';
++import 'release_notes_view.dart';
+ import '../../core/config/app_fonts.dart';
+ import '../../core/config/app_shape.dart';
+ 
+@@ -20,7 +21,21 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
+     context: context,
+     builder: (dialogContext) {
+       final cs = Theme.of(dialogContext).colorScheme;
+-      final notes = info.notes;
++      final releases = info.releaseNotes.isNotEmpty
++          ? [
++              for (final release in info.releaseNotes)
++                if (!release.isEmpty) release,
++            ]
++          : [
++              if (info.notes.trim().isNotEmpty)
++                ReleaseNotes(
++                  tag: info.tag,
++                  version: info.version,
++                  build: info.build,
++                  title: info.tag,
++                  body: info.notes,
++                ),
++            ];
+       return AlertDialog(
+         backgroundColor: cs.surfaceContainerHigh,
+         shape: AppShape.dialogBorder,
+@@ -56,7 +71,7 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
+                 ),
+               ),
+             ],
+-            if (notes.isNotEmpty) ...[
++            if (releases.isNotEmpty) ...[
+               const SizedBox(height: 16),
+               Text(
+                 l10n.updateWhatsNew,
+@@ -69,16 +84,11 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
+               ),
+               const SizedBox(height: 6),
+               ConstrainedBox(
+-                constraints: const BoxConstraints(maxHeight: 180),
++                constraints: BoxConstraints(
++                  maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.4,
++                ),
+                 child: SingleChildScrollView(
+-                  child: Text(
+-                    notes,
+-                    style: TextStyle(
+-                      color: cs.onSurfaceVariant,
+-                      fontSize: 13,
+-                      height: 1.4,
+-                    ),
+-                  ),
++                  child: ReleaseNotesView(releases: releases),
+                 ),
+               ),
+             ],
+diff --git a/lib/main.dart b/lib/main.dart
+index 50442c6..e202b66 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -294,7 +294,9 @@ void main(List<String> args) async {
+   final quietFuture = QuietHours.instance.load();
+   final remindersFuture = _startReminders();
+   final notesFuture = ChatNotesStore.instance.load();
+-  final quickRepliesFuture = QuickRepliesStore.instance.load();
++  final quickRepliesFuture = activeAccountId == null
++      ? Future<void>.value()
++      : QuickRepliesStore.instance.ensureLoaded(activeAccountId);
+   final hapticsFuture = Haptics.load();
+   final prefsFuture = SharedPreferences.getInstance();
+   final accentFuture = AppAccent.load();
+diff --git a/test/chat_notes_and_quick_replies_test.dart b/test/chat_notes_and_quick_replies_test.dart
+index 46dc838..8928ee0 100644
+--- a/test/chat_notes_and_quick_replies_test.dart
++++ b/test/chat_notes_and_quick_replies_test.dart
+@@ -1,6 +1,5 @@
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:promax/core/storage/chat_notes_store.dart';
+-import 'package:promax/core/storage/quick_replies_store.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
+ 
+ void main() {
+@@ -20,35 +19,4 @@ void main() {
+     expect(store.noteFor(-7), isNull);
+     expect(store.noteFor(9), 'Другая');
+   });
+-
+-  test('quick replies add, edit, reorder and drop blanks', () async {
+-    final store = QuickRepliesStore.instance;
+-    await store.load();
+-    expect(await store.add('Первый'), isTrue);
+-    expect(await store.add('Второй'), isTrue);
+-    expect(await store.add('  Третий '), isTrue);
+-    expect(await store.add('Первый'), isTrue);
+-    expect(store.items.value, ['Первый', 'Второй', 'Третий']);
+-
+-    await store.move(2, 0);
+-    expect(store.items.value, ['Третий', 'Первый', 'Второй']);
+-
+-    await store.update(1, 'Изменённый');
+-    await store.removeAt(2);
+-    await store.load();
+-    expect(store.items.value, ['Третий', 'Изменённый']);
+-
+-    await store.update(0, '');
+-    expect(store.items.value, ['Изменённый']);
+-  });
+-
+-  test('quick replies stop at the limit', () async {
+-    final store = QuickRepliesStore.instance;
+-    await store.load();
+-    for (var i = 0; i < QuickRepliesStore.maxCount; i++) {
+-      expect(await store.add('Шаблон $i'), isTrue);
+-    }
+-    expect(await store.add('Лишний'), isFalse);
+-    expect(store.items.value.length, QuickRepliesStore.maxCount);
+-  });
+ }
+diff --git a/test/quick_replies_test.dart b/test/quick_replies_test.dart
+new file mode 100644
+index 0000000..8bc8717
+--- /dev/null
++++ b/test/quick_replies_test.dart
+@@ -0,0 +1,237 @@
++import 'package:flutter/services.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:promax/core/storage/quick_replies_store.dart';
++import 'package:promax/frontend/screens/chats/chat/quick_reply_panel_controller.dart';
++import 'package:shared_preferences/shared_preferences.dart';
++
++const int _account = 101;
++const int _otherAccount = 202;
++
++List<String> _texts(int accountId) => [
++  for (final reply in QuickRepliesStore.instance.repliesFor(accountId))
++    reply.text,
++];
++
++void main() {
++  final store = QuickRepliesStore.instance;
++
++  setUp(() {
++    SharedPreferences.setMockInitialValues({});
++    store.resetForTest();
++  });
++
++  group('QuickRepliesStore', () {
++    test('adds, edits, reorders and removes templates', () async {
++      await store.load(_account);
++      expect(
++        await store.add(
++          _account,
++          title: ' Перезвоню ',
++          text: 'Перезвоню позже 📞',
++        ),
++        QuickReplySaveResult.saved,
++      );
++      expect(
++        await store.add(_account, text: '  **Жирный** и _курсив_  '),
++        QuickReplySaveResult.saved,
++      );
++      expect(
++        await store.add(_account, text: 'Третий'),
++        QuickReplySaveResult.saved,
++      );
++      expect(
++        await store.add(_account, text: '   '),
++        QuickReplySaveResult.empty,
++      );
++
++      final first = store.repliesFor(_account).first;
++      expect(first.title, 'Перезвоню');
++      expect(first.label, 'Перезвоню');
++      expect(_texts(_account), [
++        'Перезвоню позже 📞',
++        '**Жирный** и _курсив_',
++        'Третий',
++      ]);
++      expect(store.repliesFor(_account)[1].label, '**Жирный** и _курсив_');
++
++      await store.move(_account, 2, 0);
++      expect(_texts(_account).first, 'Третий');
++
++      final third = store.repliesFor(_account).first;
++      await store.update(
++        _account,
++        third.id,
++        title: 'Новое',
++        text: 'Изменённый',
++      );
++      await store.remove(_account, first.id);
++
++      store.resetForTest();
++      await store.load(_account);
++      final reloaded = store.repliesFor(_account);
++      expect(reloaded.map((reply) => reply.text), [
++        'Изменённый',
++        '**Жирный** и _курсив_',
++      ]);
++      expect(reloaded.first.title, 'Новое');
++      expect(reloaded.first.id, third.id);
++    });
++
++    test('keeps templates separate per account', () async {
++      await store.add(_account, text: 'Первый аккаунт');
++      await store.add(_otherAccount, text: 'Второй аккаунт');
++      store.resetForTest();
++      await store.ensureLoaded(_account);
++      await store.ensureLoaded(_otherAccount);
++      expect(_texts(_account), ['Первый аккаунт']);
++      expect(_texts(_otherAccount), ['Второй аккаунт']);
++
++      await store.forget(_otherAccount);
++      store.resetForTest();
++      await store.ensureLoaded(_otherAccount);
++      expect(_texts(_otherAccount), isEmpty);
++      await store.ensureLoaded(_account);
++      expect(_texts(_account), ['Первый аккаунт']);
++    });
++
++    test('ignores writes for the unknown account 0', () async {
++      expect(await store.add(0, text: 'Никуда'), QuickReplySaveResult.empty);
++      expect(store.repliesFor(0), isEmpty);
++    });
++
++    test('moves the old global list into the first loaded account', () async {
++      SharedPreferences.setMockInitialValues({
++        QuickRepliesStore.legacyPrefKey: ['Старый шаблон', '  ', 'Ещё один'],
++      });
++      await store.load(_account);
++      expect(_texts(_account), ['Старый шаблон', 'Ещё один']);
++      expect(store.repliesFor(_account).every((r) => r.title.isEmpty), isTrue);
++
++      final prefs = await SharedPreferences.getInstance();
++      expect(prefs.getStringList(QuickRepliesStore.legacyPrefKey), isNull);
++
++      await store.load(_otherAccount);
++      expect(_texts(_otherAccount), isEmpty);
++    });
++
++    test('drops corrupt entries and survives broken json', () async {
++      SharedPreferences.setMockInitialValues({
++        QuickRepliesStore.prefKeyFor(_account):
++            '[{"id":"a","text":"Хороший"},{"id":"a","text":"Дубль"},'
++            '{"text":"Без id"},{"id":"b","text":"  "},42]',
++        QuickRepliesStore.prefKeyFor(_otherAccount): '{not json',
++      });
++      await store.load(_account);
++      await store.load(_otherAccount);
++      expect(_texts(_account), ['Хороший']);
++      expect(_texts(_otherAccount), isEmpty);
++    });
++
++    test('stops at the limit', () async {
++      for (var i = 0; i < QuickRepliesStore.maxCount; i++) {
++        expect(
++          await store.add(_account, text: 'Шаблон $i'),
++          QuickReplySaveResult.saved,
++        );
++      }
++      expect(
++        await store.add(_account, text: 'Лишний'),
++        QuickReplySaveResult.limitReached,
++      );
++      expect(store.repliesFor(_account).length, QuickRepliesStore.maxCount);
++    });
++
++    test('matches by title or text and ranks word starts first', () {
++      const replies = [
++        QuickReply(id: '1', title: '', text: 'Скоро буду дома'),
++        QuickReply(id: '2', title: 'Домой', text: 'Еду'),
++        QuickReply(id: '3', title: 'Адрес', text: 'Улица Синтетическая, 1'),
++      ];
++      expect(matchQuickReplies(replies, ''), replies);
++      expect(matchQuickReplies(replies, 'дом').map((r) => r.id), ['2', '1']);
++      expect(matchQuickReplies(replies, 'синт').map((r) => r.id), ['3']);
++      expect(matchQuickReplies(replies, 'нет такого'), isEmpty);
++    });
++  });
++
++  group('quickReplyQueryAt', () {
++    QuickReplyQuery? at(String text, [int? cursor]) =>
++        quickReplyQueryAt(text, cursor ?? text.length);
++
++    test('opens on the trigger at the start of the text or a word', () {
++      expect(at(';'), const QuickReplyQuery(start: 0, end: 1, text: ''));
++      expect(
++        at(';пере'),
++        const QuickReplyQuery(start: 0, end: 5, text: 'пере'),
++      );
++      expect(
++        at('Привет ;адр'),
++        const QuickReplyQuery(start: 7, end: 11, text: 'адр'),
++      );
++      expect(
++        at('строка\n;x1'),
++        const QuickReplyQuery(start: 7, end: 10, text: 'x1'),
++      );
++    });
++
++    test('stays closed inside words, after spaces and for emoticons', () {
++      expect(at('a;b'), isNull);
++      expect(at('; '), isNull);
++      expect(at(';пере звоню'), isNull);
++      expect(at(';)'), isNull);
++      expect(at(';;'), isNull);
++      expect(at('ничего'), isNull);
++      expect(at(''), isNull);
++      expect(at(';${'я' * 33}'), isNull);
++    });
++
++    test('does not clash with slash commands or mentions', () {
++      expect(at('/start'), isNull);
++      expect(at('/shrug ;'), isNotNull);
++      expect(at('@имя'), isNull);
++    });
++
++    test('needs the cursor at the end of the token', () {
++      expect(at(';abc', 2), isNull);
++      expect(
++        at(';ab cd', 3),
++        const QuickReplyQuery(start: 0, end: 3, text: 'ab'),
++      );
++    });
++  });
++
++  group('insertQuickReplyText', () {
++    test('replaces the typed trigger with the template', () {
++      const value = TextEditingValue(
++        text: 'Ок ;пер',
++        selection: TextSelection.collapsed(offset: 7),
++      );
++      final next = insertQuickReplyText(
++        value,
++        'Перезвоню 📞',
++        replacing: quickReplyQueryAt(value.text, 7),
++      );
++      expect(next.text, 'Ок Перезвоню 📞');
++      expect(next.selection, const TextSelection.collapsed(offset: 15));
++    });
++
++    test('inserts at the cursor or over the selection', () {
++      const caret = TextEditingValue(
++        text: 'ab',
++        selection: TextSelection.collapsed(offset: 1),
++      );
++      expect(insertQuickReplyText(caret, 'X').text, 'aXb');
++
++      const selected = TextEditingValue(
++        text: 'abcd',
++        selection: TextSelection(baseOffset: 1, extentOffset: 3),
++      );
++      final replaced = insertQuickReplyText(selected, 'X');
++      expect(replaced.text, 'aXd');
++      expect(replaced.selection.baseOffset, 2);
++
++      const unfocused = TextEditingValue(text: 'ab');
++      expect(insertQuickReplyText(unfocused, 'X').text, 'abX');
++    });
++  });
++}
+diff --git a/test/release_notes_test.dart b/test/release_notes_test.dart
+new file mode 100644
+index 0000000..999f892
+--- /dev/null
++++ b/test/release_notes_test.dart
+@@ -0,0 +1,207 @@
++import 'package:flutter/gestures.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:promax/core/utils/release_notes_markdown.dart';
++import 'package:promax/core/utils/update_checker.dart';
++import 'package:promax/frontend/widgets/release_notes_view.dart';
++import 'package:promax/l10n/app_localizations.dart';
++
++Map<String, Object?> _release(
++  String tag, {
++  String body = '',
++  String? name,
++  bool draft = false,
++}) => {
++  'tag_name': tag,
++  'name': ?name,
++  'body': body,
++  'draft': draft,
++  'html_url': 'https://example.com/releases/$tag',
++  'assets': const [],
++};
++
++void main() {
++  group('releaseNotesNewerThan', () {
++    final releases = [
++      _release('v1.1.0-beta.11+121', body: 'eleven'),
++      _release('v1.1.0-beta.13+123', body: 'thirteen', name: 'Beta 13'),
++      _release('v1.1.0-beta.12+122', body: 'twelve\r\nline'),
++      _release('v1.1.0-beta.14+124', body: 'draft', draft: true),
++      _release('nightly', body: 'nightly'),
++      _release('v1.1.0-beta.10+120', body: 'ten'),
++    ];
++
++    test('keeps every newer release, newest first', () {
++      final notes = releaseNotesNewerThan(
++        releases,
++        currentVersion: '1.1.0',
++        currentBuild: 121,
++      );
++      expect(notes.map((n) => n.tag), [
++        'v1.1.0-beta.13+123',
++        'v1.1.0-beta.12+122',
++      ]);
++      expect(notes.first.title, 'Beta 13');
++      expect(notes.last.title, 'v1.1.0-beta.12+122');
++      expect(notes.last.body, 'twelve\nline');
++    });
++
++    test('is empty when the app is current', () {
++      expect(
++        releaseNotesNewerThan(
++          releases,
++          currentVersion: '1.1.0',
++          currentBuild: 123,
++        ),
++        isEmpty,
++      );
++    });
++
++    test('the update carries notes of all skipped releases', () {
++      final update = updateFromReleases(
++        releases,
++        currentVersion: '1.1.0',
++        currentBuild: 120,
++      )!;
++      expect(update.tag, 'v1.1.0-beta.13+123');
++      expect(update.releaseNotes.map((n) => n.body), [
++        'thirteen',
++        'twelve\nline',
++        'eleven',
++      ]);
++      expect(
++        updateFromReleases(
++          releases,
++          currentVersion: '1.1.0',
++          currentBuild: 123,
++        ),
++        isNull,
++      );
++    });
++  });
++
++  group('parseReleaseNotes', () {
++    test('splits headings, bullets, numbers and paragraphs', () {
++      final blocks = parseReleaseNotes(
++        '## Что нового\n'
++        '<!-- hidden -->\n'
++        '- Первый пункт\n'
++        '  продолжение\n'
++        '  * вложенный\n'
++        '1. Нумерованный\n'
++        '\n'
++        'Абзац\nв две строки\n'
++        '---\n'
++        '```\ncode line\n```',
++      );
++      expect(blocks.map((b) => b.kind), [
++        NotesBlockKind.heading,
++        NotesBlockKind.bullet,
++        NotesBlockKind.bullet,
++        NotesBlockKind.numbered,
++        NotesBlockKind.paragraph,
++        NotesBlockKind.paragraph,
++      ]);
++      expect(blocks[0].level, 2);
++      expect(blocks[0].plainText, 'Что нового');
++      expect(blocks[1].plainText, 'Первый пункт продолжение');
++      expect(blocks[2].level, 1);
++      expect(blocks[3].number, 1);
++      expect(blocks[4].plainText, 'Абзац в две строки');
++      expect(blocks[5].spans.single, const NotesSpan('code line', code: true));
++    });
++
++    test('parses bold, italic, code and links', () {
++      expect(
++        parseInlineMarkdown(
++          'Это **жирный** и *курсив*, `код` и [сайт](https://example.com/a)',
++        ),
++        const [
++          NotesSpan('Это '),
++          NotesSpan('жирный', bold: true),
++          NotesSpan(' и '),
++          NotesSpan('курсив', italic: true),
++          NotesSpan(', '),
++          NotesSpan('код', code: true),
++          NotesSpan(' и '),
++          NotesSpan('сайт', link: 'https://example.com/a'),
++        ],
++      );
++    });
++
++    test('links bare and angle urls but drops unsafe schemes', () {
++      expect(
++        parseInlineMarkdown(
++          'См. https://example.com/x. и <https://example.org>',
++        ),
++        const [
++          NotesSpan('См. '),
++          NotesSpan('https://example.com/x', link: 'https://example.com/x'),
++          NotesSpan('. и '),
++          NotesSpan('https://example.org', link: 'https://example.org'),
++        ],
++      );
++      expect(
++        parseInlineMarkdown('[жми](javascript:alert(1))').first.link,
++        isNull,
++      );
++      expect(parseInlineMarkdown(r'\*не курсив\*'), const [
++        NotesSpan('*не курсив*'),
++      ]);
++      expect(parseInlineMarkdown('2 * 3'), const [NotesSpan('2 * 3')]);
++    });
++  });
++
++  testWidgets('renders notes and asks before opening a link', (tester) async {
++    await tester.pumpWidget(
++      const MaterialApp(
++        localizationsDelegates: AppLocalizations.localizationsDelegates,
++        supportedLocales: AppLocalizations.supportedLocales,
++        locale: Locale('ru'),
++        home: Scaffold(
++          body: ReleaseNotesView(
++            releases: [
++              ReleaseNotes(
++                tag: 'v2',
++                version: '2.0.0',
++                build: 2,
++                title: 'Версия 2',
++                body: '## Главное\n- **Новое** [ссылка](https://example.com)',
++              ),
++              ReleaseNotes(
++                tag: 'v1',
++                version: '1.0.0',
++                build: 1,
++                title: 'Версия 1',
++                body: 'Старое',
++              ),
++            ],
++          ),
++        ),
++      ),
++    );
++    expect(find.text('Версия 2'), findsOneWidget);
++    expect(find.text('Версия 1'), findsOneWidget);
++    expect(find.text('Главное'), findsOneWidget);
++    expect(find.text('Новое ссылка', findRichText: true), findsOneWidget);
++    expect(
++      tester.getTopLeft(find.text('Версия 2')).dy,
++      lessThan(tester.getTopLeft(find.text('Версия 1')).dy),
++    );
++
++    final rich = tester.widget<RichText>(
++      find.text('Новое ссылка', findRichText: true),
++    );
++    TapGestureRecognizer? recognizer;
++    rich.text.visitChildren((span) {
++      if (span is TextSpan && span.recognizer is TapGestureRecognizer) {
++        recognizer = span.recognizer! as TapGestureRecognizer;
++      }
++      return recognizer == null;
++    });
++    recognizer!.onTap!();
++    await tester.pumpAndSettle();
++    expect(find.text('Открыть ссылку?'), findsOneWidget);
++    expect(find.text('https://example.com'), findsOneWidget);
++  });
++}
+-- 
+2.43.0
+
