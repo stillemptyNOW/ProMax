@@ -222,6 +222,9 @@ class PushService {
   static Future<void> clearChatNotification(int chatId) =>
       NotificationBridge.instance.cancelChat(chatId);
 
+  static Future<void> pruneChatNotification(int chatId, int seen) =>
+      NotificationBridge.instance.pruneChat(chatId, seen);
+
   Api? _api;
   AccountModule? _account;
   String? _token;

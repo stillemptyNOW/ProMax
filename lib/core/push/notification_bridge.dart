@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../../backend/api.dart';
@@ -38,7 +39,11 @@ class NotificationBridge {
 
   int get activeChatId => _activeChats.isEmpty ? 0 : _activeChats.last;
 
+  @visibleForTesting
+  bool debugNative = false;
+
   bool get _native {
+    if (debugNative) return true;
     try {
       return Platform.isAndroid || Platform.isIOS;
     } catch (_) {
@@ -97,6 +102,18 @@ class NotificationBridge {
       await _method.invokeMethod<void>('cancelChat', {'chatId': chatId});
     } catch (e) {
       logger.w('NotificationBridge.cancelChat: $e');
+    }
+  }
+
+  Future<void> pruneChat(int chatId, int seen) async {
+    if (!_native || chatId == 0 || seen <= 0) return;
+    try {
+      await _method.invokeMethod<void>('pruneChat', {
+        'chatId': chatId,
+        'seen': seen,
+      });
+    } catch (e) {
+      logger.w('NotificationBridge.pruneChat: $e');
     }
   }
 

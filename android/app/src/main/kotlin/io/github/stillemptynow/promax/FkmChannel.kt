@@ -137,6 +137,16 @@ object FkmChannel {
         return true
     }
 
+    fun post(tag: String, task: () -> Unit) {
+        worker.execute {
+            try {
+                task()
+            } catch (e: Exception) {
+                Log.w("Fkm", "$tag failed: ${e.message}")
+            }
+        }
+    }
+
     // Правка и удаление ничего не «доставляют» — счётчик они не трогают.
     private fun update(
         ctx: Context,

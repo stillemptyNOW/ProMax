@@ -704,6 +704,8 @@ class ChatsModule {
     await _commitChatContent([(rows.first, updated.toDbRow())]);
     if (next == 0) {
       unawaited(PushService.clearChatNotification(chatId));
+    } else if (ProMaxSettings.antiRead.value) {
+      unawaited(PushService.pruneChatNotification(chatId, nextMark));
     }
   }
 

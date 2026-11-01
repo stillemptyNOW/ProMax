@@ -41,6 +41,12 @@ object ChatNotifications {
                     ProMaxNotifier(app).cancelChat(longArg(call.argument<Any>("chatId")))
                     result.success(null)
                 }
+                "pruneChat" -> {
+                    val chatId = longArg(call.argument<Any>("chatId"))
+                    val seen = longArg(call.argument<Any>("seen"))
+                    FkmChannel.post("pruneChat") { ProMaxNotifier(app).pruneChat(chatId, seen) }
+                    result.success(null)
+                }
                 "notifiedChats" -> result.success(ProMaxNotifier(app).notifiedChats())
                 else -> result.notImplemented()
             }

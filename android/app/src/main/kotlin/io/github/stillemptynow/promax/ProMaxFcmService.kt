@@ -119,6 +119,13 @@ class ProMaxNotifier(private val ctx: Context) {
 
         val active = activeIds()
         if (!active.contains(notifId)) clearChat(chatId)
+        val seen = data["seen"]?.toLongOrNull() ?: 0L
+        if (seen > 0L) {
+            if (ts <= seen) return
+            val history = loadHistory(chatId)
+            val unseen = history.filter { it.ts > seen }
+            if (unseen.size != history.size) saveHistory(chatId, unseen)
+        }
         val meta = ChatMeta(chatTitle, data["c"]?.toIntOrNull() ?: 0, chatTitle != senderName)
         saveMeta(chatId, meta)
         val history = appendHistory(
@@ -135,6 +142,23 @@ class ProMaxNotifier(private val ctx: Context) {
         manager().cancel(notifId)
         clearChat(chatId)
         syncSummary(notifId, null)
+    }
+
+    fun pruneChat(chatId: Long, seen: Long) {
+        if (seen <= 0L) return
+        val history = loadHistory(chatId)
+        val unseen = history.filter { it.ts > seen }
+        if (unseen.size == history.size) return
+        if (unseen.isEmpty()) {
+            cancelChat(chatId)
+            return
+        }
+        saveHistory(chatId, unseen)
+        val notifId = notifIdOf(chatId)
+        if (!activeIds().contains(notifId)) return
+        val meta = loadMeta(chatId) ?: return
+        render(chatId, notifId, meta, unseen, alertOnce = true)
+        syncSummary(notifId, unseen.last())
     }
 
     fun notifiedChats(): List<Long> {
