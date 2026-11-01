@@ -2454,9 +2454,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attachSheetLimitedAccessInfo => 'Not all photos are accessible';
 
   @override
-  String get attachSheetSectionInProgress => 'Section under development';
-
-  @override
   String get attachSheetContact => 'Contact';
 
   @override
@@ -3658,13 +3655,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelFollowersTitle => 'Followers';
-
-  @override
-  String get channelStatsTitle => 'Channel statistics';
-
-  @override
-  String get channelStatsUnavailable =>
-      'Channel statistics aren\'t available yet';
 
   @override
   String get adminsAdd => 'Add admin';

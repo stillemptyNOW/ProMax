@@ -4658,12 +4658,6 @@ abstract class AppLocalizations {
   /// **'Not all photos are accessible'**
   String get attachSheetLimitedAccessInfo;
 
-  /// No description provided for @attachSheetSectionInProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'Section under development'**
-  String get attachSheetSectionInProgress;
-
   /// No description provided for @attachSheetContact.
   ///
   /// In en, this message translates to:
@@ -6697,18 +6691,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Followers'**
   String get channelFollowersTitle;
-
-  /// No description provided for @channelStatsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Channel statistics'**
-  String get channelStatsTitle;
-
-  /// No description provided for @channelStatsUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Channel statistics aren\'t available yet'**
-  String get channelStatsUnavailable;
 
   /// No description provided for @adminsAdd.
   ///

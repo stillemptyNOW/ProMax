@@ -837,25 +837,6 @@ class _ChatListScreenState extends State<ChatListScreen>
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
               ),
               const SizedBox(height: 20),
-              if (kind == ChatListDeleteKind.ownedGroup && single != null) ...[
-                Container(
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: Text(
-                    l10n.channelDeleteTransfer,
-                    style: TextStyle(
-                      color: cs.onSurface.withValues(alpha: 0.4),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
               GestureDetector(
                 onTap: () => Navigator.pop(ctx, true),
                 child: Container(

@@ -2468,9 +2468,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get attachSheetLimitedAccessInfo => 'Доступны не все фото';
 
   @override
-  String get attachSheetSectionInProgress => 'Раздел в разработке';
-
-  @override
   String get attachSheetContact => 'Контакт';
 
   @override
@@ -3686,12 +3683,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get channelFollowersTitle => 'Подписчики';
-
-  @override
-  String get channelStatsTitle => 'Статистика канала';
-
-  @override
-  String get channelStatsUnavailable => 'Статистика канала пока недоступна';
 
   @override
   String get adminsAdd => 'Добавить администратора';
