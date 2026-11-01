@@ -6,6 +6,7 @@ import '../../core/utils/update_installer.dart';
 import '../../core/utils/link_opener.dart';
 import '../../l10n/app_localizations.dart';
 import 'custom_notification.dart';
+import 'release_notes_view.dart';
 import '../../core/config/app_fonts.dart';
 import '../../core/config/app_shape.dart';
 
@@ -20,7 +21,21 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
     context: context,
     builder: (dialogContext) {
       final cs = Theme.of(dialogContext).colorScheme;
-      final notes = info.notes;
+      final releases = info.releaseNotes.isNotEmpty
+          ? [
+              for (final release in info.releaseNotes)
+                if (!release.isEmpty) release,
+            ]
+          : [
+              if (info.notes.trim().isNotEmpty)
+                ReleaseNotes(
+                  tag: info.tag,
+                  version: info.version,
+                  build: info.build,
+                  title: info.tag,
+                  body: info.notes,
+                ),
+            ];
       return AlertDialog(
         backgroundColor: cs.surfaceContainerHigh,
         shape: AppShape.dialogBorder,
@@ -56,7 +71,7 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
                 ),
               ),
             ],
-            if (notes.isNotEmpty) ...[
+            if (releases.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text(
                 l10n.updateWhatsNew,
@@ -69,16 +84,11 @@ Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) async {
               ),
               const SizedBox(height: 6),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 180),
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.4,
+                ),
                 child: SingleChildScrollView(
-                  child: Text(
-                    notes,
-                    style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
-                  ),
+                  child: ReleaseNotesView(releases: releases),
                 ),
               ),
             ],

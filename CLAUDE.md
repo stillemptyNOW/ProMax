@@ -194,9 +194,14 @@ and the Linux bundle. Pushing a `v*` tag publishes everything — IPA, `.pmx`
 tools package, APKs, desktop archives — into one public GitHub Release through
 `.github/scripts/publish-release.sh`. APKs are named `ProMax-<version>-promax-<abi>.apk`
 because the in-app updater picks them by the `-promax-<abi>.apk` suffix. Without the
-`ANDROID_KEYSTORE_*` secrets each build is signed with a throwaway debug key, so those APKs are
-published as `ProMax-<version>-preview-<abi>.apk`: the updater never installs them over an existing
-copy, and moving between preview builds needs a reinstall. The in-app updater reads
+`ANDROID_KEYSTORE_*` secrets a build is signed with a throwaway debug key, its APKs are named
+`ProMax-<version>-preview-<abi>.apk` and only kept as workflow artifacts: they are never published.
+Releases carry only the signed `ProMax-<version>-promax-<abi>.apk`; `publish-release.sh` deletes any
+`ProMax-*-preview-*.apk` already attached to the release (`gh release delete-asset`) once signed APKs
+are uploaded, and refuses to add preview APKs to a release that has signed ones. The in-app updater
+shows «Что нового» before «Обновить»: the Markdown bodies of every release newer than the running
+build, newest first (`releaseNotesNewerThan`, rendered by `ReleaseNotesView`; a link opens only after
+a confirmation). The in-app updater reads
 the 20 most recent releases of the public ProMax repository and takes the newest by the version and
 build in the tag (`newestRelease`), because GitHub's list order does not follow them. It verifies
 downloaded files by their published size and SHA-256 digest. iOS sends the IPA to the share sheet so
