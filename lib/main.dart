@@ -55,6 +55,7 @@ import 'core/config/app_link_preview.dart';
 import 'core/config/app_media_cache.dart';
 import 'core/config/app_video_note_quality.dart';
 import 'core/config/app_pill_gradient.dart';
+import 'core/config/call_pip_setting.dart';
 import 'core/config/app_visual_style.dart';
 import 'core/config/app_chat_chrome.dart';
 import 'core/config/app_composer_background.dart';
@@ -91,6 +92,7 @@ import 'backend/modules/digital_id.dart';
 import 'core/calls/call_bridge.dart';
 import 'core/calls/call_controller.dart';
 import 'core/calls/call_kit.dart';
+import 'core/calls/call_pip.dart';
 import 'core/calls/call_session.dart';
 import 'core/media/audio_playback_controller.dart';
 import 'core/media/media_kit_video_platform.dart';
@@ -128,6 +130,7 @@ import 'frontend/widgets/liquid_glass.dart';
 import 'frontend/widgets/mesh_gradient_background.dart';
 import 'frontend/widgets/small_spinner.dart';
 import 'frontend/widgets/theme_reveal.dart';
+import 'frontend/widgets/call_pip_layer.dart';
 import 'frontend/widgets/floating_call_badge.dart';
 import 'frontend/widgets/floating_video_note.dart';
 import 'frontend/widgets/keyboard_dismissal.dart';
@@ -303,6 +306,7 @@ void main(List<String> args) async {
   final themeModeFuture = AppThemeModeConfig.load();
   final amoledFuture = AppAmoled.load();
   final pillGradientFuture = AppPillGradient.load();
+  final callPipFuture = CallPipSetting.load();
   final visualStyleFuture = AppVisualStyle.load();
   final liquidGlassFuture = LiquidGlass.load();
   final nativeGlassFuture = NativeGlass.load();
@@ -396,6 +400,7 @@ void main(List<String> args) async {
     themeModeFuture,
     amoledFuture,
     pillGradientFuture,
+    callPipFuture,
     visualStyleFuture,
     liquidGlassFuture,
     nativeGlassFuture,
@@ -611,6 +616,7 @@ class ProMaxAppState extends State<ProMaxApp>
     CallController.instance.appResumed = AppForeground.interactiveIn(lifecycle);
     CallBridge.instance.init();
     CallKitBridge.instance.init();
+    CallPip.instance.init();
     NotificationBridge.instance.init();
     unawaited(LauncherBadge.instance.init());
     AppExitHooks.add(PendingUndo.commitCurrent);
@@ -1291,60 +1297,64 @@ class ProMaxAppState extends State<ProMaxApp>
                           value: overlayStyle.copyWith(
                             statusBarColor: Colors.transparent,
                           ),
-                          child: Listener(
-                            behavior: HitTestBehavior.translucent,
-                            onPointerDown: (_) =>
-                                AppLock.instance.noteInteraction(),
-                            child: AppLockLayer(
-                              child: Stack(
-                                fit: StackFit.expand,
-                                clipBehavior: Clip.none,
-                                children: [
-                                  if (gradientColors != null &&
-                                      gradientColors.isNotEmpty)
-                                    Positioned.fill(
-                                      child: MeshGradientBackground(
-                                        colors: gradientColors,
-                                        animate:
-                                            gradientWallpaper!.gradientAnimated,
-                                        rotation:
-                                            gradientWallpaper.gradientRotation,
-                                      ),
-                                    ),
-                                  RepaintBoundary(
-                                    key: _captureBoundaryKey,
-                                    child:
-                                        NotificationListener<
-                                          ScrollNotification
-                                        >(
-                                          onNotification: (notification) {
-                                            if (notification
-                                                is ScrollEndNotification) {
-                                              PerformanceMonitor.instance
-                                                  .markActivityEnd();
-                                            } else {
-                                              PerformanceMonitor.instance.mark(
-                                                'scroll',
-                                              );
-                                            }
-                                            return false;
-                                          },
-                                          child: KeyboardDismissal(
-                                            child: sChild!,
-                                          ),
+                          child: CallPipLayer(
+                            child: Listener(
+                              behavior: HitTestBehavior.translucent,
+                              onPointerDown: (_) =>
+                                  AppLock.instance.noteInteraction(),
+                              child: AppLockLayer(
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    if (gradientColors != null &&
+                                        gradientColors.isNotEmpty)
+                                      Positioned.fill(
+                                        child: MeshGradientBackground(
+                                          colors: gradientColors,
+                                          animate: gradientWallpaper!
+                                              .gradientAnimated,
+                                          rotation: gradientWallpaper
+                                              .gradientRotation,
                                         ),
-                                  ),
-                                  const Positioned.fill(
-                                    child: FloatingVideoNoteLayer(),
-                                  ),
-                                  const Positioned.fill(
-                                    child: FloatingCallBadgeLayer(),
-                                  ),
-                                  const Positioned.fill(
-                                    child: AppSwitcherCurtain(),
-                                  ),
-                                  if (fpsOn) const FpsOverlayLayer(),
-                                ],
+                                      ),
+                                    RepaintBoundary(
+                                      key: _captureBoundaryKey,
+                                      child:
+                                          NotificationListener<
+                                            ScrollNotification
+                                          >(
+                                            onNotification: (notification) {
+                                              if (notification
+                                                  is ScrollEndNotification) {
+                                                PerformanceMonitor.instance
+                                                    .markActivityEnd();
+                                              } else {
+                                                PerformanceMonitor.instance
+                                                    .mark('scroll');
+                                              }
+                                              return false;
+                                            },
+                                            child: KeyboardDismissal(
+                                              child: sChild!,
+                                            ),
+                                          ),
+                                    ),
+                                    const Positioned.fill(
+                                      child: FloatingVideoNoteLayer(),
+                                    ),
+                                    const Positioned.fill(
+                                      child: FloatingCallBadgeLayer(),
+                                    ),
+                                    const Positioned.fill(
+                                      child: GlobalAtmosphereOverlay(),
+                                    ),
+                                    const Positioned.fill(
+                                      child: AppSwitcherCurtain(),
+                                    ),
+                                    if (fpsOn) const FpsOverlayLayer(),
+                                  ],
+                                ),
                               ),
                             ),
                           ),

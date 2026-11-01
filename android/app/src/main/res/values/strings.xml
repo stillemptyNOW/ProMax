@@ -12,4 +12,7 @@
     <string name="fkm_disable">Turn off</string>
     <string name="notif_deleted_prefix">Deleted:</string>
     <string name="share_target_label">Send to a chat</string>
+    <string name="call_pip_mute">Mute</string>
+    <string name="call_pip_unmute">Unmute</string>
+    <string name="call_pip_hangup">End call</string>
 </resources>

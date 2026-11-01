@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -78,6 +79,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
     private var pendingPeer: NfcExchange.Peer? = null
     @Volatile private var exchangingEmitted = false
 
+    private val callPip = CallPip(this)
     private var pendingCall: Map<String, Any?>? = null
     private var pendingChat: Long = 0L
     private var pendingShare: Map<String, Any?>? = null
@@ -383,6 +385,21 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
         SubjectLift.attach(flutterEngine, this)
 
         MediaExport.attach(flutterEngine, this)
+
+        callPip.attach(flutterEngine.dartExecutor.binaryMessenger)
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        callPip.onUserLeaveHint()
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration,
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        callPip.onModeChanged(isInPictureInPictureMode)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -894,6 +911,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         activityChannels().forEach { messenger.setMessageHandler(it, null) }
         nfcEvents = null
+        callPip.detach()
         EngineHost.unbindActivity(this)
         super.cleanUpFlutterEngine(flutterEngine)
     }
@@ -908,6 +926,8 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
         "io.github.stillemptynow.promax/video",
         "io.github.stillemptynow.promax/screen",
         MediaExport.CHANNEL,
+        CallPip.METHODS,
+        CallPip.EVENTS,
     )
 
     override fun onDestroy() {
