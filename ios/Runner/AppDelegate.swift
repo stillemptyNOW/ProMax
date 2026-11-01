@@ -46,6 +46,7 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
       registerNotifications(messenger)
       registerScreen(messenger)
       registerClipboard(messenger)
+      registerOnDeviceML(messenger)
       registerCallKit(messenger)
       registerNativeGlass(messenger)
       method("io.github.stillemptynow.promax/fkm", messenger) { call, result in
@@ -199,6 +200,15 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
   private func registerClipboard(_ messenger: FlutterBinaryMessenger) {
     method("io.github.stillemptynow.promax/clipboard", messenger) { call, result in
       ProMaxClipboard.handle(call, result: result)
+    }
+  }
+
+  private func registerOnDeviceML(_ messenger: FlutterBinaryMessenger) {
+    method("io.github.stillemptynow.promax/translate", messenger) { call, result in
+      ProMaxTranslation.handle(call, result: result)
+    }
+    method("io.github.stillemptynow.promax/sticker", messenger) { call, result in
+      ProMaxSubjectLift.handle(call, result: result)
     }
   }
 

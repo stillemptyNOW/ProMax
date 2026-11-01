@@ -13807,6 +13807,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset settings'**
   String get motionBlurReset;
+
+  /// No description provided for @msgActionsTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate'**
+  String get msgActionsTranslate;
+
+  /// No description provided for @msgActionsShowOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Show original'**
+  String get msgActionsShowOriginal;
+
+  /// No description provided for @translationShowTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show translation'**
+  String get translationShowTranslation;
+
+  /// No description provided for @translationTranslating.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating…'**
+  String get translationTranslating;
+
+  /// No description provided for @translationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get translationLabel;
+
+  /// No description provided for @translationLabelFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Translated from {language}'**
+  String translationLabelFrom(String language);
+
+  /// No description provided for @chatScreenMenuTranslateChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate chat'**
+  String get chatScreenMenuTranslateChat;
+
+  /// No description provided for @chatScreenMenuStopTranslateChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop translating chat'**
+  String get chatScreenMenuStopTranslateChat;
+
+  /// No description provided for @translationChatEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming messages will be translated on this device'**
+  String get translationChatEnabled;
+
+  /// No description provided for @translationChatDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat auto-translation is off'**
+  String get translationChatDisabled;
+
+  /// No description provided for @translationSameLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'The message is already in the target language'**
+  String get translationSameLanguage;
+
+  /// No description provided for @translationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t translate the message'**
+  String get translationFailed;
+
+  /// No description provided for @translationNeedsWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'The language model downloads over Wi-Fi. Connect to Wi-Fi or allow mobile data in translation settings'**
+  String get translationNeedsWifi;
+
+  /// No description provided for @translationUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This language isn\'t supported by the translator'**
+  String get translationUnsupported;
+
+  /// No description provided for @translationUndetermined.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t detect the message language'**
+  String get translationUndetermined;
+
+  /// No description provided for @translationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation isn\'t available on this device'**
+  String get translationUnavailable;
+
+  /// No description provided for @translationSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Message translation'**
+  String get translationSettingsTitle;
+
+  /// No description provided for @translationSettingsPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation runs on this device. Message text is never sent anywhere'**
+  String get translationSettingsPrivacy;
+
+  /// No description provided for @translationSettingsTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate to'**
+  String get translationSettingsTarget;
+
+  /// No description provided for @translationSettingsTargetApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App language ({language})'**
+  String translationSettingsTargetApp(String language);
+
+  /// No description provided for @translationSettingsWifiOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Download models over Wi-Fi only'**
+  String get translationSettingsWifiOnly;
+
+  /// No description provided for @translationSettingsWifiOnlySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Each language model is about 30 MB and downloads on first use'**
+  String get translationSettingsWifiOnlySubtitle;
+
+  /// No description provided for @translationSettingsModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded languages'**
+  String get translationSettingsModels;
+
+  /// No description provided for @translationSettingsModelsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No models downloaded yet'**
+  String get translationSettingsModelsEmpty;
+
+  /// No description provided for @translationSettingsDeleteModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete model'**
+  String get translationSettingsDeleteModel;
+
+  /// No description provided for @translationSettingsModelDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Model deleted'**
+  String get translationSettingsModelDeleted;
+
+  /// No description provided for @translationSettingsModelDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the model'**
+  String get translationSettingsModelDeleteFailed;
+
+  /// No description provided for @translationSettingsSystemModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation languages are downloaded by the system. Remove them in iOS Settings → Apps → Translate'**
+  String get translationSettingsSystemModels;
+
+  /// No description provided for @stickerMakerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sticker'**
+  String get stickerMakerAction;
+
+  /// No description provided for @stickerMakerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New sticker'**
+  String get stickerMakerTitle;
+
+  /// No description provided for @stickerMakerProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Cutting out the subject…'**
+  String get stickerMakerProcessing;
+
+  /// No description provided for @stickerMakerNoSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find a subject in the photo'**
+  String get stickerMakerNoSubject;
+
+  /// No description provided for @stickerMakerDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'The model is still downloading, try again in a minute'**
+  String get stickerMakerDownloading;
+
+  /// No description provided for @stickerMakerUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Making stickers isn\'t available on this device'**
+  String get stickerMakerUnavailable;
+
+  /// No description provided for @stickerMakerUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get stickerMakerUse;
+
+  /// No description provided for @stickerMakerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The background was removed on this device. The sticker is sent as an image with a transparent background'**
+  String get stickerMakerHint;
 }
 
 class _AppLocalizationsDelegate

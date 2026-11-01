@@ -16,6 +16,8 @@ import '../../core/config/app_bubble_behavior.dart';
 import '../../core/config/app_bubble_shape.dart';
 import '../../core/crypto/message_decryption_cache.dart';
 import 'decrypted_text.dart';
+import 'message_translation.dart';
+import '../../core/translation/message_translator.dart';
 import '../../core/utils/bubble_radius.dart';
 import '../../core/utils/emoji_keyword_index.dart';
 import '../../core/utils/haptics.dart';
@@ -2054,12 +2056,37 @@ class MessageBubble extends StatelessWidget {
     chatId: message.chatId,
     messageId: message.id,
     cipherText: message.text ?? '',
-    builder: (decryption) => _buildTextContentBody(ctx, decryption),
+    builder: (decryption) {
+      final source = _translatableText(decryption);
+      if (source == null || message.isControl) {
+        return _buildTextContentBody(ctx, decryption, null);
+      }
+      return MessageTranslationScope(
+        accountId: message.accountId,
+        chatId: message.chatId,
+        messageId: message.id,
+        sourceText: source,
+        isMe: isMe,
+        builder: (translation) =>
+            _buildTextContentBody(ctx, decryption, translation),
+      );
+    },
   );
+
+  String? _translatableText(MessageDecryption? decryption) {
+    if (decryption?.state == MessageDecryptionState.wrongKey ||
+        decryption?.state == MessageDecryptionState.unavailable) {
+      return null;
+    }
+    final text = decryption?.plaintext ?? message.text;
+    if (text == null || text.trim().isEmpty) return null;
+    return text;
+  }
 
   Widget _buildTextContentBody(
     BubbleContext ctx,
     MessageDecryption? decryption,
+    MessageTranslationState? translation,
   ) {
     final attachments = message.attachments;
     final isForwardedContact =
@@ -2114,7 +2141,7 @@ class MessageBubble extends StatelessWidget {
       ],
     );
 
-    final Widget textWidget;
+    Widget textWidget;
     if (decryption?.state == MessageDecryptionState.wrongKey ||
         decryption?.state == MessageDecryptionState.unavailable) {
       textWidget = _wrapSelectable(
@@ -2142,6 +2169,32 @@ class MessageBubble extends StatelessWidget {
       );
     } else {
       textWidget = _wrapSelectable(Text(message.text ?? '', style: textStyle));
+    }
+
+    if (translation != null &&
+        !isForwarded &&
+        MessageTranslationFooter.hasContent(translation)) {
+      final footer = MessageTranslationFooter(
+        translationKey: MessageTranslator.keyOf(
+          message.accountId,
+          message.chatId,
+          message.id,
+        ),
+        state: translation,
+        color: ctx.dim,
+        accent: ctx.text,
+      );
+      textWidget = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (translation.showsTranslation)
+            Text(translation.text ?? '', style: textStyle)
+          else
+            textWidget,
+          footer,
+        ],
+      );
     }
 
     if (hasReactions) {
