@@ -14,7 +14,6 @@ import 'package:promax/core/protocol/packet.dart';
 import 'package:promax/core/push/fkm_bridge.dart';
 import 'package:promax/core/push/fkm_controller.dart';
 import 'package:promax/core/storage/app_database.dart';
-import 'package:promax/core/storage/ignored_senders.dart';
 import 'package:promax/core/storage/token_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -51,9 +50,7 @@ class _PushApi extends Api {
 
 const int _me = 820001;
 const int _peer = 820333;
-const int _ignored = 820999;
 const int _dialog = _me ^ _peer;
-const int _ignoredDialog = _me ^ _ignored;
 
 Map<String, Object> _chat(int chatId, int peer) => {
   'id': chatId,
@@ -104,7 +101,6 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    IgnoredSenders.instance.reset();
     shown = [];
     _messenger.setMockMethodCallHandler(_fkm, (call) async {
       if (call.method == 'showMessage') {
@@ -137,7 +133,6 @@ void main() {
     await AppDatabase.saveProfile(ProfileData.stub(_me));
     await TokenStorage.setActiveAccount(_me);
     await chats.cacheServerChat(_chat(_dialog, _peer), _me);
-    await chats.cacheServerChat(_chat(_ignoredDialog, _ignored), _me);
     await controller.init(api);
   });
 
@@ -166,11 +161,5 @@ void main() {
     await deliver(_push(_dialog, _peer, 6000));
     await deliver(_push(_dialog, _peer, 6000));
     expect(shownIds(), ['6000']);
-  });
-
-  test('an ignored sender never reaches the notification shade', () async {
-    await IgnoredSenders.instance.add(_me, _ignored);
-    await deliver(_push(_ignoredDialog, _ignored, 7000));
-    expect(shown, isEmpty);
   });
 }

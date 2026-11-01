@@ -22,9 +22,7 @@ import '../../../core/config/app_show_extra_info.dart';
 import '../../../core/config/app_stories.dart';
 import '../../../core/protocol/packet.dart';
 import '../../../core/storage/app_database.dart';
-import '../../../core/push/push_service.dart';
 import '../../../core/storage/chat_members_store.dart';
-import '../../../core/storage/ignored_senders.dart';
 import '../../../core/utils/format.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/utils/route_settle.dart';
@@ -1273,15 +1271,6 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
         destructive: false,
         onTap: _addChatToFolder,
       ));
-      if (!_isBot && _otherId != null && _otherId != _myId && _myId != 0) {
-        final ignored = IgnoredSenders.instance.isIgnored(_myId, _otherId!);
-        entries.add((
-          icon: ignored ? Symbols.chat : Symbols.speaker_notes_off,
-          label: ignored ? l10n.chatInfoMenuUnignore : l10n.chatInfoMenuIgnore,
-          destructive: false,
-          onTap: _toggleIgnore,
-        ));
-      }
       if (!_isBot && _otherId != null && _otherId != _myId) {
         entries.add((
           icon: _blocked ? Symbols.lock_open : Symbols.block,
@@ -1938,28 +1927,6 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
       chats: [(chatId: _mediaChatId, forAll: _canActForAll)],
     );
     Navigator.of(context).popUntil((route) => route.isFirst);
-  }
-
-  Future<void> _toggleIgnore() async {
-    final peerId = _otherId;
-    if (peerId == null || _myId == 0) return;
-    final store = IgnoredSenders.instance;
-    if (store.isIgnored(_myId, peerId)) {
-      await store.remove(_myId, peerId);
-      if (mounted) showCustomNotification(context, l10n.ignoredSendersRemoved);
-      return;
-    }
-    final choice = await showBlurredConfirm(
-      context,
-      title: l10n.chatInfoMenuIgnore,
-      message: l10n.chatInfoIgnoreConfirmMessage(_customName),
-      confirmLabel: l10n.ignoredSendersConfirmAdd,
-      cancelLabel: l10n.ignoredSendersCancel,
-    );
-    if (!mounted || !choice.confirmed) return;
-    await store.add(_myId, peerId);
-    unawaited(PushService.clearChatNotification(widget.chatId));
-    if (mounted) showCustomNotification(context, l10n.ignoredSendersAdded);
   }
 
   Future<void> _toggleBlock() async {

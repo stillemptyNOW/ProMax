@@ -9,7 +9,6 @@ import '../../backend/modules/messages.dart';
 import '../config/promax_settings.dart';
 import '../crypto/e2ee_service.dart';
 import '../storage/app_database.dart';
-import '../storage/ignored_senders.dart';
 import '../storage/local_read_state.dart';
 import '../storage/token_storage.dart';
 
@@ -53,7 +52,6 @@ class NotificationFacts {
     this.streamerMode = false,
     this.encrypted = false,
     this.readMark = 0,
-    this.senderIgnored = false,
   });
 
   final int accountId;
@@ -63,7 +61,6 @@ class NotificationFacts {
   final bool streamerMode;
   final bool encrypted;
   final int readMark;
-  final bool senderIgnored;
 
   static int effectiveReadMark({
     required int accountId,
@@ -80,7 +77,6 @@ class NotificationFacts {
     final local = ProMaxSettings.antiRead.value
         ? await LocalReadState.load(accountId, chatId)
         : const LocalReadState();
-    await IgnoredSenders.instance.load();
     await E2eeService.instance.ensureLoaded(accountId);
     return NotificationFacts(
       accountId: accountId,
@@ -93,12 +89,6 @@ class NotificationFacts {
         accountId: accountId,
         chat: chat,
         local: local,
-      ),
-      senderIgnored: IgnoredSenders.instance.hidesFromDialog(
-        accountId: accountId,
-        chatId: chatId,
-        senderId: senderId,
-        isDialog: chat?.type == 'DIALOG',
       ),
     );
   }
@@ -241,7 +231,6 @@ abstract final class NotificationPolicy {
   }) {
     final senderId = push.senderId;
     if (senderId == null || senderId == facts.accountId) return null;
-    if (facts.senderIgnored) return null;
     final time = push.message['time'];
     if (time is int && time <= facts.readMark) return null;
 

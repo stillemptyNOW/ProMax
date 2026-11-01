@@ -285,16 +285,6 @@ void main() {
       );
       expect(NotificationFacts.effectiveReadMark(accountId: _me), 0);
     });
-
-    test('a sender on the ignore list never produces a notification', () {
-      expect(
-        NotificationPolicy.compose(
-          _push(),
-          const NotificationFacts(accountId: _me, senderIgnored: true),
-        ),
-        isNull,
-      );
-    });
   });
 
   test('editedText respects the push privacy settings', () {

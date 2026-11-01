@@ -21,8 +21,8 @@ import 'core/cache/self_presence.dart';
 import 'core/storage/app_instance.dart';
 import 'core/storage/draft_store.dart';
 import 'core/storage/archived_chats_store.dart';
-import 'core/storage/ignored_senders.dart';
 import 'core/storage/local_contact_avatars.dart';
+import 'core/storage/retired_preferences.dart';
 import 'core/crypto/e2ee_service.dart';
 import 'core/storage/chat_encryption_store.dart';
 import 'core/config/app_accent.dart';
@@ -354,10 +354,10 @@ void main(List<String> args) async {
   await quickRepliesFuture;
 
   final prefs = await prefsFuture;
+  await RetiredPreferences.purge(prefs);
   await FileHistoryCache.load(prefs);
   await DraftStore.instance.load();
   await ArchivedChatsStore.instance.load();
-  await IgnoredSenders.instance.load();
   await LocalContactAvatars.instance.load();
   await badgeFuture;
   await ChatEncryptionStore.instance.load();
