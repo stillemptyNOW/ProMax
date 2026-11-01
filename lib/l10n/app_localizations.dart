@@ -3260,12 +3260,6 @@ abstract class AppLocalizations {
   /// **'All messages in this chat will be deleted permanently.'**
   String get chatInfoClearHistoryMessage;
 
-  /// No description provided for @chatInfoClearHistoryForAll.
-  ///
-  /// In en, this message translates to:
-  /// **'For everyone'**
-  String get chatInfoClearHistoryForAll;
-
   /// No description provided for @chatInfoClearHistoryConfirm.
   ///
   /// In en, this message translates to:
@@ -4664,12 +4658,6 @@ abstract class AppLocalizations {
   /// **'Not all photos are accessible'**
   String get attachSheetLimitedAccessInfo;
 
-  /// No description provided for @attachSheetSectionInProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'Section under development'**
-  String get attachSheetSectionInProgress;
-
   /// No description provided for @attachSheetContact.
   ///
   /// In en, this message translates to:
@@ -4916,18 +4904,6 @@ abstract class AppLocalizations {
   /// **'Linear'**
   String get photoEditorBlurLinear;
 
-  /// No description provided for @fontSettingsInvalidInput.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a font link or name'**
-  String get fontSettingsInvalidInput;
-
-  /// No description provided for @fontSettingsFontNotFound.
-  ///
-  /// In en, this message translates to:
-  /// **'Font \"{name}\" not found or no network'**
-  String fontSettingsFontNotFound(String name);
-
   /// No description provided for @fontSettingsFontAdded.
   ///
   /// In en, this message translates to:
@@ -4943,26 +4919,8 @@ abstract class AppLocalizations {
   /// No description provided for @fontSettingsAddFontTitle.
   ///
   /// In en, this message translates to:
-  /// **'Add font'**
+  /// **'Add font from file'**
   String get fontSettingsAddFontTitle;
-
-  /// No description provided for @fontSettingsAddFontDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Paste a Google Fonts link or font name'**
-  String get fontSettingsAddFontDescription;
-
-  /// No description provided for @fontSettingsAddFontConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Add'**
-  String get fontSettingsAddFontConfirm;
-
-  /// No description provided for @fontSettingsPickFile.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose file'**
-  String get fontSettingsPickFile;
 
   /// No description provided for @fontSettingsPickFileHint.
   ///
@@ -4975,12 +4933,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is not a font file'**
   String get fontSettingsNotAFont;
-
-  /// No description provided for @fontSettingsCancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get fontSettingsCancel;
 
   /// No description provided for @fontSettingsTitle.
   ///
@@ -6740,18 +6692,6 @@ abstract class AppLocalizations {
   /// **'Followers'**
   String get channelFollowersTitle;
 
-  /// No description provided for @channelStatsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Channel statistics'**
-  String get channelStatsTitle;
-
-  /// No description provided for @channelStatsUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Channel statistics aren\'t available yet'**
-  String get channelStatsUnavailable;
-
   /// No description provided for @adminsAdd.
   ///
   /// In en, this message translates to:
@@ -7724,12 +7664,6 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to delete this message?'**
   String get chatScreenDeleteMessageConfirm;
 
-  /// No description provided for @chatScreenDeleteAlsoFor.
-  ///
-  /// In en, this message translates to:
-  /// **'Also delete for {name}'**
-  String chatScreenDeleteAlsoFor(String name);
-
   /// No description provided for @deleteMessagesFailedWithReason.
   ///
   /// In en, this message translates to:
@@ -7771,24 +7705,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again'**
   String get deleteChatTypeUnknown;
-
-  /// No description provided for @chatForAllNotAllowedHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The MAX server doesn\'t allow deleting this chat for the other person, so it will be deleted only for you.'**
-  String get chatForAllNotAllowedHint;
-
-  /// No description provided for @chatListForAllNotAllowedHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The MAX server doesn\'t allow deleting some of these chats for the other person, so they will be deleted only for you.'**
-  String get chatListForAllNotAllowedHint;
-
-  /// No description provided for @chatClearAlsoForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Also erase the history for the other person'**
-  String get chatClearAlsoForPeer;
 
   /// No description provided for @chatDeleteForAllMembers.
   ///
@@ -7832,113 +7748,11 @@ abstract class AppLocalizations {
   /// **'MAX didn\'t confirm deleting {count} messages. They are still in the chat'**
   String deleteMessagesNotConfirmed(int count);
 
-  /// No description provided for @deleteMessagesPeerOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX deletes the other person\'s messages only for you'**
-  String get deleteMessagesPeerOnlyForMe;
-
-  /// No description provided for @deleteMessagesOthersOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX deletes other people\'s messages only for you'**
-  String get deleteMessagesOthersOnlyForMe;
-
-  /// No description provided for @deleteMessagesTooOldForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Only your own messages younger than {age} can be deleted for the other person — a MAX server limit'**
-  String deleteMessagesTooOldForPeer(String age);
-
-  /// No description provided for @deleteMessagesTooOldForAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Only your own messages younger than {age} can be deleted for everyone — a MAX server limit'**
-  String deleteMessagesTooOldForAll(String age);
-
-  /// No description provided for @deleteMessagesScheduledOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'Scheduled messages are deleted for everyone only from the scheduled list'**
-  String get deleteMessagesScheduledOnlyForMe;
-
   /// No description provided for @deleteMessagesSelectionOnlyForMe.
   ///
   /// In en, this message translates to:
-  /// **'So the selected messages will be deleted only for you'**
+  /// **'Some of the selected messages cannot be deleted for members, so all of them will be deleted only for you'**
   String get deleteMessagesSelectionOnlyForMe;
-
-  /// No description provided for @deletionAgeLimitDays.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} day} other{{count} days}}'**
-  String deletionAgeLimitDays(int count);
-
-  /// No description provided for @deletionAgeLimitHours.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} hour} other{{count} hours}}'**
-  String deletionAgeLimitHours(int count);
-
-  /// No description provided for @deletionAgeLimitMinutes.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} minute} other{{count} minutes}}'**
-  String deletionAgeLimitMinutes(int count);
-
-  /// No description provided for @wipeForBothMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'ProMax will delete your messages younger than {age} for the other person and then ask MAX to delete the chat for both of you. This can\'t be undone.'**
-  String wipeForBothMessage(String age);
-
-  /// No description provided for @wipeOwnForPeerTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete my messages for the other person?'**
-  String get wipeOwnForPeerTitle;
-
-  /// No description provided for @wipeOwnForPeerAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete mine for the other person'**
-  String get wipeOwnForPeerAction;
-
-  /// No description provided for @wipeOwnForPeerMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'The MAX server doesn\'t allow deleting this chat for the other person. ProMax will delete your messages younger than {age} for them; the rest of the history stays with them and the chat is deleted only for you. This can\'t be undone.'**
-  String wipeOwnForPeerMessage(String age);
-
-  /// No description provided for @wipeSummaryForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Your messages deleted for the other person: {count}'**
-  String wipeSummaryForPeer(int count);
-
-  /// No description provided for @wipeSummaryNotConfirmed.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX didn\'t delete for the other person: {count}'**
-  String wipeSummaryNotConfirmed(int count);
-
-  /// No description provided for @wipeSummaryKeptForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Left with the other person (their messages and yours older than {age}): {count}'**
-  String wipeSummaryKeptForPeer(int count, String age);
-
-  /// No description provided for @wipeSummaryChatForAllAccepted.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX accepted the request to delete the chat for both of you'**
-  String get wipeSummaryChatForAllAccepted;
-
-  /// No description provided for @wipeSummaryChatRemovedForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'The chat was deleted only for you'**
-  String get wipeSummaryChatRemovedForMe;
 
   /// No description provided for @infoDeleteForAll.
   ///
@@ -7951,60 +7765,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your profile hasn\'t loaded yet, try again in a moment'**
   String get chatActionProfileUnavailable;
-
-  /// No description provided for @chatDeleteAlsoForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Also delete the chat for the other person — the history disappears for them too'**
-  String get chatDeleteAlsoForPeer;
-
-  /// No description provided for @wipeForBothAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete for both'**
-  String get wipeForBothAction;
-
-  /// No description provided for @wipeForBothTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete for both?'**
-  String get wipeForBothTitle;
-
-  /// No description provided for @wipeCollecting.
-  ///
-  /// In en, this message translates to:
-  /// **'Collecting the history…'**
-  String get wipeCollecting;
-
-  /// No description provided for @wipeFound.
-  ///
-  /// In en, this message translates to:
-  /// **'Messages found: {count}'**
-  String wipeFound(int count);
-
-  /// No description provided for @wipeDeleting.
-  ///
-  /// In en, this message translates to:
-  /// **'Deleted {done} of {total}'**
-  String wipeDeleting(int done, int total);
-
-  /// No description provided for @wipeSummaryHistoryIncomplete.
-  ///
-  /// In en, this message translates to:
-  /// **'The server didn\'t return the whole history'**
-  String get wipeSummaryHistoryIncomplete;
-
-  /// No description provided for @wipeSummaryInterrupted.
-  ///
-  /// In en, this message translates to:
-  /// **'The connection dropped and deleting stopped — try again'**
-  String get wipeSummaryInterrupted;
-
-  /// No description provided for @wipeSummaryChatKept.
-  ///
-  /// In en, this message translates to:
-  /// **'The chat wasn\'t deleted: {reason}'**
-  String wipeSummaryChatKept(String reason);
 
   /// No description provided for @messageDeletedMark.
   ///
@@ -13136,18 +12896,6 @@ abstract class AppLocalizations {
   /// **'The author won\'t know you watched the story'**
   String get proMaxHideStoryViewsHint;
 
-  /// No description provided for @proMaxStreamerMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Streamer mode'**
-  String get proMaxStreamerMode;
-
-  /// No description provided for @proMaxStreamerModeHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Blurs numbers, IDs and message previews, hides notification text'**
-  String get proMaxStreamerModeHint;
-
   /// No description provided for @proMaxSwitcherBlur.
   ///
   /// In en, this message translates to:
@@ -13316,11 +13064,11 @@ abstract class AppLocalizations {
   /// **'Don\'t read'**
   String get proMaxAntiRead;
 
-  /// No description provided for @proMaxStreamer.
+  /// No description provided for @proMaxNoTypingShort.
   ///
   /// In en, this message translates to:
-  /// **'Streamer'**
-  String get proMaxStreamer;
+  /// **'No typing'**
+  String get proMaxNoTypingShort;
 
   /// No description provided for @proMaxOff.
   ///
@@ -13513,138 +13261,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That does not look like a phone number'**
   String get profilePhoneManualInvalid;
-
-  /// No description provided for @ignoredSendersTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Don\'t let them write to me'**
-  String get ignoredSendersTitle;
-
-  /// No description provided for @ignoredSendersHowItWorks.
-  ///
-  /// In en, this message translates to:
-  /// **'How it works'**
-  String get ignoredSendersHowItWorks;
-
-  /// No description provided for @ignoredSendersExplanation.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX has no \"who can message me\" setting. The only way to make sending fail is the MAX server black list, and the other person may notice it.\n\nThis mode works in ProMax only and blocks nobody on the server. Messages from the chosen people in private chats are deleted for you only, you get no notifications for them, no read mark is set, the chat does not jump up and the counter does not grow, and their calls are declined silently. They will not know: for them the message was sent as usual.'**
-  String get ignoredSendersExplanation;
-
-  /// No description provided for @ignoredSendersCaveat.
-  ///
-  /// In en, this message translates to:
-  /// **'Messages are deleted \"for me\" on the server, so they also disappear in your other MAX apps, although a notification may still show up there. Removing someone from the list does not bring deleted messages back. Group chats are not affected.'**
-  String get ignoredSendersCaveat;
-
-  /// No description provided for @ignoredSendersEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'The list is empty'**
-  String get ignoredSendersEmpty;
-
-  /// No description provided for @ignoredSendersEmptyHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Add someone by ID or from a private chat menu: \"Don\'t let them write to me\"'**
-  String get ignoredSendersEmptyHint;
-
-  /// No description provided for @ignoredSendersAdd.
-  ///
-  /// In en, this message translates to:
-  /// **'Add by ID'**
-  String get ignoredSendersAdd;
-
-  /// No description provided for @ignoredSendersIdLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'User ID'**
-  String get ignoredSendersIdLabel;
-
-  /// No description provided for @ignoredSendersIdHint.
-  ///
-  /// In en, this message translates to:
-  /// **'For example, 123456789'**
-  String get ignoredSendersIdHint;
-
-  /// No description provided for @ignoredSendersConfirmAdd.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide'**
-  String get ignoredSendersConfirmAdd;
-
-  /// No description provided for @ignoredSendersCancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get ignoredSendersCancel;
-
-  /// No description provided for @ignoredSendersInvalidId.
-  ///
-  /// In en, this message translates to:
-  /// **'A numeric user ID is required'**
-  String get ignoredSendersInvalidId;
-
-  /// No description provided for @ignoredSendersSelfId.
-  ///
-  /// In en, this message translates to:
-  /// **'This is your own ID'**
-  String get ignoredSendersSelfId;
-
-  /// No description provided for @ignoredSendersAlreadyAdded.
-  ///
-  /// In en, this message translates to:
-  /// **'This ID is already on the list'**
-  String get ignoredSendersAlreadyAdded;
-
-  /// No description provided for @ignoredSendersAdded.
-  ///
-  /// In en, this message translates to:
-  /// **'Their messages will no longer be shown'**
-  String get ignoredSendersAdded;
-
-  /// No description provided for @ignoredSendersRemoved.
-  ///
-  /// In en, this message translates to:
-  /// **'Their new messages will be shown again'**
-  String get ignoredSendersRemoved;
-
-  /// No description provided for @ignoredSendersRemove.
-  ///
-  /// In en, this message translates to:
-  /// **'Allow'**
-  String get ignoredSendersRemove;
-
-  /// No description provided for @ignoredSendersUserId.
-  ///
-  /// In en, this message translates to:
-  /// **'ID {id}'**
-  String ignoredSendersUserId(int id);
-
-  /// No description provided for @ignoredSendersNoAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in to an account first'**
-  String get ignoredSendersNoAccount;
-
-  /// No description provided for @chatInfoMenuIgnore.
-  ///
-  /// In en, this message translates to:
-  /// **'Don\'t let them write to me'**
-  String get chatInfoMenuIgnore;
-
-  /// No description provided for @chatInfoMenuUnignore.
-  ///
-  /// In en, this message translates to:
-  /// **'Let them write to me'**
-  String get chatInfoMenuUnignore;
-
-  /// No description provided for @chatInfoIgnoreConfirmMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'{name} can still send you messages and will not know, but ProMax will delete them for you, show no notifications, never mark them read and decline calls. Only the MAX black list stops the sending itself.'**
-  String chatInfoIgnoreConfirmMessage(String name);
 
   /// No description provided for @pluginsScreenNativeSection.
   ///

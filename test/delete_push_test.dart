@@ -7,7 +7,6 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:promax/backend/api.dart';
 import 'package:promax/backend/modules/chat_deletion_plan.dart';
 import 'package:promax/backend/modules/chats.dart';
-import 'package:promax/backend/modules/deletion_policy.dart';
 import 'package:promax/backend/modules/messages.dart';
 import 'package:promax/backend/modules/server_outcome.dart';
 import 'package:promax/core/cache/message_session_cache.dart';
@@ -275,16 +274,14 @@ void main() {
     );
   });
 
-  group('deleting a dialog for both', () {
-    tearDown(DeletionPolicy.instance.forget);
-
+  group('deleting a dialog', () {
     Packet refusal(int opcode) => Packet(
       cmd: CmdType.error,
       opcode: opcode,
       payload: {'localizedMessage': 'синтетический отказ'},
     );
 
-    test('sends exactly one CHAT_DELETE with forAll, like MAX', () async {
+    test('a dialog is deleted only for me even if forAll is asked', () async {
       final result = await chats.deleteChat(
         api,
         chatId: _chatId,
@@ -293,12 +290,12 @@ void main() {
       );
 
       expect(result.ok, isTrue);
-      expect(result.forAll, isTrue);
+      expect(result.forAll, isFalse);
       expect(api.requests.map((r) => r.$1), [Opcode.chatDelete]);
       expect(api.requests.single.$2, {
         'chatId': _chatId,
         'lastEventTime': 6000,
-        'forAll': true,
+        'forAll': false,
       });
       expect(await AppDatabase.loadChat(_me, _chatId), isEmpty);
       expect(await storedIds(), isEmpty);
@@ -329,36 +326,6 @@ void main() {
       );
 
       expect(api.requests.single.$2['lastEventTime'], 7000);
-    });
-
-    test('without delete-for-all the dialog is deleted only for me', () async {
-      DeletionPolicy.instance.debugSet(accountId: _me, deleteForAll: false);
-
-      final result = await chats.deleteChat(
-        api,
-        chatId: _chatId,
-        forAll: true,
-        accountId: _me,
-      );
-
-      expect(result.ok, isTrue);
-      expect(result.forAll, isFalse);
-      expect(api.requests.single.$1, Opcode.chatDelete);
-      expect(api.requests.single.$2['forAll'], isFalse);
-    });
-
-    test('a bot keeps its side of the dialog', () async {
-      ContactCache.putOptions(_peer, {'BOT'});
-      addTearDown(() => ContactCache.remove(_peer));
-
-      await chats.deleteChat(
-        api,
-        chatId: _chatId,
-        forAll: true,
-        accountId: _me,
-      );
-
-      expect(api.requests.single.$2['forAll'], isFalse);
     });
 
     test('keeps the chat and says why when the server refuses', () async {
@@ -424,7 +391,7 @@ void main() {
         expect(api.requests.last.$2, {
           'chatId': unknownChat,
           'lastEventTime': 8000,
-          'forAll': true,
+          'forAll': false,
         });
       },
     );
@@ -517,19 +484,15 @@ void main() {
       expect(api.requests.single.$2['forAll'], isFalse);
     });
 
-    test('clearing for everyone is one CHAT_CLEAR and nothing else', () async {
-      final outcome = await chats.clearHistory(
-        api,
-        chatId: _chatId,
-        forAll: true,
-      );
+    test('clearing is one CHAT_CLEAR for me and nothing else', () async {
+      final outcome = await chats.clearHistory(api, chatId: _chatId);
 
       expect(outcome, isA<ServerDone>());
       expect(api.requests.single.$1, Opcode.chatClear);
       expect(api.requests.single.$2, {
         'chatId': _chatId,
         'lastEventTime': 6000,
-        'forAll': true,
+        'forAll': false,
       });
       expect(await AppDatabase.loadChat(_me, _chatId), isNotEmpty);
       expect(await storedIds(), isEmpty);

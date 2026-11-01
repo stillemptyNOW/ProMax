@@ -22,8 +22,8 @@ import 'core/cache/self_presence.dart';
 import 'core/storage/app_instance.dart';
 import 'core/storage/draft_store.dart';
 import 'core/storage/archived_chats_store.dart';
-import 'core/storage/ignored_senders.dart';
 import 'core/storage/local_contact_avatars.dart';
+import 'core/storage/retired_preferences.dart';
 import 'core/crypto/e2ee_service.dart';
 import 'core/storage/chat_encryption_store.dart';
 import 'core/config/app_accent.dart';
@@ -73,7 +73,6 @@ import 'backend/modules/chats.dart';
 import 'backend/modules/comments.dart';
 import 'backend/modules/contacts.dart';
 import 'backend/modules/deletion_gateway.dart';
-import 'backend/modules/deletion_policy.dart';
 import 'backend/modules/file_uploader.dart';
 import 'backend/modules/folders.dart';
 import 'backend/modules/messages.dart';
@@ -251,7 +250,6 @@ void main(List<String> args) async {
   final activeAccountId = await TokenStorage.getActiveAccountId();
   if (activeAccountId != null) {
     await ContactsModule.primeCacheFromDb(activeAccountId);
-    await DeletionPolicy.instance.load(activeAccountId);
   }
   attachInfoCacheApi(api);
   unawaited(
@@ -355,10 +353,10 @@ void main(List<String> args) async {
   await quickRepliesFuture;
 
   final prefs = await prefsFuture;
+  await RetiredPreferences.purge(prefs);
   await FileHistoryCache.load(prefs);
   await DraftStore.instance.load();
   await ArchivedChatsStore.instance.load();
-  await IgnoredSenders.instance.load();
   await LocalContactAvatars.instance.load();
   await badgeFuture;
   await ChatEncryptionStore.instance.load();

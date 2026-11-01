@@ -87,10 +87,6 @@ object CallNotifier {
         }
         val name = data["userName"] ?: data["title"] ?: "Неизвестный"
         val callerId = data["suid"] ?: data["callerId"] ?: ""
-        if (IgnoredSenders.hidesCall(ctx, callerId.toLongOrNull() ?: 0L)) {
-            Log.d("ProMaxFcm", "call push dropped: caller is on the ignore list")
-            return
-        }
         val conversationId = data["conversationId"] ?: data["vcId"] ?: ""
         val vcp = data["vcp"] ?: ""
         val account = data["c"] ?: ""

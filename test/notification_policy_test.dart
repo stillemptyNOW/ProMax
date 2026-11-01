@@ -215,10 +215,9 @@ void main() {
       );
     });
 
-    test('the text hides for privacy, streamer mode and encryption', () {
+    test('the text hides for privacy and encryption', () {
       for (final facts in [
         NotificationFacts(accountId: _me, privacy: _privacy(details: false)),
-        const NotificationFacts(accountId: _me, streamerMode: true),
         const NotificationFacts(accountId: _me, encrypted: true),
       ]) {
         final n = NotificationPolicy.compose(_push(), facts)!;
@@ -284,16 +283,6 @@ void main() {
         1700000000000,
       );
       expect(NotificationFacts.effectiveReadMark(accountId: _me), 0);
-    });
-
-    test('a sender on the ignore list never produces a notification', () {
-      expect(
-        NotificationPolicy.compose(
-          _push(),
-          const NotificationFacts(accountId: _me, senderIgnored: true),
-        ),
-        isNull,
-      );
     });
   });
 

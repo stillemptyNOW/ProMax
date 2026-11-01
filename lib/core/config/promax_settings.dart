@@ -24,7 +24,6 @@ class ProMaxSettings {
   static const _kQuickReaction = 'promax_quick_reaction';
   static const _kNoTyping = 'promax_no_typing';
   static const _kHideStoryViews = 'promax_hide_story_views';
-  static const _kStreamerMode = 'promax_streamer_mode';
   static const _kSwitcherBlur = 'promax_app_switcher_blur';
 
   // #***! каждая настройка это ValueNotifier, юишка подписана напрямую
@@ -35,7 +34,6 @@ class ProMaxSettings {
   static final ValueNotifier<bool> showTypingTime = ValueNotifier(false);
   static final ValueNotifier<bool> showReadStamp = ValueNotifier(true);
   static final ValueNotifier<bool> ghostMode = ValueNotifier(false);
-  static final ValueNotifier<bool> streamerMode = ValueNotifier(false);
   static final ValueNotifier<bool> switcherBlur = ValueNotifier(false);
   static final ValueNotifier<bool> antiRead = ValueNotifier(false);
   static final ValueNotifier<bool> selfOnlineCheck = ValueNotifier(true);
@@ -66,7 +64,6 @@ class ProMaxSettings {
     quickReaction.value = prefs.getString(_kQuickReaction) ?? '❤️';
     noTyping.value = prefs.getBool(_kNoTyping) ?? false;
     hideStoryViews.value = prefs.getBool(_kHideStoryViews) ?? false;
-    streamerMode.value = prefs.getBool(_kStreamerMode) ?? false;
     switcherBlur.value = prefs.getBool(_kSwitcherBlur) ?? false;
     unawaited(RecentsPrivacy.apply(switcherBlur.value));
     selfOnlineCheck.value = prefs.getBool(_kSelfOnlineCheck) ?? true;
@@ -77,12 +74,6 @@ class ProMaxSettings {
   }
 
   // #***! дальше по сеттеру на настройку, память потом диск
-  static Future<void> setStreamerMode(bool value) async {
-    streamerMode.value = value;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kStreamerMode, value);
-  }
-
   static Future<void> setSwitcherBlur(bool value) async {
     switcherBlur.value = value;
     unawaited(RecentsPrivacy.apply(value));

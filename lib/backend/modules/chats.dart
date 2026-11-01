@@ -15,7 +15,6 @@ import '../../core/crypto/e2ee_service.dart';
 import '../../core/crypto/message_decryption_cache.dart';
 import '../../core/media/deleted_media_keeper.dart';
 import '../../core/storage/app_database.dart';
-import '../../core/storage/ignored_senders.dart';
 import '../../core/storage/local_read_state.dart';
 import '../../core/storage/read_receipt.dart';
 import '../../core/storage/chat_activity_store.dart';
@@ -35,7 +34,6 @@ import 'chat_deletion_plan.dart';
 import 'chat_parsing.dart';
 import 'chat_preview.dart';
 import 'contacts.dart' show ContactsModule;
-import 'deletion_policy.dart';
 import 'folders.dart';
 import 'messages.dart'
     show ContactCache, CachedMessage, HistoryPage, MessagesModule;
@@ -588,7 +586,7 @@ class ChatsModule {
     if ((row['unread_count'] as int? ?? 0) == 0) return;
 
     final msgIdNum = int.tryParse(messageId);
-    if (msgIdNum != null && _sendsReadMarks(accountId, chatId)) {
+    if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
       await ReadMarkQueue.instance.submit(
         api,
         ReadMark(
@@ -618,10 +616,6 @@ class ChatsModule {
     }
     await _commitChatContent([(fresh.first, updated.toDbRow())]);
   }
-
-  bool _sendsReadMarks(int accountId, int chatId) =>
-      !ProMaxSettings.antiRead.value &&
-      IgnoredSenders.instance.ignoredPeer(accountId, chatId) == null;
 
   Future<void> _applyLocalReadState(
     Map<String, dynamic> row, {
@@ -669,7 +663,7 @@ class ChatsModule {
     required int remaining,
   }) async {
     final msgIdNum = int.tryParse(messageId);
-    if (msgIdNum != null && _sendsReadMarks(accountId, chatId)) {
+    if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
       await ReadMarkQueue.instance.submit(
         api,
         ReadMark(
@@ -1059,7 +1053,6 @@ class ChatsModule {
   }
 
   StreamSubscription<Packet>? _globalPushSub;
-  Api? _pushApi;
   StreamSubscription<SessionState>? _globalStateSub;
   Future<void> _pushQueue = Future.value();
   final ReadBaselines _readBaselines = ReadBaselines();
@@ -1082,7 +1075,6 @@ class ChatsModule {
   void attachGlobalPushHandlers(Api api) {
     _globalPushSub?.cancel();
     _globalStateSub?.cancel();
-    _pushApi = api;
     _globalPushSub = api.pushStream.listen(_enqueueGlobalPush);
     _globalStateSub = api.stateStream.listen(_handleSessionState);
     PendingDeletions.instance.chatHolds
@@ -1121,7 +1113,6 @@ class ChatsModule {
   // #***! сменили аккаунт, всё локальное чужое
   void resetForAccountSwitch() {
     E2eeService.instance.lock();
-    DeletionPolicy.instance.forget();
     _historyFetched.clear();
     _readBaselines.end();
     ContactInfoFetch.clear();
@@ -1193,16 +1184,6 @@ class ChatsModule {
     final accountId = await TokenStorage.getActiveAccountId();
     if (accountId == null) return;
     await PrivacyModule.applyConfigPush(accountId, payload);
-    final config = payload['config'];
-    final server = config is Map ? config['server'] : payload['server'];
-    if (server is Map && server.isNotEmpty) {
-      await DeletionPolicy.instance.applyServerConfig(
-        accountId,
-        server,
-        complete: false,
-      );
-      logger.i('NOTIF_CONFIG: ${DeletionPolicy.instance.describe()}');
-    }
   }
 
   Future<void> _handleNotifMsgYouReacted(Packet packet) async {
@@ -1503,18 +1484,6 @@ class ChatsModule {
     final status = msg['status'] as String?;
     final unread = payload['unread'] as int?;
 
-    await IgnoredSenders.instance.load();
-    if (IgnoredSenders.instance.hidesFromDialog(
-      accountId: accountId,
-      chatId: chatId,
-      senderId: senderId,
-    )) {
-      if (status != 'REMOVED' && msgIdStr != null) {
-        _discardIgnored(chatId, [msgIdStr]);
-      }
-      return;
-    }
-
     var rows = await AppDatabase.loadChat(accountId, chatId);
     // #***! чата нет в базе, нас только что добавили, тянем карточку
     if (rows.isEmpty) {
@@ -1674,40 +1643,6 @@ class ChatsModule {
 
     await _commitChatContent([(rows.first, newRow)]);
   }
-
-  void _discardIgnored(int chatId, List<String> messageIds) {
-    final api = _pushApi;
-    if (api == null) return;
-    MessagesModule(api).discardIgnored(chatId, messageIds);
-  }
-
-  void _hideIgnoredDialog(Map<String, dynamic> row, CachedChat? existing) {
-    final accountId = row['account_id'] as int;
-    final chatId = row['id'] as int;
-    final peer = IgnoredSenders.instance.ignoredPeer(accountId, chatId);
-    if (peer == null) return;
-    row['unread_count'] = 0;
-    if (row['last_msg_sender'] != peer) return;
-    final lastId = row['last_msg_id'];
-    if (lastId is int) _discardIgnored(chatId, ['$lastId']);
-    final previous = existing?.toDbRow();
-    final keep = previous != null && previous['last_msg_sender'] != peer;
-    for (final key in _lastMessageColumns) {
-      row[key] = keep ? previous[key] : null;
-    }
-    if (!keep) row['last_msg_text'] = lastMsgPlaceholder;
-    if (previous != null) row['last_event_time'] = previous['last_event_time'];
-  }
-
-  static const _lastMessageColumns = [
-    'last_msg_id',
-    'last_msg_time',
-    'last_msg_text',
-    'last_msg_elements',
-    'last_msg_preview',
-    'last_msg_sender',
-    'last_msg_status',
-  ];
 
   Future<bool> _adoptSentEcho(int accountId, int chatId, Map msg) async {
     final cid = MessagesModule.clientIdOf({'cid': msg['cid']});
@@ -2131,8 +2066,6 @@ class ChatsModule {
     }
     final row = parsed.toDbRow();
     await _applyLocalReadState(row, updateServerMark: true);
-    await IgnoredSenders.instance.load();
-    _hideIgnoredDialog(row, ex);
     row['in_list'] = listState;
     await AppDatabase.saveChats([row]);
     final adjusted = CachedChat.fromDbRow(row);
@@ -2191,7 +2124,6 @@ class ChatsModule {
     Map<dynamic, dynamic> presenceMap = const {},
   }) async {
     final cachedAt = DateTime.now().millisecondsSinceEpoch;
-    await IgnoredSenders.instance.load();
     final existingRows = await AppDatabase.loadChats(
       accountId,
       includeHidden: true,
@@ -2223,7 +2155,6 @@ class ChatsModule {
       if (parsed == null) continue;
       final row = parsed.toDbRow();
       await _applyLocalReadState(row, updateServerMark: true);
-      _hideIgnoredDialog(row, existing[parsed.id]);
       row['in_list'] = chatListStateForStatus(
         map['status'],
         previous: existingListState[parsed.id],
@@ -2826,16 +2757,12 @@ class ChatsModule {
   }) async {
     String? type;
     int? owner;
-    Iterable<int> participants;
-    Set<String> options;
     int eventTime;
     final cached = await _cachedChat(accountId, chatId);
     if (cached != null) {
       eventTime = knownEventTime(cached);
       type = cached.type;
       owner = cached.owner;
-      participants = cached.participants.keys;
-      options = cached.options;
     } else {
       final Map<String, dynamic>? info;
       try {
@@ -2848,40 +2775,20 @@ class ChatsModule {
       final rawOwner = info?['owner'];
       type = rawType is String ? rawType : null;
       owner = rawOwner is int ? rawOwner : null;
-      participants = parseParticipants(info?['participants']).keys;
-      options = const {};
     }
-    final peerIsBot =
-        type == 'DIALOG' &&
-        knownBot(
-          dialogPeerId(chatId: chatId, myId: myId, participants: participants),
-          chatOptions: options,
-        );
-    final policy = DeletionPolicy.instance;
-    final deleteForAll = policy.accountId == accountId
-        ? policy.deleteForAll
-        : null;
     final plan = ChatDeletionPlan.of(
       forAll: true,
       chatId: chatId,
       chatType: type,
       owner: owner,
       myId: myId,
-      peerIsBot: peerIsBot,
-      deleteForAll: deleteForAll,
     );
     if (plan == null) {
       logger.w('$action $chatId: тип чата неизвестен, для всех не отправляем');
     } else if (!plan.forAll) {
       logger.w(
-        '$action $chatId: $type, владелец $owner, бот $peerIsBot, '
-        'delete-for-all=$deleteForAll — сервер MAX не даёт сделать это для '
-        'всех, отправляю только для себя, как официальный клиент',
-      );
-    } else if (type == 'DIALOG' && deleteForAll == null) {
-      logger.i(
-        '$action $chatId: delete-for-all ещё не известен, отправляю для всех, '
-        'решит сервер',
+        '$action $chatId: $type, владелец $owner — для всех удаляет только '
+        'владелец группы, отправляю только для себя',
       );
     }
     return (plan: plan, eventTime: eventTime, failure: null);
@@ -2974,35 +2881,13 @@ class ChatsModule {
   Future<ServerOutcome> clearHistory(
     Api api, {
     required int chatId,
-    bool forAll = false,
     int seenEventTime = 0,
   }) async {
     final accountId = await TokenStorage.getActiveAccountId();
-    var sendForAll = false;
-    var seen = seenEventTime;
-    if (forAll && chatId != 0) {
-      final resolved = await _planForAll(
-        api,
-        chatId: chatId,
-        myId: accountId ?? 0,
-        accountId: accountId,
-        action: 'clearHistory',
-      );
-      final failure = resolved.failure;
-      if (failure != null) {
-        _logRefusal('clearHistory', chatId, failure);
-        return failure;
-      }
-      final plan = resolved.plan;
-      if (plan == null) return ChatDeletionRefusal.typeUnknown.outcome;
-      sendForAll = plan.forAll;
-      seen = math.max(seen, resolved.eventTime);
-    }
-
     final eventTime = await _requestEventTime(
       api,
       chatId,
-      seen: seen,
+      seen: seenEventTime,
       accountId: accountId,
     );
     final timeFailure = eventTime.failure;
@@ -3019,10 +2904,10 @@ class ChatsModule {
       final response = await api.sendRequest(Opcode.chatClear, {
         'chatId': chatId,
         'lastEventTime': lastEventTime,
-        'forAll': sendForAll,
+        'forAll': false,
       });
       logger.i(
-        'CHAT_CLEAR чат $chatId, forAll=$sendForAll, '
+        'CHAT_CLEAR чат $chatId, '
         'lastEventTime=$lastEventTime → ${describeReply(response)}',
       );
       return response;

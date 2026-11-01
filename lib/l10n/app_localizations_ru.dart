@@ -1716,9 +1716,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Все сообщения в этом чате будут удалены без возможности восстановления.';
 
   @override
-  String get chatInfoClearHistoryForAll => 'Для всех';
-
-  @override
   String get chatInfoClearHistoryConfirm => 'Очистить';
 
   @override
@@ -2471,9 +2468,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get attachSheetLimitedAccessInfo => 'Доступны не все фото';
 
   @override
-  String get attachSheetSectionInProgress => 'Раздел в разработке';
-
-  @override
   String get attachSheetContact => 'Контакт';
 
   @override
@@ -2598,14 +2592,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get photoEditorBlurLinear => 'Линейное';
 
   @override
-  String get fontSettingsInvalidInput => 'Введите ссылку или название шрифта';
-
-  @override
-  String fontSettingsFontNotFound(String name) {
-    return 'Шрифт «$name» не найден или нет сети';
-  }
-
-  @override
   String fontSettingsFontAdded(String name) {
     return 'Шрифт «$name» добавлен';
   }
@@ -2616,26 +2602,13 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get fontSettingsAddFontTitle => 'Добавить шрифт';
-
-  @override
-  String get fontSettingsAddFontDescription =>
-      'Вставьте ссылку Google Fonts или название шрифта';
-
-  @override
-  String get fontSettingsAddFontConfirm => 'Добавить';
-
-  @override
-  String get fontSettingsPickFile => 'Выбрать файл';
+  String get fontSettingsAddFontTitle => 'Добавить шрифт из файла';
 
   @override
   String get fontSettingsPickFileHint => 'Шрифт в формате .ttf, .otf или .ttc';
 
   @override
   String get fontSettingsNotAFont => 'Это не файл шрифта';
-
-  @override
-  String get fontSettingsCancel => 'Отмена';
 
   @override
   String get fontSettingsTitle => 'Шрифты';
@@ -3712,12 +3685,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get channelFollowersTitle => 'Подписчики';
 
   @override
-  String get channelStatsTitle => 'Статистика канала';
-
-  @override
-  String get channelStatsUnavailable => 'Статистика канала пока недоступна';
-
-  @override
   String get adminsAdd => 'Добавить администратора';
 
   @override
@@ -4268,11 +4235,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Вы точно хотите удалить это сообщение?';
 
   @override
-  String chatScreenDeleteAlsoFor(String name) {
-    return 'Также удалить для $name';
-  }
-
-  @override
   String deleteMessagesFailedWithReason(String reason) {
     return 'Не удалось удалить сообщения: $reason';
   }
@@ -4302,17 +4264,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get deleteChatTypeUnknown =>
       'Чат не удалён для всех: не удалось узнать, личный это чат или группа. Попробуйте ещё раз';
-
-  @override
-  String get chatForAllNotAllowedHint =>
-      'Сервер MAX не разрешает удалять этот чат у собеседника — он удалится только у вас.';
-
-  @override
-  String get chatListForAllNotAllowedHint =>
-      'Сервер MAX не разрешает удалять некоторые из этих чатов у собеседника — они удалятся только у вас.';
-
-  @override
-  String get chatClearAlsoForPeer => 'Стереть историю и у собеседника';
 
   @override
   String get chatDeleteForAllMembers => 'Удалить у всех участников';
@@ -4345,107 +4296,8 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get deleteMessagesPeerOnlyForMe =>
-      'Сообщения собеседника сервер MAX удаляет только у вас';
-
-  @override
-  String get deleteMessagesOthersOnlyForMe =>
-      'Чужие сообщения сервер MAX удаляет только у вас';
-
-  @override
-  String deleteMessagesTooOldForPeer(String age) {
-    return 'Удалить у собеседника можно только свои сообщения не старше $age — это ограничение сервера MAX';
-  }
-
-  @override
-  String deleteMessagesTooOldForAll(String age) {
-    return 'Удалить у всех можно только свои сообщения не старше $age — это ограничение сервера MAX';
-  }
-
-  @override
-  String get deleteMessagesScheduledOnlyForMe =>
-      'Отложенные сообщения удаляются у всех только из списка отложенных';
-
-  @override
   String get deleteMessagesSelectionOnlyForMe =>
-      'Поэтому выбранные сообщения удалятся только у вас';
-
-  @override
-  String deletionAgeLimitDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count дня',
-      many: '$count дней',
-      few: '$count дней',
-      one: '$count дня',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count часа',
-      many: '$count часов',
-      few: '$count часов',
-      one: '$count часа',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count минуты',
-      many: '$count минут',
-      few: '$count минут',
-      one: '$count минуты',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String wipeForBothMessage(String age) {
-    return 'ProMax удалит у собеседника ваши сообщения не старше $age, а затем попросит сервер MAX удалить чат у обоих. Отменить это нельзя.';
-  }
-
-  @override
-  String get wipeOwnForPeerTitle => 'Удалить мои сообщения у собеседника?';
-
-  @override
-  String get wipeOwnForPeerAction => 'Удалить мои у собеседника';
-
-  @override
-  String wipeOwnForPeerMessage(String age) {
-    return 'Сервер MAX не разрешает удалять этот чат у собеседника. ProMax удалит у него ваши сообщения не старше $age, остальная переписка у собеседника останется, а чат удалится только у вас. Отменить это нельзя.';
-  }
-
-  @override
-  String wipeSummaryForPeer(int count) {
-    return 'Удалено у собеседника ваших сообщений: $count';
-  }
-
-  @override
-  String wipeSummaryNotConfirmed(int count) {
-    return 'Сервер MAX не удалил у собеседника: $count';
-  }
-
-  @override
-  String wipeSummaryKeptForPeer(int count, String age) {
-    return 'Остались у собеседника (его сообщения и ваши старше $age): $count';
-  }
-
-  @override
-  String get wipeSummaryChatForAllAccepted =>
-      'Сервер MAX принял запрос на удаление чата у обоих';
-
-  @override
-  String get wipeSummaryChatRemovedForMe => 'Чат удалён только у вас';
+      'Часть выбранных сообщений нельзя удалить у участников, поэтому все они удалятся только у вас';
 
   @override
   String get infoDeleteForAll =>
@@ -4454,42 +4306,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get chatActionProfileUnavailable =>
       'Профиль ещё не загрузился, попробуйте через пару секунд';
-
-  @override
-  String get chatDeleteAlsoForPeer =>
-      'Удалить чат и у собеседника — переписка пропадёт и у него';
-
-  @override
-  String get wipeForBothAction => 'Удалить у обоих';
-
-  @override
-  String get wipeForBothTitle => 'Удалить у обоих?';
-
-  @override
-  String get wipeCollecting => 'Собираю историю…';
-
-  @override
-  String wipeFound(int count) {
-    return 'Найдено сообщений: $count';
-  }
-
-  @override
-  String wipeDeleting(int done, int total) {
-    return 'Удалено $done из $total';
-  }
-
-  @override
-  String get wipeSummaryHistoryIncomplete =>
-      'Сервер отдал историю не полностью';
-
-  @override
-  String get wipeSummaryInterrupted =>
-      'Связь пропала, удаление прервано — попробуйте ещё раз';
-
-  @override
-  String wipeSummaryChatKept(String reason) {
-    return 'Чат не удалён: $reason';
-  }
 
   @override
   String get messageDeletedMark => 'удалено';
@@ -7521,13 +7337,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Автор истории не узнает, что вы её смотрели';
 
   @override
-  String get proMaxStreamerMode => 'Режим стримера';
-
-  @override
-  String get proMaxStreamerModeHint =>
-      'Размывает номера, ID и превью сообщений, прячет текст уведомлений';
-
-  @override
   String get proMaxSwitcherBlur => 'Размытие в переключателе';
 
   @override
@@ -7621,7 +7430,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get proMaxAntiRead => 'Не читать';
 
   @override
-  String get proMaxStreamer => 'Стример';
+  String get proMaxNoTypingShort => 'Не печатать';
 
   @override
   String get proMaxOff => 'Выкл';
@@ -7724,81 +7533,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get profilePhoneManualInvalid => 'Не похоже на номер телефона';
-
-  @override
-  String get ignoredSendersTitle => 'Запрет писать мне';
-
-  @override
-  String get ignoredSendersHowItWorks => 'Как это работает';
-
-  @override
-  String get ignoredSendersExplanation =>
-      'В MAX нет настройки «кто может мне писать». Единственный способ, при котором отправка сообщения не проходит, — чёрный список (ЧС) на сервере MAX, и об этом собеседник может догадаться.\n\nЭтот режим работает только в ProMax и на сервере никого не блокирует. Сообщения выбранных людей в личных чатах удаляются только у вас, уведомления о них не приходят, отметка о прочтении не ставится, чат не поднимается и счётчик не растёт, а звонки молча отклоняются. Они ничего не узнают: для них сообщение отправлено как обычно.';
-
-  @override
-  String get ignoredSendersCaveat =>
-      'Сообщения удаляются «у себя» на сервере, поэтому пропадут и в других ваших приложениях MAX, но уведомление там может успеть прийти. Если убрать человека из списка, удалённые сообщения не вернутся. Групповые чаты режим не затрагивает.';
-
-  @override
-  String get ignoredSendersEmpty => 'Список пуст';
-
-  @override
-  String get ignoredSendersEmptyHint =>
-      'Добавьте человека по ID или из меню личного чата: «Запретить писать мне»';
-
-  @override
-  String get ignoredSendersAdd => 'Добавить по ID';
-
-  @override
-  String get ignoredSendersIdLabel => 'ID пользователя';
-
-  @override
-  String get ignoredSendersIdHint => 'Например, 123456789';
-
-  @override
-  String get ignoredSendersConfirmAdd => 'Запретить';
-
-  @override
-  String get ignoredSendersCancel => 'Отмена';
-
-  @override
-  String get ignoredSendersInvalidId => 'Нужен числовой ID пользователя';
-
-  @override
-  String get ignoredSendersSelfId => 'Это ваш собственный ID';
-
-  @override
-  String get ignoredSendersAlreadyAdded => 'Этот ID уже в списке';
-
-  @override
-  String get ignoredSendersAdded =>
-      'Сообщения от него больше не будут показываться';
-
-  @override
-  String get ignoredSendersRemoved =>
-      'Новые сообщения от него снова будут показываться';
-
-  @override
-  String get ignoredSendersRemove => 'Разрешить';
-
-  @override
-  String ignoredSendersUserId(int id) {
-    return 'ID $id';
-  }
-
-  @override
-  String get ignoredSendersNoAccount => 'Сначала войдите в аккаунт';
-
-  @override
-  String get chatInfoMenuIgnore => 'Запретить писать мне';
-
-  @override
-  String get chatInfoMenuUnignore => 'Разрешить писать мне';
-
-  @override
-  String chatInfoIgnoreConfirmMessage(String name) {
-    return '$name сможет отправлять вам сообщения и не узнает об этом, но ProMax будет удалять их у вас, не покажет уведомления, не отметит прочитанными и отклонит звонки. Остановить саму отправку может только чёрный список MAX.';
-  }
 
   @override
   String get pluginsScreenNativeSection => 'Встроенные нативные';

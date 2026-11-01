@@ -22,7 +22,6 @@ import 'quick_replies_screen.dart';
 import '../../../core/storage/quick_replies_store.dart';
 import '../../../core/reminders/message_reminders.dart';
 import 'export_reader_screen.dart';
-import 'ignored_senders_screen.dart';
 import 'plugins_screen.dart';
 import 'privacy_sandbox_screen.dart';
 import 'promax_design_screen.dart';
@@ -94,11 +93,6 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   label: l10n.privacySandboxTitle,
                   onTap: () => _open(context, const PrivacySandboxScreen()),
                 ),
-                SettingsNavTile(
-                  icon: Symbols.speaker_notes_off,
-                  label: l10n.ignoredSendersTitle,
-                  onTap: () => _open(context, const IgnoredSendersScreen()),
-                ),
                 ValueListenableBuilder<bool>(
                   valueListenable: ProMaxSettings.ghostMode,
                   builder: (context, value, _) => SettingsToggleTile(
@@ -139,18 +133,6 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     )!.proMaxHideStoryViewsHint,
                     value: value,
                     onChanged: ProMaxSettings.setHideStoryViews,
-                  ),
-                ),
-                ValueListenableBuilder<bool>(
-                  valueListenable: ProMaxSettings.streamerMode,
-                  builder: (context, value, _) => SettingsToggleTile(
-                    icon: Symbols.cast,
-                    label: AppLocalizations.of(context)!.proMaxStreamerMode,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    )!.proMaxStreamerModeHint,
-                    value: value,
-                    onChanged: ProMaxSettings.setStreamerMode,
                   ),
                 ),
                 ValueListenableBuilder<bool>(
@@ -496,12 +478,12 @@ class _ProMaxHero extends StatelessWidget {
                     ),
                   ),
                   ValueListenableBuilder<bool>(
-                    valueListenable: ProMaxSettings.streamerMode,
+                    valueListenable: ProMaxSettings.noTyping,
                     builder: (context, on, _) => _ControlTile(
-                      icon: Symbols.cast,
-                      label: AppLocalizations.of(context)!.proMaxStreamer,
+                      icon: Symbols.edit_off,
+                      label: AppLocalizations.of(context)!.proMaxNoTypingShort,
                       on: on,
-                      onTap: () => ProMaxSettings.setStreamerMode(!on),
+                      onTap: () => ProMaxSettings.setNoTyping(!on),
                     ),
                   ),
                   ValueListenableBuilder<AtmosphereEffect>(

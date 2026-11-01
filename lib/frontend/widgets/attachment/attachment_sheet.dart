@@ -36,15 +36,19 @@ import '../../../core/security/app_lock.dart';
 
 List<PillNavItem> _buildNavItems(
   AppLocalizations l10n, {
-  required bool pickOnly,
+  required bool file,
+  required bool location,
+  required bool poll,
+  required bool contact,
 }) => [
   PillNavItem(icon: Symbols.image, label: l10n.attachSheetGallery),
-  PillNavItem(icon: Symbols.description, label: l10n.scheduledAttachFile),
-  if (!pickOnly) ...[
+  if (file)
+    PillNavItem(icon: Symbols.description, label: l10n.scheduledAttachFile),
+  if (location)
     PillNavItem(icon: Symbols.location_on, label: l10n.scheduledAttachLocation),
-    PillNavItem(icon: Symbols.bar_chart, label: l10n.attachSheetPoll),
+  if (poll) PillNavItem(icon: Symbols.bar_chart, label: l10n.attachSheetPoll),
+  if (contact)
     PillNavItem(icon: Symbols.person, label: l10n.attachSheetContact),
-  ],
 ];
 
 typedef PickedPhotosCallback =
@@ -271,7 +275,22 @@ class _AttachmentSheetState extends State<AttachmentSheet> {
 
   bool get _pickOnly => widget.onPickPhoto != null;
 
-  int get _pageCount => _pickOnly ? 2 : 5;
+  bool get _offersFile => widget.onPickFile != null;
+
+  bool get _offersLocation => !_pickOnly && widget.onShareLocation != null;
+
+  bool get _offersPoll => !_pickOnly && widget.onCreatePoll != null;
+
+  bool get _offersContact => !_pickOnly && widget.onSendContact != null;
+
+  int get _pageCount =>
+      1 +
+      [
+        _offersFile,
+        _offersLocation,
+        _offersPoll,
+        _offersContact,
+      ].where((offered) => offered).length;
 
   List<GalleryItem>? _visibleSource;
   List<GalleryItem> _visibleCache = const [];
@@ -715,20 +734,21 @@ class _AttachmentSheetState extends State<AttachmentSheet> {
         _KeepAlivePage(
           child: _buildGalleryPage(scrollController, cs, bottomReserve),
         ),
-        _buildActionPage(
-          cs,
-          bottomReserve,
-          icon: Symbols.description,
-          title: _pickOnly
-              ? l10n.avatarPickerFilesTitle
-              : l10n.attachSheetSendFileTitle,
-          subtitle: _pickOnly
-              ? l10n.avatarPickerFilesSubtitle
-              : l10n.attachSheetSendFileSubtitle,
-          buttonLabel: l10n.attachSheetChooseFileButton,
-          onTap: widget.onPickFile,
-        ),
-        if (!_pickOnly) ...[
+        if (_offersFile)
+          _buildActionPage(
+            cs,
+            bottomReserve,
+            icon: Symbols.description,
+            title: _pickOnly
+                ? l10n.avatarPickerFilesTitle
+                : l10n.attachSheetSendFileTitle,
+            subtitle: _pickOnly
+                ? l10n.avatarPickerFilesSubtitle
+                : l10n.attachSheetSendFileSubtitle,
+            buttonLabel: l10n.attachSheetChooseFileButton,
+            onTap: widget.onPickFile,
+          ),
+        if (_offersLocation)
           _buildActionPage(
             cs,
             bottomReserve,
@@ -738,6 +758,7 @@ class _AttachmentSheetState extends State<AttachmentSheet> {
             buttonLabel: l10n.attachSheetSendLocationButton,
             onTap: widget.onShareLocation,
           ),
+        if (_offersPoll)
           _buildActionPage(
             cs,
             bottomReserve,
@@ -747,18 +768,9 @@ class _AttachmentSheetState extends State<AttachmentSheet> {
             buttonLabel: l10n.attachSheetCreatePoll,
             onTap: widget.onCreatePoll,
           ),
-          _buildContactPage(cs, bottomReserve),
-        ],
+        if (widget.onSendContact case final onPick? when _offersContact)
+          ContactPickerPage(bottomReserve: bottomReserve, onPick: onPick),
       ],
-    );
-  }
-
-  Widget _buildContactPage(ColorScheme cs, double bottomReserve) {
-    final onSendContact = widget.onSendContact;
-    if (onSendContact == null) return _buildPlaceholderPage(cs, bottomReserve);
-    return ContactPickerPage(
-      bottomReserve: bottomReserve,
-      onPick: onSendContact,
     );
   }
 
@@ -1004,25 +1016,6 @@ class _AttachmentSheetState extends State<AttachmentSheet> {
     );
   }
 
-  Widget _buildPlaceholderPage(ColorScheme cs, double bottomReserve) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomReserve),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Symbols.construction, size: 48, color: cs.onSurfaceVariant),
-            const SizedBox(height: 12),
-            Text(
-              AppLocalizations.of(context)!.attachSheetSectionInProgress,
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildDenied(
     ScrollController scrollController,
     ColorScheme cs,
@@ -1252,9 +1245,11 @@ class _AttachmentSheetState extends State<AttachmentSheet> {
                 duration: const Duration(milliseconds: 200),
                 switchInCurve: Curves.easeOut,
                 switchOutCurve: Curves.easeIn,
-                child: selected.isEmpty
+                child: selected.isNotEmpty
+                    ? _buildCaptionBar(Theme.of(context).colorScheme)
+                    : _pageCount > 1
                     ? _buildPillNav()
-                    : _buildCaptionBar(Theme.of(context).colorScheme),
+                    : const SizedBox.shrink(key: ValueKey('no-nav')),
               );
             },
           ),
@@ -1266,7 +1261,10 @@ class _AttachmentSheetState extends State<AttachmentSheet> {
   Widget _buildPillNav() {
     final navItems = _buildNavItems(
       AppLocalizations.of(context)!,
-      pickOnly: _pickOnly,
+      file: _offersFile,
+      location: _offersLocation,
+      poll: _offersPoll,
+      contact: _offersContact,
     );
     return LayoutBuilder(
       key: const ValueKey('nav'),

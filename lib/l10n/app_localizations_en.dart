@@ -1709,9 +1709,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'All messages in this chat will be deleted permanently.';
 
   @override
-  String get chatInfoClearHistoryForAll => 'For everyone';
-
-  @override
   String get chatInfoClearHistoryConfirm => 'Clear';
 
   @override
@@ -2457,9 +2454,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attachSheetLimitedAccessInfo => 'Not all photos are accessible';
 
   @override
-  String get attachSheetSectionInProgress => 'Section under development';
-
-  @override
   String get attachSheetContact => 'Contact';
 
   @override
@@ -2584,14 +2578,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photoEditorBlurLinear => 'Linear';
 
   @override
-  String get fontSettingsInvalidInput => 'Enter a font link or name';
-
-  @override
-  String fontSettingsFontNotFound(String name) {
-    return 'Font \"$name\" not found or no network';
-  }
-
-  @override
   String fontSettingsFontAdded(String name) {
     return 'Font \"$name\" added';
   }
@@ -2602,26 +2588,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fontSettingsAddFontTitle => 'Add font';
-
-  @override
-  String get fontSettingsAddFontDescription =>
-      'Paste a Google Fonts link or font name';
-
-  @override
-  String get fontSettingsAddFontConfirm => 'Add';
-
-  @override
-  String get fontSettingsPickFile => 'Choose file';
+  String get fontSettingsAddFontTitle => 'Add font from file';
 
   @override
   String get fontSettingsPickFileHint => 'A .ttf, .otf or .ttc font';
 
   @override
   String get fontSettingsNotAFont => 'This is not a font file';
-
-  @override
-  String get fontSettingsCancel => 'Cancel';
 
   @override
   String get fontSettingsTitle => 'Fonts';
@@ -3684,13 +3657,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelFollowersTitle => 'Followers';
 
   @override
-  String get channelStatsTitle => 'Channel statistics';
-
-  @override
-  String get channelStatsUnavailable =>
-      'Channel statistics aren\'t available yet';
-
-  @override
   String get adminsAdd => 'Add admin';
 
   @override
@@ -4233,11 +4199,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Are you sure you want to delete this message?';
 
   @override
-  String chatScreenDeleteAlsoFor(String name) {
-    return 'Also delete for $name';
-  }
-
-  @override
   String deleteMessagesFailedWithReason(String reason) {
     return 'Couldn\'t delete messages: $reason';
   }
@@ -4267,18 +4228,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteChatTypeUnknown =>
       'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again';
-
-  @override
-  String get chatForAllNotAllowedHint =>
-      'The MAX server doesn\'t allow deleting this chat for the other person, so it will be deleted only for you.';
-
-  @override
-  String get chatListForAllNotAllowedHint =>
-      'The MAX server doesn\'t allow deleting some of these chats for the other person, so they will be deleted only for you.';
-
-  @override
-  String get chatClearAlsoForPeer =>
-      'Also erase the history for the other person';
 
   @override
   String get chatDeleteForAllMembers => 'Delete for all members';
@@ -4311,101 +4260,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deleteMessagesPeerOnlyForMe =>
-      'MAX deletes the other person\'s messages only for you';
-
-  @override
-  String get deleteMessagesOthersOnlyForMe =>
-      'MAX deletes other people\'s messages only for you';
-
-  @override
-  String deleteMessagesTooOldForPeer(String age) {
-    return 'Only your own messages younger than $age can be deleted for the other person — a MAX server limit';
-  }
-
-  @override
-  String deleteMessagesTooOldForAll(String age) {
-    return 'Only your own messages younger than $age can be deleted for everyone — a MAX server limit';
-  }
-
-  @override
-  String get deleteMessagesScheduledOnlyForMe =>
-      'Scheduled messages are deleted for everyone only from the scheduled list';
-
-  @override
   String get deleteMessagesSelectionOnlyForMe =>
-      'So the selected messages will be deleted only for you';
-
-  @override
-  String deletionAgeLimitDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count days',
-      one: '$count day',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count hours',
-      one: '$count hour',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count minutes',
-      one: '$count minute',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String wipeForBothMessage(String age) {
-    return 'ProMax will delete your messages younger than $age for the other person and then ask MAX to delete the chat for both of you. This can\'t be undone.';
-  }
-
-  @override
-  String get wipeOwnForPeerTitle => 'Delete my messages for the other person?';
-
-  @override
-  String get wipeOwnForPeerAction => 'Delete mine for the other person';
-
-  @override
-  String wipeOwnForPeerMessage(String age) {
-    return 'The MAX server doesn\'t allow deleting this chat for the other person. ProMax will delete your messages younger than $age for them; the rest of the history stays with them and the chat is deleted only for you. This can\'t be undone.';
-  }
-
-  @override
-  String wipeSummaryForPeer(int count) {
-    return 'Your messages deleted for the other person: $count';
-  }
-
-  @override
-  String wipeSummaryNotConfirmed(int count) {
-    return 'MAX didn\'t delete for the other person: $count';
-  }
-
-  @override
-  String wipeSummaryKeptForPeer(int count, String age) {
-    return 'Left with the other person (their messages and yours older than $age): $count';
-  }
-
-  @override
-  String get wipeSummaryChatForAllAccepted =>
-      'MAX accepted the request to delete the chat for both of you';
-
-  @override
-  String get wipeSummaryChatRemovedForMe => 'The chat was deleted only for you';
+      'Some of the selected messages cannot be deleted for members, so all of them will be deleted only for you';
 
   @override
   String get infoDeleteForAll => 'delete-for-all';
@@ -4413,42 +4269,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chatActionProfileUnavailable =>
       'Your profile hasn\'t loaded yet, try again in a moment';
-
-  @override
-  String get chatDeleteAlsoForPeer =>
-      'Also delete the chat for the other person — the history disappears for them too';
-
-  @override
-  String get wipeForBothAction => 'Delete for both';
-
-  @override
-  String get wipeForBothTitle => 'Delete for both?';
-
-  @override
-  String get wipeCollecting => 'Collecting the history…';
-
-  @override
-  String wipeFound(int count) {
-    return 'Messages found: $count';
-  }
-
-  @override
-  String wipeDeleting(int done, int total) {
-    return 'Deleted $done of $total';
-  }
-
-  @override
-  String get wipeSummaryHistoryIncomplete =>
-      'The server didn\'t return the whole history';
-
-  @override
-  String get wipeSummaryInterrupted =>
-      'The connection dropped and deleting stopped — try again';
-
-  @override
-  String wipeSummaryChatKept(String reason) {
-    return 'The chat wasn\'t deleted: $reason';
-  }
 
   @override
   String get messageDeletedMark => 'deleted';
@@ -7470,13 +7290,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The author won\'t know you watched the story';
 
   @override
-  String get proMaxStreamerMode => 'Streamer mode';
-
-  @override
-  String get proMaxStreamerModeHint =>
-      'Blurs numbers, IDs and message previews, hides notification text';
-
-  @override
   String get proMaxSwitcherBlur => 'Blur in the app switcher';
 
   @override
@@ -7570,7 +7383,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proMaxAntiRead => 'Don\'t read';
 
   @override
-  String get proMaxStreamer => 'Streamer';
+  String get proMaxNoTypingShort => 'No typing';
 
   @override
   String get proMaxOff => 'Off';
@@ -7674,79 +7487,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profilePhoneManualInvalid =>
       'That does not look like a phone number';
-
-  @override
-  String get ignoredSendersTitle => 'Don\'t let them write to me';
-
-  @override
-  String get ignoredSendersHowItWorks => 'How it works';
-
-  @override
-  String get ignoredSendersExplanation =>
-      'MAX has no \"who can message me\" setting. The only way to make sending fail is the MAX server black list, and the other person may notice it.\n\nThis mode works in ProMax only and blocks nobody on the server. Messages from the chosen people in private chats are deleted for you only, you get no notifications for them, no read mark is set, the chat does not jump up and the counter does not grow, and their calls are declined silently. They will not know: for them the message was sent as usual.';
-
-  @override
-  String get ignoredSendersCaveat =>
-      'Messages are deleted \"for me\" on the server, so they also disappear in your other MAX apps, although a notification may still show up there. Removing someone from the list does not bring deleted messages back. Group chats are not affected.';
-
-  @override
-  String get ignoredSendersEmpty => 'The list is empty';
-
-  @override
-  String get ignoredSendersEmptyHint =>
-      'Add someone by ID or from a private chat menu: \"Don\'t let them write to me\"';
-
-  @override
-  String get ignoredSendersAdd => 'Add by ID';
-
-  @override
-  String get ignoredSendersIdLabel => 'User ID';
-
-  @override
-  String get ignoredSendersIdHint => 'For example, 123456789';
-
-  @override
-  String get ignoredSendersConfirmAdd => 'Hide';
-
-  @override
-  String get ignoredSendersCancel => 'Cancel';
-
-  @override
-  String get ignoredSendersInvalidId => 'A numeric user ID is required';
-
-  @override
-  String get ignoredSendersSelfId => 'This is your own ID';
-
-  @override
-  String get ignoredSendersAlreadyAdded => 'This ID is already on the list';
-
-  @override
-  String get ignoredSendersAdded => 'Their messages will no longer be shown';
-
-  @override
-  String get ignoredSendersRemoved => 'Their new messages will be shown again';
-
-  @override
-  String get ignoredSendersRemove => 'Allow';
-
-  @override
-  String ignoredSendersUserId(int id) {
-    return 'ID $id';
-  }
-
-  @override
-  String get ignoredSendersNoAccount => 'Sign in to an account first';
-
-  @override
-  String get chatInfoMenuIgnore => 'Don\'t let them write to me';
-
-  @override
-  String get chatInfoMenuUnignore => 'Let them write to me';
-
-  @override
-  String chatInfoIgnoreConfirmMessage(String name) {
-    return '$name can still send you messages and will not know, but ProMax will delete them for you, show no notifications, never mark them read and decline calls. Only the MAX black list stops the sending itself.';
-  }
 
   @override
   String get pluginsScreenNativeSection => 'Built-in native';

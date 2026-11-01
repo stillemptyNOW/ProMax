@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../l10n/app_localizations.dart';
-import '../../../widgets/hint_bubble.dart';
 import '../../../widgets/settings_card.dart';
 import '../../../widgets/swipe_route.dart';
 import 'admins_screen.dart';
@@ -79,25 +78,18 @@ class AdminSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        SettingsCard(
-          children: [
-            if (state.hasSettings)
+        if (state.hasSettings) ...[
+          const SizedBox(height: 12),
+          SettingsCard(
+            children: [
               SettingsNavTile(
                 icon: Symbols.settings,
                 label: l10n.channelSettingsTitle,
                 onTap: openSettings,
               ),
-            Builder(
-              builder: (tileContext) => SettingsNavTile(
-                icon: Symbols.monitoring,
-                label: l10n.channelStatsTitle,
-                onTap: () =>
-                    showHintBubble(tileContext, l10n.channelStatsUnavailable),
-              ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
       ],
     );
