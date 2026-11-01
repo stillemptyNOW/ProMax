@@ -76,8 +76,135 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+                <data android:scheme="promax-direct-launch"/>
             </intent-filter>
         </activity>
+        <activity-alias
+            android:name="io.github.stillemptynow.promax.IconDefault"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="ProMax"
+            android:targetActivity="io.github.stillemptynow.promax.MainActivity">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="io.github.stillemptynow.promax.IconLight"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_light"
+            android:label="ProMax"
+            android:targetActivity="io.github.stillemptynow.promax.MainActivity">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="io.github.stillemptynow.promax.IconAurora"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_aurora"
+            android:label="ProMax"
+            android:targetActivity="io.github.stillemptynow.promax.MainActivity">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="io.github.stillemptynow.promax.IconSunset"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_sunset"
+            android:label="ProMax"
+            android:targetActivity="io.github.stillemptynow.promax.MainActivity">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="io.github.stillemptynow.promax.IconGlass"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_glass"
+            android:label="ProMax"
+            android:targetActivity="io.github.stillemptynow.promax.MainActivity">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="io.github.stillemptynow.promax.IconHalloween"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_halloween"
+            android:label="ProMax"
+            android:targetActivity="io.github.stillemptynow.promax.MainActivity">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="io.github.stillemptynow.promax.IconNewYear"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_newyear"
+            android:label="ProMax"
+            android:targetActivity="io.github.stillemptynow.promax.MainActivity">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
         <activity-alias
             android:name="io.github.stillemptynow.promax.IntentEntry"
             android:exported="true"

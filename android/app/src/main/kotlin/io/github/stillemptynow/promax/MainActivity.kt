@@ -51,9 +51,15 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
 
     private val channelName = "io.github.stillemptynow.promax/vpn_bypass"
     private val iconPackage = MainActivity::class.java.name.substringBeforeLast('.')
-    private val iconComponents = mapOf(
-        "MainActivity" to "$iconPackage.MainActivity",
-    )
+    private val iconComponents = listOf(
+        "IconDefault",
+        "IconLight",
+        "IconAurora",
+        "IconSunset",
+        "IconGlass",
+        "IconHalloween",
+        "IconNewYear",
+    ).associateWith { "$iconPackage.$it" }
 
     private var secureForRecents = false
     private var nfcAdapter: NfcAdapter? = null
@@ -95,25 +101,40 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
             NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK
     }
 
-    private fun applyIcon(name: String) {
+    private fun applyIcon(name: String, closeApp: Boolean) {
         val pm = packageManager
+        val target = iconComponents.getValue(name)
+        pm.setComponentEnabledSetting(
+            ComponentName(packageName, target),
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+            PackageManager.DONT_KILL_APP,
+        )
         for ((alias, className) in iconComponents) {
-            val component = ComponentName(packageName, className)
-            val state = if (alias == name) {
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            }
+            if (alias == name) continue
             pm.setComponentEnabledSetting(
-                component,
-                state,
+                ComponentName(packageName, className),
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP,
             )
         }
-        iconComponents[name]?.let { LauncherBadge.reapply(this, it) }
-        Handler(Looper.getMainLooper()).postDelayed({
-            finishAndRemoveTask()
-        }, 250L)
+        LauncherBadge.reapply(this, target)
+        if (closeApp) {
+            Handler(Looper.getMainLooper()).postDelayed({
+                finishAndRemoveTask()
+            }, 250L)
+        }
+    }
+
+    private fun appliedIcon(): String? {
+        val pm = packageManager
+        val states = iconComponents.mapValues { (_, className) ->
+            pm.getComponentEnabledSetting(ComponentName(packageName, className))
+        }
+        states.entries
+            .firstOrNull { it.value == PackageManager.COMPONENT_ENABLED_STATE_ENABLED }
+            ?.let { return it.key }
+        val fallback = iconComponents.keys.first()
+        return if (states[fallback] == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT) fallback else null
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -176,6 +197,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
             "io.github.stillemptynow.promax/app_icon",
         ).setMethodCallHandler { call, result ->
             when (call.method) {
+                "getAppIcon" -> result.success(appliedIcon())
                 "setAppIcon" -> {
                     val name = call.argument<String>("name")
                     if (name == null || !iconComponents.containsKey(name)) {
@@ -183,7 +205,7 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
                         return@setMethodCallHandler
                     }
                     try {
-                        applyIcon(name)
+                        applyIcon(name, call.argument<Boolean>("closeApp") ?: true)
                         result.success(null)
                     } catch (e: Exception) {
                         result.error("APPLY_FAILED", e.message, null)

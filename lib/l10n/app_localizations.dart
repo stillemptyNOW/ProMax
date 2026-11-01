@@ -10487,7 +10487,7 @@ abstract class AppLocalizations {
   /// No description provided for @appIconScreenUnsupported.
   ///
   /// In en, this message translates to:
-  /// **'Changing the icon is only available on Android and iOS'**
+  /// **'The app icon can\'t be changed in the web version'**
   String get appIconScreenUnsupported;
 
   /// No description provided for @appIconScreenChanged.
@@ -10517,14 +10517,68 @@ abstract class AppLocalizations {
   /// No description provided for @appIconScreenHint.
   ///
   /// In en, this message translates to:
-  /// **'On Android the app will close so the launcher picks up the new icon. On iOS it changes instantly with a system dialog.'**
+  /// **'iOS changes the icon right away and shows a system notice about it.'**
   String get appIconScreenHint;
 
-  /// No description provided for @appIconScreenOnlyMobile.
+  /// No description provided for @appIconScreenHintAndroid.
   ///
   /// In en, this message translates to:
-  /// **'Only available on Android and iOS'**
-  String get appIconScreenOnlyMobile;
+  /// **'The launcher needs a few seconds to pick up the new icon. ProMax closes, chat shortcuts are removed, and on some launchers you have to put the icon back on the home screen.'**
+  String get appIconScreenHintAndroid;
+
+  /// No description provided for @appIconScreenHintDesktop.
+  ///
+  /// In en, this message translates to:
+  /// **'The icon changes for the window, the taskbar and the Dock while ProMax runs and is restored on every launch. Start menu, desktop and Dock shortcuts keep the classic icon until ProMax starts.'**
+  String get appIconScreenHintDesktop;
+
+  /// No description provided for @appIconAndroidConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the icon?'**
+  String get appIconAndroidConfirmTitle;
+
+  /// No description provided for @appIconAndroidConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax will close and the launcher will update the icon in a few seconds. Chat shortcuts on the home screen are removed, and on some launchers you have to add the icon to the home screen again from the app list.'**
+  String get appIconAndroidConfirmMessage;
+
+  /// No description provided for @appIconAndroidConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get appIconAndroidConfirmAction;
+
+  /// No description provided for @appIconSeasonalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seasonal icon automatically'**
+  String get appIconSeasonalTitle;
+
+  /// No description provided for @appIconSeasonalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Halloween from October 24 to November 2, New Year from December 20 to January 10. Your own icon comes back afterwards.'**
+  String get appIconSeasonalSubtitle;
+
+  /// No description provided for @appIconSeasonalActive.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” is on until {date}'**
+  String appIconSeasonalActive(String name, DateTime date);
+
+  /// No description provided for @appIconSeasonalPending.
+  ///
+  /// In en, this message translates to:
+  /// **'The icon changes once you leave ProMax'**
+  String get appIconSeasonalPending;
+
+  /// No description provided for @appIconSeasonalManual.
+  ///
+  /// In en, this message translates to:
+  /// **'You picked the icon yourself, so it stays until the season ends'**
+  String get appIconSeasonalManual;
 
   /// No description provided for @password2faConnectionDropped.
   ///
