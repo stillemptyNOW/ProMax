@@ -7836,4 +7836,25 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get stickerMakerHint =>
       'Фон удалён на устройстве. Стикер отправится как изображение с прозрачным фоном';
+
+  @override
+  String get appIconNameDefault => 'Классическая';
+
+  @override
+  String get appIconNameLight => 'Светлая';
+
+  @override
+  String get appIconNameAurora => 'Аврора';
+
+  @override
+  String get appIconNameSunset => 'Закат';
+
+  @override
+  String get appIconNameGlass => 'Стекло';
+
+  @override
+  String get appIconNameHalloween => 'Хэллоуин';
+
+  @override
+  String get appIconNameNewYear => 'Новый год';
 }

@@ -10,7 +10,8 @@ const _plugin = 'native/promax_effects';
 const _kotlin = '$_plugin/android/src/main/kotlin/promax/effects';
 const _bridge = '$_plugin/android/src/main/cpp/promax_effects_jni.cpp';
 
-String _read(String path) => File(path).readAsStringSync();
+String _read(String path) =>
+    File(path).readAsStringSync().replaceAll('\r\n', '\n');
 
 Set<String> _matches(String pattern, String source) =>
     RegExp(pattern).allMatches(source).map((match) => match.group(1)!).toSet();

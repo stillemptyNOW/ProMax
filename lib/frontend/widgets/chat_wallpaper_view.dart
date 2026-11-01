@@ -133,8 +133,20 @@ class _WallpaperImageLayerState extends State<WallpaperImageLayer> {
 
   @override
   Widget build(BuildContext context) {
+    final screen = MediaQuery.sizeOf(context);
+    final cacheSide =
+        (screen.longestSide *
+                _motionScale *
+                MediaQuery.devicePixelRatioOf(context))
+            .ceil()
+            .clamp(1, 2560);
     final image = Image(
-      image: widget.image,
+      image: ResizeImage(
+        widget.image,
+        width: cacheSide,
+        height: cacheSide,
+        policy: ResizeImagePolicy.fit,
+      ),
       fit: BoxFit.cover,
       alignment: Alignment(widget.offsetX.clamp(-1.0, 1.0), 0),
       width: double.infinity,

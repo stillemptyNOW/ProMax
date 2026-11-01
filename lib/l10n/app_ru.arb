@@ -2463,5 +2463,12 @@
   "stickerMakerDownloading": "Модель ещё загружается, попробуйте через минуту",
   "stickerMakerUnavailable": "Создание стикеров недоступно на этом устройстве",
   "stickerMakerUse": "Готово",
-  "stickerMakerHint": "Фон удалён на устройстве. Стикер отправится как изображение с прозрачным фоном"
+  "stickerMakerHint": "Фон удалён на устройстве. Стикер отправится как изображение с прозрачным фоном",
+  "appIconNameDefault": "Классическая",
+  "appIconNameLight": "Светлая",
+  "appIconNameAurora": "Аврора",
+  "appIconNameSunset": "Закат",
+  "appIconNameGlass": "Стекло",
+  "appIconNameHalloween": "Хэллоуин",
+  "appIconNameNewYear": "Новый год"
 }

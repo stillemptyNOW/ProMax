@@ -2885,5 +2885,12 @@
   "stickerMakerDownloading": "The model is still downloading, try again in a minute",
   "stickerMakerUnavailable": "Making stickers isn't available on this device",
   "stickerMakerUse": "Done",
-  "stickerMakerHint": "The background was removed on this device. The sticker is sent as an image with a transparent background"
+  "stickerMakerHint": "The background was removed on this device. The sticker is sent as an image with a transparent background",
+  "appIconNameDefault": "Classic",
+  "appIconNameLight": "Light",
+  "appIconNameAurora": "Aurora",
+  "appIconNameSunset": "Sunset",
+  "appIconNameGlass": "Glass",
+  "appIconNameHalloween": "Halloween",
+  "appIconNameNewYear": "New Year"
 }

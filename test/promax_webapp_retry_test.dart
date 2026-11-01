@@ -89,6 +89,13 @@ class _Platform extends InAppWebViewPlatform {
   }
 }
 
+void _mobileTest(String description, WidgetTesterCallback callback) =>
+    testWidgets(
+      description,
+      callback,
+      variant: TargetPlatformVariant.only(TargetPlatform.android),
+    );
+
 void main() {
   setUpAll(() => api.state);
   tearDownAll(() => api.dispose());
@@ -133,7 +140,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  testWidgets(
+  _mobileTest(
     'technical error retry fetches a new URL and keeps the screen open',
     (tester) async {
       var launches = 0;
@@ -160,7 +167,7 @@ void main() {
     },
   );
 
-  testWidgets('normal close still leaves the mini app', (tester) async {
+  _mobileTest('normal close still leaves the mini app', (tester) async {
     var launches = 0;
     await open(tester, () async {
       launches++;
@@ -181,7 +188,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('ignores bridge calls without the page secret', (tester) async {
+  _mobileTest('ignores bridge calls without the page secret', (tester) async {
     await open(
       tester,
       () async =>
@@ -206,7 +213,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('ignores bridge calls from a foreign page', (tester) async {
+  _mobileTest('ignores bridge calls from a foreign page', (tester) async {
     await open(
       tester,
       () async =>

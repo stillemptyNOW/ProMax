@@ -68,7 +68,10 @@ class _AppIconScreenState extends State<AppIconScreen> {
     try {
       await AppIconConfig.choose(icon);
       if (!mounted) return;
-      showCustomNotification(context, l10n.appIconScreenChanged(icon.title));
+      showCustomNotification(
+        context,
+        l10n.appIconScreenChanged(_iconTitle(icon, l10n)),
+      );
     } catch (e) {
       if (!mounted) return;
       final reason = e is PlatformException ? (e.message ?? e.code) : '$e';
@@ -91,7 +94,7 @@ class _AppIconScreenState extends State<AppIconScreen> {
     final override = selection.seasonalOverrideAt(now);
     if (override != null) {
       return l10n.appIconSeasonalActive(
-        override.season.icon.title,
+        _iconTitle(override.season.icon, l10n),
         override.lastDay,
       );
     }
@@ -196,6 +199,7 @@ class _AppIconTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     return SettingsRadioTile(
       leading: ClipRRect(
         borderRadius: BorderRadius.circular(14),
@@ -208,7 +212,7 @@ class _AppIconTile extends StatelessWidget {
         ),
       ),
       leadingGap: 16,
-      label: icon.title,
+      label: _iconTitle(icon, l10n),
       labelStyle: TextStyle(
         color: cs.onSurface,
         fontSize: 16,
@@ -219,3 +223,13 @@ class _AppIconTile extends StatelessWidget {
     );
   }
 }
+
+String _iconTitle(AppIcon icon, AppLocalizations l10n) => switch (icon) {
+  AppIcon.defaultIcon => l10n.appIconNameDefault,
+  AppIcon.light => l10n.appIconNameLight,
+  AppIcon.aurora => l10n.appIconNameAurora,
+  AppIcon.sunset => l10n.appIconNameSunset,
+  AppIcon.glass => l10n.appIconNameGlass,
+  AppIcon.halloween => l10n.appIconNameHalloween,
+  AppIcon.newYear => l10n.appIconNameNewYear,
+};

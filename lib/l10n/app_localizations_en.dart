@@ -7791,4 +7791,25 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get stickerMakerHint =>
       'The background was removed on this device. The sticker is sent as an image with a transparent background';
+
+  @override
+  String get appIconNameDefault => 'Classic';
+
+  @override
+  String get appIconNameLight => 'Light';
+
+  @override
+  String get appIconNameAurora => 'Aurora';
+
+  @override
+  String get appIconNameSunset => 'Sunset';
+
+  @override
+  String get appIconNameGlass => 'Glass';
+
+  @override
+  String get appIconNameHalloween => 'Halloween';
+
+  @override
+  String get appIconNameNewYear => 'New Year';
 }

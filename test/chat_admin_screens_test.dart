@@ -61,30 +61,26 @@ Future<void> _pump(WidgetTester tester, Widget home) async {
 void main() {
   setUpAll(() => api.state);
 
-  testWidgets('the info section shows both counters and statistics', (
-    tester,
-  ) async {
-    await _pump(
-      tester,
-      Scaffold(
-        body: AdminSection(
-          state: _state(myId: _ownerId),
-          onLeave: () {},
+  testWidgets(
+    'the info section shows real counters without the unavailable statistics action',
+    (tester) async {
+      await _pump(
+        tester,
+        Scaffold(
+          body: AdminSection(
+            state: _state(myId: _ownerId),
+            onLeave: () {},
+          ),
         ),
-      ),
-    );
+      );
 
-    expect(find.widgetWithText(SettingsNavTile, 'Администраторы'), findsOne);
-    expect(find.widgetWithText(SettingsNavTile, '2'), findsOne);
-    expect(find.widgetWithText(SettingsNavTile, 'Подписчики'), findsOne);
-    expect(find.widgetWithText(SettingsNavTile, '3'), findsOne);
-    expect(find.text('Статистика канала'), findsOne);
-
-    await tester.tap(find.text('Статистика канала'));
-    await tester.pump();
-    expect(find.text('Статистика канала пока недоступна'), findsOne);
-    await tester.pump(const Duration(seconds: 3));
-  });
+      expect(find.widgetWithText(SettingsNavTile, 'Администраторы'), findsOne);
+      expect(find.widgetWithText(SettingsNavTile, '2'), findsOne);
+      expect(find.widgetWithText(SettingsNavTile, 'Подписчики'), findsOne);
+      expect(find.widgetWithText(SettingsNavTile, '3'), findsOne);
+      expect(find.text('Статистика канала'), findsNothing);
+    },
+  );
 
   testWidgets('the owner sees every admin and can add more', (tester) async {
     await _pump(tester, AdminsScreen(state: _state(myId: _ownerId)));

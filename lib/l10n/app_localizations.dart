@@ -13777,6 +13777,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The background was removed on this device. The sticker is sent as an image with a transparent background'**
   String get stickerMakerHint;
+
+  /// No description provided for @appIconNameDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get appIconNameDefault;
+
+  /// No description provided for @appIconNameLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get appIconNameLight;
+
+  /// No description provided for @appIconNameAurora.
+  ///
+  /// In en, this message translates to:
+  /// **'Aurora'**
+  String get appIconNameAurora;
+
+  /// No description provided for @appIconNameSunset.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunset'**
+  String get appIconNameSunset;
+
+  /// No description provided for @appIconNameGlass.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass'**
+  String get appIconNameGlass;
+
+  /// No description provided for @appIconNameHalloween.
+  ///
+  /// In en, this message translates to:
+  /// **'Halloween'**
+  String get appIconNameHalloween;
+
+  /// No description provided for @appIconNameNewYear.
+  ///
+  /// In en, this message translates to:
+  /// **'New Year'**
+  String get appIconNameNewYear;
 }
 
 class _AppLocalizationsDelegate
