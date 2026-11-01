@@ -1,3 +1,5 @@
+import 'core/config/update_channel.dart';
+import 'core/hub/diagnostics.dart';
 import 'core/translation/translation_settings.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -209,6 +211,7 @@ void _installLogCapture() {
 
   final previousFlutterOnError = FlutterError.onError;
   FlutterError.onError = (FlutterErrorDetails details) {
+    Diagnostics.record('flutter_error', details.exception, details.stack);
     DebugSessionLog.instance.recordLogLine(
       '  |         FlutterError: ${details.exceptionAsString()}',
     );
@@ -224,6 +227,7 @@ void _installLogCapture() {
 
   final previousPlatformOnError = ui.PlatformDispatcher.instance.onError;
   ui.PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    Diagnostics.record('uncaught_error', error, stack);
     DebugSessionLog.instance.recordLogLine('  |         Uncaught: $error');
     DebugSessionLog.instance.recordLogLine(stack.toString());
     if (previousPlatformOnError != null) {
@@ -339,6 +343,8 @@ void main(List<String> args) async {
   final spectrumBackgroundFuture = AppSpectrumBackground.load();
   final performanceFuture = AppPerformance.load();
   final translationFuture = TranslationSettings.instance.load();
+  final updateChannelFuture = UpdateChannel.load();
+  final diagnosticsFuture = Diagnostics.init().catchError((_) {});
   final badgeFuture = AppBadge.load();
   unawaited(AppIconConfig.load());
   final trafficCaptureFuture = TrafficMonitor.instance.load();
@@ -434,6 +440,8 @@ void main(List<String> args) async {
     spectrumBackgroundFuture,
     performanceFuture,
     translationFuture,
+    updateChannelFuture,
+    diagnosticsFuture,
   ]);
   debugPrint('PROMAX-STARTUP: DeviceContactsService.loadFromStartup...');
   await DeviceContactsService.loadFromStartup();

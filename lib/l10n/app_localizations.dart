@@ -13819,6 +13819,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New Year'**
   String get appIconNameNewYear;
+
+  /// No description provided for @selfProfilePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'View profile as others see it'**
+  String get selfProfilePreview;
+
+  /// No description provided for @selfProfileId.
+  ///
+  /// In en, this message translates to:
+  /// **'My ID'**
+  String get selfProfileId;
+
+  /// No description provided for @selfProfileIdCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'ID copied'**
+  String get selfProfileIdCopied;
+
+  /// No description provided for @selfProfilePreviewPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'This card shows your public name and bio. The phone number and status visible to another person depend on your privacy settings and contacts.'**
+  String get selfProfilePreviewPrivacy;
+
+  /// No description provided for @updateReceiveBeta.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive beta updates'**
+  String get updateReceiveBeta;
+
+  /// No description provided for @updateReceiveBetaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off: stable releases only. On: also beta versions and release candidates.'**
+  String get updateReceiveBetaHint;
+
+  /// No description provided for @diagnosticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send diagnostics'**
+  String get diagnosticsTitle;
+
+  /// No description provided for @diagnosticsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A random installation ID, error types, ProMax stack frames, version and OS are sent to the ProMax server. No chats, phone numbers or tokens. You can turn this off at any time.'**
+  String get diagnosticsHint;
+
+  /// No description provided for @hubAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax announcements'**
+  String get hubAnnouncements;
+
+  /// No description provided for @hubAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get hubAdmin;
+
+  /// No description provided for @hubPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get hubPreview;
+
+  /// No description provided for @hubServiceChat.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax service chat'**
+  String get hubServiceChat;
+
+  /// No description provided for @hubActivationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate admin access using a one-time code from your server. Your phone number opens this screen; the server verifies permission to broadcast.'**
+  String get hubActivationHint;
+
+  /// No description provided for @hubActivationCode.
+  ///
+  /// In en, this message translates to:
+  /// **'One-time code'**
+  String get hubActivationCode;
+
+  /// No description provided for @hubActivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate'**
+  String get hubActivate;
+
+  /// No description provided for @hubUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The ProMax service is unavailable'**
+  String get hubUnavailable;
+
+  /// No description provided for @hubOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot reach the ProMax service. Showing saved announcements.'**
+  String get hubOffline;
+
+  /// No description provided for @hubNoAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements from the ProMax team will appear here'**
+  String get hubNoAnnouncements;
+
+  /// No description provided for @hubReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements are available only in ProMax. You cannot reply to this chat.'**
+  String get hubReadOnly;
+
+  /// No description provided for @hubDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get hubDraft;
+
+  /// No description provided for @hubDraftEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No draft yet'**
+  String get hubDraftEmpty;
+
+  /// No description provided for @hubDraftChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The draft changed on another device or is empty. Refresh it before publishing.'**
+  String get hubDraftChanged;
+
+  /// No description provided for @hubActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete the action. Check your connection and admin activation.'**
+  String get hubActionFailed;
+
+  /// No description provided for @hubPublish.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish to everyone'**
+  String get hubPublish;
+
+  /// No description provided for @hubPublishConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Every ProMax user will see this announcement. Send it?'**
+  String get hubPublishConfirm;
+
+  /// No description provided for @hubPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement published'**
+  String get hubPublished;
+
+  /// No description provided for @hubPreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the administrator can see this chat. Check the text and select Publish to everyone when ready.'**
+  String get hubPreviewHint;
+
+  /// No description provided for @hubAdminHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write an announcement and send it to Preview. Users will not see it until you confirm publication.'**
+  String get hubAdminHint;
+
+  /// No description provided for @hubCompose.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement text'**
+  String get hubCompose;
+
+  /// No description provided for @hubSendToPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to preview'**
+  String get hubSendToPreview;
+
+  /// No description provided for @hubRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get hubRefresh;
+
+  /// No description provided for @hubNewAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'New announcement in the ProMax service chat'**
+  String get hubNewAnnouncement;
 }
 
 class _AppLocalizationsDelegate

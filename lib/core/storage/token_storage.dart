@@ -110,6 +110,10 @@ class TokenStorage {
 
   static Future<void> deleteAccount(int accountId) async {
     await deleteToken(accountId);
+    await _secure.delete(key: 'promax_hub_admin_$accountId');
+    final hubPrefs = await SharedPreferences.getInstance();
+    await hubPrefs.remove('promax_hub_messages_$accountId');
+    await hubPrefs.remove('promax_hub_seen_$accountId');
     final activeId = await getActiveAccountId();
     if (activeId == accountId) {
       final prefs = await SharedPreferences.getInstance();

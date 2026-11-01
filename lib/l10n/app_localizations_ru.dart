@@ -7857,4 +7857,111 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appIconNameNewYear => 'Новый год';
+
+  @override
+  String get selfProfilePreview => 'Посмотреть профиль со стороны';
+
+  @override
+  String get selfProfileId => 'Мой ID';
+
+  @override
+  String get selfProfileIdCopied => 'ID скопирован';
+
+  @override
+  String get selfProfilePreviewPrivacy =>
+      'Так выглядит карточка с вашим публичным именем и описанием. Видимость телефона и статуса для другого человека зависит от настроек приватности и ваших контактов.';
+
+  @override
+  String get updateReceiveBeta => 'Получать бета-версии';
+
+  @override
+  String get updateReceiveBetaHint =>
+      'Выключено — только стабильные выпуски. Включено — также бета-версии и кандидаты в релиз.';
+
+  @override
+  String get diagnosticsTitle => 'Отправлять диагностику';
+
+  @override
+  String get diagnosticsHint =>
+      'Случайный ID установки, типы ошибок, стек ProMax, версия и ОС отправляются на сервер ProMax. Без переписки, телефона и токенов. Можно выключить в любой момент.';
+
+  @override
+  String get hubAnnouncements => 'Объявления ProMax';
+
+  @override
+  String get hubAdmin => 'Админка';
+
+  @override
+  String get hubPreview => 'Превью';
+
+  @override
+  String get hubServiceChat => 'Служебный чат ProMax';
+
+  @override
+  String get hubActivationHint =>
+      'Активируйте админку одноразовым кодом с вашего сервера. Номер телефона открывает этот экран, а право рассылки подтверждается сервером.';
+
+  @override
+  String get hubActivationCode => 'Одноразовый код';
+
+  @override
+  String get hubActivate => 'Активировать';
+
+  @override
+  String get hubUnavailable => 'Сервис ProMax пока недоступен';
+
+  @override
+  String get hubOffline =>
+      'Нет связи с сервисом ProMax. Показаны сохранённые объявления.';
+
+  @override
+  String get hubNoAnnouncements => 'Здесь появятся объявления команды ProMax';
+
+  @override
+  String get hubReadOnly =>
+      'Объявления доступны только в ProMax. Ответы в этот чат не отправляются.';
+
+  @override
+  String get hubDraft => 'Черновик';
+
+  @override
+  String get hubDraftEmpty => 'Черновик пока пуст';
+
+  @override
+  String get hubDraftChanged =>
+      'Черновик изменён на другом устройстве или пуст. Обновите его перед отправкой.';
+
+  @override
+  String get hubActionFailed =>
+      'Не удалось выполнить действие. Проверьте соединение и активацию админки.';
+
+  @override
+  String get hubPublish => 'Опубликовать всем';
+
+  @override
+  String get hubPublishConfirm =>
+      'Это объявление увидят все пользователи ProMax. Отправить?';
+
+  @override
+  String get hubPublished => 'Объявление опубликовано';
+
+  @override
+  String get hubPreviewHint =>
+      'Этот чат виден только администратору. Проверьте текст и нажмите «Опубликовать всем», когда он готов.';
+
+  @override
+  String get hubAdminHint =>
+      'Напишите объявление и отправьте его в «Превью». До подтверждения публикации пользователи его не увидят.';
+
+  @override
+  String get hubCompose => 'Текст объявления';
+
+  @override
+  String get hubSendToPreview => 'Отправить в превью';
+
+  @override
+  String get hubRefresh => 'Обновить';
+
+  @override
+  String get hubNewAnnouncement => 'Новое объявление в служебном чате ProMax';
 }

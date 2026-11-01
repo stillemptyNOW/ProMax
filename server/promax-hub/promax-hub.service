@@ -1,0 +1,31 @@
+[Unit]
+Description=ProMax announcements and anonymous diagnostics
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=promax-hub
+Group=promax-hub
+WorkingDirectory=/opt/promax-hub/current
+Environment=PROMAX_HUB_DB=/var/lib/promax-hub/hub.sqlite3
+ExecStart=/opt/promax-hub/venv/bin/uvicorn app:create_app --factory --host 127.0.0.1 --port 8091 --no-access-log --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=on-failure
+RestartSec=5
+StateDirectory=promax-hub
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryMax=256M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

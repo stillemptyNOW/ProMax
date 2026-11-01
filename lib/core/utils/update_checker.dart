@@ -1,3 +1,4 @@
+import '../config/update_channel.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -160,10 +161,23 @@ typedef _PublishedRelease = ({
   ({String version, int? build}) version,
 });
 
-Iterable<_PublishedRelease> _publishedReleases(Object? releases) sync* {
+bool isBetaRelease(Map<Object?, Object?> release) =>
+    release['prerelease'] == true ||
+    RegExp(
+      r'(?:^|[.+-])(?:alpha|beta|rc|preview|nightly|dev)(?:[.+-]|$)',
+      caseSensitive: false,
+    ).hasMatch('${release['tag_name'] ?? ''}');
+
+Iterable<_PublishedRelease> _publishedReleases(
+  Object? releases, {
+  bool includePrereleases = true,
+}) sync* {
   final candidates = releases is List ? releases : [releases];
   for (final release in candidates.whereType<Map<Object?, Object?>>()) {
-    if (release['draft'] == true) continue;
+    if (release['draft'] == true ||
+        (!includePrereleases && isBetaRelease(release))) {
+      continue;
+    }
     final tag = release['tag_name'];
     if (tag is! String) continue;
     final version = parseReleaseTag(tag);
@@ -172,9 +186,15 @@ Iterable<_PublishedRelease> _publishedReleases(Object? releases) sync* {
   }
 }
 
-Map<Object?, Object?>? newestRelease(Object? releases) {
+Map<Object?, Object?>? newestRelease(
+  Object? releases, {
+  bool includePrereleases = true,
+}) {
   _PublishedRelease? newest;
-  for (final entry in _publishedReleases(releases)) {
+  for (final entry in _publishedReleases(
+    releases,
+    includePrereleases: includePrereleases,
+  )) {
     if (newest == null ||
         UpdateChecker._compareRelease(entry.version, newest.version) > 0) {
       newest = entry;
@@ -187,9 +207,13 @@ List<ReleaseNotes> releaseNotesNewerThan(
   Object? releases, {
   required String currentVersion,
   required int? currentBuild,
+  bool includePrereleases = true,
 }) {
   final newer = [
-    for (final entry in _publishedReleases(releases))
+    for (final entry in _publishedReleases(
+      releases,
+      includePrereleases: includePrereleases,
+    ))
       if (UpdateChecker._isNewer(
         currentBase: currentVersion,
         currentBuild: UpdateChecker._normalizeBuild(currentBuild),
@@ -257,9 +281,14 @@ AppUpdateInfo? updateFromReleases(
   Object? releases, {
   required String currentVersion,
   required int? currentBuild,
+  bool includePrereleases = true,
 }) {
-  final release = newestRelease(releases);
+  final release = newestRelease(
+    releases,
+    includePrereleases: includePrereleases,
+  );
   if (release == null) {
+    if (!includePrereleases && newestRelease(releases) != null) return null;
     throw const FormatException('No GitHub release has an app version');
   }
   final remote = AppUpdateInfo.tryParse(_manifestFromRelease(release));
@@ -277,6 +306,7 @@ AppUpdateInfo? updateFromReleases(
       releases,
       currentVersion: currentVersion,
       currentBuild: currentBuild,
+      includePrereleases: includePrereleases,
     ),
   );
 }
@@ -295,12 +325,14 @@ abstract class UpdateChecker {
   static Future<AppUpdateInfo?> fetchLatest() async {
     if (!UpdateConfig.isConfigured) return null;
 
+    await UpdateChannel.load();
     final info = await PackageInfo.fromPlatform();
     final releases = await _fetchReleases();
     return updateFromReleases(
       releases,
       currentVersion: info.version,
       currentBuild: int.tryParse(info.buildNumber),
+      includePrereleases: UpdateChannel.beta.value,
     );
   }
 

@@ -1,3 +1,5 @@
+import 'self_profile_preview_screen.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'dart:async';
 import '../../widgets/promax_ui.dart';
 import 'dart:math' as math;
@@ -688,6 +690,33 @@ class _SettingsTabState extends State<SettingsTab>
                           context,
                           title: 'Сервисы',
                           items: [
+                            _SettingsItem(
+                              icon: Symbols.visibility,
+                              label: l10n.selfProfilePreview,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SelfProfilePreviewScreen(
+                                    profile: _profile!,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _SettingsItem(
+                              icon: Symbols.tag,
+                              label: '${l10n.selfProfileId}: ${_profile!.id}',
+                              onTap: () async {
+                                await Clipboard.setData(
+                                  ClipboardData(text: '${_profile!.id}'),
+                                );
+                                if (context.mounted) {
+                                  showCustomNotification(
+                                    context,
+                                    l10n.selfProfileIdCopied,
+                                  );
+                                }
+                              },
+                            ),
                             if (BuildProfile.digitalId)
                               _SettingsItem(
                                 icon: Symbols.badge,

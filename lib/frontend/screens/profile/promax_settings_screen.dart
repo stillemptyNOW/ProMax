@@ -1,3 +1,5 @@
+import '../../../core/config/update_channel.dart';
+import '../../../core/hub/diagnostics.dart';
 import 'translation_settings_screen.dart';
 import '../../../core/translation/translation_backend.dart';
 import 'dart:async';
@@ -57,6 +59,31 @@ class ProMaxSettingsScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
             _ProMaxHero(onGhostChanged: _setGhostMode),
+            SettingsCard(
+              children: [
+                if (BuildProfile.selfUpdate)
+                  ValueListenableBuilder<bool>(
+                    valueListenable: UpdateChannel.beta,
+                    builder: (context, beta, _) => SettingsToggleTile(
+                      icon: Symbols.science,
+                      label: l10n.updateReceiveBeta,
+                      subtitle: l10n.updateReceiveBetaHint,
+                      value: beta,
+                      onChanged: UpdateChannel.setBeta,
+                    ),
+                  ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: Diagnostics.enabled,
+                  builder: (context, enabled, _) => SettingsToggleTile(
+                    icon: Symbols.bug_report,
+                    label: l10n.diagnosticsTitle,
+                    subtitle: l10n.diagnosticsHint,
+                    value: enabled,
+                    onChanged: Diagnostics.setEnabled,
+                  ),
+                ),
+              ],
+            ),
             if (MethodChannelTranslationBackend.platformSupported)
               SettingsCard(
                 children: [

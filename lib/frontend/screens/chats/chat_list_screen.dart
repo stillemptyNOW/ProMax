@@ -1,3 +1,4 @@
+import '../promax_hub/service_chat_tiles.dart';
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -2328,6 +2329,18 @@ class _ChatListScreenState extends State<ChatListScreen>
         ),
         slivers: [
           const SliverToBoxAdapter(child: SizedBox(height: 8)),
+          if (pageIndex == 0 &&
+              !widget.forwardMode &&
+              !_shareMode &&
+              !widget.archiveMode &&
+              _profile != null)
+            SliverToBoxAdapter(
+              child: ServiceChatTiles(
+                key: ValueKey('hub_${_profile!.id}_${_profile!.phone}'),
+                accountId: _profile!.id,
+                phone: _profile!.phone,
+              ),
+            ),
           if (_shouldShowArchiveEntry(pageIndex))
             SliverToBoxAdapter(child: _buildRevealableArchiveEntry(cs)),
           if (pageChats.isEmpty && !_isInitialLoading)

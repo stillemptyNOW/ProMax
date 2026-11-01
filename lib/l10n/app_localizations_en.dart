@@ -7812,4 +7812,113 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appIconNameNewYear => 'New Year';
+
+  @override
+  String get selfProfilePreview => 'View profile as others see it';
+
+  @override
+  String get selfProfileId => 'My ID';
+
+  @override
+  String get selfProfileIdCopied => 'ID copied';
+
+  @override
+  String get selfProfilePreviewPrivacy =>
+      'This card shows your public name and bio. The phone number and status visible to another person depend on your privacy settings and contacts.';
+
+  @override
+  String get updateReceiveBeta => 'Receive beta updates';
+
+  @override
+  String get updateReceiveBetaHint =>
+      'Off: stable releases only. On: also beta versions and release candidates.';
+
+  @override
+  String get diagnosticsTitle => 'Send diagnostics';
+
+  @override
+  String get diagnosticsHint =>
+      'A random installation ID, error types, ProMax stack frames, version and OS are sent to the ProMax server. No chats, phone numbers or tokens. You can turn this off at any time.';
+
+  @override
+  String get hubAnnouncements => 'ProMax announcements';
+
+  @override
+  String get hubAdmin => 'Admin';
+
+  @override
+  String get hubPreview => 'Preview';
+
+  @override
+  String get hubServiceChat => 'ProMax service chat';
+
+  @override
+  String get hubActivationHint =>
+      'Activate admin access using a one-time code from your server. Your phone number opens this screen; the server verifies permission to broadcast.';
+
+  @override
+  String get hubActivationCode => 'One-time code';
+
+  @override
+  String get hubActivate => 'Activate';
+
+  @override
+  String get hubUnavailable => 'The ProMax service is unavailable';
+
+  @override
+  String get hubOffline =>
+      'Cannot reach the ProMax service. Showing saved announcements.';
+
+  @override
+  String get hubNoAnnouncements =>
+      'Announcements from the ProMax team will appear here';
+
+  @override
+  String get hubReadOnly =>
+      'Announcements are available only in ProMax. You cannot reply to this chat.';
+
+  @override
+  String get hubDraft => 'Draft';
+
+  @override
+  String get hubDraftEmpty => 'No draft yet';
+
+  @override
+  String get hubDraftChanged =>
+      'The draft changed on another device or is empty. Refresh it before publishing.';
+
+  @override
+  String get hubActionFailed =>
+      'Could not complete the action. Check your connection and admin activation.';
+
+  @override
+  String get hubPublish => 'Publish to everyone';
+
+  @override
+  String get hubPublishConfirm =>
+      'Every ProMax user will see this announcement. Send it?';
+
+  @override
+  String get hubPublished => 'Announcement published';
+
+  @override
+  String get hubPreviewHint =>
+      'Only the administrator can see this chat. Check the text and select Publish to everyone when ready.';
+
+  @override
+  String get hubAdminHint =>
+      'Write an announcement and send it to Preview. Users will not see it until you confirm publication.';
+
+  @override
+  String get hubCompose => 'Announcement text';
+
+  @override
+  String get hubSendToPreview => 'Send to preview';
+
+  @override
+  String get hubRefresh => 'Refresh';
+
+  @override
+  String get hubNewAnnouncement =>
+      'New announcement in the ProMax service chat';
 }

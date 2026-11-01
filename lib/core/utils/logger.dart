@@ -1,3 +1,4 @@
+import '../hub/diagnostics.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -129,6 +130,13 @@ class ProMaxLogPrinter extends LogPrinter {
 
   @override
   List<String> log(LogEvent event) {
+    if (event.level.value >= 5000) {
+      Diagnostics.record(
+        'log_error',
+        event.error ?? const ReportedLogError(),
+        event.stackTrace ?? StackTrace.current,
+      );
+    }
     final lines = <String>[];
     final t = event.time;
     final timeStr =
@@ -160,4 +168,8 @@ class ProMaxLogPrinter extends LogPrinter {
     }
     return finalMessage.toString();
   }
+}
+
+class ReportedLogError {
+  const ReportedLogError();
 }

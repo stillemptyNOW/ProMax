@@ -51,6 +51,11 @@ drop_preview_apks() {
   done
 }
 
+release_flags=()
+if [[ "$tag" =~ -(alpha|beta|rc|preview)[.-] ]]; then
+  release_flags=(--prerelease --latest=false)
+fi
+
 published=false
 for attempt in 1 2 3 4 5; do
   if gh release view "$tag" >/dev/null 2>&1; then
@@ -58,7 +63,7 @@ for attempt in 1 2 3 4 5; do
     published=true
     break
   fi
-  if gh release create "$tag" "$@" --target "$GITHUB_SHA" --title "$title" "${notes_args[@]}"; then
+  if gh release create "$tag" "$@" --target "$GITHUB_SHA" --title "$title" "${notes_args[@]}" "${release_flags[@]}"; then
     published=true
     break
   fi
