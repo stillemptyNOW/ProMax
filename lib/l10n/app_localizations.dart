@@ -4916,18 +4916,6 @@ abstract class AppLocalizations {
   /// **'Linear'**
   String get photoEditorBlurLinear;
 
-  /// No description provided for @fontSettingsInvalidInput.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a font link or name'**
-  String get fontSettingsInvalidInput;
-
-  /// No description provided for @fontSettingsFontNotFound.
-  ///
-  /// In en, this message translates to:
-  /// **'Font \"{name}\" not found or no network'**
-  String fontSettingsFontNotFound(String name);
-
   /// No description provided for @fontSettingsFontAdded.
   ///
   /// In en, this message translates to:
@@ -4943,26 +4931,8 @@ abstract class AppLocalizations {
   /// No description provided for @fontSettingsAddFontTitle.
   ///
   /// In en, this message translates to:
-  /// **'Add font'**
+  /// **'Add font from file'**
   String get fontSettingsAddFontTitle;
-
-  /// No description provided for @fontSettingsAddFontDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Paste a Google Fonts link or font name'**
-  String get fontSettingsAddFontDescription;
-
-  /// No description provided for @fontSettingsAddFontConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Add'**
-  String get fontSettingsAddFontConfirm;
-
-  /// No description provided for @fontSettingsPickFile.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose file'**
-  String get fontSettingsPickFile;
 
   /// No description provided for @fontSettingsPickFileHint.
   ///
@@ -4975,12 +4945,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is not a font file'**
   String get fontSettingsNotAFont;
-
-  /// No description provided for @fontSettingsCancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get fontSettingsCancel;
 
   /// No description provided for @fontSettingsTitle.
   ///

@@ -1059,15 +1059,6 @@
   "photoEditorBlurOff": "Off",
   "photoEditorBlurRadial": "Radial",
   "photoEditorBlurLinear": "Linear",
-  "fontSettingsInvalidInput": "Enter a font link or name",
-  "fontSettingsFontNotFound": "Font \"{name}\" not found or no network",
-  "@fontSettingsFontNotFound": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "fontSettingsFontAdded": "Font \"{name}\" added",
   "@fontSettingsFontAdded": {
     "placeholders": {
@@ -1084,13 +1075,9 @@
       }
     }
   },
-  "fontSettingsAddFontTitle": "Add font",
-  "fontSettingsAddFontDescription": "Paste a Google Fonts link or font name",
-  "fontSettingsAddFontConfirm": "Add",
-  "fontSettingsPickFile": "Choose file",
+  "fontSettingsAddFontTitle": "Add font from file",
   "fontSettingsPickFileHint": "A .ttf, .otf or .ttc font",
   "fontSettingsNotAFont": "This is not a font file",
-  "fontSettingsCancel": "Cancel",
   "fontSettingsTitle": "Fonts",
   "fontSettingsSectionFont": "Font",
   "fontSettingsLoading": "Loading…",

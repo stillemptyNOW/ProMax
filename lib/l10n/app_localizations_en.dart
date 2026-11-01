@@ -2584,14 +2584,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photoEditorBlurLinear => 'Linear';
 
   @override
-  String get fontSettingsInvalidInput => 'Enter a font link or name';
-
-  @override
-  String fontSettingsFontNotFound(String name) {
-    return 'Font \"$name\" not found or no network';
-  }
-
-  @override
   String fontSettingsFontAdded(String name) {
     return 'Font \"$name\" added';
   }
@@ -2602,26 +2594,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fontSettingsAddFontTitle => 'Add font';
-
-  @override
-  String get fontSettingsAddFontDescription =>
-      'Paste a Google Fonts link or font name';
-
-  @override
-  String get fontSettingsAddFontConfirm => 'Add';
-
-  @override
-  String get fontSettingsPickFile => 'Choose file';
+  String get fontSettingsAddFontTitle => 'Add font from file';
 
   @override
   String get fontSettingsPickFileHint => 'A .ttf, .otf or .ttc font';
 
   @override
   String get fontSettingsNotAFont => 'This is not a font file';
-
-  @override
-  String get fontSettingsCancel => 'Cancel';
 
   @override
   String get fontSettingsTitle => 'Fonts';

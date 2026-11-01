@@ -2598,14 +2598,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get photoEditorBlurLinear => 'Линейное';
 
   @override
-  String get fontSettingsInvalidInput => 'Введите ссылку или название шрифта';
-
-  @override
-  String fontSettingsFontNotFound(String name) {
-    return 'Шрифт «$name» не найден или нет сети';
-  }
-
-  @override
   String fontSettingsFontAdded(String name) {
     return 'Шрифт «$name» добавлен';
   }
@@ -2616,26 +2608,13 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get fontSettingsAddFontTitle => 'Добавить шрифт';
-
-  @override
-  String get fontSettingsAddFontDescription =>
-      'Вставьте ссылку Google Fonts или название шрифта';
-
-  @override
-  String get fontSettingsAddFontConfirm => 'Добавить';
-
-  @override
-  String get fontSettingsPickFile => 'Выбрать файл';
+  String get fontSettingsAddFontTitle => 'Добавить шрифт из файла';
 
   @override
   String get fontSettingsPickFileHint => 'Шрифт в формате .ttf, .otf или .ttc';
 
   @override
   String get fontSettingsNotAFont => 'Это не файл шрифта';
-
-  @override
-  String get fontSettingsCancel => 'Отмена';
 
   @override
   String get fontSettingsTitle => 'Шрифты';
