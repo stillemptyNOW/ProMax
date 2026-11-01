@@ -15,6 +15,7 @@ import '../../../core/cache/info_cache.dart';
 import '../../../core/calls/active_call.dart';
 import '../../../core/calls/call_controller.dart';
 import '../../../core/calls/call_info.dart';
+import '../../../core/calls/call_pip.dart';
 import '../../../core/calls/call_session.dart';
 import '../../../core/calls/call_tones.dart';
 import '../../../core/calls/camera_devices.dart';
@@ -165,6 +166,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 420),
     );
+    _remoteRenderer.addListener(_reportPipSize);
     _initRenderer();
 
     _incomingPending = widget.session == null && widget.incoming != null;
@@ -239,6 +241,13 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     }
     _syncLocalPreview();
     setState(() {});
+  }
+
+  void _reportPipSize() {
+    CallPip.instance.reportVideoSize(
+      _remoteRenderer.videoWidth,
+      _remoteRenderer.videoHeight,
+    );
   }
 
   void _attachStream(MediaStream stream) {
@@ -743,6 +752,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     _tileRenderers.clear();
     _dotsController.dispose();
     _videoController.dispose();
+    _remoteRenderer.removeListener(_reportPipSize);
     if (_rendererReady) _remoteRenderer.srcObject = null;
     _remoteRenderer.dispose();
     if (_localRendererReady) _localRenderer.srcObject = null;

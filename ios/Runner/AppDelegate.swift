@@ -47,6 +47,7 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
       registerScreen(messenger)
       registerClipboard(messenger)
       registerCallKit(messenger)
+      registerCallPip(messenger, view: controller.view)
       registerNativeGlass(messenger)
       method("io.github.stillemptynow.promax/fkm", messenger) { call, result in
         ProMaxLiveConnection.shared.handle(call, result: result)
@@ -208,6 +209,13 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
     }
     events("io.github.stillemptynow.promax/callkit_events", messenger) { sink in
       ProMaxCallKit.shared.attach(sink)
+    }
+  }
+
+  private func registerCallPip(_ messenger: FlutterBinaryMessenger, view: UIView) {
+    ProMaxCallPip.shared.parentView = view
+    method("io.github.stillemptynow.promax/call_pip", messenger) { call, result in
+      ProMaxCallPip.shared.handle(call, result: result)
     }
   }
 

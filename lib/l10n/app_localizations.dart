@@ -6620,6 +6620,24 @@ abstract class AppLocalizations {
   /// **'Otherwise a video message starts with the front camera'**
   String get mediaDevicesVideoNoteRearHint;
 
+  /// No description provided for @mediaDevicesCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get mediaDevicesCalls;
+
+  /// No description provided for @mediaDevicesCallPip.
+  ///
+  /// In en, this message translates to:
+  /// **'Picture in picture in video calls'**
+  String get mediaDevicesCallPip;
+
+  /// No description provided for @mediaDevicesCallPipHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The other person\'s video stays in a small window over other apps when you leave ProMax'**
+  String get mediaDevicesCallPipHint;
+
   /// No description provided for @chatPreviewMarkRead.
   ///
   /// In en, this message translates to:

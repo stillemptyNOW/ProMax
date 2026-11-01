@@ -3599,6 +3599,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Иначе кружок открывается с фронтальной';
 
   @override
+  String get mediaDevicesCalls => 'Звонки';
+
+  @override
+  String get mediaDevicesCallPip => 'Картинка в картинке в видеозвонках';
+
+  @override
+  String get mediaDevicesCallPipHint =>
+      'Видео собеседника остаётся в окошке поверх других приложений, когда вы сворачиваете ProMax';
+
+  @override
   String get chatPreviewMarkRead => 'Пометить прочитанным';
 
   @override

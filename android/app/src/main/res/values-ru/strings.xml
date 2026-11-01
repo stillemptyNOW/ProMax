@@ -10,4 +10,7 @@
     <string name="fkm_disable">Выключить</string>
     <string name="notif_deleted_prefix">Удалено:</string>
     <string name="share_target_label">Отправить в чат</string>
+    <string name="call_pip_mute">Выключить микрофон</string>
+    <string name="call_pip_unmute">Включить микрофон</string>
+    <string name="call_pip_hangup">Завершить звонок</string>
 </resources>

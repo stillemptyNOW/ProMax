@@ -3581,6 +3581,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Otherwise a video message starts with the front camera';
 
   @override
+  String get mediaDevicesCalls => 'Calls';
+
+  @override
+  String get mediaDevicesCallPip => 'Picture in picture in video calls';
+
+  @override
+  String get mediaDevicesCallPipHint =>
+      'The other person\'s video stays in a small window over other apps when you leave ProMax';
+
+  @override
   String get chatPreviewMarkRead => 'Mark as read';
 
   @override

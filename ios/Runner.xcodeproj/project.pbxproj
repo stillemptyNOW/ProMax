@@ -20,6 +20,7 @@
 		AA11BB22CC33DD44EE550106 /* ProMaxCallKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE550006 /* ProMaxCallKit.swift */; };
 		AA11BB22CC33DD44EE550107 /* ProMaxNativeGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE550007 /* ProMaxNativeGlass.swift */; };
 		AA11BB22CC33DD44EE550108 /* ProMaxNativeTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE550008 /* ProMaxNativeTabBar.swift */; };
+		AA11BB22CC33DD44EE550109 /* ProMaxCallPip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE550009 /* ProMaxCallPip.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
@@ -78,6 +79,7 @@
 		AA11BB22CC33DD44EE550006 /* ProMaxCallKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProMaxCallKit.swift; sourceTree = "<group>"; };
 		AA11BB22CC33DD44EE550007 /* ProMaxNativeGlass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProMaxNativeGlass.swift; sourceTree = "<group>"; };
 		AA11BB22CC33DD44EE550008 /* ProMaxNativeTabBar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProMaxNativeTabBar.swift; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE550009 /* ProMaxCallPip.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProMaxCallPip.swift; sourceTree = "<group>"; };
 		AA11BB22CC33DD44EE550004 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		782E66FE4E292DCFD0D1B7D2 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		789A1AEF2F4FF7DEED202476 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -200,6 +202,7 @@
 				AA11BB22CC33DD44EE550006 /* ProMaxCallKit.swift */,
 				AA11BB22CC33DD44EE550007 /* ProMaxNativeGlass.swift */,
 				AA11BB22CC33DD44EE550008 /* ProMaxNativeTabBar.swift */,
+				AA11BB22CC33DD44EE550009 /* ProMaxCallPip.swift */,
 				AA11BB22CC33DD44EE550004 /* Runner.entitlements */,
 			);
 			path = Runner;
@@ -454,6 +457,7 @@
 				AA11BB22CC33DD44EE550106 /* ProMaxCallKit.swift in Sources */,
 				AA11BB22CC33DD44EE550107 /* ProMaxNativeGlass.swift in Sources */,
 				AA11BB22CC33DD44EE550108 /* ProMaxNativeTabBar.swift in Sources */,
+				AA11BB22CC33DD44EE550109 /* ProMaxCallPip.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
