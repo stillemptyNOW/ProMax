@@ -10,6 +10,7 @@ import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
 import '../calls/call_kit.dart';
 import '../../core/storage/app_database.dart';
+import '../../core/storage/notified_messages.dart';
 import '../../core/storage/token_storage.dart';
 import '../config/promax_settings.dart';
 import '../utils/logger.dart';
@@ -214,6 +215,7 @@ class FkmController {
     if (facts == null) return;
     final notification = NotificationPolicy.compose(push, facts);
     if (notification == null || !_firstNotice(notification)) return;
+    if (!await _firstPersistedNotice(notification)) return;
     await _bridge.showMessage(notification.toFkmData());
   }
 
@@ -223,6 +225,16 @@ class FkmController {
     if (!_notified.add('${notification.chatId}:$messageId')) return false;
     if (_notified.length > _notifiedLimit) _notified.remove(_notified.first);
     return true;
+  }
+
+  Future<bool> _firstPersistedNotice(MessageNotification notification) async {
+    final messageId = notification.messageId;
+    if (!ProMaxSettings.antiRead.value || messageId == null) return true;
+    return NotifiedMessages.claim(
+      notification.accountId,
+      notification.chatId,
+      messageId,
+    );
   }
 
   // #***! сообщение удалили, гасим уведомление

@@ -13,12 +13,16 @@ import 'package:promax/core/protocol/opcode_map.dart';
 import 'package:promax/core/protocol/packet.dart';
 import 'package:promax/core/push/fkm_bridge.dart';
 import 'package:promax/core/push/fkm_controller.dart';
+import 'package:promax/core/push/notification_bridge.dart';
 import 'package:promax/core/storage/app_database.dart';
 import 'package:promax/core/storage/ignored_senders.dart';
 import 'package:promax/core/storage/token_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _fkm = MethodChannel('io.github.stillemptynow.promax/fkm');
+const _notifications = MethodChannel(
+  'io.github.stillemptynow.promax/notifications',
+);
 const _localNotifications = MethodChannel(
   'dexterous.com/flutter/local_notifications',
 );
@@ -166,6 +170,57 @@ void main() {
     await deliver(_push(_dialog, _peer, 6000));
     await deliver(_push(_dialog, _peer, 6000));
     expect(shownIds(), ['6000']);
+  });
+
+  test('the notification carries the "don\'t read" watermark so native drops '
+      'messages the user already saw from the chat history', () async {
+    await chats.markRead(api, _me, _dialog, '5000', 5000);
+
+    await deliver(_push(_dialog, _peer, 6000));
+
+    expect(shownIds(), ['6000']);
+    expect(shown.single['seen'], '5000');
+  });
+
+  test('a message is not notified again after the engine restarts', () async {
+    await deliver(_push(_dialog, _peer, 6000));
+    controller.dispose();
+    controller = FkmController.withBridge(
+      FkmBridge.forTesting(isSupported: true),
+    );
+    await controller.init(api);
+
+    await deliver(_push(_dialog, _peer, 6000));
+    await deliver(_push(_dialog, _peer, 7000));
+
+    expect(shownIds(), ['6000', '7000']);
+  });
+
+  test('reading part of a chat prunes the seen messages from its '
+      'notification', () async {
+    final calls = <MethodCall>[];
+    NotificationBridge.instance.debugNative = true;
+    _messenger.setMockMethodCallHandler(_notifications, (call) async {
+      calls.add(call);
+      return null;
+    });
+    addTearDown(() {
+      NotificationBridge.instance.debugNative = false;
+      _messenger.setMockMethodCallHandler(_notifications, null);
+    });
+
+    await chats.markReadUpTo(api, _me, _dialog, '4000', 4000, remaining: 1);
+    await pumpEventQueue();
+
+    expect(
+      [
+        for (final call in calls)
+          if (call.method == 'pruneChat') call.arguments,
+      ],
+      [
+        {'chatId': _dialog, 'seen': 4000},
+      ],
+    );
   });
 
   test('an ignored sender never reaches the notification shade', () async {

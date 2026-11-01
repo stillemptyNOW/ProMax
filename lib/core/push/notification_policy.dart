@@ -53,6 +53,7 @@ class NotificationFacts {
     this.streamerMode = false,
     this.encrypted = false,
     this.readMark = 0,
+    this.seenMark = 0,
     this.senderIgnored = false,
   });
 
@@ -63,6 +64,7 @@ class NotificationFacts {
   final bool streamerMode;
   final bool encrypted;
   final int readMark;
+  final int seenMark;
   final bool senderIgnored;
 
   static int effectiveReadMark({
@@ -77,9 +79,15 @@ class NotificationFacts {
     final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
     final rows = await AppDatabase.loadChat(accountId, chatId);
     final chat = rows.isEmpty ? null : CachedChat.fromDbRow(rows.first);
-    final local = ProMaxSettings.antiRead.value
+    final antiRead = ProMaxSettings.antiRead.value;
+    final local = antiRead
         ? await LocalReadState.load(accountId, chatId)
         : const LocalReadState();
+    final readMark = effectiveReadMark(
+      accountId: accountId,
+      chat: chat,
+      local: local,
+    );
     await IgnoredSenders.instance.load();
     await E2eeService.instance.ensureLoaded(accountId);
     return NotificationFacts(
@@ -89,11 +97,8 @@ class NotificationFacts {
       senderName: senderId == null ? null : ContactCache.get(senderId),
       streamerMode: ProMaxSettings.streamerMode.value,
       encrypted: E2eeService.instance.isOn(accountId, chatId),
-      readMark: effectiveReadMark(
-        accountId: accountId,
-        chat: chat,
-        local: local,
-      ),
+      readMark: readMark,
+      seenMark: antiRead ? readMark : 0,
       senderIgnored: IgnoredSenders.instance.hidesFromDialog(
         accountId: accountId,
         chatId: chatId,
@@ -118,6 +123,7 @@ class MessageNotification {
     required this.textVisible,
     required this.sound,
     this.messageId,
+    this.seenUpTo = 0,
   });
 
   final int chatId;
@@ -131,6 +137,7 @@ class MessageNotification {
   final bool textVisible;
   final bool sound;
   final String? messageId;
+  final int seenUpTo;
 
   Map<String, String> toFkmData() => {
     'mc': '$chatId',
@@ -142,6 +149,7 @@ class MessageNotification {
     'ctime': '$time',
     'sound': '$sound',
     'msgid': ?messageId,
+    if (seenUpTo > 0) 'seen': '$seenUpTo',
   };
 }
 
@@ -276,6 +284,7 @@ abstract final class NotificationPolicy {
       textVisible: textVisible && text != hiddenPreview,
       sound: soundEnabled(privacy),
       messageId: msgId == null ? null : '$msgId',
+      seenUpTo: facts.seenMark,
     );
   }
 

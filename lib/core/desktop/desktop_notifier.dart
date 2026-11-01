@@ -21,6 +21,7 @@ import '../push/push_service.dart';
 import '../push/quiet_hours.dart';
 import '../security/double_bottom.dart';
 import '../storage/app_database.dart';
+import '../storage/notified_messages.dart';
 import '../storage/token_storage.dart';
 import '../utils/logger.dart';
 import 'desktop_identity.dart';
@@ -165,6 +166,16 @@ class DesktopNotifier {
     if (facts == null) return;
     final notification = NotificationPolicy.compose(push, facts);
     if (notification == null) return;
+    final messageId = notification.messageId;
+    if (ProMaxSettings.antiRead.value &&
+        messageId != null &&
+        !await NotifiedMessages.claim(
+          notification.accountId,
+          notification.chatId,
+          messageId,
+        )) {
+      return;
+    }
 
     final presence = await DesktopWindow.instance.presence();
     final alert = NotificationPolicy.desktopAlert(

@@ -170,6 +170,7 @@ final class ProMaxLiveConnection: NSObject {
   private func post(message data: [String: String]) {
     guard UIApplication.shared.applicationState != .active,
           let id = Self.identifier(data), let chat = data["mc"] else { return }
+    if let seen = Int64(data["seen"] ?? ""), let time = Int64(data["ctime"] ?? ""), time <= seen { return }
     let content = UNMutableNotificationContent()
     let title = data["title"] ?? "ProMax"
     let sender = data["userName"] ?? ""
@@ -178,7 +179,7 @@ final class ProMaxLiveConnection: NSObject {
     content.body = Self.body(title: title, sender: sender, text: text)
     content.sound = data["sound"] == "false" ? nil : .default
     content.threadIdentifier = "chat-\(chat)"
-    content.userInfo = ["chatId": chat, "msgid": data["msgid"] ?? "", "sender": sender]
+    content.userInfo = ["chatId": chat, "msgid": data["msgid"] ?? "", "sender": sender, "ctime": data["ctime"] ?? ""]
     UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
   }
 
