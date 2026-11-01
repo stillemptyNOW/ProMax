@@ -91,7 +91,12 @@ class StickerMaker {
   }
 
   static Uint8List? buildStickerPng(Uint8List encoded) {
-    final decoded = img.decodeImage(encoded);
+    final img.Image? decoded;
+    try {
+      decoded = img.decodePng(encoded);
+    } catch (_) {
+      return null;
+    }
     if (decoded == null) return null;
     final rgba = decoded.convert(format: img.Format.uint8, numChannels: 4);
     final bounds = _opaqueBounds(rgba);

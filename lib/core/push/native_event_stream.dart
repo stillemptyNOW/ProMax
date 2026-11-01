@@ -27,4 +27,11 @@ class NativeEventStream {
     subscribe();
     _reattach = FkmBridge.instance.attached.listen((_) => subscribe());
   }
+
+  void dispose() {
+    unawaited(_events?.cancel());
+    unawaited(_reattach?.cancel());
+    _events = null;
+    _reattach = null;
+  }
 }

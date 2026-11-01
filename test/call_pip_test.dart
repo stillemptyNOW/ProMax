@@ -16,7 +16,10 @@ class _FakePlatform implements CallPipPlatform {
   Future<void> update(CallPipConfig config) async => sent.add(config);
 
   @override
-  void listen(void Function(Object? event) onEvent) => this.onEvent = onEvent;
+  VoidCallback listen(void Function(Object? event) onEvent) {
+    this.onEvent = onEvent;
+    return () => this.onEvent = null;
+  }
 
   @override
   Stream<void> get reattached => reattach.stream;

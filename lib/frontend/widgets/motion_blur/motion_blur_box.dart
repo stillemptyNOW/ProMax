@@ -1,3 +1,4 @@
+import '../../../core/config/app_performance.dart';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -68,13 +69,16 @@ class _MotionBlurBoxState extends State<MotionBlurBox>
   bool get _canBlur =>
       !_reduceMotion &&
       _exclusions == 0 &&
-      (widget.preview ? true : _plugin.allows(_target));
+      (widget.preview ||
+          (AppPerformance.current.glass != GlassQuality.flat &&
+              _plugin.allows(_target)));
 
   @override
   void initState() {
     super.initState();
     _attachToParent();
     _listen(widget.motion);
+    AppPerformance.budget.addListener(_onBudgetChanged);
   }
 
   @override
@@ -118,10 +122,15 @@ class _MotionBlurBoxState extends State<MotionBlurBox>
 
   @override
   void dispose() {
+    AppPerformance.budget.removeListener(_onBudgetChanged);
     _unlisten(widget.motion);
     _ticker?.dispose();
     _signal.dispose();
     super.dispose();
+  }
+
+  void _onBudgetChanged() {
+    if (!_canBlur) _settle();
   }
 
   void _listen(List<Listenable> motion) {

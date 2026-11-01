@@ -836,6 +836,40 @@ class AppDatabase {
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  static Future<bool> claimNotification(
+    int accountId,
+    int chatId,
+    String messageId, {
+    required int limit,
+  }) async {
+    final db = await _instance;
+    final key = 'promax_notified_$chatId';
+    return db.transaction((txn) async {
+      final rows = await txn.query(
+        'sync_state',
+        where: 'account_id = ? AND key = ?',
+        whereArgs: [accountId, key],
+        limit: 1,
+      );
+      var ids = <String>[];
+      if (rows.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(rows.first['value'] as String);
+          if (decoded is List) ids = [for (final id in decoded) '$id'];
+        } catch (_) {}
+      }
+      if (ids.contains(messageId)) return false;
+      ids.add(messageId);
+      final kept = ids.length > limit ? ids.sublist(ids.length - limit) : ids;
+      await txn.insert('sync_state', {
+        'account_id': accountId,
+        'key': key,
+        'value': jsonEncode(kept),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      return true;
+    });
+  }
+
   static Future<String?> getSyncValue(int accountId, String key) async {
     final db = await _instance;
     final rows = await db.query(

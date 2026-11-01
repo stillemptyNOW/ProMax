@@ -1,3 +1,7 @@
+import '../../../core/translation/message_translator.dart';
+import '../../../core/translation/translation_settings.dart';
+import '../../../core/translation/translation_backend.dart';
+import '../../widgets/message_translation.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show File;
@@ -3652,6 +3656,14 @@ class _ChatScreenState extends State<ChatScreen>
           label: l10n.chatInfoMembersSearchHint,
           onTap: _openSearch,
         ),
+        if (MethodChannelTranslationBackend.platformSupported)
+          ChatMenuItem(
+            icon: Symbols.translate,
+            label: TranslationSettings.instance.isAuto(_myId, widget.chatId)
+                ? l10n.chatScreenMenuStopTranslateChat
+                : l10n.chatScreenMenuTranslateChat,
+            onTap: _toggleTranslation,
+          ),
         ChatMenuItem(
           icon: Symbols.wallpaper,
           label: l10n.chatScreenMenuChangeWallpaper,
@@ -3679,6 +3691,45 @@ class _ChatScreenState extends State<ChatScreen>
           onTap: _deleteChat,
         ),
       ],
+    );
+  }
+
+  Future<void> _toggleTranslation() async {
+    final l10n = AppLocalizations.of(context)!;
+    final translator = MessageTranslator.instance;
+    final caps = await translator.loadCapabilities();
+    if (!mounted) return;
+    if (!caps.available) {
+      showCustomNotification(context, l10n.translationUnavailable);
+      return;
+    }
+    final enabled = !TranslationSettings.instance.isAuto(_myId, widget.chatId);
+    await TranslationSettings.instance.setAuto(_myId, widget.chatId, enabled);
+    if (!enabled) translator.resetAutoInChat(_myId, widget.chatId);
+    if (!mounted) return;
+    showCustomNotification(
+      context,
+      enabled ? l10n.translationChatEnabled : l10n.translationChatDisabled,
+    );
+  }
+
+  void _translateMessage(CachedMessage message) {
+    final translator = MessageTranslator.instance;
+    final key = MessageTranslator.keyOf(_myId, widget.chatId, message.id);
+    if (translator.stateOf(key).showsTranslation) {
+      translator.showOriginal(key);
+      return;
+    }
+    final text = MessageDecryptionCache.instance.readableText(message);
+    if (text == null || text.trim().isEmpty) return;
+    unawaited(
+      translateMessageFromMenu(
+        context,
+        accountId: _myId,
+        chatId: widget.chatId,
+        messageId: message.id,
+        text: text,
+      ),
     );
   }
 
@@ -5532,6 +5583,26 @@ class _ChatScreenState extends State<ChatScreen>
                                   (chat?.forwardDisabled ?? false)
                               ? null
                               : () => _forwardMessages([message]),
+                          onTranslate:
+                              !message.isControl &&
+                                  MethodChannelTranslationBackend
+                                      .platformSupported &&
+                                  (MessageDecryptionCache.instance
+                                          .readableText(message)
+                                          ?.trim()
+                                          .isNotEmpty ??
+                                      false)
+                              ? () => _translateMessage(message)
+                              : null,
+                          isTranslated: () => MessageTranslator.instance
+                              .stateOf(
+                                MessageTranslator.keyOf(
+                                  _myId,
+                                  widget.chatId,
+                                  message.id,
+                                ),
+                              )
+                              .showsTranslation,
                           allowCopy: !(chat?.copyDisabled ?? false),
                           onMarkUnread: message.isControl
                               ? null

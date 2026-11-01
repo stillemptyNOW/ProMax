@@ -87,13 +87,12 @@ class _MessageTranslationScopeState extends State<MessageTranslationScope> {
   void initState() {
     super.initState();
     _settings.autoChats.addListener(_autoTranslate);
-    _settings.targetLanguage.addListener(_autoTranslate);
+    _settings.targetLanguage.addListener(_targetChanged);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_dependenciesReady) return;
     _dependenciesReady = true;
     _autoTranslate();
   }
@@ -111,12 +110,18 @@ class _MessageTranslationScopeState extends State<MessageTranslationScope> {
   @override
   void dispose() {
     _settings.autoChats.removeListener(_autoTranslate);
-    _settings.targetLanguage.removeListener(_autoTranslate);
+    _settings.targetLanguage.removeListener(_targetChanged);
     super.dispose();
   }
 
+  void _targetChanged() {
+    if (!mounted) return;
+    MessageTranslator.instance.reset(_key);
+    _autoTranslate();
+  }
+
   void _autoTranslate() {
-    if (!mounted || widget.isMe) return;
+    if (!mounted || !_dependenciesReady || widget.isMe) return;
     if (!_settings.isAuto(widget.accountId, widget.chatId)) return;
     MessageTranslator.instance.translate(
       _key,
@@ -131,7 +136,8 @@ class _MessageTranslationScopeState extends State<MessageTranslationScope> {
     return ValueListenableBuilder<MessageTranslationState>(
       valueListenable: MessageTranslator.instance.watch(_key),
       builder: (context, state, _) => widget.builder(
-        state.sourceText == widget.sourceText
+        state.sourceText == widget.sourceText &&
+                state.targetLanguage == translationTargetFor(context)
             ? state
             : MessageTranslationState.idle,
       ),

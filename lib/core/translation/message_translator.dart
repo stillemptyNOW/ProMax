@@ -12,6 +12,7 @@ enum TranslateOutcome { translated, sameLanguage, failed, unavailable }
 class MessageTranslationState {
   final TranslationPhase phase;
   final String? sourceText;
+  final String? targetLanguage;
   final String? text;
   final String? sourceLanguage;
   final bool auto;
@@ -20,6 +21,7 @@ class MessageTranslationState {
   const MessageTranslationState({
     required this.phase,
     this.sourceText,
+    this.targetLanguage,
     this.text,
     this.sourceLanguage,
     this.auto = false,
@@ -36,6 +38,7 @@ class MessageTranslationState {
       MessageTranslationState(
         phase: next,
         sourceText: sourceText,
+        targetLanguage: targetLanguage,
         text: text,
         sourceLanguage: sourceLanguage,
         auto: auto,
@@ -69,6 +72,7 @@ class MessageTranslator {
   final Map<String, _TranslationSlot> _slots = {};
   final Map<String, Future<TranslateOutcome>> _inFlight = {};
   Future<TranslationCapabilities>? _capabilitiesFuture;
+  bool _disposed = false;
 
   final ValueNotifier<TranslationCapabilities?> capabilities =
       ValueNotifier<TranslationCapabilities?>(null);
@@ -82,7 +86,7 @@ class MessageTranslator {
 
   Future<TranslationCapabilities> loadCapabilities() =>
       _capabilitiesFuture ??= _backend.capabilities().then((value) {
-        capabilities.value = value;
+        if (!_disposed) capabilities.value = value;
         return value;
       });
 
@@ -101,7 +105,9 @@ class MessageTranslator {
   void _prune() {
     final idle = [
       for (final entry in _slots.entries)
-        if (!entry.value.watched) entry.key,
+        if (!entry.value.watched &&
+            entry.value.value.phase != TranslationPhase.loading)
+          entry.key,
     ];
     for (final key in idle) {
       _slots.remove(key)?.dispose();
@@ -114,11 +120,12 @@ class MessageTranslator {
     required String target,
     bool auto = false,
   }) {
-    final running = _inFlight[key];
+    final request = '$key\u0000$target\u0000$text';
+    final running = _inFlight[request];
     if (running != null) return running;
     final future = _translate(key, text, target: target, auto: auto);
-    _inFlight[key] = future;
-    return future.whenComplete(() => _inFlight.remove(key));
+    _inFlight[request] = future;
+    return future.whenComplete(() => _inFlight.remove(request));
   }
 
   Future<TranslateOutcome> _translate(
@@ -130,11 +137,11 @@ class MessageTranslator {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return TranslateOutcome.failed;
     final caps = await loadCapabilities();
-    if (!caps.available) return TranslateOutcome.unavailable;
+    if (_disposed || !caps.available) return TranslateOutcome.unavailable;
 
     final slot = _slot(key);
     final current = slot.value;
-    if (current.sourceText == text) {
+    if (current.sourceText == text && current.targetLanguage == target) {
       if (current.phase == TranslationPhase.translated) {
         return TranslateOutcome.translated;
       }
@@ -154,14 +161,16 @@ class MessageTranslator {
 
     final cached = cache.get(target, text);
     if (cached != null) {
-      return _apply(slot, text, cached, auto: auto);
+      return _apply(slot, text, cached, target: target, auto: auto);
     }
 
-    slot.value = MessageTranslationState(
+    final waiting = MessageTranslationState(
       phase: TranslationPhase.loading,
       sourceText: text,
+      targetLanguage: target,
       auto: auto,
     );
+    slot.value = waiting;
     try {
       final output = await _backend.translate(
         text: text,
@@ -169,36 +178,54 @@ class MessageTranslator {
         wifiOnly: _settings.wifiOnly.value,
       );
       cache.put(target, text, output);
-      if (!_stillWaiting(key, slot, text)) return TranslateOutcome.failed;
-      return _apply(slot, text, output, auto: auto);
+      if (!_stillWaiting(key, slot, waiting)) return TranslateOutcome.failed;
+      return _apply(slot, text, output, target: target, auto: auto);
     } on TranslationException catch (e) {
-      if (_stillWaiting(key, slot, text)) {
+      if (_stillWaiting(key, slot, waiting)) {
         slot.value = MessageTranslationState(
           phase: TranslationPhase.failed,
           sourceText: text,
+          targetLanguage: target,
           auto: auto,
           failure: e.failure,
+        );
+      }
+      return TranslateOutcome.failed;
+    } catch (_) {
+      if (_stillWaiting(key, slot, waiting)) {
+        slot.value = MessageTranslationState(
+          phase: TranslationPhase.failed,
+          sourceText: text,
+          targetLanguage: target,
+          auto: auto,
+          failure: TranslationFailure.failed,
         );
       }
       return TranslateOutcome.failed;
     }
   }
 
-  bool _stillWaiting(String key, _TranslationSlot slot, String text) =>
+  bool _stillWaiting(
+    String key,
+    _TranslationSlot slot,
+    MessageTranslationState waiting,
+  ) =>
+      !_disposed &&
       identical(_slots[key], slot) &&
-      slot.value.phase == TranslationPhase.loading &&
-      slot.value.sourceText == text;
+      identical(slot.value, waiting);
 
   TranslateOutcome _apply(
     _TranslationSlot slot,
     String text,
     TranslationOutput output, {
     required bool auto,
+    required String target,
   }) {
     if (output.sameLanguage) {
       slot.value = MessageTranslationState(
         phase: TranslationPhase.same,
         sourceText: text,
+        targetLanguage: target,
         sourceLanguage: output.sourceLanguage,
         auto: auto,
       );
@@ -208,6 +235,7 @@ class MessageTranslator {
       phase: TranslationPhase.translated,
       sourceText: text,
       text: output.text,
+      targetLanguage: target,
       sourceLanguage: output.sourceLanguage,
       auto: auto,
     );
@@ -243,6 +271,15 @@ class MessageTranslator {
         entry.value.value = MessageTranslationState.idle;
       }
     }
+  }
+
+  void dispose() {
+    _disposed = true;
+    for (final slot in _slots.values) {
+      slot.dispose();
+    }
+    _slots.clear();
+    capabilities.dispose();
   }
 
   Future<List<String>> downloadedModels() => _backend.downloadedModels();

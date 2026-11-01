@@ -13,7 +13,6 @@ import com.google.mlkit.nl.languageid.LanguageIdentifier
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.TranslateRemoteModel
 import com.google.mlkit.nl.translate.Translation
-import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -24,9 +23,7 @@ object OnDeviceTranslation {
     private const val CHANNEL = "io.github.stillemptynow.promax/translate"
     private const val UNDETERMINED = "und"
     private const val CONFIDENCE = 0.5f
-    private const val MAX_TRANSLATORS = 3
 
-    private val translators = LinkedHashMap<String, Translator>(MAX_TRANSLATORS, 0.75f, true)
     private var identifier: LanguageIdentifier? = null
 
     fun attach(engine: FlutterEngine, context: Context) {
@@ -129,7 +126,12 @@ object OnDeviceTranslation {
                 result.error("needs_wifi", "models download only over Wi-Fi", null)
                 return@addOnCompleteListener
             }
-            val translator = translator(source, target)
+            val translator = Translation.getClient(
+                TranslatorOptions.Builder()
+                    .setSourceLanguage(source)
+                    .setTargetLanguage(target)
+                    .build(),
+            )
             val conditions = if (wifiOnly) {
                 DownloadConditions.Builder().requireWifi().build()
             } else {
@@ -142,6 +144,7 @@ object OnDeviceTranslation {
                         mapOf("text" to translated, "source" to source, "same" to false),
                     )
                 }
+                .addOnCompleteListener { translator.close() }
                 .addOnFailureListener { e ->
                     result.error(
                         if (ready) "failed" else "download_failed",
@@ -150,24 +153,6 @@ object OnDeviceTranslation {
                     )
                 }
         }
-    }
-
-    private fun translator(source: String, target: String): Translator {
-        val key = "$source>$target"
-        translators[key]?.let { return it }
-        val created = Translation.getClient(
-            TranslatorOptions.Builder()
-                .setSourceLanguage(source)
-                .setTargetLanguage(target)
-                .build(),
-        )
-        translators[key] = created
-        while (translators.size > MAX_TRANSLATORS) {
-            val eldest = translators.entries.iterator().next()
-            translators.remove(eldest.key)
-            eldest.value.close()
-        }
-        return created
     }
 
     private fun onUnmeteredNetwork(context: Context): Boolean {
@@ -193,15 +178,6 @@ object OnDeviceTranslation {
         if (language == null) {
             result.success(false)
             return
-        }
-        val iterator = translators.entries.iterator()
-        while (iterator.hasNext()) {
-            val entry = iterator.next()
-            val pair = entry.key.split(">")
-            if (pair.contains(language)) {
-                entry.value.close()
-                iterator.remove()
-            }
         }
         RemoteModelManager.getInstance()
             .deleteDownloadedModel(TranslateRemoteModel.Builder(language).build())

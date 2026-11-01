@@ -1,3 +1,4 @@
+import 'package:promax/core/storage/notified_messages.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -218,4 +219,25 @@ void main() {
     );
   });
 
+  test('concurrent notices retain every claimed id across restarts', () async {
+    final ids = [for (var i = 0; i < 20; i++) 'synthetic-$i'];
+    final first = await Future.wait([
+      for (final id in ids) NotifiedMessages.claim(_me, _dialog, id),
+    ]);
+    expect(first, everyElement(isTrue));
+    final repeated = await Future.wait([
+      for (final id in ids) NotifiedMessages.claim(_me, _dialog, id),
+    ]);
+    expect(repeated, everyElement(isFalse));
+    await AppDatabase.saveProfile(ProfileData.stub(_me + 1));
+    expect(await NotifiedMessages.claim(_me + 1, _dialog, ids.first), isTrue);
+  });
+
+  test('simultaneous delivery claims one notification only', () async {
+    final claimed = await Future.wait([
+      for (var i = 0; i < 10; i++)
+        NotifiedMessages.claim(_me, _dialog, 'synthetic-one'),
+    ]);
+    expect(claimed.where((value) => value).length, 1);
+  });
 }

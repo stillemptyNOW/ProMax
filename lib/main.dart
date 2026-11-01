@@ -1,3 +1,4 @@
+import 'core/translation/translation_settings.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -337,6 +338,7 @@ void main(List<String> args) async {
   final showExtraInfoFuture = AppShowExtraInfo.load();
   final spectrumBackgroundFuture = AppSpectrumBackground.load();
   final performanceFuture = AppPerformance.load();
+  final translationFuture = TranslationSettings.instance.load();
   final badgeFuture = AppBadge.load();
   unawaited(AppIconConfig.load());
   final trafficCaptureFuture = TrafficMonitor.instance.load();
@@ -431,6 +433,7 @@ void main(List<String> args) async {
     showExtraInfoFuture,
     spectrumBackgroundFuture,
     performanceFuture,
+    translationFuture,
   ]);
   debugPrint('PROMAX-STARTUP: DeviceContactsService.loadFromStartup...');
   await DeviceContactsService.loadFromStartup();
@@ -1347,9 +1350,6 @@ class ProMaxAppState extends State<ProMaxApp>
                                     ),
                                     const Positioned.fill(
                                       child: FloatingCallBadgeLayer(),
-                                    ),
-                                    const Positioned.fill(
-                                      child: GlobalAtmosphereOverlay(),
                                     ),
                                     const Positioned.fill(
                                       child: AppSwitcherCurtain(),

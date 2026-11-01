@@ -132,7 +132,7 @@ class CallPipHangUp extends CallPipEvent {
 abstract class CallPipPlatform {
   Future<void> update(CallPipConfig config);
 
-  void listen(void Function(Object? event) onEvent);
+  VoidCallback listen(void Function(Object? event) onEvent);
 
   Stream<void> get reattached;
 }
@@ -157,9 +157,11 @@ class MethodChannelCallPipPlatform implements CallPipPlatform {
   }
 
   @override
-  void listen(void Function(Object? event) onEvent) {
-    if (!Platform.isAndroid) return;
-    NativeEventStream(_events, 'CallPip').listen(onEvent);
+  VoidCallback listen(void Function(Object? event) onEvent) {
+    if (!Platform.isAndroid) return () {};
+    final events = NativeEventStream(_events, 'CallPip');
+    events.listen(onEvent);
+    return events.dispose;
   }
 
   @override
@@ -194,6 +196,7 @@ class CallPip extends ChangeNotifier {
   final ValueListenable<bool> _enabled;
   final bool _supported;
 
+  VoidCallback? _cancelEvents;
   bool _started = false;
   bool _active = false;
   CallSession? _session;
@@ -224,7 +227,7 @@ class CallPip extends ChangeNotifier {
     _started = true;
     _presentation.addListener(_onPresentation);
     _enabled.addListener(sync);
-    _platform.listen(handleEvent);
+    _cancelEvents = _platform.listen(handleEvent);
     _reattachSub = _platform.reattached.listen((_) => _push());
     _onPresentation();
   }
@@ -313,6 +316,8 @@ class CallPip extends ChangeNotifier {
 
   @override
   void dispose() {
+    _started = false;
+    _cancelEvents?.call();
     _presentation.removeListener(_onPresentation);
     _enabled.removeListener(sync);
     unawaited(_reattachSub?.cancel());

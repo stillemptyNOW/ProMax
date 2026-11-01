@@ -1,3 +1,4 @@
+import '../config/promax_settings.dart';
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io' show Platform;

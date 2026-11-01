@@ -1,3 +1,5 @@
+import 'translation_settings_screen.dart';
+import '../../../core/translation/translation_backend.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -55,6 +57,17 @@ class ProMaxSettingsScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
             _ProMaxHero(onGhostChanged: _setGhostMode),
+            if (MethodChannelTranslationBackend.platformSupported)
+              SettingsCard(
+                children: [
+                  SettingsNavTile(
+                    icon: Symbols.translate,
+                    label: l10n.translationSettingsTitle,
+                    onTap: () =>
+                        _open(context, const TranslationSettingsScreen()),
+                  ),
+                ],
+              ),
             ProMaxSectionTitle(
               AppLocalizations.of(context)!.proMaxSectionAppearance,
             ),

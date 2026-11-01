@@ -146,7 +146,10 @@ class MethodChannelTranslationBackend implements TranslationBackend {
         sameLanguage: map?['same'] == true,
       );
     } on PlatformException catch (e) {
-      throw TranslationException(TranslationFailure.fromCode(e.code), e.message);
+      throw TranslationException(
+        TranslationFailure.fromCode(e.code),
+        e.message,
+      );
     } on MissingPluginException {
       throw const TranslationException(TranslationFailure.unsupported);
     }

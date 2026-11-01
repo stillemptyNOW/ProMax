@@ -1,3 +1,4 @@
+import 'package:promax/frontend/screens/chats/chat/quick_reply_panel_controller.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -45,11 +46,32 @@ class _HarnessState extends State<_Harness> with TickerProviderStateMixin {
     bottomInset: () => 0,
   );
   late final search = ChatSearchController(chatId: 1, isMounted: () => mounted);
+  late final quickReply = QuickReplyPanelController(
+    vsync: this,
+    accountId: () => 1,
+    enabled: () => false,
+    valueOf: () => TextEditingValue.empty,
+    onSelected: (_, _) {},
+  );
+
+  @override
+  void dispose() {
+    mention.dispose();
+    command.dispose();
+    quickReply.dispose();
+    note.dispose();
+    search.dispose();
+    composerHeight.dispose();
+    pinnedHeight.dispose();
+    super.dispose();
+  }
+
   final composerHeight = ValueNotifier<double>(0);
   final pinnedHeight = ValueNotifier<double>(0);
 
   @override
   Widget build(BuildContext context) => ChatBodyLayout(
+    quickReplyPanel: quickReply,
     underlap: widget.underlap,
     cs: Theme.of(context).colorScheme,
     chat: null,
