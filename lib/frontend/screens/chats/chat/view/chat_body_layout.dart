@@ -7,6 +7,7 @@ import 'package:promax/core/storage/chat_wallpaper_store.dart'
 import 'package:promax/frontend/screens/chats/chat/command_panel_controller.dart';
 import 'package:promax/frontend/screens/chats/chat/chat_search_controller.dart';
 import 'package:promax/frontend/screens/chats/chat/mention_panel_controller.dart';
+import 'package:promax/frontend/screens/chats/chat/quick_reply_panel_controller.dart';
 import 'package:promax/frontend/screens/chats/chat/video_note_controller.dart';
 import 'package:promax/frontend/screens/chats/chat/message_search_result.dart';
 import 'package:promax/frontend/widgets/chat_wallpaper_view.dart';
@@ -19,6 +20,7 @@ import 'measure_size.dart';
 import 'mention_panel_view.dart';
 import 'message_list_decorations.dart';
 import 'pinned_banner_pill.dart';
+import 'quick_reply_panel_view.dart';
 import 'search_view.dart';
 import '../../../../../core/config/ios_release.dart';
 
@@ -40,6 +42,7 @@ class ChatBodyLayout extends StatelessWidget {
   final Widget atmosphere;
   final MentionPanelController mentionPanel;
   final CommandPanelController commandPanel;
+  final QuickReplyPanelController quickReplyPanel;
   final VideoNoteController note;
   final Animation<double> searchAnim;
   final ChatSearchController search;
@@ -71,6 +74,7 @@ class ChatBodyLayout extends StatelessWidget {
     this.atmosphere = const SizedBox.shrink(),
     required this.mentionPanel,
     required this.commandPanel,
+    required this.quickReplyPanel,
     required this.note,
     required this.searchAnim,
     required this.search,
@@ -119,6 +123,7 @@ class ChatBodyLayout extends StatelessWidget {
         children: [
           MentionPanelView(mentionPanel: mentionPanel),
           CommandPanelView(commandPanel: commandPanel),
+          QuickReplyPanelView(quickReplyPanel: quickReplyPanel),
         ],
       ),
     );

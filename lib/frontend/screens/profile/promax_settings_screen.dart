@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -20,6 +22,7 @@ import 'bookmarks_screen.dart';
 import 'reminders_screen.dart';
 import 'quick_replies_screen.dart';
 import '../../../core/storage/quick_replies_store.dart';
+import '../../../core/storage/token_storage.dart';
 import '../../../core/reminders/message_reminders.dart';
 import 'export_reader_screen.dart';
 import 'plugins_screen.dart';
@@ -260,15 +263,7 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     onTap: () => _open(context, const RemindersScreen()),
                   ),
                 ),
-                ValueListenableBuilder<List<String>>(
-                  valueListenable: QuickRepliesStore.instance.items,
-                  builder: (context, items, _) => SettingsNavTile(
-                    icon: Symbols.quickreply,
-                    label: AppLocalizations.of(context)!.proMaxQuickReplies,
-                    value: items.isEmpty ? null : '${items.length}',
-                    onTap: () => _open(context, const QuickRepliesScreen()),
-                  ),
-                ),
+                const _QuickRepliesTile(),
                 SettingsNavTile(
                   icon: Symbols.lock_open,
                   label: AppLocalizations.of(context)!.proMaxOpenChatExport,
@@ -687,6 +682,52 @@ class ProMaxBannerCard extends StatelessWidget {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+}
+
+class _QuickRepliesTile extends StatefulWidget {
+  const _QuickRepliesTile();
+
+  @override
+  State<_QuickRepliesTile> createState() => _QuickRepliesTileState();
+}
+
+class _QuickRepliesTileState extends State<_QuickRepliesTile> {
+  int _accountId = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_resolveAccount());
+  }
+
+  Future<void> _resolveAccount() async {
+    final accountId = await TokenStorage.getActiveAccountId() ?? 0;
+    await QuickRepliesStore.instance.ensureLoaded(accountId);
+    if (mounted) setState(() => _accountId = accountId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: QuickRepliesStore.instance,
+      builder: (context, _) {
+        final count = QuickRepliesStore.instance.repliesFor(_accountId).length;
+        return SettingsNavTile(
+          icon: Symbols.quickreply,
+          label: AppLocalizations.of(context)!.proMaxQuickReplies,
+          value: count == 0 ? null : '$count',
+          onTap: _accountId == 0
+              ? null
+              : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => QuickRepliesScreen(accountId: _accountId),
+                  ),
+                ),
         );
       },
     );

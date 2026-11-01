@@ -296,7 +296,9 @@ void main(List<String> args) async {
   final quietFuture = QuietHours.instance.load();
   final remindersFuture = _startReminders();
   final notesFuture = ChatNotesStore.instance.load();
-  final quickRepliesFuture = QuickRepliesStore.instance.load();
+  final quickRepliesFuture = activeAccountId == null
+      ? Future<void>.value()
+      : QuickRepliesStore.instance.ensureLoaded(activeAccountId);
   final hapticsFuture = Haptics.load();
   final prefsFuture = SharedPreferences.getInstance();
   final accentFuture = AppAccent.load();

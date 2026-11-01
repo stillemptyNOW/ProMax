@@ -14,6 +14,7 @@ import '../../core/storage/account_phone_store.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/utils/parse.dart';
 import '../../core/storage/profile_deletion_store.dart';
+import '../../core/storage/quick_replies_store.dart';
 import '../../core/storage/spoofing_service.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
@@ -701,6 +702,7 @@ class AccountModule {
     await TokenStorage.deleteAccount(accountId);
     await SpoofingService.clearAccountSpoof(accountId);
     await ProfileDeletionStore.clear(accountId);
+    await QuickRepliesStore.instance.forget(accountId);
     logger.i('Аккаунт $accountId удалён локально');
   }
 

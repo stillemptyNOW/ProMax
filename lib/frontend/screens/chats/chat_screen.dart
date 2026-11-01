@@ -86,6 +86,7 @@ import 'chat/typing_label.dart';
 import 'chat/view/chat_intro_cards.dart';
 import 'chat/upload_status.dart';
 import 'chat/mention_panel_controller.dart';
+import 'chat/quick_reply_panel_controller.dart';
 import 'chat/chat_media_send_controller.dart';
 import 'chat/chat_text_send_controller.dart';
 import '../../../backend/modules/forward_sender.dart';
@@ -564,6 +565,7 @@ class _ChatScreenState extends State<ChatScreen>
   late final AnimationController _attachAnim;
   late final CommandPanelController _commandPanel;
   late final MentionPanelController _mentionPanel;
+  late final QuickReplyPanelController _quickReplyPanel;
 
   late AnimationController _shimmerController;
   Timer? _shimmerStartTimer;
@@ -766,6 +768,13 @@ class _ChatScreenState extends State<ChatScreen>
       selfId: () => _myId,
       valueOf: () => _messageController.value,
       onSelected: _onMentionSelected,
+    );
+    _quickReplyPanel = QuickReplyPanelController(
+      vsync: this,
+      accountId: () => _myId,
+      enabled: () => !widget.preview && _selectedCommand == null,
+      valueOf: () => _messageController.value,
+      onSelected: _onQuickReplySelected,
     );
     _selectionAnim = AnimationController(
       vsync: this,
@@ -2597,6 +2606,7 @@ class _ChatScreenState extends State<ChatScreen>
     _attachAnim.dispose();
     _commandPanel.dispose();
     _mentionPanel.dispose();
+    _quickReplyPanel.dispose();
     _selectionAnim.dispose();
     _searchAnim.dispose();
     _searchFocusNode.dispose();
@@ -2636,6 +2646,7 @@ class _ChatScreenState extends State<ChatScreen>
     }
     _commandPanel.update();
     _mentionPanel.update();
+    _quickReplyPanel.update();
   }
 
   void _broadcastActivity(ChatActivity activity) {
@@ -2686,6 +2697,16 @@ class _ChatScreenState extends State<ChatScreen>
       end: query.end,
     );
     _mentionPanel.update();
+    _messageFocusNode.requestFocus();
+  }
+
+  void _onQuickReplySelected(QuickReply reply, QuickReplyQuery query) {
+    _messageController.value = insertQuickReplyText(
+      _messageController.value,
+      reply.text,
+      replacing: query,
+    );
+    _quickReplyPanel.update();
     _messageFocusNode.requestFocus();
   }
 
@@ -3662,17 +3683,11 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Future<void> _insertQuickReply() async {
-    final reply = await pickQuickReply(context);
+    final reply = await pickQuickReply(context, accountId: _myId);
     if (reply == null || !mounted) return;
-    final value = _messageController.value;
-    final selection = value.selection.isValid
-        ? value.selection
-        : TextSelection.collapsed(offset: value.text.length);
-    _messageController.value = TextEditingValue(
-      text: value.text.replaceRange(selection.start, selection.end, reply),
-      selection: TextSelection.collapsed(
-        offset: selection.start + reply.length,
-      ),
+    _messageController.value = insertQuickReplyText(
+      _messageController.value,
+      reply.text,
     );
     _messageFocusNode.requestFocus();
   }
@@ -3684,7 +3699,7 @@ class _ChatScreenState extends State<ChatScreen>
     final timer = DisappearingMessages.instance.timerFor(widget.chatId);
     final quiet = QuietHours.instance.windowFor(widget.chatId);
     final note = ChatNotesStore.instance.noteFor(widget.chatId);
-    final templates = QuickRepliesStore.instance.items.value.length;
+    final templates = QuickRepliesStore.instance.repliesFor(_myId).length;
     final secret = DoubleBottom.isSecret(widget.chatId);
     final l10n = AppLocalizations.of(context)!;
     void then(VoidCallback action) {
@@ -5153,6 +5168,7 @@ class _ChatScreenState extends State<ChatScreen>
                     atmosphere: ChatAtmosphereLayer(chatId: widget.chatId),
                     mentionPanel: _mentionPanel,
                     commandPanel: _commandPanel,
+                    quickReplyPanel: _quickReplyPanel,
                     note: _note,
                     searchAnim: _searchAnim,
                     search: _search,

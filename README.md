@@ -45,7 +45,7 @@
 
 [GitHub Actions](https://github.com/stillemptyNOW/ProMax/actions/workflows/promax-ios.yml) проверяет криптографическое ядро, анализатор и тесты, затем собирает IPA на macOS. [Второй воркфлоу](https://github.com/stillemptyNOW/ProMax/actions/workflows/promax-platforms.yml) собирает APK для Android, установщик и архив для Windows и версию для Linux. Тег `v*` публикует всё в один релиз.
 
-Если в секретах репозитория лежит ключ подписи (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`), APK выходят как `ProMax-…-promax-<abi>.apk` и обновляются прямо из приложения. Без ключа каждая сборка подписывается временным ключом и выходит как `ProMax-…-preview-<abi>.apk`: такую версию ставят начисто, а для перехода на следующую preview-сборку старую нужно удалить.
+Если в секретах репозитория лежит ключ подписи (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`), APK выходят как `ProMax-…-promax-<abi>.apk` и обновляются прямо из приложения. Без ключа сборка подписывается временным ключом, её APK (`ProMax-…-preview-<abi>.apk`) остаются только в артефактах workflow и в релиз не попадают; подписанные APK при публикации удаляют из релиза оставшиеся preview-файлы.
 
 ## Лицензия
 

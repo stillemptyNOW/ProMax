@@ -37,6 +37,24 @@ class UpdateAsset {
   }
 }
 
+class ReleaseNotes {
+  final String tag;
+  final String version;
+  final int? build;
+  final String title;
+  final String body;
+
+  const ReleaseNotes({
+    required this.tag,
+    required this.version,
+    required this.build,
+    required this.title,
+    required this.body,
+  });
+
+  bool get isEmpty => body.trim().isEmpty;
+}
+
 // #***! манифест с бакета
 class AppUpdateInfo {
   final String version;
@@ -45,6 +63,7 @@ class AppUpdateInfo {
   final String url;
   final String notes;
   final List<UpdateAsset> assets;
+  final List<ReleaseNotes> releaseNotes;
 
   const AppUpdateInfo({
     required this.version,
@@ -53,7 +72,18 @@ class AppUpdateInfo {
     required this.url,
     required this.notes,
     required this.assets,
+    this.releaseNotes = const [],
   });
+
+  AppUpdateInfo withReleaseNotes(List<ReleaseNotes> notes) => AppUpdateInfo(
+    version: version,
+    build: build,
+    tag: tag,
+    url: url,
+    notes: this.notes,
+    assets: assets,
+    releaseNotes: List.unmodifiable(notes),
+  );
 
   // #***! APK выбираем по суффиксу имени
   UpdateAsset? assetWithSuffix(String suffix) => assetMatching(suffix: suffix);
@@ -125,23 +155,130 @@ class UpdateCheckResult {
   return (version: match.group(1)!, build: int.tryParse(match.group(2) ?? ''));
 }
 
-Map<Object?, Object?>? newestRelease(Object? releases) {
+typedef _PublishedRelease = ({
+  Map<Object?, Object?> release,
+  ({String version, int? build}) version,
+});
+
+Iterable<_PublishedRelease> _publishedReleases(Object? releases) sync* {
   final candidates = releases is List ? releases : [releases];
-  Map<Object?, Object?>? newest;
-  ({String version, int? build})? newestVersion;
   for (final release in candidates.whereType<Map<Object?, Object?>>()) {
     if (release['draft'] == true) continue;
     final tag = release['tag_name'];
     if (tag is! String) continue;
     final version = parseReleaseTag(tag);
     if (version == null) continue;
-    if (newestVersion == null ||
-        UpdateChecker._compareRelease(version, newestVersion) > 0) {
-      newest = release;
-      newestVersion = version;
+    yield (release: release, version: version);
+  }
+}
+
+Map<Object?, Object?>? newestRelease(Object? releases) {
+  _PublishedRelease? newest;
+  for (final entry in _publishedReleases(releases)) {
+    if (newest == null ||
+        UpdateChecker._compareRelease(entry.version, newest.version) > 0) {
+      newest = entry;
     }
   }
-  return newest;
+  return newest?.release;
+}
+
+List<ReleaseNotes> releaseNotesNewerThan(
+  Object? releases, {
+  required String currentVersion,
+  required int? currentBuild,
+}) {
+  final newer = [
+    for (final entry in _publishedReleases(releases))
+      if (UpdateChecker._isNewer(
+        currentBase: currentVersion,
+        currentBuild: UpdateChecker._normalizeBuild(currentBuild),
+        remoteBase: entry.version.version,
+        remoteBuild: UpdateChecker._normalizeBuild(entry.version.build),
+      ))
+        entry,
+  ]..sort((a, b) => UpdateChecker._compareRelease(b.version, a.version));
+  final seenTags = <String>{};
+  final notes = <ReleaseNotes>[];
+  for (final entry in newer) {
+    final tag = entry.release['tag_name'] as String;
+    if (!seenTags.add(tag)) continue;
+    final name = entry.release['name'];
+    final body = entry.release['body'];
+    notes.add(
+      ReleaseNotes(
+        tag: tag,
+        version: entry.version.version,
+        build: entry.version.build,
+        title: name is String && name.trim().isNotEmpty ? name.trim() : tag,
+        body: body is String
+            ? body.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim()
+            : '',
+      ),
+    );
+  }
+  return notes;
+}
+
+Map<String, dynamic> _manifestFromRelease(Map<Object?, Object?> release) {
+  final tag = release['tag_name'] as String;
+  final parsed = parseReleaseTag(tag)!;
+  final rawAssets = release['assets'];
+  final assets = <Map<String, Object?>>[];
+  if (rawAssets is List) {
+    for (final value in rawAssets.whereType<Map>()) {
+      final name = value['name'];
+      final url = value['browser_download_url'];
+      if (name is! String || url is! String) continue;
+      final digest = value['digest'];
+      assets.add({
+        'name': name,
+        'url': url,
+        'size': value['size'] is int ? value['size'] : 0,
+        'sha256': digest is String
+            ? digest.replaceFirst(RegExp(r'^sha256:'), '').toLowerCase()
+            : '',
+      });
+    }
+  }
+  return {
+    'version': parsed.version,
+    'build': parsed.build,
+    'tag': tag,
+    'url': release['html_url'] is String
+        ? release['html_url']
+        : UpdateConfig.downloadsPage,
+    'notes': release['body'] is String ? release['body'] : '',
+    'assets': assets,
+  };
+}
+
+AppUpdateInfo? updateFromReleases(
+  Object? releases, {
+  required String currentVersion,
+  required int? currentBuild,
+}) {
+  final release = newestRelease(releases);
+  if (release == null) {
+    throw const FormatException('No GitHub release has an app version');
+  }
+  final remote = AppUpdateInfo.tryParse(_manifestFromRelease(release));
+  if (remote == null) return null;
+  if (!UpdateChecker._isNewer(
+    currentBase: currentVersion,
+    currentBuild: UpdateChecker._normalizeBuild(currentBuild),
+    remoteBase: remote.version,
+    remoteBuild: UpdateChecker._normalizeBuild(remote.build),
+  )) {
+    return null;
+  }
+  return remote.withReleaseNotes(
+    releaseNotesNewerThan(
+      releases,
+      currentVersion: currentVersion,
+      currentBuild: currentBuild,
+    ),
+  );
 }
 
 // #***! проверка последнего публичного GitHub-релиза
@@ -159,25 +296,12 @@ abstract class UpdateChecker {
     if (!UpdateConfig.isConfigured) return null;
 
     final info = await PackageInfo.fromPlatform();
-    final currentBase = info.version;
-    final currentBuild = _normalizeBuild(int.tryParse(info.buildNumber));
-
-    final manifest = await _fetchManifest();
-    if (manifest == null) return null;
-
-    final remote = AppUpdateInfo.tryParse(manifest);
-    if (remote == null) return null;
-
-    if (!_isNewer(
-      currentBase: currentBase,
-      currentBuild: currentBuild,
-      remoteBase: remote.version,
-      remoteBuild: _normalizeBuild(remote.build),
-    )) {
-      return null;
-    }
-
-    return remote;
+    final releases = await _fetchReleases();
+    return updateFromReleases(
+      releases,
+      currentVersion: info.version,
+      currentBuild: int.tryParse(info.buildNumber),
+    );
   }
 
   // #***! автопроверка, уважает интервал и пропустить эту версию
@@ -238,7 +362,7 @@ abstract class UpdateChecker {
   }
 
   // #***! манифест с no-cache иначе CDN отдаст старый
-  static Future<Map<String, dynamic>?> _fetchManifest() async {
+  static Future<Object?> _fetchReleases() async {
     final uri = UpdateConfig.manifestUri;
     final client = HttpClient()..connectionTimeout = _timeout;
     try {
@@ -260,40 +384,7 @@ abstract class UpdateChecker {
           .transform(const Utf8Decoder())
           .join()
           .timeout(_timeout);
-      final release = newestRelease(jsonDecode(body));
-      if (release == null) {
-        throw const FormatException('No GitHub release has an app version');
-      }
-      final tag = release['tag_name'] as String;
-      final parsed = parseReleaseTag(tag)!;
-      final rawAssets = release['assets'];
-      final assets = <Map<String, Object?>>[];
-      if (rawAssets is List) {
-        for (final value in rawAssets.whereType<Map>()) {
-          final name = value['name'];
-          final url = value['browser_download_url'];
-          if (name is! String || url is! String) continue;
-          final digest = value['digest'];
-          assets.add({
-            'name': name,
-            'url': url,
-            'size': value['size'] is int ? value['size'] : 0,
-            'sha256': digest is String
-                ? digest.replaceFirst(RegExp(r'^sha256:'), '').toLowerCase()
-                : '',
-          });
-        }
-      }
-      return {
-        'version': parsed.version,
-        'build': parsed.build,
-        'tag': tag,
-        'url': release['html_url'] is String
-            ? release['html_url']
-            : UpdateConfig.downloadsPage,
-        'notes': release['body'] is String ? release['body'] : '',
-        'assets': assets,
-      };
+      return jsonDecode(body);
     } finally {
       client.close(force: true);
     }
