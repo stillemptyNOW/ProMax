@@ -68,7 +68,6 @@ import '../../widgets/lost_account_dialog.dart';
 import 'chat/view/chat_list_shimmer.dart';
 import 'chat/view/chat_list_tile.dart';
 import 'chat_list_deletion.dart';
-import '../../../backend/modules/deletion_policy.dart';
 import 'chat/view/chat_preview_line.dart';
 import '../../widgets/connection_status.dart';
 import '../../../backend/api.dart';
@@ -761,9 +760,8 @@ class _ChatListScreenState extends State<ChatListScreen>
     }
     final kind = cats.single;
 
-    final choice = await _showDeleteConfirmDialog(selectedAfter, kind, myId);
-    if (!mounted || choice == null) return;
-    final deleteForAll = DeletionPolicy.instance.deleteForAll;
+    final confirmed = await _showDeleteConfirmDialog(selectedAfter, kind);
+    if (!mounted || confirmed != true) return;
 
     _clearSelection();
     removeChatsWithUndo(
@@ -774,24 +772,14 @@ class _ChatListScreenState extends State<ChatListScreen>
       accountId: myId,
       chats: [
         for (final c in selectedAfter)
-          (
-            chatId: c.id,
-            forAll: chatListDeletesForAll(
-              kind,
-              c,
-              myId: myId,
-              deleteForAll: deleteForAll,
-              erasePeerChosen: choice.forAll,
-            ),
-          ),
+          (chatId: c.id, forAll: chatListDeletesForAll(kind, c, myId: myId)),
       ],
     );
   }
 
-  Future<({bool forAll})?> _showDeleteConfirmDialog(
+  Future<bool?> _showDeleteConfirmDialog(
     List<CachedChat> selected,
     ChatListDeleteKind kind,
-    int myId,
   ) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
@@ -824,116 +812,70 @@ class _ChatListScreenState extends State<ChatListScreen>
         return Future.value(null);
     }
 
-    final deleteForAll = DeletionPolicy.instance.deleteForAll;
-    final personal = kind == ChatListDeleteKind.personal;
-    final allowsForAll = [
-      for (final chat in selected)
-        if (chat.id != 0)
-          chatListAllowsForAll(chat, myId: myId, deleteForAll: deleteForAll),
-    ];
-    final offerForAll = personal && allowsForAll.contains(true);
-    final forAllHint = !personal || !allowsForAll.contains(false)
-        ? null
-        : (count == 1
-              ? l10n.chatForAllNotAllowedHint
-              : l10n.chatListForAllNotAllowedHint);
-    var forAll = false;
-    return showModalBottomSheet<({bool forAll})>(
+    return showModalBottomSheet<bool>(
       context: context,
       backgroundColor: cs.surfaceContainerHigh,
       shape: kSheetShape,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  body,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
-                ),
-                if (forAllHint != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    forAllHint,
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                body,
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
+              ),
+              const SizedBox(height: 20),
+              if (kind == ChatListDeleteKind.ownedGroup && single != null) ...[
+                Container(
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(22),
                   ),
-                ],
-                if (offerForAll) ...[
-                  const SizedBox(height: 8),
-                  InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => setSheetState(() => forAll = !forAll),
-                    child: Row(
-                      children: [
-                        Checkbox(
-                          value: forAll,
-                          onChanged: (v) =>
-                              setSheetState(() => forAll = v ?? false),
-                        ),
-                        Expanded(
-                          child: Text(
-                            l10n.chatDeleteAlsoForPeer,
-                            style: TextStyle(color: cs.onSurface, fontSize: 15),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                if (kind == ChatListDeleteKind.ownedGroup &&
-                    single != null) ...[
-                  Container(
-                    height: 44,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: Text(
-                      l10n.channelDeleteTransfer,
-                      style: TextStyle(
-                        color: cs.onSurface.withValues(alpha: 0.4),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                GestureDetector(
-                  onTap: () => Navigator.pop(ctx, (forAll: forAll)),
-                  child: Container(
-                    height: 44,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: cs.error,
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: Text(
-                      primaryLabel,
-                      style: TextStyle(
-                        color: cs.onError,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  child: Text(
+                    l10n.channelDeleteTransfer,
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.4),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
               ],
-            ),
+              GestureDetector(
+                onTap: () => Navigator.pop(ctx, true),
+                child: Container(
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: cs.error,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Text(
+                    primaryLabel,
+                    style: TextStyle(
+                      color: cs.onError,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

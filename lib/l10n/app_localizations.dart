@@ -3260,12 +3260,6 @@ abstract class AppLocalizations {
   /// **'All messages in this chat will be deleted permanently.'**
   String get chatInfoClearHistoryMessage;
 
-  /// No description provided for @chatInfoClearHistoryForAll.
-  ///
-  /// In en, this message translates to:
-  /// **'For everyone'**
-  String get chatInfoClearHistoryForAll;
-
   /// No description provided for @chatInfoClearHistoryConfirm.
   ///
   /// In en, this message translates to:
@@ -7688,12 +7682,6 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to delete this message?'**
   String get chatScreenDeleteMessageConfirm;
 
-  /// No description provided for @chatScreenDeleteAlsoFor.
-  ///
-  /// In en, this message translates to:
-  /// **'Also delete for {name}'**
-  String chatScreenDeleteAlsoFor(String name);
-
   /// No description provided for @deleteMessagesFailedWithReason.
   ///
   /// In en, this message translates to:
@@ -7735,24 +7723,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again'**
   String get deleteChatTypeUnknown;
-
-  /// No description provided for @chatForAllNotAllowedHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The MAX server doesn\'t allow deleting this chat for the other person, so it will be deleted only for you.'**
-  String get chatForAllNotAllowedHint;
-
-  /// No description provided for @chatListForAllNotAllowedHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The MAX server doesn\'t allow deleting some of these chats for the other person, so they will be deleted only for you.'**
-  String get chatListForAllNotAllowedHint;
-
-  /// No description provided for @chatClearAlsoForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Also erase the history for the other person'**
-  String get chatClearAlsoForPeer;
 
   /// No description provided for @chatDeleteForAllMembers.
   ///
@@ -7796,113 +7766,11 @@ abstract class AppLocalizations {
   /// **'MAX didn\'t confirm deleting {count} messages. They are still in the chat'**
   String deleteMessagesNotConfirmed(int count);
 
-  /// No description provided for @deleteMessagesPeerOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX deletes the other person\'s messages only for you'**
-  String get deleteMessagesPeerOnlyForMe;
-
-  /// No description provided for @deleteMessagesOthersOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX deletes other people\'s messages only for you'**
-  String get deleteMessagesOthersOnlyForMe;
-
-  /// No description provided for @deleteMessagesTooOldForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Only your own messages younger than {age} can be deleted for the other person — a MAX server limit'**
-  String deleteMessagesTooOldForPeer(String age);
-
-  /// No description provided for @deleteMessagesTooOldForAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Only your own messages younger than {age} can be deleted for everyone — a MAX server limit'**
-  String deleteMessagesTooOldForAll(String age);
-
-  /// No description provided for @deleteMessagesScheduledOnlyForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'Scheduled messages are deleted for everyone only from the scheduled list'**
-  String get deleteMessagesScheduledOnlyForMe;
-
   /// No description provided for @deleteMessagesSelectionOnlyForMe.
   ///
   /// In en, this message translates to:
-  /// **'So the selected messages will be deleted only for you'**
+  /// **'Some of the selected messages cannot be deleted for members, so all of them will be deleted only for you'**
   String get deleteMessagesSelectionOnlyForMe;
-
-  /// No description provided for @deletionAgeLimitDays.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} day} other{{count} days}}'**
-  String deletionAgeLimitDays(int count);
-
-  /// No description provided for @deletionAgeLimitHours.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} hour} other{{count} hours}}'**
-  String deletionAgeLimitHours(int count);
-
-  /// No description provided for @deletionAgeLimitMinutes.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} minute} other{{count} minutes}}'**
-  String deletionAgeLimitMinutes(int count);
-
-  /// No description provided for @wipeForBothMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'ProMax will delete your messages younger than {age} for the other person and then ask MAX to delete the chat for both of you. This can\'t be undone.'**
-  String wipeForBothMessage(String age);
-
-  /// No description provided for @wipeOwnForPeerTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete my messages for the other person?'**
-  String get wipeOwnForPeerTitle;
-
-  /// No description provided for @wipeOwnForPeerAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete mine for the other person'**
-  String get wipeOwnForPeerAction;
-
-  /// No description provided for @wipeOwnForPeerMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'The MAX server doesn\'t allow deleting this chat for the other person. ProMax will delete your messages younger than {age} for them; the rest of the history stays with them and the chat is deleted only for you. This can\'t be undone.'**
-  String wipeOwnForPeerMessage(String age);
-
-  /// No description provided for @wipeSummaryForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Your messages deleted for the other person: {count}'**
-  String wipeSummaryForPeer(int count);
-
-  /// No description provided for @wipeSummaryNotConfirmed.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX didn\'t delete for the other person: {count}'**
-  String wipeSummaryNotConfirmed(int count);
-
-  /// No description provided for @wipeSummaryKeptForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Left with the other person (their messages and yours older than {age}): {count}'**
-  String wipeSummaryKeptForPeer(int count, String age);
-
-  /// No description provided for @wipeSummaryChatForAllAccepted.
-  ///
-  /// In en, this message translates to:
-  /// **'MAX accepted the request to delete the chat for both of you'**
-  String get wipeSummaryChatForAllAccepted;
-
-  /// No description provided for @wipeSummaryChatRemovedForMe.
-  ///
-  /// In en, this message translates to:
-  /// **'The chat was deleted only for you'**
-  String get wipeSummaryChatRemovedForMe;
 
   /// No description provided for @infoDeleteForAll.
   ///
@@ -7915,60 +7783,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your profile hasn\'t loaded yet, try again in a moment'**
   String get chatActionProfileUnavailable;
-
-  /// No description provided for @chatDeleteAlsoForPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Also delete the chat for the other person — the history disappears for them too'**
-  String get chatDeleteAlsoForPeer;
-
-  /// No description provided for @wipeForBothAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete for both'**
-  String get wipeForBothAction;
-
-  /// No description provided for @wipeForBothTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete for both?'**
-  String get wipeForBothTitle;
-
-  /// No description provided for @wipeCollecting.
-  ///
-  /// In en, this message translates to:
-  /// **'Collecting the history…'**
-  String get wipeCollecting;
-
-  /// No description provided for @wipeFound.
-  ///
-  /// In en, this message translates to:
-  /// **'Messages found: {count}'**
-  String wipeFound(int count);
-
-  /// No description provided for @wipeDeleting.
-  ///
-  /// In en, this message translates to:
-  /// **'Deleted {done} of {total}'**
-  String wipeDeleting(int done, int total);
-
-  /// No description provided for @wipeSummaryHistoryIncomplete.
-  ///
-  /// In en, this message translates to:
-  /// **'The server didn\'t return the whole history'**
-  String get wipeSummaryHistoryIncomplete;
-
-  /// No description provided for @wipeSummaryInterrupted.
-  ///
-  /// In en, this message translates to:
-  /// **'The connection dropped and deleting stopped — try again'**
-  String get wipeSummaryInterrupted;
-
-  /// No description provided for @wipeSummaryChatKept.
-  ///
-  /// In en, this message translates to:
-  /// **'The chat wasn\'t deleted: {reason}'**
-  String wipeSummaryChatKept(String reason);
 
   /// No description provided for @messageDeletedMark.
   ///

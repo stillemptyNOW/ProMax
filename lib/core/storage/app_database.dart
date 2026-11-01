@@ -192,9 +192,6 @@ abstract class SyncKey {
   static const serverConfigSeen = 'server_config_seen';
   static const profileInviteLink = 'profile_invite_link';
   static const welcomeStickerIds = 'welcome_sticker_ids';
-  static const deleteForAll = 'delete_for_all';
-  static const editTimeout = 'edit_timeout';
-  static const editCommentTimeout = 'edit_comment_timeout';
 }
 
 // #***! вся локальная база, профили чаты контакты сообщения

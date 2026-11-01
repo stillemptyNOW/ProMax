@@ -34,7 +34,6 @@ import 'chat_deletion_plan.dart';
 import 'chat_parsing.dart';
 import 'chat_preview.dart';
 import 'contacts.dart' show ContactsModule;
-import 'deletion_policy.dart';
 import 'folders.dart';
 import 'messages.dart'
     show ContactCache, CachedMessage, HistoryPage, MessagesModule;
@@ -1114,7 +1113,6 @@ class ChatsModule {
   // #***! сменили аккаунт, всё локальное чужое
   void resetForAccountSwitch() {
     E2eeService.instance.lock();
-    DeletionPolicy.instance.forget();
     _historyFetched.clear();
     _readBaselines.end();
     ContactInfoFetch.clear();
@@ -1186,16 +1184,6 @@ class ChatsModule {
     final accountId = await TokenStorage.getActiveAccountId();
     if (accountId == null) return;
     await PrivacyModule.applyConfigPush(accountId, payload);
-    final config = payload['config'];
-    final server = config is Map ? config['server'] : payload['server'];
-    if (server is Map && server.isNotEmpty) {
-      await DeletionPolicy.instance.applyServerConfig(
-        accountId,
-        server,
-        complete: false,
-      );
-      logger.i('NOTIF_CONFIG: ${DeletionPolicy.instance.describe()}');
-    }
   }
 
   Future<void> _handleNotifMsgYouReacted(Packet packet) async {
@@ -2769,16 +2757,12 @@ class ChatsModule {
   }) async {
     String? type;
     int? owner;
-    Iterable<int> participants;
-    Set<String> options;
     int eventTime;
     final cached = await _cachedChat(accountId, chatId);
     if (cached != null) {
       eventTime = knownEventTime(cached);
       type = cached.type;
       owner = cached.owner;
-      participants = cached.participants.keys;
-      options = cached.options;
     } else {
       final Map<String, dynamic>? info;
       try {
@@ -2791,40 +2775,20 @@ class ChatsModule {
       final rawOwner = info?['owner'];
       type = rawType is String ? rawType : null;
       owner = rawOwner is int ? rawOwner : null;
-      participants = parseParticipants(info?['participants']).keys;
-      options = const {};
     }
-    final peerIsBot =
-        type == 'DIALOG' &&
-        knownBot(
-          dialogPeerId(chatId: chatId, myId: myId, participants: participants),
-          chatOptions: options,
-        );
-    final policy = DeletionPolicy.instance;
-    final deleteForAll = policy.accountId == accountId
-        ? policy.deleteForAll
-        : null;
     final plan = ChatDeletionPlan.of(
       forAll: true,
       chatId: chatId,
       chatType: type,
       owner: owner,
       myId: myId,
-      peerIsBot: peerIsBot,
-      deleteForAll: deleteForAll,
     );
     if (plan == null) {
       logger.w('$action $chatId: тип чата неизвестен, для всех не отправляем');
     } else if (!plan.forAll) {
       logger.w(
-        '$action $chatId: $type, владелец $owner, бот $peerIsBot, '
-        'delete-for-all=$deleteForAll — сервер MAX не даёт сделать это для '
-        'всех, отправляю только для себя, как официальный клиент',
-      );
-    } else if (type == 'DIALOG' && deleteForAll == null) {
-      logger.i(
-        '$action $chatId: delete-for-all ещё не известен, отправляю для всех, '
-        'решит сервер',
+        '$action $chatId: $type, владелец $owner — для всех удаляет только '
+        'владелец группы, отправляю только для себя',
       );
     }
     return (plan: plan, eventTime: eventTime, failure: null);
@@ -2917,35 +2881,13 @@ class ChatsModule {
   Future<ServerOutcome> clearHistory(
     Api api, {
     required int chatId,
-    bool forAll = false,
     int seenEventTime = 0,
   }) async {
     final accountId = await TokenStorage.getActiveAccountId();
-    var sendForAll = false;
-    var seen = seenEventTime;
-    if (forAll && chatId != 0) {
-      final resolved = await _planForAll(
-        api,
-        chatId: chatId,
-        myId: accountId ?? 0,
-        accountId: accountId,
-        action: 'clearHistory',
-      );
-      final failure = resolved.failure;
-      if (failure != null) {
-        _logRefusal('clearHistory', chatId, failure);
-        return failure;
-      }
-      final plan = resolved.plan;
-      if (plan == null) return ChatDeletionRefusal.typeUnknown.outcome;
-      sendForAll = plan.forAll;
-      seen = math.max(seen, resolved.eventTime);
-    }
-
     final eventTime = await _requestEventTime(
       api,
       chatId,
-      seen: seen,
+      seen: seenEventTime,
       accountId: accountId,
     );
     final timeFailure = eventTime.failure;
@@ -2962,10 +2904,10 @@ class ChatsModule {
       final response = await api.sendRequest(Opcode.chatClear, {
         'chatId': chatId,
         'lastEventTime': lastEventTime,
-        'forAll': sendForAll,
+        'forAll': false,
       });
       logger.i(
-        'CHAT_CLEAR чат $chatId, forAll=$sendForAll, '
+        'CHAT_CLEAR чат $chatId, '
         'lastEventTime=$lastEventTime → ${describeReply(response)}',
       );
       return response;

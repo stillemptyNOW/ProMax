@@ -1716,9 +1716,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Все сообщения в этом чате будут удалены без возможности восстановления.';
 
   @override
-  String get chatInfoClearHistoryForAll => 'Для всех';
-
-  @override
   String get chatInfoClearHistoryConfirm => 'Очистить';
 
   @override
@@ -4247,11 +4244,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Вы точно хотите удалить это сообщение?';
 
   @override
-  String chatScreenDeleteAlsoFor(String name) {
-    return 'Также удалить для $name';
-  }
-
-  @override
   String deleteMessagesFailedWithReason(String reason) {
     return 'Не удалось удалить сообщения: $reason';
   }
@@ -4281,17 +4273,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get deleteChatTypeUnknown =>
       'Чат не удалён для всех: не удалось узнать, личный это чат или группа. Попробуйте ещё раз';
-
-  @override
-  String get chatForAllNotAllowedHint =>
-      'Сервер MAX не разрешает удалять этот чат у собеседника — он удалится только у вас.';
-
-  @override
-  String get chatListForAllNotAllowedHint =>
-      'Сервер MAX не разрешает удалять некоторые из этих чатов у собеседника — они удалятся только у вас.';
-
-  @override
-  String get chatClearAlsoForPeer => 'Стереть историю и у собеседника';
 
   @override
   String get chatDeleteForAllMembers => 'Удалить у всех участников';
@@ -4324,107 +4305,8 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get deleteMessagesPeerOnlyForMe =>
-      'Сообщения собеседника сервер MAX удаляет только у вас';
-
-  @override
-  String get deleteMessagesOthersOnlyForMe =>
-      'Чужие сообщения сервер MAX удаляет только у вас';
-
-  @override
-  String deleteMessagesTooOldForPeer(String age) {
-    return 'Удалить у собеседника можно только свои сообщения не старше $age — это ограничение сервера MAX';
-  }
-
-  @override
-  String deleteMessagesTooOldForAll(String age) {
-    return 'Удалить у всех можно только свои сообщения не старше $age — это ограничение сервера MAX';
-  }
-
-  @override
-  String get deleteMessagesScheduledOnlyForMe =>
-      'Отложенные сообщения удаляются у всех только из списка отложенных';
-
-  @override
   String get deleteMessagesSelectionOnlyForMe =>
-      'Поэтому выбранные сообщения удалятся только у вас';
-
-  @override
-  String deletionAgeLimitDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count дня',
-      many: '$count дней',
-      few: '$count дней',
-      one: '$count дня',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count часа',
-      many: '$count часов',
-      few: '$count часов',
-      one: '$count часа',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count минуты',
-      many: '$count минут',
-      few: '$count минут',
-      one: '$count минуты',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String wipeForBothMessage(String age) {
-    return 'ProMax удалит у собеседника ваши сообщения не старше $age, а затем попросит сервер MAX удалить чат у обоих. Отменить это нельзя.';
-  }
-
-  @override
-  String get wipeOwnForPeerTitle => 'Удалить мои сообщения у собеседника?';
-
-  @override
-  String get wipeOwnForPeerAction => 'Удалить мои у собеседника';
-
-  @override
-  String wipeOwnForPeerMessage(String age) {
-    return 'Сервер MAX не разрешает удалять этот чат у собеседника. ProMax удалит у него ваши сообщения не старше $age, остальная переписка у собеседника останется, а чат удалится только у вас. Отменить это нельзя.';
-  }
-
-  @override
-  String wipeSummaryForPeer(int count) {
-    return 'Удалено у собеседника ваших сообщений: $count';
-  }
-
-  @override
-  String wipeSummaryNotConfirmed(int count) {
-    return 'Сервер MAX не удалил у собеседника: $count';
-  }
-
-  @override
-  String wipeSummaryKeptForPeer(int count, String age) {
-    return 'Остались у собеседника (его сообщения и ваши старше $age): $count';
-  }
-
-  @override
-  String get wipeSummaryChatForAllAccepted =>
-      'Сервер MAX принял запрос на удаление чата у обоих';
-
-  @override
-  String get wipeSummaryChatRemovedForMe => 'Чат удалён только у вас';
+      'Часть выбранных сообщений нельзя удалить у участников, поэтому все они удалятся только у вас';
 
   @override
   String get infoDeleteForAll =>
@@ -4433,42 +4315,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get chatActionProfileUnavailable =>
       'Профиль ещё не загрузился, попробуйте через пару секунд';
-
-  @override
-  String get chatDeleteAlsoForPeer =>
-      'Удалить чат и у собеседника — переписка пропадёт и у него';
-
-  @override
-  String get wipeForBothAction => 'Удалить у обоих';
-
-  @override
-  String get wipeForBothTitle => 'Удалить у обоих?';
-
-  @override
-  String get wipeCollecting => 'Собираю историю…';
-
-  @override
-  String wipeFound(int count) {
-    return 'Найдено сообщений: $count';
-  }
-
-  @override
-  String wipeDeleting(int done, int total) {
-    return 'Удалено $done из $total';
-  }
-
-  @override
-  String get wipeSummaryHistoryIncomplete =>
-      'Сервер отдал историю не полностью';
-
-  @override
-  String get wipeSummaryInterrupted =>
-      'Связь пропала, удаление прервано — попробуйте ещё раз';
-
-  @override
-  String wipeSummaryChatKept(String reason) {
-    return 'Чат не удалён: $reason';
-  }
 
   @override
   String get messageDeletedMark => 'удалено';

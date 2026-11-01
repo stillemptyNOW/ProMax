@@ -1709,9 +1709,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'All messages in this chat will be deleted permanently.';
 
   @override
-  String get chatInfoClearHistoryForAll => 'For everyone';
-
-  @override
   String get chatInfoClearHistoryConfirm => 'Clear';
 
   @override
@@ -4212,11 +4209,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Are you sure you want to delete this message?';
 
   @override
-  String chatScreenDeleteAlsoFor(String name) {
-    return 'Also delete for $name';
-  }
-
-  @override
   String deleteMessagesFailedWithReason(String reason) {
     return 'Couldn\'t delete messages: $reason';
   }
@@ -4246,18 +4238,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteChatTypeUnknown =>
       'The chat wasn\'t deleted for everyone: couldn\'t tell whether it is a personal chat or a group. Try again';
-
-  @override
-  String get chatForAllNotAllowedHint =>
-      'The MAX server doesn\'t allow deleting this chat for the other person, so it will be deleted only for you.';
-
-  @override
-  String get chatListForAllNotAllowedHint =>
-      'The MAX server doesn\'t allow deleting some of these chats for the other person, so they will be deleted only for you.';
-
-  @override
-  String get chatClearAlsoForPeer =>
-      'Also erase the history for the other person';
 
   @override
   String get chatDeleteForAllMembers => 'Delete for all members';
@@ -4290,101 +4270,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deleteMessagesPeerOnlyForMe =>
-      'MAX deletes the other person\'s messages only for you';
-
-  @override
-  String get deleteMessagesOthersOnlyForMe =>
-      'MAX deletes other people\'s messages only for you';
-
-  @override
-  String deleteMessagesTooOldForPeer(String age) {
-    return 'Only your own messages younger than $age can be deleted for the other person — a MAX server limit';
-  }
-
-  @override
-  String deleteMessagesTooOldForAll(String age) {
-    return 'Only your own messages younger than $age can be deleted for everyone — a MAX server limit';
-  }
-
-  @override
-  String get deleteMessagesScheduledOnlyForMe =>
-      'Scheduled messages are deleted for everyone only from the scheduled list';
-
-  @override
   String get deleteMessagesSelectionOnlyForMe =>
-      'So the selected messages will be deleted only for you';
-
-  @override
-  String deletionAgeLimitDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count days',
-      one: '$count day',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count hours',
-      one: '$count hour',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deletionAgeLimitMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count minutes',
-      one: '$count minute',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String wipeForBothMessage(String age) {
-    return 'ProMax will delete your messages younger than $age for the other person and then ask MAX to delete the chat for both of you. This can\'t be undone.';
-  }
-
-  @override
-  String get wipeOwnForPeerTitle => 'Delete my messages for the other person?';
-
-  @override
-  String get wipeOwnForPeerAction => 'Delete mine for the other person';
-
-  @override
-  String wipeOwnForPeerMessage(String age) {
-    return 'The MAX server doesn\'t allow deleting this chat for the other person. ProMax will delete your messages younger than $age for them; the rest of the history stays with them and the chat is deleted only for you. This can\'t be undone.';
-  }
-
-  @override
-  String wipeSummaryForPeer(int count) {
-    return 'Your messages deleted for the other person: $count';
-  }
-
-  @override
-  String wipeSummaryNotConfirmed(int count) {
-    return 'MAX didn\'t delete for the other person: $count';
-  }
-
-  @override
-  String wipeSummaryKeptForPeer(int count, String age) {
-    return 'Left with the other person (their messages and yours older than $age): $count';
-  }
-
-  @override
-  String get wipeSummaryChatForAllAccepted =>
-      'MAX accepted the request to delete the chat for both of you';
-
-  @override
-  String get wipeSummaryChatRemovedForMe => 'The chat was deleted only for you';
+      'Some of the selected messages cannot be deleted for members, so all of them will be deleted only for you';
 
   @override
   String get infoDeleteForAll => 'delete-for-all';
@@ -4392,42 +4279,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chatActionProfileUnavailable =>
       'Your profile hasn\'t loaded yet, try again in a moment';
-
-  @override
-  String get chatDeleteAlsoForPeer =>
-      'Also delete the chat for the other person — the history disappears for them too';
-
-  @override
-  String get wipeForBothAction => 'Delete for both';
-
-  @override
-  String get wipeForBothTitle => 'Delete for both?';
-
-  @override
-  String get wipeCollecting => 'Collecting the history…';
-
-  @override
-  String wipeFound(int count) {
-    return 'Messages found: $count';
-  }
-
-  @override
-  String wipeDeleting(int done, int total) {
-    return 'Deleted $done of $total';
-  }
-
-  @override
-  String get wipeSummaryHistoryIncomplete =>
-      'The server didn\'t return the whole history';
-
-  @override
-  String get wipeSummaryInterrupted =>
-      'The connection dropped and deleting stopped — try again';
-
-  @override
-  String wipeSummaryChatKept(String reason) {
-    return 'The chat wasn\'t deleted: $reason';
-  }
 
   @override
   String get messageDeletedMark => 'deleted';
