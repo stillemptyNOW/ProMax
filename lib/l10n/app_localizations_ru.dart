@@ -8211,35 +8211,4 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get hubNotificationOpen => 'Открыть';
-
-  @override
-  String get hubSocialTitle => 'Функции Hub и приватность';
-
-  @override
-  String get hubShowProMaxBadge => 'Отметка ProMax';
-
-  @override
-  String get hubShowProMaxBadgeHint =>
-      'Показывать другим пользователям ProMax, что вы тоже используете ProMax';
-
-  @override
-  String get hubShowOsPresence => 'Транслировать ОС в сети';
-
-  @override
-  String get hubShowOsPresenceHint =>
-      'Показывать вашу операционную систему другим пользователям ProMax, пока вы в сети (TTL 3 мин)';
-
-  @override
-  String get hubDeleteData => 'Удалить данные с Hub';
-
-  @override
-  String get hubDeleteDataHint =>
-      'Удалить сессии, отметку и присутствие с сервера';
-
-  @override
-  String get hubDeleteDataConfirm =>
-      'Удалить все данные вашей учетной записи с сервера Hub?';
-
-  @override
-  String get hubDeleteDataSuccess => 'Данные с сервера Hub удалены';
 }

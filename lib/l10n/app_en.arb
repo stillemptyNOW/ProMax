@@ -3003,14 +3003,5 @@
   "hubToday": "Today",
   "hubYesterday": "Yesterday",
   "hubNotificationChannel": "ProMax announcements",
-    "hubNotificationOpen": "Open",
-  "hubSocialTitle": "Hub features and privacy",
-  "hubShowProMaxBadge": "ProMax badge",
-  "hubShowProMaxBadgeHint": "Show other ProMax users that you are also using ProMax",
-  "hubShowOsPresence": "Broadcast OS presence",
-  "hubShowOsPresenceHint": "Show your operating system to other ProMax users while online (3m TTL)",
-  "hubDeleteData": "Delete Hub data",
-  "hubDeleteDataHint": "Delete sessions, badges, and presence from the server",
-  "hubDeleteDataConfirm": "Delete all your account data from the Hub server?",
-  "hubDeleteDataSuccess": "Hub server data deleted"
+  "hubNotificationOpen": "Open"
 }

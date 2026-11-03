@@ -13,7 +13,6 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from releases import ReleaseCatalog
-from social import MiniAppIdentity, social_routes
 
 
 class Pair(BaseModel):
@@ -174,11 +173,10 @@ class Hub:
             db.execute("DELETE FROM download_clicks WHERE created < ?", (int(time.time()) - 86400,))
 
 
-def create_app(database=None, admin_account_id=None, identity_provider=None):
+def create_app(database=None, admin_account_id=None):
     hub = Hub(database or os.environ.get("PROMAX_HUB_DB", "/var/lib/promax-hub/hub.sqlite3"), admin_account_id)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.hub = hub
-    app.include_router(social_routes(hub, identity_provider or MiniAppIdentity.configured()))
     owner_id = hub.owner_id
     catalog = ReleaseCatalog()
     app.state.catalog = catalog

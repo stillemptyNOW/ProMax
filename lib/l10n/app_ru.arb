@@ -2581,14 +2581,5 @@
   "hubToday": "Сегодня",
   "hubYesterday": "Вчера",
   "hubNotificationChannel": "Объявления ProMax",
-    "hubNotificationOpen": "Открыть",
-  "hubSocialTitle": "Функции Hub и приватность",
-  "hubShowProMaxBadge": "Отметка ProMax",
-  "hubShowProMaxBadgeHint": "Показывать другим пользователям ProMax, что вы тоже используете ProMax",
-  "hubShowOsPresence": "Транслировать ОС в сети",
-  "hubShowOsPresenceHint": "Показывать вашу операционную систему другим пользователям ProMax, пока вы в сети (TTL 3 мин)",
-  "hubDeleteData": "Удалить данные с Hub",
-  "hubDeleteDataHint": "Удалить сессии, отметку и присутствие с сервера",
-  "hubDeleteDataConfirm": "Удалить все данные вашей учетной записи с сервера Hub?",
-  "hubDeleteDataSuccess": "Данные с сервера Hub удалены"
+  "hubNotificationOpen": "Открыть"
 }
