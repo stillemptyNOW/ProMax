@@ -14353,6 +14353,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Welcome to the redesign'**
   String get appRedesignWelcome;
+
+  /// No description provided for @hubKindNews.
+  ///
+  /// In en, this message translates to:
+  /// **'News'**
+  String get hubKindNews;
+
+  /// No description provided for @hubKindUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get hubKindUpdate;
+
+  /// No description provided for @hubKindImportant.
+  ///
+  /// In en, this message translates to:
+  /// **'Important'**
+  String get hubKindImportant;
+
+  /// No description provided for @hubKindPromo.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo'**
+  String get hubKindPromo;
+
+  /// No description provided for @hubKindHoliday.
+  ///
+  /// In en, this message translates to:
+  /// **'Holiday'**
+  String get hubKindHoliday;
+
+  /// No description provided for @hubActionLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Open link'**
+  String get hubActionLink;
+
+  /// No description provided for @hubActionUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Open update'**
+  String get hubActionUpdate;
+
+  /// No description provided for @hubActionSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get hubActionSettings;
+
+  /// No description provided for @hubFieldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get hubFieldTitle;
+
+  /// No description provided for @hubFieldImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image (https link)'**
+  String get hubFieldImage;
+
+  /// No description provided for @hubFieldButtonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Button label'**
+  String get hubFieldButtonLabel;
+
+  /// No description provided for @hubFieldButtonUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Button link (https)'**
+  String get hubFieldButtonUrl;
+
+  /// No description provided for @hubFieldAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Button action'**
+  String get hubFieldAction;
+
+  /// No description provided for @hubMenuCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get hubMenuCopy;
+
+  /// No description provided for @hubMenuHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get hubMenuHide;
+
+  /// No description provided for @hubMenuMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute announcements'**
+  String get hubMenuMute;
+
+  /// No description provided for @hubMenuUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute announcements'**
+  String get hubMenuUnmute;
+
+  /// No description provided for @hubCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get hubCopied;
+
+  /// No description provided for @hubToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get hubToday;
+
+  /// No description provided for @hubYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get hubYesterday;
+
+  /// No description provided for @hubNotificationChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax announcements'**
+  String get hubNotificationChannel;
+
+  /// No description provided for @hubNotificationOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get hubNotificationOpen;
 }
 
 class _AppLocalizationsDelegate

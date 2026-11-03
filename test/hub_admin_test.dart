@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/core/hub/hub_client.dart';
+import 'package:promax/core/hub/hub_content.dart';
 import 'package:promax/core/hub/hub_inbox.dart';
 import 'package:promax/core/storage/token_storage.dart';
 import 'package:promax/frontend/screens/promax_hub/service_chat_screen.dart';
@@ -41,13 +42,19 @@ class _AdminClient extends HubClient {
   }
 
   @override
-  Future<HubDraft> saveDraft(String token, String text, int revision) async {
+  Future<HubDraft> saveDraft(
+    String token,
+    String text,
+    int revision, {
+    HubMeta meta = HubMeta.plain,
+  }) async {
     saves++;
     if (serverDraft.revision != revision) throw const HubException(409);
     return serverDraft = HubDraft(
       text: text.trim(),
       revision: revision + 1,
       publishedRevision: serverDraft.publishedRevision,
+      meta: meta,
     );
   }
 
@@ -194,11 +201,17 @@ void main() {
   testWidgets('refresh preserves unsaved editor text', (tester) async {
     await tester.pumpWidget(host(ServiceChat.admin));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Synthetic unsaved edit');
+    await tester.enterText(
+      find.byKey(const ValueKey('hub_compose')),
+      'Synthetic unsaved edit',
+    );
     await tester.tap(find.byTooltip('Refresh'));
     await tester.pumpAndSettle();
     expect(
-      tester.widget<TextField>(find.byType(TextField)).controller?.text,
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('hub_compose')))
+          .controller
+          ?.text,
       'Synthetic unsaved edit',
     );
   });
@@ -208,12 +221,18 @@ void main() {
   ) async {
     await tester.pumpWidget(host(ServiceChat.admin));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Synthetic unsaved edit');
+    await tester.enterText(
+      find.byKey(const ValueKey('hub_compose')),
+      'Synthetic unsaved edit',
+    );
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(host(ServiceChat.admin));
     await tester.pumpAndSettle();
     expect(
-      tester.widget<TextField>(find.byType(TextField)).controller?.text,
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('hub_compose')))
+          .controller
+          ?.text,
       'Synthetic unsaved edit',
     );
   });
@@ -223,7 +242,7 @@ void main() {
   ) async {
     await tester.pumpWidget(host(ServiceChat.admin));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '   ');
+    await tester.enterText(find.byKey(const ValueKey('hub_compose')), '   ');
     await tester.pump();
     expect(
       tester

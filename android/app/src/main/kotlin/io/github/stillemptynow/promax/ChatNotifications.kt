@@ -47,6 +47,17 @@ object ChatNotifications {
                     FkmChannel.post("pruneChat") { ProMaxNotifier(app).pruneChat(chatId, seen) }
                     result.success(null)
                 }
+                "showAnnouncement" -> {
+                    ProMaxNotifier(app).showAnnouncement(
+                        longArg(call.argument<Any>("id")).toInt(),
+                        call.argument<String>("title") ?: "ProMax",
+                        call.argument<String>("body") ?: "",
+                        call.argument<String>("kind") ?: "news",
+                        call.argument<String>("channelName") ?: "ProMax",
+                        call.argument<String>("openLabel") ?: "Open",
+                    )
+                    result.success(null)
+                }
                 "notifiedChats" -> result.success(ProMaxNotifier(app).notifiedChats())
                 else -> result.notImplemented()
             }

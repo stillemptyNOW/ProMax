@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/product_links.dart';
+import 'hub_content.dart';
 
 class HubException implements Exception {
   const HubException(this.status);
@@ -12,16 +13,24 @@ class HubMessage {
     required this.id,
     required this.text,
     required this.created,
+    this.meta = HubMeta.plain,
   });
   final int id;
   final String text;
   final int created;
+  final HubMeta meta;
   factory HubMessage.fromJson(Map<String, dynamic> value) => HubMessage(
     id: value['id'] as int,
     text: value['text'] as String,
     created: value['created'] as int,
+    meta: HubMeta.fromJson(value),
   );
-  Map<String, Object> toJson() => {'id': id, 'text': text, 'created': created};
+  Map<String, Object> toJson() => {
+    'id': id,
+    'text': text,
+    'created': created,
+    ...meta.toJson(),
+  };
 }
 
 class HubDraft {
@@ -29,14 +38,17 @@ class HubDraft {
     required this.text,
     required this.revision,
     required this.publishedRevision,
+    this.meta = HubMeta.plain,
   });
   final String text;
   final int revision;
   final int publishedRevision;
+  final HubMeta meta;
   factory HubDraft.fromJson(Map<String, dynamic> value) => HubDraft(
     text: value['text'] as String,
     revision: value['revision'] as int,
     publishedRevision: value['published_revision'] as int,
+    meta: HubMeta.fromJson(value),
   );
 }
 
@@ -111,15 +123,19 @@ class HubClient {
   Future<HubDraft> draft(String token) async =>
       HubDraft.fromJson(await request('/v1/admin/draft', token: token));
 
-  Future<HubDraft> saveDraft(String token, String text, int revision) async =>
-      HubDraft.fromJson(
-        await request(
-          '/v1/admin/draft',
-          token: token,
-          method: 'PUT',
-          body: {'text': text, 'revision': revision},
-        ),
-      );
+  Future<HubDraft> saveDraft(
+    String token,
+    String text,
+    int revision, {
+    HubMeta meta = HubMeta.plain,
+  }) async => HubDraft.fromJson(
+    await request(
+      '/v1/admin/draft',
+      token: token,
+      method: 'PUT',
+      body: {'text': text, 'revision': revision, ...meta.toJson()},
+    ),
+  );
 
   Future<void> publish(String token, int revision) async {
     await request(
