@@ -159,6 +159,35 @@ void main() {
   });
 
   group('HubSocial service', () {
+    test('changing visibility preserves unrelated server consents', () async {
+      Map<String, dynamic>? update;
+      final mock = MockClient((request) async {
+        if (request.url.path == '/v1/identity/me') {
+          return http.Response(
+            jsonEncode({
+              'consent': {
+                'show_os': false,
+                'show_promax': false,
+                'allow_groups': true,
+                'share_wallpaper': true,
+              },
+            }),
+            200,
+          );
+        }
+        if (request.url.path == '/v1/identity/consent') {
+          update = jsonDecode(request.body) as Map<String, dynamic>;
+          return http.Response(jsonEncode({'consent': update}), 200);
+        }
+        return http.Response('{}', 200);
+      });
+      final social = HubSocial(client: HubClient(createClient: () => mock));
+      await social.init(101, token: 'synthetic-token');
+      await social.setShowPromax(true);
+      expect(update?['allow_groups'], isTrue);
+      expect(update?['share_wallpaper'], isTrue);
+      social.dispose();
+    });
     test('failed consent withdrawal leaves the saved state enabled', () async {
       var fail = false;
       final mock = MockClient((request) async {

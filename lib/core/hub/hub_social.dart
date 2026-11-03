@@ -62,9 +62,16 @@ class HubSocial extends ChangeNotifier {
     final account = _accountId;
     final activeToken = _token;
     if (activeToken != null) {
+      final current = await client.identityMe(activeToken);
+      if (_disposed || _accountId != account || _token != activeToken) return;
       await client.updateIdentityConsent(
         activeToken,
-        HubConsent(showOs: value, showPromax: _showPromax),
+        HubConsent(
+          showOs: value,
+          showPromax: _showPromax,
+          allowGroups: current.allowGroups,
+          shareWallpaper: current.shareWallpaper,
+        ),
       );
       if (_disposed || _accountId != account || _token != activeToken) return;
     }
@@ -89,9 +96,16 @@ class HubSocial extends ChangeNotifier {
     final account = _accountId;
     final activeToken = _token;
     if (activeToken != null) {
+      final current = await client.identityMe(activeToken);
+      if (_disposed || _accountId != account || _token != activeToken) return;
       await client.updateIdentityConsent(
         activeToken,
-        HubConsent(showOs: _showOs, showPromax: value),
+        HubConsent(
+          showOs: _showOs,
+          showPromax: value,
+          allowGroups: current.allowGroups,
+          shareWallpaper: current.shareWallpaper,
+        ),
       );
       if (_disposed || _accountId != account || _token != activeToken) return;
     }
