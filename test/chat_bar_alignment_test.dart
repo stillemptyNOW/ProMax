@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:promax/backend/modules/messages.dart';
 import 'package:promax/core/config/app_chat_chrome.dart';
+import 'package:promax/core/config/app_design.dart';
 import 'package:promax/core/config/app_composer_background.dart';
 import 'package:promax/core/config/app_composer_style.dart';
 import 'package:promax/backend/modules/forward_sender.dart';
@@ -30,6 +31,8 @@ void main() {
   late ValueNotifier<UploadStatus> uploadStatus;
 
   setUp(() {
+    AppDesign.classic.value = true;
+    addTearDown(() => AppDesign.classic.value = false);
     messageController = RichMessageController();
     focusNode = FocusNode();
     attachAnim = AnimationController(
@@ -201,5 +204,18 @@ void main() {
     expect(tester.getCenter(find.byType(ComposerMorphIcon)).dx, width - 39);
     expect(tester.getCenter(find.byIcon(Symbols.face)).dx, 38);
     expect(tester.getCenter(find.byIcon(Symbols.attachment)).dx, width - 100);
+  });
+
+  testWidgets('the redesigned composer puts attach left and stickers right', (
+    tester,
+  ) async {
+    AppDesign.classic.value = false;
+    await pumpBar(tester, ComposerStyle.glossy);
+    final width = tester.getSize(find.byType(ComposerInputBar)).width;
+
+    final attach = tester.getCenter(find.byIcon(Symbols.attachment)).dx;
+    final face = tester.getCenter(find.byIcon(Symbols.face)).dx;
+    expect(attach, lessThan(width / 2));
+    expect(face, greaterThan(attach));
   });
 }

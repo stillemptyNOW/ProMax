@@ -86,7 +86,7 @@ class ConversationTile extends StatelessWidget {
                               fill: 1,
                             ),
                           ],
-                          if (titleBadge != null) titleBadge!,
+                          ?titleBadge,
                           const SizedBox(width: 8),
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 88),
