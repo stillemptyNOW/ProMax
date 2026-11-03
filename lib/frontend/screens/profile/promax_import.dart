@@ -1,3 +1,4 @@
+import '../../../core/config/native_ios_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/config/app_accent.dart';
@@ -41,6 +42,7 @@ Future<int> applyProMaxArchive(
   if (PlatformSettings.current == 'ios') {
     final prefs = await SharedPreferences.getInstance();
     await NativeGlass.save(prefs.getBool('app_native_glass') ?? true);
+    await NativeIosUi.save(prefs.getBool(NativeIosUi.prefKey) ?? false);
   }
   if (!context.mounted) return restored;
   final prefs = await ProMaxArchive.settings();

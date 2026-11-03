@@ -1,4 +1,7 @@
 import '../../../core/config/app_design.dart';
+import '../../../core/config/native_ios_ui.dart';
+import 'native/native_chat_list_bridge.dart';
+import 'native/native_chat_list_view.dart';
 import 'chat/view/conversation_tile.dart';
 import '../promax_hub/service_chat_tiles.dart';
 import 'dart:async';
@@ -2292,7 +2295,157 @@ class _ChatListScreenState extends State<ChatListScreen>
     );
   }
 
+  bool get _useNativeChatList =>
+      NativeIosUi.active &&
+      !widget.forwardMode &&
+      !widget.archiveMode &&
+      !_shareMode &&
+      widget.forwardBatch == null &&
+      !_isInitialLoading;
+
+  ({String title, String avatar}) _nativeIdentity(
+    CachedChat chat,
+    AppLocalizations l10n,
+  ) {
+    if (chat.type == 'DIALOG' && chat.id != 0) {
+      var secondId = _profile?.id ?? 0;
+      for (final entry in chat.participants.entries) {
+        if (entry.key != _profile?.id) {
+          secondId = entry.key;
+          break;
+        }
+      }
+      return (
+        title: ContactCache.get(secondId) ?? chat.title ?? '',
+        avatar: ContactCache.getAvatar(secondId) ?? chat.iconUrl ?? '',
+      );
+    }
+    return (
+      title: chat.id == 0
+          ? l10n.chatListSavedMessages
+          : chat.title ?? l10n.hubChatTileTitle,
+      avatar: chat.iconUrl ?? '',
+    );
+  }
+
+  NativeChatRow _nativeRowFor(CachedChat chat, AppLocalizations l10n) {
+    final identity = _nativeIdentity(chat, l10n);
+    final accountId = _profile?.id ?? 0;
+    final placeholder = chat.isLastMsgDeleted;
+    final savedWelcome = chat.id == 0 && chat.lastMsgText == _savedWelcomeKey;
+    final encrypted =
+        ChatEncryptionStore.instance.isEnabled(accountId, chat.id) ||
+        E2eeService.instance.isOn(accountId, chat.id);
+    final draft = chat.id == 0 ? null : _draftFor(chat.id);
+    final sender = chat.lastMsgSenderId != null
+        ? ContactCache.get(chat.lastMsgSenderId!)
+        : null;
+    final senderPrefix =
+        chat.type != 'DIALOG' &&
+            !placeholder &&
+            sender?.isNotEmpty == true &&
+            chat.id != 0
+        ? '$sender: '
+        : '';
+    final String body;
+    if (draft != null) {
+      body = draft;
+    } else if (placeholder) {
+      body = l10n.chatListOpenToLoad;
+    } else if (savedWelcome) {
+      body = l10n.savedMessagesEmptyPreview;
+    } else if (encrypted) {
+      body = l10n.chatListPreviewUnavailable;
+    } else {
+      body = '$senderPrefix${chat.lastMsgTextOneLine ?? ''}';
+    }
+    return NativeChatRow(
+      id: chat.id.toString(),
+      title: identity.title,
+      preview: body,
+      time: _formatTime(chat.lastMsgTime),
+      avatarUrl: identity.avatar,
+      kind: chat.type,
+      unread: chat.unreadCount,
+      mention: chat.hasUnreadMention,
+      muted: chat.isMuted,
+      pinned: (chat.favIndex ?? 0) > 0,
+      verified: chat.isOfficial,
+      selected: _selectedChats.contains(chat.id.toString()),
+      draft: draft != null,
+      italic: placeholder || savedWelcome || encrypted,
+      ownStatus: draft == null ? _ownStatusFor(chat, placeholder) : null,
+      ownRead: chat.lastMsgReadByOthers,
+      hasCall: chat.activeCall != null,
+    );
+  }
+
+  void _openNativeChat(String id) {
+    final chat = _chats.where((c) => c.id.toString() == id).firstOrNull;
+    if (chat == null) return;
+    final identity = _nativeIdentity(chat, AppLocalizations.of(context)!);
+    _openChatFromList(id, identity.title, identity.avatar, chat.type);
+  }
+
+  Future<void> _runNativeBulk(
+    List<String> ids,
+    Future<void> Function() handler,
+  ) async {
+    setState(() {
+      _selectedChats
+        ..clear()
+        ..addAll(ids);
+    });
+    await handler();
+  }
+
+  NativeChatListHandlers get _nativeHandlers => NativeChatListHandlers(
+    open: _openNativeChat,
+    select: _toggleSelection,
+    pin: (ids) => _runNativeBulk(ids, _onPinTap),
+    mute: (ids) => _runNativeBulk(ids, _onMuteTap),
+    archive: (ids) => _runNativeBulk(ids, _onArchiveTap),
+    delete: (ids) => _runNativeBulk(ids, _onDeleteTap),
+    search: _openSearch,
+  );
+
+  Widget _buildNativeChatPage(int pageIndex) {
+    final pageChats = _chatsForPageIndex(pageIndex);
+    final l10n = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final strings = NativeChatListStrings(
+      pin: l10n.msgActionsPin,
+      unpin: l10n.msgActionsUnpin,
+      mute: l10n.nativeChatListMute,
+      unmute: l10n.nativeChatListUnmute,
+      archive: l10n.chatListArchive,
+      delete: l10n.msgActionsDelete,
+      select: l10n.nativeChatListSelect,
+      search: l10n.nativeChatListSearch,
+      empty: l10n.chatListEmpty,
+      draft: l10n.chatListDraftPrefix,
+    );
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        for (final chat in pageChats) chats.chatListenable(chat),
+      ]),
+      builder: (context, _) => NativeChatListView(
+        rows: [
+          for (final chat in pageChats)
+            _nativeRowFor(chats.chatListenable(chat).value, l10n),
+        ],
+        selecting: _isSelectionMode,
+        handlers: _nativeHandlers,
+        theme: nativeChatListThemeOf(cs),
+        strings: strings,
+        topInset: 0,
+        bottomInset: MediaQuery.viewPaddingOf(context).bottom + 100,
+      ),
+    );
+  }
+
   Widget _buildFolderChatPage(int pageIndex) {
+    if (_useNativeChatList) return _buildNativeChatPage(pageIndex);
     final pageChats = _chatsForPageIndex(pageIndex);
     final sc = _folderChatScrollControllers[pageIndex];
     final cs = Theme.of(context).colorScheme;

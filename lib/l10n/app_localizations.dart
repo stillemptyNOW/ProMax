@@ -14138,6 +14138,42 @@ abstract class AppLocalizations {
   /// **'Use Apple styling on supported iOS versions'**
   String get platformNativeGlassHint;
 
+  /// No description provided for @platformNativeIosUi.
+  ///
+  /// In en, this message translates to:
+  /// **'Native iOS interface'**
+  String get platformNativeIosUi;
+
+  /// No description provided for @platformNativeIosUiHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Experimental: the chat list is drawn by SwiftUI. Turn off if something breaks'**
+  String get platformNativeIosUiHint;
+
+  /// No description provided for @nativeChatListMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get nativeChatListMute;
+
+  /// No description provided for @nativeChatListUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get nativeChatListUnmute;
+
+  /// No description provided for @nativeChatListSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get nativeChatListSelect;
+
+  /// No description provided for @nativeChatListSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get nativeChatListSearch;
+
   /// No description provided for @platformNativeUnsupported.
   ///
   /// In en, this message translates to:

@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/config/platform_settings.dart';
 import 'platform_settings_screen.dart';
 import '../../../core/config/app_shape.dart';
+import '../../../core/config/native_ios_ui.dart';
 import '../../../core/config/promax_aura.dart';
 import '../../../core/config/promax_glass.dart';
 import '../../../core/config/promax_nav.dart';
@@ -170,6 +171,19 @@ class ProMaxDesignScreen extends StatelessWidget {
                     onChanged: ProMaxNavLayout.save,
                   ),
                 ),
+                if (NativeIosUi.isSupported)
+                  ValueListenableBuilder<bool>(
+                    valueListenable: NativeIosUi.enabled,
+                    builder: (context, value, _) => SettingsToggleTile(
+                      icon: Symbols.phone_iphone,
+                      label: AppLocalizations.of(context)!.platformNativeIosUi,
+                      subtitle: AppLocalizations.of(
+                        context,
+                      )!.platformNativeIosUiHint,
+                      value: value,
+                      onChanged: NativeIosUi.save,
+                    ),
+                  ),
               ],
             ),
             const ProMaxSectionTitle('Ещё'),

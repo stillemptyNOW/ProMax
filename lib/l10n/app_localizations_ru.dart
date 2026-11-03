@@ -8033,6 +8033,25 @@ class AppLocalizationsRu extends AppLocalizations {
       'Использовать оформление Apple на поддерживаемой версии iOS';
 
   @override
+  String get platformNativeIosUi => 'Нативный интерфейс iOS';
+
+  @override
+  String get platformNativeIosUiHint =>
+      'Эксперимент: список чатов рисует SwiftUI. Выключите, если что-то сломалось';
+
+  @override
+  String get nativeChatListMute => 'Без звука';
+
+  @override
+  String get nativeChatListUnmute => 'Включить звук';
+
+  @override
+  String get nativeChatListSelect => 'Выбрать';
+
+  @override
+  String get nativeChatListSearch => 'Поиск';
+
+  @override
   String get platformNativeUnsupported =>
       'Системное стекло доступно начиная с iOS 26. Сейчас используется стекло ProMax.';
 

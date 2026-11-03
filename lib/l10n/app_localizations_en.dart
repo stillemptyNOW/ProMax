@@ -7990,6 +7990,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Use Apple styling on supported iOS versions';
 
   @override
+  String get platformNativeIosUi => 'Native iOS interface';
+
+  @override
+  String get platformNativeIosUiHint =>
+      'Experimental: the chat list is drawn by SwiftUI. Turn off if something breaks';
+
+  @override
+  String get nativeChatListMute => 'Mute';
+
+  @override
+  String get nativeChatListUnmute => 'Unmute';
+
+  @override
+  String get nativeChatListSelect => 'Select';
+
+  @override
+  String get nativeChatListSearch => 'Search';
+
+  @override
   String get platformNativeUnsupported =>
       'System glass requires iOS 26. ProMax glass is used on this device.';
 
