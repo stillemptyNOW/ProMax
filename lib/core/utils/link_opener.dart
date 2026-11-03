@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../links/deep_link_service.dart';
+import '../config/promax_settings_link.dart';
+import '../../frontend/screens/profile/settings_link_import.dart';
 import '../security/url_policy.dart';
 
 import '../../frontend/widgets/custom_notification.dart';
@@ -19,6 +21,10 @@ bool leavesWebView(String? scheme) {
 
 Future<void> openExternalUrl(BuildContext context, String url) async {
   final uri = Uri.tryParse(url.trim());
+  if (uri != null && ProMaxSettingsLink.matches(uri)) {
+    await importProMaxSettingsLink(context, url);
+    return;
+  }
   if (uri != null && isAppLinkUri(uri)) {
     DeepLinkService.instance.handle(uri);
     return;

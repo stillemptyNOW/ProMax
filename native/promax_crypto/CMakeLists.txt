@@ -74,7 +74,7 @@ endif()
 
 if(KC_BUILD_TESTS)
     enable_testing()
-    add_executable(kc_test ${KC_ROOT}/tests/test_core.c ${KC_ROOT}/tests/test_v2.c)
+    add_executable(kc_test ${KC_ROOT}/tests/test_core.c ${KC_ROOT}/tests/test_v2.c ${KC_ROOT}/tests/test_group.c)
     target_include_directories(kc_test PRIVATE ${KC_ROOT}/src ${KC_ROOT}/third_party/monocypher)
     target_link_libraries(kc_test PRIVATE promax_crypto_static)
     set_target_properties(kc_test PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)

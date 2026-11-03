@@ -11,3 +11,4 @@
 #include "kc_handshake.c"
 #include "kc_file.c"
 #include "kc_export.c"
+#include "kc_group.c"

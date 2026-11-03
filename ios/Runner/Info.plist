@@ -72,6 +72,42 @@
 				<key>UIPrerenderedIcon</key>
 				<false/>
 			</dict>
+			<key>IconChristmas</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>IconChristmas</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>IconValentine</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>IconValentine</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>IconWomensDay</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>IconWomensDay</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>IconVictoryDay</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>IconVictoryDay</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
 		</dict>
 	</dict>
 	<key>CFBundleIdentifier</key>

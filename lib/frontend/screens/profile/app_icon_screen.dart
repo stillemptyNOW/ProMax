@@ -232,4 +232,8 @@ String _iconTitle(AppIcon icon, AppLocalizations l10n) => switch (icon) {
   AppIcon.glass => l10n.appIconNameGlass,
   AppIcon.halloween => l10n.appIconNameHalloween,
   AppIcon.newYear => l10n.appIconNameNewYear,
+  AppIcon.christmas => l10n.appIconNameChristmas,
+  AppIcon.valentine => l10n.appIconNameValentine,
+  AppIcon.womensday => l10n.appIconNameWomensDay,
+  AppIcon.victoryday => l10n.appIconNameVictoryDay,
 };

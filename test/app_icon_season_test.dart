@@ -4,34 +4,63 @@ import 'package:promax/core/config/app_icon_catalog.dart';
 
 void main() {
   group('IconSeason', () {
-    test('Хэллоуин длится с 24 октября по 2 ноября включительно', () {
-      expect(IconSeason.activeAt(DateTime(2026, 10, 23, 23, 59)), isNull);
+    test('Хэллоуин длится с 28 октября по 3 ноября включительно', () {
+      expect(IconSeason.activeAt(DateTime(2026, 10, 27, 23, 59)), isNull);
       expect(
-        IconSeason.activeAt(DateTime(2026, 10, 24))?.key,
+        IconSeason.activeAt(DateTime(2026, 10, 28))?.key,
         'halloween-2026',
       );
       expect(
-        IconSeason.activeAt(DateTime(2026, 11, 2, 23, 59))?.key,
+        IconSeason.activeAt(DateTime(2026, 11, 3, 23, 59))?.key,
         'halloween-2026',
       );
-      expect(IconSeason.activeAt(DateTime(2026, 11, 3)), isNull);
+      expect(IconSeason.activeAt(DateTime(2026, 11, 4)), isNull);
     });
 
     test('Новый год переходит через смену года', () {
-      expect(IconSeason.activeAt(DateTime(2026, 12, 19)), isNull);
-      expect(IconSeason.activeAt(DateTime(2026, 12, 20))?.key, 'newYear-2026');
+      expect(IconSeason.activeAt(DateTime(2026, 12, 28)), isNull);
+      expect(IconSeason.activeAt(DateTime(2026, 12, 29))?.key, 'newYear-2026');
       expect(IconSeason.activeAt(DateTime(2027, 1, 1))?.key, 'newYear-2026');
-      final last = IconSeason.activeAt(DateTime(2027, 1, 10, 22));
+      final last = IconSeason.activeAt(DateTime(2027, 1, 4, 22));
       expect(last?.key, 'newYear-2026');
-      expect(last?.lastDay, DateTime(2027, 1, 10));
-      expect(IconSeason.activeAt(DateTime(2027, 1, 11)), isNull);
+      expect(last?.lastDay, DateTime(2027, 1, 4));
+      expect(IconSeason.activeAt(DateTime(2027, 1, 12)), isNull);
     });
+  });
+
+  test('every holiday has exactly seven calendar dates without overlaps', () {
+    for (final year in [2026, 2028]) {
+      for (final season in IconSeason.values) {
+        final start = DateTime(year, season.startMonth, season.startDay);
+        final period = season.periodAt(start)!;
+        for (var day = 0; day < 7; day++) {
+          final date = DateTime(year, season.startMonth, season.startDay + day);
+          expect(IconSeason.activeAt(date)?.season, season);
+        }
+        expect(
+          period.lastDay,
+          DateTime(year, season.startMonth, season.startDay + 6),
+        );
+        expect(
+          season.periodAt(
+            DateTime(year, season.startMonth, season.startDay - 1),
+          ),
+          isNull,
+        );
+        expect(
+          season.periodAt(
+            DateTime(year, season.startMonth, season.startDay + 7),
+          ),
+          isNull,
+        );
+      }
+    }
   });
 
   group('AppIconSelection', () {
     final halloween = DateTime(2026, 10, 30);
     final november = DateTime(2026, 11, 10);
-    final winter = DateTime(2027, 1, 5);
+    final winter = DateTime(2027, 1, 2);
 
     test('без сезонного режима всегда выбранная иконка', () {
       const selection = AppIconSelection(choice: AppIcon.aurora);
@@ -57,7 +86,7 @@ void main() {
       expect(picked.effectiveAt(DateTime(2026, 11, 1)), AppIcon.glass);
       expect(picked.effectiveAt(november), AppIcon.glass);
       expect(picked.effectiveAt(winter), AppIcon.newYear);
-      expect(picked.effectiveAt(DateTime(2027, 10, 25)), AppIcon.halloween);
+      expect(picked.effectiveAt(DateTime(2027, 10, 29)), AppIcon.halloween);
     });
 
     test('ручной выбор вне сезона и без режима не помечает сезон', () {

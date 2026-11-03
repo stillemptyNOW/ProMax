@@ -28,9 +28,9 @@ enum CryptoStatus {
   final String name_;
 
   static CryptoStatus fromCode(int code) => CryptoStatus.values.firstWhere(
-    (status) => status.code == code,
-    orElse: () => CryptoStatus.internal,
-  );
+        (status) => status.code == code,
+        orElse: () => CryptoStatus.internal,
+      );
 }
 
 class ProMaxCryptoException implements Exception {
@@ -104,6 +104,27 @@ class SessionDecrypted {
   final Uint8List state;
 }
 
+class GroupMember {
+  const GroupMember({required this.id, required this.publicKey});
+
+  final int id;
+  final Uint8List publicKey;
+}
+
+class GroupSenderKey {
+  const GroupSenderKey({required this.distribution, required this.state});
+
+  final Uint8List distribution;
+  final Uint8List state;
+}
+
+class GroupEncrypted {
+  const GroupEncrypted({required this.envelope, required this.state});
+
+  final Uint8List envelope;
+  final Uint8List state;
+}
+
 abstract final class ProMaxCryptoSizes {
   static const int key = 32;
   static const int nonce = 12;
@@ -130,4 +151,10 @@ abstract final class ProMaxCryptoSizes {
   static const int fileContext = 96;
   static const int localKey = 32;
   static const int localNonce = 24;
+  static const int groupMember = 40;
+  static const int groupMembersMax = 256;
+  static const int groupDistribution = 188;
+  static const int groupStateMax = 9376;
+  static const int groupPlaintextMax = 65536;
+  static const int groupRandom = 32;
 }

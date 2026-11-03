@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:promax/core/hub/diagnostics.dart';
@@ -12,10 +13,12 @@ class _Client extends HubClient {
   List<HubMessage> feed = const [];
   bool fail = false;
   final uploads = <Map<String, dynamic>>[];
+  final cursors = <int>[];
   @override
-  Future<List<HubMessage>> messages() async {
+  Future<List<HubMessage>> messages({int after = 0}) async {
+    cursors.add(after);
     if (fail) throw const HubException(503);
-    return feed;
+    return feed.where((message) => message.id > after).toList();
   }
 
   @override
@@ -80,11 +83,45 @@ void main() {
     await inbox.init();
     await inbox.refresh();
     expect(inbox.messages.length, 1);
+    expect(client.cursors, [0, 1]);
     expect(inbox.adminCandidate, isFalse);
     expect(
       () => inbox.activate('synthetic-code'),
       throwsA(isA<HubException>()),
     );
+  });
+
+  test('an unchanged feed does not rebuild listeners', () async {
+    final client = _Client()
+      ..feed = const [HubMessage(id: 1, text: 'synthetic', created: 100)];
+    final inbox = HubInbox(accountId: 101, phone: 11112223344, client: client);
+    addTearDown(inbox.dispose);
+    await inbox.init();
+    var changes = 0;
+    inbox.addListener(() => changes++);
+    await inbox.refresh();
+    expect(changes, 0);
+    client.feed = [
+      ...client.feed,
+      const HubMessage(id: 2, text: 'synthetic new', created: 101),
+    ];
+    await inbox.refresh();
+    expect(changes, 1);
+    expect(inbox.messages.map((message) => message.id), [1, 2]);
+  });
+
+  test('iOS diagnostic platform names match the server schema', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final client = _Client();
+    await Diagnostics.init(client: client);
+    Diagnostics.record(
+      'flutter_error',
+      StateError('synthetic'),
+      StackTrace.empty,
+    );
+    await Diagnostics.flush();
+    expect(client.uploads.single['events'][0]['platform'], 'ios');
   });
 
   test(

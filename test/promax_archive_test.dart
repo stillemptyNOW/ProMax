@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/core/config/call_lighting.dart';
 import 'package:promax/core/config/promax_archive.dart';
+import 'package:promax/core/config/platform_settings.dart';
 import 'package:promax/core/storage/app_database.dart';
 import 'package:promax/core/storage/token_storage.dart';
 import 'package:promax_crypto/promax_crypto.dart';
@@ -83,6 +84,97 @@ void main() {
     await expectLater(ProMaxArchive.apply(data), throwsFormatException);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getBool('promax_anti_read'), isNull);
+  });
+
+  test(
+    'another OS imports shared preferences and retains device settings',
+    () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('app_amoled', true);
+      await prefs.setInt('dev_video_note_resolution', 1080);
+      await prefs.setString('app_performance_mode', 'beauty');
+      final data = await ProMaxArchive.settingsDocument();
+      expect(data['platform'], 'android');
+      expect(
+        (data['settings'] as Map).containsKey('dev_video_note_resolution'),
+        false,
+      );
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      await prefs.setBool('app_amoled', false);
+      await prefs.setString('app_performance_mode', 'smooth');
+      await prefs.remove('dev_video_note_resolution');
+      await ProMaxArchive.apply(data);
+      expect(prefs.getBool('app_amoled'), true);
+      expect(prefs.getString('app_performance_mode'), 'smooth');
+      expect(prefs.getInt('dev_video_note_resolution'), isNull);
+    },
+  );
+
+  test('same OS imports its supported device preferences', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final data = await ProMaxArchive.settingsDocument();
+    data['platformSettings'] = {
+      'app_performance_mode': 'smooth',
+      'call_pip_enabled': false,
+    };
+    await ProMaxArchive.apply(data);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('app_performance_mode'), 'smooth');
+    expect(prefs.getBool('call_pip_enabled'), false);
+    expect(PlatformSettings.valid('android', 'app_native_glass', true), false);
+    expect(PlatformSettings.valid('ios', 'app_native_glass', true), true);
+  });
+
+  test(
+    'scoped documents cannot import camera settings through shared keys',
+    () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('dev_video_note_resolution', 720);
+      await prefs.setInt('dev_video_note_fps', 30);
+      await prefs.setBool('dev_video_note_rear_camera', false);
+      await ProMaxArchive.apply({
+        'format': 'ProMax',
+        'version': 1,
+        'settings': {
+          'app_amoled': true,
+          'dev_video_note_resolution': 1080,
+          'dev_video_note_fps': 60,
+          'dev_video_note_rear_camera': true,
+        },
+        'platform': 'android',
+        'platformSettings': {'app_performance_mode': 'smooth'},
+      });
+      expect(prefs.getBool('app_amoled'), true);
+      expect(prefs.getInt('dev_video_note_resolution'), 720);
+      expect(prefs.getInt('dev_video_note_fps'), 30);
+      expect(prefs.getBool('dev_video_note_rear_camera'), false);
+    },
+  );
+
+  test('legacy documents still restore camera settings on mobile', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await ProMaxArchive.apply({
+      'format': 'ProMax',
+      'version': 1,
+      'settings': {'dev_video_note_resolution': 1080, 'dev_video_note_fps': 60},
+    });
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getInt('dev_video_note_resolution'), 1080);
+    expect(prefs.getInt('dev_video_note_fps'), 60);
+  });
+
+  test('unrecognized device payload cannot change any preference', () async {
+    final data = await ProMaxArchive.settingsDocument();
+    data['platformSettings'] = {'auth_token_101': 'synthetic-secret'};
+    await expectLater(ProMaxArchive.apply(data), throwsFormatException);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('auth_token_101'), isNull);
   });
 
   test(

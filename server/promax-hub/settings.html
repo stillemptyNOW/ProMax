@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Настройки ProMax</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; background: #101116; color: #eeeff5; }
+    main { max-width: 520px; margin: 10vh auto; padding: 28px; }
+    h1 { font-size: 32px; letter-spacing: -.04em; }
+    p { line-height: 1.6; color: #bcc0cf; }
+    a, button { display: block; box-sizing: border-box; width: 100%; margin: 16px 0; padding: 15px; border: 0; border-radius: 16px; text-align: center; font: inherit; text-decoration: none; }
+    #open { background: #a998ff; color: #151023; font-weight: 650; }
+    button { background: #272934; color: #eeeff5; cursor: pointer; }
+    [hidden] { display: none; }
+  </style>
+  <script src="/settings-link.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>Настройки ProMax</h1>
+    <p id="description">Вам отправили настройки ProMax. Приложение спросит подтверждение перед импортом. Ссылка может изменить оформление и настройки приватности клиента.</p>
+    <a id="open" hidden>Открыть в ProMax</a>
+    <button id="copy" type="button" hidden>Скопировать ссылку</button>
+    <p id="status" role="status" aria-live="polite"></p>
+    <p>Если ссылка не открывается, обновите ProMax и вставьте её в «Настройки ProMax → Импорт по ссылке».</p>
+    <p>История сообщений, аккаунты и ключи в эту ссылку не входят. Настройки находятся в самой ссылке и не загружаются на сервер.</p>
+  </main>
+</body>
+</html>

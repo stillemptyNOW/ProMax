@@ -37,6 +37,14 @@
 		3255C5921487B4019C070908 /* IconHalloween@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 73414889F7A7BD3EDDACCEB1 /* IconHalloween@3x.png */; };
 		6F691AC2CA496AE02015257F /* IconNewYear@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 9226F190054E34A538F5460F /* IconNewYear@2x.png */; };
 		0BB5DE2C66E3BD418A7CF54F /* IconNewYear@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7D549F67E1A9C1B469AC3649 /* IconNewYear@3x.png */; };
+		738DD843A43CD0CB150D1A08 /* IconChristmas@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7CB2C053E414AEFEB50BED6A /* IconChristmas@2x.png */; };
+		AB75097D492C8E59651B630D /* IconChristmas@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = CA372D364D3DE46E6B95FCB6 /* IconChristmas@3x.png */; };
+		99963F5236EAAAA3C3486BF3 /* IconValentine@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E4860240589F69F1D838B803 /* IconValentine@2x.png */; };
+		43F1F85A6FED84A38D34218A /* IconValentine@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = E361452D43375CD2BF6531B8 /* IconValentine@3x.png */; };
+		9F2EE82340B3F6BC7B0C9DFD /* IconWomensDay@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E8CBCE7E5B5E7DFEB848B176 /* IconWomensDay@2x.png */; };
+		41ADDD439D2A490600E88E66 /* IconWomensDay@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = D2444CBA4C0A920E366E82E5 /* IconWomensDay@3x.png */; };
+		EC27777475DBAC61C61A038F /* IconVictoryDay@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 1075290314A08D8718662EB8 /* IconVictoryDay@2x.png */; };
+		F272F7F1BA9F30D15D00271B /* IconVictoryDay@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 147242DE6123D14A03168BC4 /* IconVictoryDay@3x.png */; };
 		E835CC948F2F948DC3BBF405 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2AE8CB2654009FE276CACA4B /* Pods_RunnerTests.framework */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 /* End PBXBuildFile section */
@@ -108,6 +116,14 @@
 		73414889F7A7BD3EDDACCEB1 /* IconHalloween@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconHalloween@3x.png"; sourceTree = "<group>"; };
 		9226F190054E34A538F5460F /* IconNewYear@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconNewYear@2x.png"; sourceTree = "<group>"; };
 		7D549F67E1A9C1B469AC3649 /* IconNewYear@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconNewYear@3x.png"; sourceTree = "<group>"; };
+		7CB2C053E414AEFEB50BED6A /* IconChristmas@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconChristmas@2x.png"; sourceTree = "<group>"; };
+		CA372D364D3DE46E6B95FCB6 /* IconChristmas@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconChristmas@3x.png"; sourceTree = "<group>"; };
+		E4860240589F69F1D838B803 /* IconValentine@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconValentine@2x.png"; sourceTree = "<group>"; };
+		E361452D43375CD2BF6531B8 /* IconValentine@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconValentine@3x.png"; sourceTree = "<group>"; };
+		E8CBCE7E5B5E7DFEB848B176 /* IconWomensDay@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconWomensDay@2x.png"; sourceTree = "<group>"; };
+		D2444CBA4C0A920E366E82E5 /* IconWomensDay@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconWomensDay@3x.png"; sourceTree = "<group>"; };
+		1075290314A08D8718662EB8 /* IconVictoryDay@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconVictoryDay@2x.png"; sourceTree = "<group>"; };
+		147242DE6123D14A03168BC4 /* IconVictoryDay@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "IconVictoryDay@3x.png"; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9D7B0FFE63E0BD5D67D7758D /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
@@ -204,6 +220,14 @@
 				73414889F7A7BD3EDDACCEB1 /* IconHalloween@3x.png */,
 				9226F190054E34A538F5460F /* IconNewYear@2x.png */,
 				7D549F67E1A9C1B469AC3649 /* IconNewYear@3x.png */,
+				7CB2C053E414AEFEB50BED6A /* IconChristmas@2x.png */,
+				CA372D364D3DE46E6B95FCB6 /* IconChristmas@3x.png */,
+				E4860240589F69F1D838B803 /* IconValentine@2x.png */,
+				E361452D43375CD2BF6531B8 /* IconValentine@3x.png */,
+				E8CBCE7E5B5E7DFEB848B176 /* IconWomensDay@2x.png */,
+				D2444CBA4C0A920E366E82E5 /* IconWomensDay@3x.png */,
+				1075290314A08D8718662EB8 /* IconVictoryDay@2x.png */,
+				147242DE6123D14A03168BC4 /* IconVictoryDay@3x.png */,
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
@@ -354,6 +378,14 @@
 				3255C5921487B4019C070908 /* IconHalloween@3x.png in Resources */,
 				6F691AC2CA496AE02015257F /* IconNewYear@2x.png in Resources */,
 				0BB5DE2C66E3BD418A7CF54F /* IconNewYear@3x.png in Resources */,
+				738DD843A43CD0CB150D1A08 /* IconChristmas@2x.png in Resources */,
+				AB75097D492C8E59651B630D /* IconChristmas@3x.png in Resources */,
+				99963F5236EAAAA3C3486BF3 /* IconValentine@2x.png in Resources */,
+				43F1F85A6FED84A38D34218A /* IconValentine@3x.png in Resources */,
+				9F2EE82340B3F6BC7B0C9DFD /* IconWomensDay@2x.png in Resources */,
+				41ADDD439D2A490600E88E66 /* IconWomensDay@3x.png in Resources */,
+				EC27777475DBAC61C61A038F /* IconVictoryDay@2x.png in Resources */,
+				F272F7F1BA9F30D15D00271B /* IconVictoryDay@3x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

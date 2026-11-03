@@ -38,7 +38,7 @@ async function refresh() {
   if (!standalone()) return show('install');
   if (!('serviceWorker' in navigator) || !('PushManager' in globalThis) || !('Notification' in globalThis)) return show('unsupported');
   if (!registration) {
-    await navigator.serviceWorker.register('/sw.js', {updateViaCache: 'none'});
+    await navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'});
     registration = await timeout(navigator.serviceWorker.ready, 15000, 'Не удалось запустить службу уведомлений. Проверьте интернет и откройте приложение заново.');
   }
   if (Notification.permission === 'denied') return show('denied');

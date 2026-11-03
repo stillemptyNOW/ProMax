@@ -5,6 +5,45 @@ import 'types.dart';
 Never _unavailable() =>
     throw const ProMaxCryptoException(CryptoStatus.unavailable);
 
+abstract final class ProMaxGroupCrypto {
+  static bool get isAvailable => false;
+
+  static Uint8List membersBuild(List<GroupMember> members) => _unavailable();
+
+  static GroupSenderKey senderCreate({
+    required Uint8List identity,
+    required int groupId,
+    required int senderId,
+    required int epoch,
+    required Uint8List members,
+    Uint8List? oldState,
+    Uint8List? random,
+  }) =>
+      _unavailable();
+
+  static Uint8List receiverImport({
+    required int groupId,
+    required int senderId,
+    required Uint8List members,
+    required Uint8List distribution,
+    Uint8List? oldState,
+  }) =>
+      _unavailable();
+
+  static GroupEncrypted encrypt({
+    required Uint8List state,
+    required ContentType contentType,
+    required Uint8List plaintext,
+  }) =>
+      _unavailable();
+
+  static SessionDecrypted decrypt({
+    required Uint8List state,
+    required Uint8List envelope,
+  }) =>
+      _unavailable();
+}
+
 class FileSealer {
   Uint8List chunk(Uint8List plaintext, {required bool last}) => _unavailable();
 

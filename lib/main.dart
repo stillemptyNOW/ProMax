@@ -30,6 +30,8 @@ import 'core/storage/retired_preferences.dart';
 import 'core/crypto/e2ee_service.dart';
 import 'core/storage/chat_encryption_store.dart';
 import 'core/config/app_accent.dart';
+import 'core/config/app_design.dart';
+import 'frontend/widgets/redesign_welcome_layer.dart';
 import 'core/config/app_amoled.dart';
 import 'core/config/app_badge.dart';
 import 'core/config/app_icon.dart';
@@ -292,6 +294,7 @@ void main(List<String> args) async {
   final packageInfoFuture = PackageInfo.fromPlatform();
   final localeFuture = _loadInitialLocale();
   final glassFuture = ProMaxGlass.load();
+  final appDesignFuture = AppDesign.load();
   final atmosphereFuture = ProMaxAtmosphere.load();
   final presetFuture = ProMaxThemePresets.load();
   final navLayoutFuture = ProMaxNavLayout.load();
@@ -357,6 +360,7 @@ void main(List<String> args) async {
 
   await hapticsFuture;
   await glassFuture;
+  await appDesignFuture;
   await atmosphereFuture;
   await presetFuture;
   await navLayoutFuture;
@@ -1361,6 +1365,9 @@ class ProMaxAppState extends State<ProMaxApp>
                                     ),
                                     const Positioned.fill(
                                       child: AppSwitcherCurtain(),
+                                    ),
+                                    const Positioned.fill(
+                                      child: RedesignWelcomeLayer(),
                                     ),
                                     if (fpsOn) const FpsOverlayLayer(),
                                   ],

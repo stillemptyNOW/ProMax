@@ -38,6 +38,10 @@ VARIANTS = {
 ARTWORKS = {
     'Halloween': {'source': 'promax-logo-halloween.png', 'center': (650, 625), 'extent': 470},
     'NewYear': {'source': 'promax-logo-newyear.png', 'center': (720, 590), 'extent': 440},
+    'Christmas': {'source': 'promax-logo-christmas.png', 'center': (627, 627), 'extent': 564.3},
+    'Valentine': {'source': 'promax-logo-valentine.png', 'center': (627, 627), 'extent': 564.3},
+    'WomensDay': {'source': 'promax-logo-womensday.png', 'center': (627, 627), 'extent': 564.3},
+    'VictoryDay': {'source': 'promax-logo-victoryday.png', 'center': (627, 627), 'extent': 564.3},
 }
 
 ALTERNATES = list(VARIANTS) + list(ARTWORKS)

@@ -38,6 +38,10 @@ constexpr AppIconResource kAppIcons[] = {
     {"IconAurora", IDI_ICON_AURORA},   {"IconSunset", IDI_ICON_SUNSET},
     {"IconGlass", IDI_ICON_GLASS},     {"IconHalloween", IDI_ICON_HALLOWEEN},
     {"IconNewYear", IDI_ICON_NEWYEAR},
+    {"IconChristmas", IDI_ICON_CHRISTMAS},
+    {"IconValentine", IDI_ICON_VALENTINE},
+    {"IconWomensDay", IDI_ICON_WOMENSDAY},
+    {"IconVictoryDay", IDI_ICON_VICTORYDAY},
 };
 
 int FindAppIconResource(const std::string& name) {

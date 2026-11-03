@@ -1589,6 +1589,22 @@ class AppDatabase {
   }
 
   // #***! дальше выборки истории, с конца до сообщения между и вокруг
+  static Future<Map<String, dynamic>?> loadLatestIncomingMessage(
+    int accountId,
+    int chatId,
+  ) async {
+    final db = await _instance;
+    final rows = await db.query(
+      'messages',
+      where:
+          'account_id = ? AND chat_id = ? AND sender_id != ? AND deleted = 0',
+      whereArgs: [accountId, chatId, accountId],
+      orderBy: 'time DESC',
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first;
+  }
+
   static Future<List<Map<String, dynamic>>> loadMessages(
     int accountId,
     int chatId, {

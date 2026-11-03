@@ -9,7 +9,11 @@ from typing import Literal
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from releases import ReleaseCatalog
+from social import MiniAppIdentity, social_routes
 
 
 class Pair(BaseModel):
@@ -29,6 +33,12 @@ class Publish(BaseModel):
     revision: int = Field(ge=1)
 
 
+class DownloadClick(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    event: str = Field(pattern=r"^[a-f0-9]{32}$")
+    asset: str = Field(min_length=1, max_length=1024)
+
+
 class Diagnostic(BaseModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["flutter_error", "uncaught_error", "log_error"]
@@ -44,13 +54,41 @@ class Diagnostics(BaseModel):
     events: list[Diagnostic] = Field(min_length=1, max_length=16)
 
 
+class FrameSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    frames: int = Field(gt=0, le=2000000000)
+    slow: int = Field(ge=0, le=2000000000)
+    mean_build_us: int = Field(ge=0, le=60000000)
+    mean_raster_us: int = Field(ge=0, le=60000000)
+    max_build_us: int = Field(ge=0, le=60000000)
+    max_raster_us: int = Field(ge=0, le=60000000)
+
+    @model_validator(mode="after")
+    def validate_counts(self):
+        if self.slow > self.frames or self.mean_build_us > self.max_build_us or self.mean_raster_us > self.max_raster_us:
+            raise ValueError("invalid_frame_summary")
+        return self
+
+
+class PerformanceReport(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    installation: str = Field(min_length=32, max_length=64, pattern=r"^[a-f0-9]+$")
+    version: str = Field(max_length=40, pattern=r"^[0-9A-Za-z.+_-]+$")
+    platform: Literal["android", "ios", "windows", "linux", "macos", "fuchsia", "web"]
+    mode: Literal["auto", "smooth", "beauty"]
+    tier: Literal["low", "mid", "high"]
+    refresh_hz: int = Field(ge=30, le=1000)
+    summary: FrameSummary
+
+
 def digest(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
 class Hub:
-    def __init__(self, path):
+    def __init__(self, path, admin_account_id=None):
         self.path = Path(path)
+        self.owner_id = admin_account_id if admin_account_id is not None else int(os.environ.get("PROMAX_ADMIN_ACCOUNT_ID", "461448957"))
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.db() as db:
             db.executescript("""
@@ -63,6 +101,9 @@ class Hub:
                 CREATE TABLE IF NOT EXISTS telemetry(id INTEGER PRIMARY KEY, created INTEGER NOT NULL, installation TEXT NOT NULL, event TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS rate_limits(key TEXT PRIMARY KEY, window INTEGER NOT NULL, count INTEGER NOT NULL);
                 CREATE INDEX IF NOT EXISTS telemetry_created ON telemetry(created);
+                CREATE TABLE IF NOT EXISTS download_total(id INTEGER PRIMARY KEY CHECK(id=1), started INTEGER NOT NULL);
+                INSERT OR IGNORE INTO download_total VALUES(1, 1);
+                CREATE TABLE IF NOT EXISTS download_clicks(event TEXT PRIMARY KEY, created INTEGER NOT NULL);
             """)
 
     @contextmanager
@@ -100,6 +141,8 @@ class Hub:
             row = db.execute("SELECT account_id FROM admins WHERE digest=?", (digest(token),)).fetchone()
         if row is None:
             raise HTTPException(401, "admin_required")
+        if row[0] != self.owner_id:
+            raise HTTPException(403, "admin_account_required")
         return row[0]
 
     def cleanup(self):
@@ -109,12 +152,25 @@ class Hub:
             db.execute("DELETE FROM telemetry WHERE id NOT IN (SELECT id FROM telemetry ORDER BY id DESC LIMIT 100000)")
             db.execute("DELETE FROM pair_codes WHERE expires < ?", (int(time.time()),))
             db.execute("DELETE FROM rate_limits WHERE window < ?", (int(time.time()) // 3600 - 48,))
+            db.execute("DELETE FROM download_clicks WHERE created < ?", (int(time.time()) - 86400,))
 
 
-def create_app(database=None):
-    hub = Hub(database or os.environ.get("PROMAX_HUB_DB", "/var/lib/promax-hub/hub.sqlite3"))
+def create_app(database=None, admin_account_id=None, identity_provider=None):
+    hub = Hub(database or os.environ.get("PROMAX_HUB_DB", "/var/lib/promax-hub/hub.sqlite3"), admin_account_id)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.hub = hub
+    app.include_router(social_routes(hub, identity_provider or MiniAppIdentity.configured()))
+    owner_id = hub.owner_id
+    catalog = ReleaseCatalog()
+    app.state.catalog = catalog
+    site = Path(__file__).with_name("site")
+    if site.is_dir():
+        app.mount("/site", StaticFiles(directory=site), name="site")
+    notifications = Path(__file__).with_name("notifications")
+    if not notifications.is_dir():
+        notifications = Path(__file__).parent.parent / "web-push"
+    if notifications.is_dir():
+        app.mount("/notifications", StaticFiles(directory=notifications, html=True), name="notifications")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT"], allow_headers=["Authorization", "Content-Type"])
 
     @app.middleware("http")
@@ -125,12 +181,67 @@ def create_app(database=None):
             return JSONResponse({"detail": "body_too_large"}, status_code=413)
         response = await call_next(request)
         response.headers["Cache-Control"] = "no-store"
+        if request.url.path.startswith("/site/"):
+            response.headers["Cache-Control"] = "public, max-age=3600"
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
+
+    @app.get("/")
+    def landing():
+        return FileResponse(site / "index.html", headers={
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+        })
+
+    @app.get("/v1/releases")
+    def releases():
+        try:
+            return catalog.get()
+        except ValueError:
+            raise HTTPException(503, "github_unavailable")
 
     @app.get("/health")
     def health():
         return {"service": "ProMax", "status": "ok", "schema": 1}
+
+    @app.get("/v1/downloads")
+    def download_count():
+        with hub.db() as db:
+            return {"started": db.execute("SELECT started FROM download_total WHERE id=1").fetchone()[0]}
+
+    @app.post("/v1/downloads")
+    def download_click(body: DownloadClick):
+        try:
+            known = any(asset["url"] == body.asset for release in catalog.get()["releases"] for asset in release["assets"])
+        except ValueError:
+            raise HTTPException(503, "github_unavailable")
+        if not known:
+            raise HTTPException(422, "unknown_asset")
+        hub.limit("download_clicks", 600, 60)
+        with hub.db() as db:
+            db.execute("DELETE FROM download_clicks WHERE created < ?", (int(time.time()) - 86400,))
+            inserted = db.execute("INSERT OR IGNORE INTO download_clicks VALUES(?, ?)", (body.event, int(time.time()))).rowcount
+            if inserted:
+                db.execute("UPDATE download_total SET started=started+1 WHERE id=1")
+            return {"started": db.execute("SELECT started FROM download_total WHERE id=1").fetchone()[0]}
+
+    @app.get("/settings")
+    def settings_link():
+        return FileResponse(Path(__file__).with_name("settings.html"), headers={
+            "Referrer-Policy": "no-referrer",
+            "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+        })
+
+    @app.get("/settings-link.js")
+    def settings_script():
+        return FileResponse(Path(__file__).with_name("settings-link.js"), media_type="text/javascript")
+
+    @app.get("/.well-known/assetlinks.json")
+    def android_links():
+        return [{"relation": ["delegate_permission/common.handle_all_urls"], "target": {
+            "namespace": "android_app", "package_name": "io.github.stillemptynow.promax",
+            "sha256_cert_fingerprints": ["E8:3B:E6:9E:C2:EA:9C:C8:F4:18:B5:33:63:6C:1A:11:48:24:BF:C0:5A:94:0F:CA:60:60:20:5F:39:0D:72:B6"],
+        }}]
 
     @app.get("/v1/announcements")
     def announcements(after: int = 0):
@@ -145,6 +256,8 @@ def create_app(database=None):
 
     @app.post("/v1/admin/pair")
     def pair(body: Pair, request: Request):
+        if body.account_id != owner_id:
+            raise HTTPException(403, "admin_account_required")
         address = request.client.host if request.client else "unknown"
         hub.limit("pair:" + digest(address), 8, 3600)
         token = secrets.token_urlsafe(48)
@@ -203,5 +316,17 @@ def create_app(database=None):
             db.executemany("INSERT INTO telemetry(created,installation,event) VALUES(?,?,?)", [(int(time.time()), body.installation, json.dumps(event, ensure_ascii=False)) for event in events])
         hub.cleanup()
         return {"accepted": len(events)}
+
+    @app.post("/v1/performance", status_code=202)
+    def performance(body: PerformanceReport, request: Request):
+        import json
+        address = request.client.host if request.client else "unknown"
+        hub.limit("performance-ip:" + digest(address), 30, 3600)
+        hub.limit("performance-install:" + body.installation, 6, 3600)
+        event = {"kind": "performance", **body.model_dump(exclude={"installation"})}
+        with hub.db() as db:
+            db.execute("INSERT INTO telemetry(created,installation,event) VALUES(?,?,?)", (int(time.time()), body.installation, json.dumps(event)))
+        hub.cleanup()
+        return {"accepted": 1}
 
     return app

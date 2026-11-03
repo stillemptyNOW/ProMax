@@ -14,6 +14,7 @@ import '../screens/webapp/web_app_bridge.dart';
 import '../screens/webapp/web_app_screen.dart';
 import '../../core/config/app_bubble_behavior.dart';
 import '../../core/config/app_bubble_shape.dart';
+import '../../core/config/app_design.dart';
 import '../../core/crypto/message_decryption_cache.dart';
 import 'decrypted_text.dart';
 import 'message_translation.dart';
@@ -1009,7 +1010,7 @@ class MessageBubble extends StatelessWidget {
       hasPhotoCap,
       hasMultiPhotos,
     );
-    if (style != BubbleStyle.promax) {
+    if (style != BubbleStyle.promax || !AppDesign.classic.value) {
       return BoxDecoration(color: color, borderRadius: radius);
     }
     final last =
@@ -1038,7 +1039,9 @@ class MessageBubble extends StatelessWidget {
       isMe: isMe,
       isTop: isTop,
       isBottom: isBottom,
-      style: bubbleStyle,
+      style: !AppDesign.classic.value && bubbleStyle == BubbleStyle.promax
+          ? BubbleStyle.mobile
+          : bubbleStyle,
       behavior: bubbleBehavior,
       hasPhotoWithCaption: hasPhotoWithCaption,
       hasMultiplePhotosNoCaption: hasMultiplePhotosNoCaption,
@@ -1131,13 +1134,12 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (_hasShareAttachment) {
-      return ValueListenableBuilder<bool>(
-        valueListenable: AppLinkPreview.current,
-        builder: (context, _, _) => _buildBubble(context),
-      );
-    }
-    return _buildBubble(context);
+    return ListenableBuilder(
+      listenable: _hasShareAttachment
+          ? Listenable.merge([AppDesign.classic, AppLinkPreview.current])
+          : AppDesign.classic,
+      builder: (context, _) => _buildBubble(context),
+    );
   }
 
   Widget _buildBubble(BuildContext context) {
@@ -2111,10 +2113,10 @@ class MessageBubble extends StatelessWidget {
     final textStyle = TextStyle(
       color: ctx.text,
       fontSize: 16,
-      height: 1.3,
+      height: AppDesign.classic.value ? 1.3 : 1.35,
       fontFamily: activeFontFamily,
       fontVariations: activeFontFamily == 'Inter'
-          ? const [FontVariation('wght', 300)]
+          ? [FontVariation('wght', AppDesign.classic.value ? 300 : 400)]
           : null,
     );
     final ranges = message.formatRanges;

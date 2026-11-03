@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:promax/backend/modules/messages.dart';
 import 'package:promax/core/config/app_chat_chrome.dart';
 import 'package:promax/core/config/app_colors.dart';
+import 'package:promax/core/config/app_design.dart';
 import 'package:promax/core/config/app_composer_background.dart';
 import 'package:promax/core/config/app_composer_style.dart';
 import 'package:promax/core/config/app_frost.dart';
@@ -117,9 +118,12 @@ class ComposerInputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ForwardRequest?>(
-      valueListenable: forward,
-      builder: (context, request, _) => _build(context, request),
+    return ValueListenableBuilder<bool>(
+      valueListenable: AppDesign.classic,
+      builder: (context, _, _) => ValueListenableBuilder<ForwardRequest?>(
+        valueListenable: forward,
+        builder: (context, request, _) => _build(context, request),
+      ),
     );
   }
 
@@ -219,7 +223,19 @@ class ComposerInputBar extends StatelessWidget {
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    if (showStickerButton) ...[
+                                    if (showAttachButton && !_classic)
+                                      _AttachButton(
+                                        hasText: hasText,
+                                        onOpen: onOpenAttach,
+                                        onLongOpen: onOpenAttachScheduled,
+                                        uploadStatus: uploadStatus,
+                                        mutedIcon: mutedIcon,
+                                        cs: cs,
+                                        slot: 44,
+                                        leading: 0,
+                                        collapseWithText: false,
+                                      ),
+                                    if (showStickerButton && _classic) ...[
                                       GestureDetector(
                                         behavior: HitTestBehavior.opaque,
                                         onTap: onToggleStickerPanel,
@@ -294,7 +310,19 @@ class ComposerInputBar extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                    if (showAttachButton)
+                                    if (showStickerButton && !_classic)
+                                      IconButton(
+                                        tooltip: AppLocalizations.of(
+                                          context,
+                                        )!.stickerPanelStickersTab,
+                                        onPressed: onToggleStickerPanel,
+                                        icon: Icon(
+                                          Symbols.face,
+                                          color: mutedIcon,
+                                          size: 24,
+                                        ),
+                                      ),
+                                    if (showAttachButton && _classic)
                                       _AttachButton(
                                         hasText: hasText,
                                         onOpen: onOpenAttach,
@@ -431,7 +459,13 @@ class ComposerInputBar extends StatelessWidget {
                                               locked ||
                                               forceSend;
                                           final pill = _actionSurface(
-                                            color: _flat
+                                            color: !_classic
+                                                ? recording
+                                                      ? cs.error
+                                                      : sendMode
+                                                      ? cs.primary
+                                                      : cs.surfaceContainerHighest
+                                                : _flat
                                                 ? Colors.transparent
                                                 : recording
                                                 ? cs.error
@@ -474,7 +508,9 @@ class ComposerInputBar extends StatelessWidget {
                                                             ? cs.error
                                                             : cs.onError)
                                                       : sendMode
-                                                      ? cs.primary
+                                                      ? _classic
+                                                            ? cs.primary
+                                                            : cs.onPrimary
                                                       : _flat
                                                       ? cs.onSurfaceVariant
                                                       : cs.onSurface,
@@ -544,23 +580,25 @@ class ComposerInputBar extends StatelessWidget {
 
   bool get _flat => !ComposerChrome.isGlossy(style);
 
+  bool get _classic => AppDesign.classic.value;
+
   bool get _frost => ComposerMaterial.isFrost(background);
 
   bool get _liquid => ComposerMaterial.isLiquid(background);
 
   bool get _translucent => _frost || _liquid;
 
-  double get _controlSize => _flat ? 48 : 54;
+  double get _controlSize => _classic ? (_flat ? 48 : 54) : 50;
 
-  double get _barSideInset => _flat ? 0 : 12;
+  double get _barSideInset => _classic && _flat ? 0 : 12;
 
-  double get _barVerticalInset => _flat ? 4 : 8;
+  double get _barVerticalInset => _classic && _flat ? 4 : 8;
 
-  double get _fieldSideInset => _flat ? 12 : 14;
+  double get _fieldSideInset => _classic ? (_flat ? 12 : 14) : 4;
 
-  double get _fieldTrailingInset => _flat ? 0 : 14;
+  double get _fieldTrailingInset => _classic ? (_flat ? 0 : 14) : 4;
 
-  double get _actionGap => _flat ? 0 : 8;
+  double get _actionGap => _classic && _flat ? 0 : 8;
 
   double get _attachSlot => _flat ? 48 : 36;
 
@@ -579,7 +617,21 @@ class ComposerInputBar extends StatelessWidget {
   }
 
   Widget _fieldSurface(ColorScheme cs, Widget child) {
-    if (_flat) return child;
+    if (_flat) {
+      if (_classic) return child;
+      return Material(
+        color: cs.surfaceContainerLow,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: cs.outlineVariant.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: child,
+      );
+    }
     return GlossyPill(
       color: _translucent
           ? AppFrost.glassTint(cs)
@@ -590,8 +642,8 @@ class ComposerInputBar extends StatelessWidget {
       blurSigma: _frost ? AppFrost.sigma : null,
       liquid: _liquid,
       backdropKey: backdropKey,
-      borderRadius: BorderRadius.circular(28),
-      depth: 8,
+      borderRadius: BorderRadius.circular(_classic ? 28 : 20),
+      depth: _classic ? 8 : 4,
       borderSide: BorderSide(
         color: cs.outlineVariant.withValues(alpha: 0.5),
         width: 0.5,
@@ -636,7 +688,9 @@ class ComposerInputBar extends StatelessWidget {
     if (_flat) {
       return Material(
         color: color,
-        shape: const CircleBorder(),
+        shape: _classic
+            ? const CircleBorder()
+            : RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(onTap: onTap, onLongPress: onLongPress, child: child),
       );
@@ -646,7 +700,7 @@ class ComposerInputBar extends StatelessWidget {
       blurSigma: _frost ? AppFrost.sigma : null,
       liquid: _liquid,
       backdropKey: backdropKey,
-      borderRadius: BorderRadius.circular(_controlSize / 2),
+      borderRadius: BorderRadius.circular(_classic ? _controlSize / 2 : 18),
       glassTint: glassTint,
       onTap: onTap,
       onLongPress: onLongPress,
@@ -1124,6 +1178,7 @@ class _AttachButton extends StatelessWidget {
   final ColorScheme cs;
   final double slot;
   final double leading;
+  final bool collapseWithText;
 
   const _AttachButton({
     required this.hasText,
@@ -1134,6 +1189,7 @@ class _AttachButton extends StatelessWidget {
     required this.cs,
     required this.slot,
     required this.leading,
+    this.collapseWithText = true,
   });
 
   @override
@@ -1141,7 +1197,7 @@ class _AttachButton extends StatelessWidget {
     return ListenableBuilder(
       listenable: Listenable.merge([hasText, uploadStatus]),
       builder: (context, _) {
-        final isText = hasText.value;
+        final isText = hasText.value && collapseWithText;
         final status = uploadStatus.value;
         final iconColor = status.awaitingResponse
             ? cs.primary

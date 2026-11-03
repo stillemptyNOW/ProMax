@@ -2936,7 +2936,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webPushInstallBody =>
-      'Use native IPA notification settings in this ProMax version.';
+      'The WEB session is connected. Open proma-x.xyz/notifications/ in Safari, choose Share, then Add to Home Screen. Open ProMax Notifications, allow notifications, create a subscription and link it to ProMax. Wait for confirmation in the app, then test an incoming message from another account with your iPhone locked.';
 
   @override
   String get webPushLinkedTitle => 'Notifications connected';
@@ -5940,7 +5940,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appIconSeasonalSubtitle =>
-      'Halloween from October 24 to November 2, New Year from December 20 to January 10. Your own icon comes back afterwards.';
+      'Each holiday icon is active for 7 days, then your selected icon returns.';
 
   @override
   String appIconSeasonalActive(String name, DateTime date) {
@@ -7348,7 +7348,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get performanceModeSubtitle =>
-      'Balance between effects and interface smoothness';
+      'Auto adapts effects to your device and frame delays. Smooth reduces effects; Beauty keeps maximum effects.';
 
   @override
   String get performanceModeAuto => 'Auto';
@@ -7407,10 +7407,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proMaxDigitalIdNative => 'Digital ID: native mode and report';
-
-  @override
-  String get proMaxBasedOnKomet =>
-      'ProMax is based on the open Komet client · GPLv3';
 
   @override
   String proMaxHeroVersion(String version, String theme) {
@@ -7921,4 +7917,170 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hubNewAnnouncement =>
       'New announcement in the ProMax service chat';
+
+  @override
+  String get proMaxLicenseInfo => 'ProMax · Open source · GPLv3';
+
+  @override
+  String get settingsLinkExport => 'Export as link';
+
+  @override
+  String get settingsLinkImport => 'Import from link';
+
+  @override
+  String get settingsLinkTitle => 'ProMax settings link';
+
+  @override
+  String get settingsLinkPrivacy =>
+      'The link contains only ProMax settings, including client privacy preferences. Anyone with the link can import them. History, accounts and recovery keys are not included.';
+
+  @override
+  String get settingsLinkCopy => 'Copy link';
+
+  @override
+  String get settingsLinkShare => 'Share';
+
+  @override
+  String get settingsLinkCopied => 'Link copied';
+
+  @override
+  String get settingsLinkPaste => 'Paste a ProMax settings link';
+
+  @override
+  String get settingsLinkInvalid =>
+      'The link is invalid, too long or unsupported by this version of ProMax';
+
+  @override
+  String get settingsLinkFailed => 'Could not share settings by link';
+
+  @override
+  String get settingsLinkConfirm =>
+      'Apply settings from this link? They may change ProMax appearance and privacy. Only included preferences will be replaced. Messages and accounts will be preserved. Preferences for another OS will not be applied.';
+
+  @override
+  String get settingsLinkApply => 'Apply';
+
+  @override
+  String get settingsLinkApplied => 'Link settings applied';
+
+  @override
+  String get settingsLinkCancel => 'Cancel';
+
+  @override
+  String get settingsLinkDone => 'Done';
+
+  @override
+  String get platformSettingsTitle => 'Device settings';
+
+  @override
+  String get platformSettingsHint =>
+      'Options for the current OS. Imports from another OS apply only shared settings and keep your device preferences.';
+
+  @override
+  String get platformMedia => 'Camera, microphone and calls';
+
+  @override
+  String get platformNotifications => 'System notifications';
+
+  @override
+  String get platformNativeGlass => 'iOS 26 system glass';
+
+  @override
+  String get platformNativeGlassHint =>
+      'Use Apple styling on supported iOS versions';
+
+  @override
+  String get platformNativeUnsupported =>
+      'System glass requires iOS 26. ProMax glass is used on this device.';
+
+  @override
+  String get platformTabs => 'Tab labels';
+
+  @override
+  String get platformTabsHint => 'Show labels under navigation icons';
+
+  @override
+  String get platformIconTiles => 'Colored settings icons';
+
+  @override
+  String get platformIconTilesHint => 'Show icons on colored tiles';
+
+  @override
+  String get hubConnectionTitle => 'ProMax service';
+
+  @override
+  String get hubCheckConnection => 'Check connection';
+
+  @override
+  String get hubConnectionOk => 'Service is available';
+
+  @override
+  String get hubSendPerformance => 'Send performance report';
+
+  @override
+  String get hubPerformanceHint =>
+      'Slow frame counts, rendering times, version, OS and effect mode. No messages or device model. Requires diagnostics to be enabled.';
+
+  @override
+  String get hubPerformanceSent => 'Performance report sent';
+
+  @override
+  String get hubPerformanceEmpty =>
+      'Use the app first to collect frame timings';
+
+  @override
+  String get hubDiagnosticsDisabled => 'Diagnostics is disabled';
+
+  @override
+  String get hubWorking => 'Working…';
+
+  @override
+  String get appIconNameChristmas => 'Christmas';
+
+  @override
+  String get appIconNameValentine => 'Valentine’s Day';
+
+  @override
+  String get appIconNameWomensDay => 'Women’s Day';
+
+  @override
+  String get appIconNameVictoryDay => 'May 9';
+
+  @override
+  String get proMaxWebsite => 'ProMax website';
+
+  @override
+  String get proMaxTelegram => 'Telegram';
+
+  @override
+  String get hubDraftUnsaved => 'Unsaved changes';
+
+  @override
+  String get hubDraftSaved => 'Draft saved';
+
+  @override
+  String get proMaxReadOnActionTitle => 'Read on action';
+
+  @override
+  String get proMaxReadOnActionHint =>
+      'While Don’t read is on, selected successful actions send read receipts. Reactions and replies read through their target; sending reads through messages received before sending. Later messages stay unread.';
+
+  @override
+  String get proMaxReadOnReaction => 'When adding a reaction';
+
+  @override
+  String get proMaxReadOnReply => 'When replying';
+
+  @override
+  String get proMaxReadOnSend => 'When sending a message';
+
+  @override
+  String get appClassicDesignTitle => 'Classic design';
+
+  @override
+  String get appClassicDesignHint =>
+      'Use the previous chat list, conversations and profile layout. Your data and settings stay with you.';
+
+  @override
+  String get appRedesignWelcome => 'Welcome to the redesign';
 }

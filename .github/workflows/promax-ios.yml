@@ -62,9 +62,15 @@ jobs:
         run: node --experimental-vm-modules test/promax_toolbox_test.mjs
       - name: Verify ProMax Web Push
         run: node --experimental-vm-modules test/promax_web_push_test.mjs
+      - name: Verify settings links landing
+        run: node test/promax_settings_landing_test.mjs
+      - name: Verify website downloads
+        run: node test/promax_downloads_test.mjs
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
+      - name: Verify Android release signing guard
+        run: python test/verify_android_apks_test.py
       - name: Verify push relay
         working-directory: server/apns-relay
         run: |

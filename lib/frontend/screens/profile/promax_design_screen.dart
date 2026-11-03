@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/config/app_native_glass.dart';
-import '../../../core/config/app_performance.dart';
+import '../../../core/config/platform_settings.dart';
+import 'platform_settings_screen.dart';
 import '../../../core/config/app_shape.dart';
 import '../../../core/config/promax_aura.dart';
 import '../../../core/config/promax_glass.dart';
@@ -80,25 +80,6 @@ class ProMaxDesignScreen extends StatelessWidget {
                 child: const Text('Сбросить'),
               ),
             ),
-            if (NativeGlass.isSupported) ...[
-              ValueListenableBuilder<bool>(
-                valueListenable: NativeGlass.enabled,
-                builder: (context, value, _) => SettingsCard(
-                  children: [
-                    SettingsToggleTile(
-                      icon: Symbols.phone_iphone,
-                      label: 'Системное стекло iOS 26',
-                      subtitle:
-                          'Liquid Glass от Apple для панелей, кнопок и таб-бара. '
-                          'Ползунки ниже меняют только стекло ProMax',
-                      value: value,
-                      onChanged: NativeGlass.save,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
             SettingsCard(
               children: [
                 ProMaxSliderTile(
@@ -139,7 +120,21 @@ class ProMaxDesignScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const PerformanceModeCard(),
+            SettingsCard(
+              children: [
+                SettingsNavTile(
+                  icon: Symbols.devices,
+                  label:
+                      '${AppLocalizations.of(context)!.platformSettingsTitle} · ${PlatformSettings.label}',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PlatformSettingsScreen(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const ProMaxSectionTitle('Интерфейс'),
             SettingsCard(
               children: [
@@ -157,8 +152,10 @@ class ProMaxDesignScreen extends StatelessWidget {
                   valueListenable: ProMaxIconTiles.enabled,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.apps,
-                    label: 'Цветные иконки',
-                    subtitle: 'Иконки настроек на цветных плитках, как в iOS',
+                    label: AppLocalizations.of(context)!.platformIconTiles,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    )!.platformIconTilesHint,
                     value: value,
                     onChanged: ProMaxIconTiles.save,
                   ),
@@ -167,8 +164,8 @@ class ProMaxDesignScreen extends StatelessWidget {
                   valueListenable: ProMaxNavLayout.tabs,
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.toolbar,
-                    label: 'Таб-бар как в iOS',
-                    subtitle: 'Подписи под иконками и мягкая подсветка вкладки',
+                    label: AppLocalizations.of(context)!.platformTabs,
+                    subtitle: AppLocalizations.of(context)!.platformTabsHint,
                     value: value,
                     onChanged: ProMaxNavLayout.save,
                   ),
@@ -207,95 +204,6 @@ class ProMaxDesignScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class PerformanceModeCard extends StatelessWidget {
-  const PerformanceModeCard({super.key});
-
-  static IconData iconOf(PerformanceMode mode) => switch (mode) {
-    PerformanceMode.auto => Symbols.auto_mode,
-    PerformanceMode.smooth => Symbols.speed,
-    PerformanceMode.beauty => Symbols.auto_awesome,
-  };
-
-  static String labelOf(AppLocalizations l10n, PerformanceMode mode) =>
-      switch (mode) {
-        PerformanceMode.auto => l10n.performanceModeAuto,
-        PerformanceMode.smooth => l10n.performanceModeSmooth,
-        PerformanceMode.beauty => l10n.performanceModeBeauty,
-      };
-
-  static String hintOf(
-    AppLocalizations l10n,
-    PerformanceMode mode,
-    DeviceTier tier,
-  ) => switch (mode) {
-    PerformanceMode.auto => l10n.performanceModeAutoHint(switch (tier) {
-      DeviceTier.low => l10n.performanceTierLow,
-      DeviceTier.mid => l10n.performanceTierMid,
-      DeviceTier.high => l10n.performanceTierHigh,
-    }),
-    PerformanceMode.smooth => l10n.performanceModeSmoothHint,
-    PerformanceMode.beauty => l10n.performanceModeBeautyHint,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ProMaxSectionTitle(l10n.performanceModeTitle),
-        SettingsPanel(
-          child: ListenableBuilder(
-            listenable: Listenable.merge([
-              AppPerformance.mode,
-              AppPerformance.tier,
-            ]),
-            builder: (context, _) {
-              final current = AppPerformance.mode.value;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.performanceModeSubtitle,
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final mode in PerformanceMode.values)
-                        ProMaxChoiceChip(
-                          key: ValueKey(mode),
-                          icon: iconOf(mode),
-                          label: labelOf(l10n, mode),
-                          selected: mode == current,
-                          onTap: () {
-                            Haptics.selection();
-                            AppPerformance.save(mode);
-                          },
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    hintOf(l10n, current, AppPerformance.tier.value),
-                    style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontSize: 12.5,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }
@@ -456,7 +364,7 @@ class GlassPreview extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   _PreviewBubble(
-                    text: 'Выглядит как iOS 26 🔥',
+                    text: 'Вот это мой стиль!',
                     incoming: false,
                     color: cs.primaryContainer,
                     textColor: cs.onPrimaryContainer,

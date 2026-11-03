@@ -5,6 +5,7 @@ import '../../widgets/color_wheel_picker.dart';
 import '../../widgets/connection_status.dart';
 
 import '../../../core/config/app_bubble_behavior.dart';
+import '../../../core/config/app_design.dart';
 import '../../../core/config/app_bubble_shape.dart';
 import '../../../core/config/app_pill_gradient.dart';
 import '../../../core/config/app_visual_style.dart';
@@ -113,6 +114,21 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                 children: [
+                  SettingsCard(
+                    children: [
+                      ValueListenableBuilder<bool>(
+                        valueListenable: AppDesign.classic,
+                        builder: (context, classic, _) => SettingsToggleTile(
+                          icon: Symbols.design_services,
+                          label: l10n.appClassicDesignTitle,
+                          subtitle: l10n.appClassicDesignHint,
+                          value: classic,
+                          onChanged: AppDesign.saveClassic,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   _ColorPickerCard(
                     color: _color,
                     isSystem: _isSystem,
@@ -1011,4 +1027,3 @@ class _BubbleBehaviorCard extends StatelessWidget {
     );
   }
 }
-

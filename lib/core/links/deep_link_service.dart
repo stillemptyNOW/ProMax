@@ -21,6 +21,9 @@ import '../webpush/web_push_service.dart';
 import 'desktop_url_scheme.dart';
 import 'max_link.dart';
 import '../config/build_profile.dart';
+import '../config/promax_settings_link.dart';
+import '../security/app_lock.dart';
+import '../../frontend/screens/profile/settings_link_import.dart';
 
 // #***! диплинки ProMax и MAX, а также переходы из пушей
 class DeepLinkService {
@@ -33,6 +36,7 @@ class DeepLinkService {
   StreamSubscription<Uri>? _sub;
   StreamSubscription<SessionState>? _stateSub;
   String? _pending;
+  String? _pendingSettings;
   bool _pendingLogExport = false;
   String? _pendingExternalCallback;
   WebPushSubscription? _pendingWebPush;
@@ -50,6 +54,7 @@ class DeepLinkService {
   Future<void> init() async {
     if (_started) return;
     _started = true;
+    AppLock.instance.locked.addListener(_flushPending);
 
     await DesktopUrlScheme.register();
 
@@ -75,6 +80,11 @@ class DeepLinkService {
 
   // #***! разбор ссылки и в очередь
   void _onUri(Uri uri) {
+    if (ProMaxSettingsLink.matches(uri)) {
+      _pendingSettings = uri.toString();
+      _flushPending();
+      return;
+    }
     if (_isLogExportLink(uri)) {
       _pendingLogExport = true;
       _flushPending();
@@ -162,6 +172,11 @@ class DeepLinkService {
     }
 
     if (!_ready || context == null) return;
+    if (_pendingSettings != null && !AppLock.instance.locked.value) {
+      final link = _pendingSettings!;
+      _pendingSettings = null;
+      unawaited(importProMaxSettingsLink(context, link));
+    }
     final pending = _pending;
     if (pending == null) return;
     final needsConnection = MaxLink.parse(pending)?.needsConnection ?? true;
@@ -308,7 +323,7 @@ class DeepLinkService {
       return segments.length == 1 && segments.first == 'export-logs';
     }
     if (scheme == 'https' || scheme == 'http') {
-      return host == 'boriskino.qd.je' &&
+      return {'proma-x.xyz', 'boriskino.qd.je'}.contains(host) &&
           segments.length == 1 &&
           segments.first == 'export-logs';
     }
@@ -338,6 +353,7 @@ class DeepLinkService {
   }
 
   void dispose() {
+    AppLock.instance.locked.removeListener(_flushPending);
     _logExportRetry?.cancel();
     _logExportRetry = null;
     _webPushRetry?.cancel();

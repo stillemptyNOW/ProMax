@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/product_links.dart';
 
 class HubException implements Exception {
   const HubException(this.status);
@@ -41,7 +42,7 @@ class HubDraft {
 
 class HubClient {
   HubClient({Uri? baseUri, http.Client Function()? createClient})
-    : baseUri = baseUri ?? Uri.parse('https://boriskino.qd.je/'),
+    : baseUri = baseUri ?? Uri.parse(ProductLinks.website),
       _createClient = createClient ?? http.Client.new;
   final Uri baseUri;
   final http.Client Function() _createClient;
@@ -90,8 +91,8 @@ class HubClient {
     }
   }
 
-  Future<List<HubMessage>> messages() async {
-    final response = await request('/v1/announcements');
+  Future<List<HubMessage>> messages({int after = 0}) async {
+    final response = await request('/v1/announcements?after=$after');
     return [
       for (final raw in response['messages'] as List)
         HubMessage.fromJson(raw as Map<String, dynamic>),

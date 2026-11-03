@@ -106,6 +106,7 @@ import 'chat/view/composer_input.dart' show BotStartPrompt;
 import 'chat/view/chat_body_layout.dart';
 import 'chat/view/shimmer_loading.dart';
 import '../../../core/config/app_visual_style.dart';
+import '../../../core/config/app_design.dart';
 import 'chat/message_deletion.dart';
 import '../../../backend/modules/chat_deletion_plan.dart';
 import 'deletion_feedback.dart';
@@ -741,6 +742,7 @@ class _ChatScreenState extends State<ChatScreen>
     _scrollController.addListener(_scheduleReadMarker);
     if (!widget.preview) MediaPlayback.instance.enterChat(widget.chatId);
     AppVisualStyle.current.addListener(_onVisualStyleChanged);
+    AppDesign.classic.addListener(_onVisualStyleChanged);
     AppChatChrome.current.addListener(_onVisualStyleChanged);
     AppComposerStyle.current.addListener(_onVisualStyleChanged);
     AppComposerBackground.current.addListener(_onVisualStyleChanged);
@@ -2548,6 +2550,7 @@ class _ChatScreenState extends State<ChatScreen>
     _scrollController.removeListener(_scrollNav.updateScrollDownVisible);
     _readMarker.dispose();
     AppVisualStyle.current.removeListener(_onVisualStyleChanged);
+    AppDesign.classic.removeListener(_onVisualStyleChanged);
     if (!widget.preview) MediaPlayback.instance.leaveChat(widget.chatId);
     AppChatChrome.current.removeListener(_onVisualStyleChanged);
     AppComposerStyle.current.removeListener(_onVisualStyleChanged);

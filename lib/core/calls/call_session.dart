@@ -162,7 +162,6 @@ class CallSession {
   static const double _speakLevelOn = 0.05;
   static const int _speakHoldTicks = 3;
 
-  // #***! проба ты тоже комет, сейчас выключена
   RTCDataChannel? _probeChannel;
   bool _peerIsProMax = false;
 
