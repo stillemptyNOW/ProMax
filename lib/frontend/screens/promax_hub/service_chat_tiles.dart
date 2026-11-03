@@ -1,10 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../../core/hub/hub_content.dart';
 import '../../../core/hub/hub_inbox.dart';
+import '../../../core/push/notification_bridge.dart';
 import '../../../core/utils/app_foreground.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/custom_notification.dart';
+import '../../widgets/hub/hub_announcement_banner.dart';
+import '../../widgets/hub/hub_kind_style.dart';
+import 'announcement_screen.dart';
 import 'service_chat_screen.dart';
 
 class ServiceChatTiles extends StatefulWidget {
@@ -39,7 +44,11 @@ class _ServiceChatTilesState extends State<ServiceChatTiles> {
     if (previous == null ||
         _inbox.unread <= previous ||
         _inbox.readers > 0 ||
-        !AppForeground.value) {
+        _inbox.muted) {
+      return;
+    }
+    if (!AppForeground.value) {
+      _notifyOs();
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,6 +59,25 @@ class _ServiceChatTilesState extends State<ServiceChatTiles> {
         );
       }
     });
+  }
+
+  void _notifyOs() {
+    final message = _inbox.visible.isEmpty ? null : _inbox.visible.last;
+    if (message == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final title = message.meta.title.isNotEmpty
+        ? message.meta.title
+        : message.meta.kind.label(l10n);
+    unawaited(
+      NotificationBridge.instance.showAnnouncement(
+        id: message.id,
+        title: title,
+        body: HubRichText.plain(message.text),
+        kind: message.meta.kind.name,
+        channelName: l10n.hubNotificationChannel,
+        openLabel: l10n.hubNotificationOpen,
+      ),
+    );
   }
 
   @override
@@ -66,6 +94,21 @@ class _ServiceChatTilesState extends State<ServiceChatTiles> {
       listenable: _inbox,
       builder: (context, _) => Column(
         children: [
+          if (_inbox.banner case final banner?)
+            HubAnnouncementBanner(
+              message: banner,
+              footer: hubStamp(context, banner),
+              onDismiss: () => _inbox.dismissBanner(banner.id),
+              onOpen: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => ServiceChatScreen(
+                    inbox: _inbox,
+                    kind: ServiceChat.announcements,
+                  ),
+                ),
+              ),
+            ),
           for (final kind in [
             if (_inbox.adminCandidate) ServiceChat.admin,
             if (_inbox.adminCandidate) ServiceChat.preview,
@@ -81,8 +124,8 @@ class _ServiceChatTilesState extends State<ServiceChatTiles> {
               ),
               title: Text(serviceChatTitle(kind, l10n)),
               subtitle: Text(
-                kind == ServiceChat.announcements && _inbox.messages.isNotEmpty
-                    ? _inbox.messages.last.text
+                kind == ServiceChat.announcements && _inbox.visible.isNotEmpty
+                    ? HubRichText.plain(_inbox.visible.last.text)
                     : l10n.hubServiceChat,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

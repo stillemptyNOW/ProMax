@@ -8083,4 +8083,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appRedesignWelcome => 'Welcome to the redesign';
+
+  @override
+  String get hubKindNews => 'News';
+
+  @override
+  String get hubKindUpdate => 'Update';
+
+  @override
+  String get hubKindImportant => 'Important';
+
+  @override
+  String get hubKindPromo => 'Promo';
+
+  @override
+  String get hubKindHoliday => 'Holiday';
+
+  @override
+  String get hubActionLink => 'Open link';
+
+  @override
+  String get hubActionUpdate => 'Open update';
+
+  @override
+  String get hubActionSettings => 'Open settings';
+
+  @override
+  String get hubFieldTitle => 'Title';
+
+  @override
+  String get hubFieldImage => 'Image (https link)';
+
+  @override
+  String get hubFieldButtonLabel => 'Button label';
+
+  @override
+  String get hubFieldButtonUrl => 'Button link (https)';
+
+  @override
+  String get hubFieldAction => 'Button action';
+
+  @override
+  String get hubMenuCopy => 'Copy';
+
+  @override
+  String get hubMenuHide => 'Hide';
+
+  @override
+  String get hubMenuMute => 'Mute announcements';
+
+  @override
+  String get hubMenuUnmute => 'Unmute announcements';
+
+  @override
+  String get hubCopied => 'Copied';
+
+  @override
+  String get hubToday => 'Today';
+
+  @override
+  String get hubYesterday => 'Yesterday';
+
+  @override
+  String get hubNotificationChannel => 'ProMax announcements';
+
+  @override
+  String get hubNotificationOpen => 'Open';
 }

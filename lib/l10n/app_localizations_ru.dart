@@ -8126,4 +8126,70 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appRedesignWelcome => 'Добро пожаловать в редизайн';
+
+  @override
+  String get hubKindNews => 'Новость';
+
+  @override
+  String get hubKindUpdate => 'Обновление';
+
+  @override
+  String get hubKindImportant => 'Важное';
+
+  @override
+  String get hubKindPromo => 'Акция';
+
+  @override
+  String get hubKindHoliday => 'Праздник';
+
+  @override
+  String get hubActionLink => 'Открыть ссылку';
+
+  @override
+  String get hubActionUpdate => 'Открыть обновление';
+
+  @override
+  String get hubActionSettings => 'Открыть настройки';
+
+  @override
+  String get hubFieldTitle => 'Заголовок';
+
+  @override
+  String get hubFieldImage => 'Картинка (ссылка https)';
+
+  @override
+  String get hubFieldButtonLabel => 'Текст кнопки';
+
+  @override
+  String get hubFieldButtonUrl => 'Ссылка кнопки (https)';
+
+  @override
+  String get hubFieldAction => 'Действие кнопки';
+
+  @override
+  String get hubMenuCopy => 'Копировать';
+
+  @override
+  String get hubMenuHide => 'Скрыть';
+
+  @override
+  String get hubMenuMute => 'Отключить уведомления об объявлениях';
+
+  @override
+  String get hubMenuUnmute => 'Включить уведомления об объявлениях';
+
+  @override
+  String get hubCopied => 'Скопировано';
+
+  @override
+  String get hubToday => 'Сегодня';
+
+  @override
+  String get hubYesterday => 'Вчера';
+
+  @override
+  String get hubNotificationChannel => 'Объявления ProMax';
+
+  @override
+  String get hubNotificationOpen => 'Открыть';
 }

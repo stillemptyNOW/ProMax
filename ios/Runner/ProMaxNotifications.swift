@@ -6,7 +6,7 @@ final class ProMaxNotifications: NSObject {
   static let shared = ProMaxNotifications()
 
   private static let chatKeys = ["promax_chat", "chatId", "chat_id"]
-  private static let nonMessagePrefixes = ["reminder-", "call-", "promax-test"]
+  private static let nonMessagePrefixes = ["reminder-", "call-", "promax-test", "announcement-"]
 
   private var sink: FlutterEventSink?
   private var pendingChatId: Int64 = 0
@@ -71,6 +71,9 @@ final class ProMaxNotifications: NSObject {
           .filter { $0 != 0 })
         DispatchQueue.main.async { result(chats.map { NSNumber(value: $0) }) }
       }
+    case "showAnnouncement":
+      showAnnouncement(call.arguments as? [String: Any] ?? [:])
+      result(nil)
     case "requestReminderPermission":
       UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
         DispatchQueue.main.async { result(granted) }
@@ -85,6 +88,21 @@ final class ProMaxNotifications: NSObject {
     default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  private func showAnnouncement(_ args: [String: Any]) {
+    let content = UNMutableNotificationContent()
+    content.title = args["title"] as? String ?? "ProMax"
+    content.body = args["body"] as? String ?? ""
+    content.sound = .default
+    content.threadIdentifier = "promax-announcements"
+    let id = (args["id"] as? NSNumber)?.int64Value ?? 0
+    let request = UNNotificationRequest(
+      identifier: "announcement-\(id)",
+      content: content,
+      trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+    )
+    UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
   }
 
   private func scheduleReminder(_ args: [String: Any], result: @escaping FlutterResult) {

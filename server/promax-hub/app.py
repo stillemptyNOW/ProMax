@@ -22,10 +22,20 @@ class Pair(BaseModel):
     account_id: int = Field(gt=0)
 
 
+KINDS = ("news", "update", "important", "promo", "holiday")
+ACTIONS = ("link", "update", "settings")
+
+
 class Draft(BaseModel):
     model_config = ConfigDict(extra="forbid")
     text: str = Field(max_length=8000)
     revision: int = Field(ge=0)
+    kind: str = Field(default="news", pattern="^(news|update|important|promo|holiday)$")
+    title: str = Field(default="", max_length=120)
+    image: str = Field(default="", max_length=500, pattern="^(https://[^\\s]*)?$")
+    button_label: str = Field(default="", max_length=40)
+    button_action: str = Field(default="link", pattern="^(link|update|settings)$")
+    button_url: str = Field(default="", max_length=500, pattern="^(https://[^\\s]*)?$")
 
 
 class Publish(BaseModel):
@@ -85,6 +95,10 @@ def digest(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
+META_COLUMNS = (("kind", "news"), ("title", ""), ("image", ""), ("button_label", ""), ("button_action", "link"), ("button_url", ""))
+META_SQL = ",".join(name for name, _ in META_COLUMNS)
+
+
 class Hub:
     def __init__(self, path, admin_account_id=None):
         self.path = Path(path)
@@ -105,6 +119,11 @@ class Hub:
                 INSERT OR IGNORE INTO download_total VALUES(1, 1);
                 CREATE TABLE IF NOT EXISTS download_clicks(event TEXT PRIMARY KEY, created INTEGER NOT NULL);
             """)
+            for table in ("draft", "announcements"):
+                have = {row[1] for row in db.execute(f"PRAGMA table_info({table})")}
+                for column, default in META_COLUMNS:
+                    if column not in have:
+                        db.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT NOT NULL DEFAULT '{default}'")
 
     @contextmanager
     def db(self):
@@ -249,9 +268,9 @@ def create_app(database=None, admin_account_id=None, identity_provider=None):
             raise HTTPException(422, "invalid_cursor")
         with hub.db() as db:
             if after == 0:
-                rows = list(reversed(db.execute("SELECT id,text,created FROM announcements ORDER BY id DESC LIMIT 100").fetchall()))
+                rows = list(reversed(db.execute("SELECT id,text,created,"+META_SQL+" FROM announcements ORDER BY id DESC LIMIT 100").fetchall()))
             else:
-                rows = db.execute("SELECT id,text,created FROM announcements WHERE id>? ORDER BY id LIMIT 100", (after,)).fetchall()
+                rows = db.execute("SELECT id,text,created,"+META_SQL+" FROM announcements WHERE id>? ORDER BY id LIMIT 100", (after,)).fetchall()
         return {"messages": [dict(row) for row in rows]}
 
     @app.post("/v1/admin/pair")
@@ -272,17 +291,20 @@ def create_app(database=None, admin_account_id=None, identity_provider=None):
     def get_draft(authorization: str | None = Header(default=None)):
         hub.admin(authorization)
         with hub.db() as db:
-            return dict(db.execute("SELECT text,revision,published_revision FROM draft WHERE id=1").fetchone())
+            return dict(db.execute("SELECT text,revision,published_revision,"+META_SQL+" FROM draft WHERE id=1").fetchone())
 
     @app.put("/v1/admin/draft")
     def save_draft(body: Draft, authorization: str | None = Header(default=None)):
         hub.admin(authorization)
         text = body.text.strip()
         with hub.db() as db:
-            changed = db.execute("UPDATE draft SET text=?,revision=revision+1 WHERE id=1 AND revision=?", (text, body.revision)).rowcount
+            changed = db.execute(
+                "UPDATE draft SET text=?,kind=?,title=?,image=?,button_label=?,button_action=?,button_url=?,revision=revision+1 WHERE id=1 AND revision=?",
+                (text, body.kind, body.title.strip(), body.image, body.button_label.strip(), body.button_action, body.button_url, body.revision),
+            ).rowcount
             if changed != 1:
                 raise HTTPException(409, "draft_changed")
-            return dict(db.execute("SELECT text,revision,published_revision FROM draft WHERE id=1").fetchone())
+            return dict(db.execute("SELECT text,revision,published_revision,"+META_SQL+" FROM draft WHERE id=1").fetchone())
 
     @app.post("/v1/admin/publish")
     def publish(body: Publish, authorization: str | None = Header(default=None)):
@@ -293,12 +315,16 @@ def create_app(database=None, admin_account_id=None, identity_provider=None):
             if body.revision != draft["revision"] or not draft["text"]:
                 raise HTTPException(409, "draft_changed_or_empty")
             if draft["published_revision"] == body.revision:
-                row = db.execute("SELECT id,text,created FROM announcements WHERE revision=?", (body.revision,)).fetchone()
+                row = db.execute("SELECT id,text,created,"+META_SQL+" FROM announcements WHERE revision=?", (body.revision,)).fetchone()
                 return dict(row)
             now = int(time.time())
-            result = db.execute("INSERT INTO announcements(text,created,revision) VALUES(?,?,?)", (draft["text"], now, body.revision))
+            meta = {name: draft[name] for name, _ in META_COLUMNS}
+            result = db.execute(
+                "INSERT INTO announcements(text,created,revision," + META_SQL + ") VALUES(?,?,?," + ",".join("?" * len(meta)) + ")",
+                (draft["text"], now, body.revision, *meta.values()),
+            )
             db.execute("UPDATE draft SET published_revision=? WHERE id=1", (body.revision,))
-            return {"id": result.lastrowid, "text": draft["text"], "created": now}
+            return {"id": result.lastrowid, "text": draft["text"], "created": now, **meta}
 
     @app.post("/v1/telemetry", status_code=202)
     def telemetry(body: Diagnostics, request: Request):

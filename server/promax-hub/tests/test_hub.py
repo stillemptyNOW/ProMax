@@ -89,6 +89,25 @@ class HubTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.client.get("/v1/announcements").json()["messages"][0]["text"], "synthetic announcement")
 
+    def test_announcement_meta_defaults_and_roundtrip(self):
+        headers = self.admin()
+        self.client.put("/v1/admin/draft", headers=headers, json={"text": "plain", "revision": 0})
+        self.client.post("/v1/admin/publish", headers=headers, json={"revision": 1})
+        first = self.client.get("/v1/announcements").json()["messages"][0]
+        self.assertEqual((first["kind"], first["title"], first["image"], first["button_action"]), ("news", "", "", "link"))
+        rich = {"text": "**bold**", "revision": 1, "kind": "important", "title": "Synthetic title",
+                "image": "https://example.test/a.png", "button_label": "Open", "button_action": "update", "button_url": ""}
+        self.assertEqual(self.client.put("/v1/admin/draft", headers=headers, json=rich).json()["kind"], "important")
+        self.client.post("/v1/admin/publish", headers=headers, json={"revision": 2})
+        last = self.client.get("/v1/announcements?after=1").json()["messages"][0]
+        self.assertEqual((last["kind"], last["title"], last["button_label"], last["button_action"]), ("important", "Synthetic title", "Open", "update"))
+
+    def test_announcement_meta_rejects_bad_values(self):
+        headers = self.admin()
+        for patch in ({"kind": "other"}, {"image": "http://example.test/a.png"}, {"button_url": "javascript:alert(1)"}, {"button_action": "x"}):
+            response = self.client.put("/v1/admin/draft", headers=headers, json={"text": "t", "revision": 0, **patch})
+            self.assertEqual(response.status_code, 422, patch)
+
     def test_publish_retries_do_not_duplicate_messages(self):
         headers = self.admin()
         self.client.put("/v1/admin/draft", headers=headers, json={"text": "synthetic", "revision": 0})
