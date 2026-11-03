@@ -16,8 +16,12 @@ for abi in arm64-v8a armeabi-v7a x86_64 universal; do
   fi
   actual_certificate=$(printf '%s\n' "$certificates" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]')
   signer_count=$(printf '%s\n' "$certificates" | grep -c '^Signer #[0-9]* certificate SHA-256 digest: ' || true)
-  if [ "$actual_certificate" != "$expected_certificate" ] || [ "$signer_count" != 1 ]; then
-    echo "::error::Android signing certificate changed: $abi cannot update existing ProMax installations."
+  if [ "$signer_count" != 1 ]; then
+    echo "::error::Expected one Android signer for $abi, found $signer_count."
+    exit 1
+  fi
+  if [ "$actual_certificate" != "$expected_certificate" ]; then
+    echo "::error::Android signing certificate changed for $abi. Expected $expected_certificate; found ${actual_certificate:-unavailable}."
     exit 1
   fi
   if ! package=$("$build_tools/aapt" dump badging "$apk" | sed -n '/^package: /p'); then

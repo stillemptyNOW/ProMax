@@ -8,6 +8,7 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'package:promax/core/config/app_performance.dart';
 import 'package:promax/core/config/chat_wallpaper_themes.dart';
 import 'package:promax/core/storage/chat_wallpaper_store.dart';
+import 'package:promax/core/utils/app_foreground.dart';
 import 'package:promax/frontend/widgets/mesh_gradient_background.dart';
 
 class ChatWallpaperView extends StatelessWidget {
@@ -31,10 +32,19 @@ class ChatWallpaperView extends StatelessWidget {
     if (wallpaper.isGradient) {
       final colors = wallpaper.gradientColors;
       if (colors == null || colors.isEmpty) return const SizedBox.shrink();
-      return MeshGradientBackground(
-        colors: colors,
-        animate: wallpaper.gradientAnimated,
-        rotation: wallpaper.gradientRotation,
+      return ListenableBuilder(
+        listenable: Listenable.merge([
+          AppForeground.notifier,
+          AppPerformance.budget,
+        ]),
+        builder: (context, _) => MeshGradientBackground(
+          colors: colors,
+          animate:
+              wallpaper.gradientAnimated &&
+              AppForeground.value &&
+              AppPerformance.current.animatedBackgrounds,
+          rotation: wallpaper.gradientRotation,
+        ),
       );
     }
     final theme = chatWallpaperThemeById(wallpaper.themeId);
@@ -73,12 +83,16 @@ class _WallpaperImageLayerState extends State<WallpaperImageLayer> {
   final ValueNotifier<Offset> _offset = ValueNotifier(Offset.zero);
   StreamSubscription<AccelerometerEvent>? _sub;
 
-  bool get _moves => widget.motion && AppPerformance.current.wallpaperMotion;
+  bool get _moves =>
+      widget.motion &&
+      AppForeground.value &&
+      AppPerformance.current.wallpaperMotion;
 
   @override
   void initState() {
     super.initState();
     AppPerformance.budget.addListener(_onBudget);
+    AppForeground.notifier.addListener(_onBudget);
     _syncMotion();
   }
 
@@ -126,6 +140,7 @@ class _WallpaperImageLayerState extends State<WallpaperImageLayer> {
   @override
   void dispose() {
     AppPerformance.budget.removeListener(_onBudget);
+    AppForeground.notifier.removeListener(_onBudget);
     _sub?.cancel();
     _offset.dispose();
     super.dispose();
