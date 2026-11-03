@@ -8168,4 +8168,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hubNotificationOpen => 'Open';
+
+  @override
+  String get hubSocialTitle => 'Hub features and privacy';
+
+  @override
+  String get hubShowProMaxBadge => 'ProMax badge';
+
+  @override
+  String get hubShowProMaxBadgeHint =>
+      'Show other ProMax users that you are also using ProMax';
+
+  @override
+  String get hubShowOsPresence => 'Broadcast OS presence';
+
+  @override
+  String get hubShowOsPresenceHint =>
+      'Show your operating system to other ProMax users while online (3m TTL)';
+
+  @override
+  String get hubDeleteData => 'Delete Hub data';
+
+  @override
+  String get hubDeleteDataHint =>
+      'Delete sessions, badges, and presence from the server';
+
+  @override
+  String get hubDeleteDataConfirm =>
+      'Delete all your account data from the Hub server?';
+
+  @override
+  String get hubDeleteDataSuccess => 'Hub server data deleted';
 }

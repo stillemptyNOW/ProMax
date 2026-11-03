@@ -3789,7 +3789,7 @@ class _ChatListScreenState extends State<ChatListScreen>
           int.tryParse(id) ?? 0,
         ) ||
         E2eeService.instance.isOn(_profile?.id ?? 0, int.tryParse(id) ?? 0);
-    final isVerified =
+    final isEncryptedVerified =
         e2eeInfo?.phase == E2eePhase.established && e2eeInfo!.verified;
     final Widget? statusIcon = (ownStatus != null && draft == null)
         ? _ownStatusIcon(cs, ownStatus, ownRead)
@@ -3941,7 +3941,7 @@ class _ChatListScreenState extends State<ChatListScreen>
             Positioned(
               left: -2,
               bottom: -2,
-              child: EncryptionLockBadge(size: 18, verified: isVerified),
+              child: EncryptionLockBadge(size: 18, verified: isEncryptedVerified),
             ),
           if (isSelected)
             Positioned(

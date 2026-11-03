@@ -14485,6 +14485,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open'**
   String get hubNotificationOpen;
+
+  /// No description provided for @hubSocialTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hub features and privacy'**
+  String get hubSocialTitle;
+
+  /// No description provided for @hubShowProMaxBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax badge'**
+  String get hubShowProMaxBadge;
+
+  /// No description provided for @hubShowProMaxBadgeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Show other ProMax users that you are also using ProMax'**
+  String get hubShowProMaxBadgeHint;
+
+  /// No description provided for @hubShowOsPresence.
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast OS presence'**
+  String get hubShowOsPresence;
+
+  /// No description provided for @hubShowOsPresenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your operating system to other ProMax users while online (3m TTL)'**
+  String get hubShowOsPresenceHint;
+
+  /// No description provided for @hubDeleteData.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Hub data'**
+  String get hubDeleteData;
+
+  /// No description provided for @hubDeleteDataHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete sessions, badges, and presence from the server'**
+  String get hubDeleteDataHint;
+
+  /// No description provided for @hubDeleteDataConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all your account data from the Hub server?'**
+  String get hubDeleteDataConfirm;
+
+  /// No description provided for @hubDeleteDataSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Hub server data deleted'**
+  String get hubDeleteDataSuccess;
 }
 
 class _AppLocalizationsDelegate

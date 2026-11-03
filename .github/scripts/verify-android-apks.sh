@@ -10,14 +10,20 @@ build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d |
 for abi in arm64-v8a armeabi-v7a x86_64 universal; do
   apk="build/app/outputs/flutter-apk/app-$abi-promax-release.apk"
   if [ "$abi" = universal ]; then apk=build/app/outputs/flutter-apk/app-promax-release.apk; fi
-  certificates=$("$build_tools/apksigner" verify --print-certs "$apk")
+  if ! certificates=$("$build_tools/apksigner" verify --print-certs "$apk"); then
+    echo "::error::APK signature verification failed for $abi ($apk)."
+    exit 1
+  fi
   actual_certificate=$(printf '%s\n' "$certificates" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]')
-  signer_count=$(printf '%s\n' "$certificates" | grep -c '^Signer #[0-9]* certificate SHA-256 digest: ')
+  signer_count=$(printf '%s\n' "$certificates" | grep -c '^Signer #[0-9]* certificate SHA-256 digest: ' || true)
   if [ "$actual_certificate" != "$expected_certificate" ] || [ "$signer_count" != 1 ]; then
     echo "::error::Android signing certificate changed: $abi cannot update existing ProMax installations."
     exit 1
   fi
-  package=$("$build_tools/aapt" dump badging "$apk" | sed -n '/^package: /p')
+  if ! package=$("$build_tools/aapt" dump badging "$apk" | sed -n '/^package: /p'); then
+    echo "::error::Could not read Android package metadata for $abi."
+    exit 1
+  fi
   if [[ "$package" != *"name='$expected_package'"* ]] || [[ "$package" != *"versionCode='$expected_code'"* ]] || [[ "$package" != *"versionName='$expected_version'"* ]]; then
     echo "::error::Unexpected Android package or version: $abi"
     exit 1

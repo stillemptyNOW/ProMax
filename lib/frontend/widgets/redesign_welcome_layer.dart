@@ -22,11 +22,13 @@ class RedesignWelcomeLayer extends StatefulWidget {
   State<RedesignWelcomeLayer> createState() => _RedesignWelcomeLayerState();
 }
 
-class _RedesignWelcomeLayerState extends State<RedesignWelcomeLayer> {
+class _RedesignWelcomeLayerState extends State<RedesignWelcomeLayer>
+    with SingleTickerProviderStateMixin {
   bool _visible = false;
   bool _preparing = false;
   bool _completed = false;
   Timer? _dismiss;
+  AnimationController? _animation;
 
   @override
   void initState() {
@@ -56,6 +58,12 @@ class _RedesignWelcomeLayerState extends State<RedesignWelcomeLayer> {
       );
       if (!mounted) return;
       _completed = true;
+      if (!MediaQuery.disableAnimationsOf(context)) {
+        _animation = AnimationController(
+          vsync: this,
+          duration: RedesignWelcomeLayer.duration,
+        )..forward();
+      }
       setState(() => _visible = true);
       _dismiss = Timer(RedesignWelcomeLayer.duration, () {
         if (mounted) setState(() => _visible = false);
@@ -73,6 +81,7 @@ class _RedesignWelcomeLayerState extends State<RedesignWelcomeLayer> {
   @override
   void dispose() {
     _dismiss?.cancel();
+    _animation?.dispose();
     AppLock.instance.locked.removeListener(_onLockChanged);
     super.dispose();
   }
@@ -80,21 +89,32 @@ class _RedesignWelcomeLayerState extends State<RedesignWelcomeLayer> {
   @override
   Widget build(BuildContext context) {
     if (!_visible) return const IgnorePointer(child: SizedBox.shrink());
+    final text = Padding(
+      padding: const EdgeInsets.all(32),
+      child: Semantics(
+        liveRegion: true,
+        child: Text(
+          AppLocalizations.of(context)!.appRedesignWelcome,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+      ),
+    );
+    final animation = _animation;
+    final opacity = animation == null
+        ? null
+        : TweenSequence<double>([
+            TweenSequenceItem(tween: Tween(begin: 0, end: 1), weight: 12),
+            TweenSequenceItem(tween: ConstantTween(1), weight: 70),
+            TweenSequenceItem(tween: Tween(begin: 1, end: 0), weight: 18),
+          ]).animate(animation);
     return BlockSemantics(
       child: Material(
         color: Theme.of(context).colorScheme.surface,
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Semantics(
-              liveRegion: true,
-              child: Text(
-                AppLocalizations.of(context)!.appRedesignWelcome,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            ),
-          ),
+          child: opacity == null
+              ? text
+              : FadeTransition(opacity: opacity, child: text),
         ),
       ),
     );

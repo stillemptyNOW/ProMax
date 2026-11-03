@@ -83,6 +83,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('welcome text fades in and out over the welcome duration', (
+    tester,
+  ) async {
+    await tester.pumpWidget(host());
+    await tester.pump();
+    final fade = find.descendant(
+      of: find.byType(RedesignWelcomeLayer),
+      matching: find.byType(FadeTransition),
+    );
+    expect(fade, findsOneWidget);
+    expect(tester.widget<FadeTransition>(fade).opacity.value, lessThan(0.1));
+    await tester.pump(const Duration(seconds: 3));
+    expect(tester.widget<FadeTransition>(fade).opacity.value, greaterThan(0.9));
+    await tester.pump(const Duration(seconds: 11));
+    expect(tester.widget<FadeTransition>(fade).opacity.value, lessThan(0.9));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Добро пожаловать в редизайн'), findsNothing);
+  });
+
   testWidgets('locked startup waits until unlock before showing the welcome', (
     tester,
   ) async {
