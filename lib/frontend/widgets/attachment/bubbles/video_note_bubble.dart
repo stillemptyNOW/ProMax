@@ -167,7 +167,10 @@ class _VideoNoteBubbleState extends State<VideoNoteBubble>
   }
 
   Future<void> _openLocalPreview(File file) async {
-    final controller = VideoPlayerController.file(file);
+    final controller = VideoPlayerController.file(
+      file,
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
     try {
       await controller.initialize();
     } catch (e) {
@@ -298,7 +301,10 @@ class _VideoNoteBubbleState extends State<VideoNoteBubble>
       return _controller;
     }
 
-    final controller = VideoPlayerController.file(file);
+    final controller = VideoPlayerController.file(
+      file,
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
     final future = controller.initialize();
     _initializing = future;
     try {
