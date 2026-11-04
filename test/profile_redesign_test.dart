@@ -103,4 +103,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('expanded profile name and status do not overlap at large text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      host(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: Size(320, 640),
+            textScaler: TextScaler.linear(2),
+          ),
+          child: Scaffold(
+            body: PersonProfileScrollView(
+              name: 'Synthetic name',
+              subtitle: 'Synthetic status',
+              avatarBuilder: (_) => const ColoredBox(color: Colors.blue),
+              body: const SizedBox(height: 1200),
+            ),
+          ),
+        ),
+      ),
+    );
+    final name = tester.getRect(find.text('Synthetic name'));
+    final status = tester.getRect(find.text('Synthetic status'));
+    expect(name.bottom, lessThanOrEqualTo(status.top));
+    expect(tester.takeException(), isNull);
+  });
 }

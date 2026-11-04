@@ -107,41 +107,60 @@ class ConversationTile extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DefaultTextStyle(
-                              style: TextStyle(
-                                color: cs.onSurfaceVariant,
-                                fontSize: 14,
-                                height: 1.3,
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final previewLine = DefaultTextStyle(
+                            style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: 14,
+                              height: 1.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            child: preview,
+                          );
+                          final indicators = <Widget>[
+                            if (muted)
+                              Icon(
+                                Symbols.notifications_off,
+                                size: 14,
+                                color: cs.outline,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              child: preview,
-                            ),
-                          ),
-                          if (muted) ...[
-                            const SizedBox(width: 6),
-                            Icon(
-                              Symbols.notifications_off,
-                              size: 14,
-                              color: cs.outline,
-                            ),
-                          ],
-                          if (pinned) ...[
-                            const SizedBox(width: 6),
-                            Icon(Symbols.keep, size: 14, color: cs.outline),
-                          ],
-                          if (indicator != null) ...[
-                            const SizedBox(width: 8),
-                            indicator!,
-                          ],
-                          if (action != null) ...[
-                            const SizedBox(width: 4),
-                            action!,
-                          ],
-                        ],
+                            if (pinned)
+                              Icon(Symbols.keep, size: 14, color: cs.outline),
+                            ?indicator,
+                            ?action,
+                          ];
+                          if (constraints.maxWidth < 220 &&
+                              indicators.isNotEmpty) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                previewLine,
+                                const SizedBox(height: 4),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: indicators,
+                                ),
+                              ],
+                            );
+                          }
+                          return Row(
+                            children: [
+                              Expanded(child: previewLine),
+                              if (indicators.isNotEmpty) ...[
+                                const SizedBox(width: 6),
+                                Wrap(
+                                  spacing: 6,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: indicators,
+                                ),
+                              ],
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),

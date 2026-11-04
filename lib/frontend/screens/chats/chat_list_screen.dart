@@ -4180,29 +4180,35 @@ class _ChatListScreenState extends State<ChatListScreen>
                       group: chatType != 'DIALOG',
                       child: messageLine,
                     ),
-                    indicator: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ?statusIcon,
-                        if (hasMention) ...[
-                          _countBadge(cs, '@', muted: isMuted),
-                          const SizedBox(width: 4),
-                        ],
-                        if (unreadCount > 0)
-                          _countBadge(
-                            cs,
-                            unreadCount.toString(),
-                            muted: isMuted,
+                    indicator:
+                        statusIcon != null ||
+                            hasMention ||
+                            unreadCount > 0 ||
+                            isRead
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ?statusIcon,
+                              if (hasMention) ...[
+                                _countBadge(cs, '@', muted: isMuted),
+                                const SizedBox(width: 4),
+                              ],
+                              if (unreadCount > 0)
+                                _countBadge(
+                                  cs,
+                                  unreadCount.toString(),
+                                  muted: isMuted,
+                                )
+                              else if (isRead)
+                                Icon(
+                                  Symbols.done_all,
+                                  color: cs.primary,
+                                  size: 16,
+                                  weight: 400,
+                                ),
+                            ],
                           )
-                        else if (isRead)
-                          Icon(
-                            Symbols.done_all,
-                            color: cs.primary,
-                            size: 16,
-                            weight: 400,
-                          ),
-                      ],
-                    ),
+                        : null,
                     action: hasMiniApp
                         ? _miniAppButton(
                             cs,
