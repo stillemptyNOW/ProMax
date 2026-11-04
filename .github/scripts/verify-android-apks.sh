@@ -4,12 +4,25 @@ set -euo pipefail
 expected_certificate=e83be69ec2ea9cc8f418b533636c1a114824bfc05a940fca6060205f390d72b6
 expected_package=io.github.stillemptynow.promax
 expected_version=$(awk '/^version:/ {split($2, v, "+"); print v[1]; exit}' pubspec.yaml)
-expected_code=$(awk '/^version:/ {split($2, v, "+"); print v[2]; exit}' pubspec.yaml)
+base_code=$(awk '/^version:/ {split($2, v, "+"); print v[2]; exit}' pubspec.yaml)
 build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+
+# Flutter's own Gradle plugin overrides versionCode on split-per-ABI APKs
+# as abiVersionCode * 1000 + versionCode (FlutterPluginConstants.ABI_VERSION),
+# to give each split a unique code for Play Store uploads; the universal
+# APK keeps the plain versionCode. lib/core/utils/update_checker.dart
+# already strips this same offset when comparing the running build's
+# number, so this must match that scheme, not a flat versionCode.
+declare -A abi_version_multiplier=( [armeabi-v7a]=1 [arm64-v8a]=2 [x86_64]=4 )
 
 for abi in arm64-v8a armeabi-v7a x86_64 universal; do
   apk="build/app/outputs/flutter-apk/app-$abi-promax-release.apk"
-  if [ "$abi" = universal ]; then apk=build/app/outputs/flutter-apk/app-promax-release.apk; fi
+  expected_code=$base_code
+  if [ "$abi" = universal ]; then
+    apk=build/app/outputs/flutter-apk/app-promax-release.apk
+  else
+    expected_code=$((abi_version_multiplier[$abi] * 1000 + base_code))
+  fi
   if ! certificates=$("$build_tools/apksigner" verify --print-certs "$apk"); then
     echo "::error::APK signature verification failed for $abi ($apk)."
     exit 1
