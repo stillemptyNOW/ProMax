@@ -228,6 +228,8 @@ jobs:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
       - name: Dependencies
         run: flutter pub get
+      - name: Rebuild bundled audio libraries without LTO bitcode
+        run: .github/scripts/build-macos-opus-libs.sh
       - name: Build
         run: |
           flutter config --no-enable-swift-package-manager
