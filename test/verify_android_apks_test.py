@@ -38,6 +38,7 @@ class AndroidReleaseSigningTests(unittest.TestCase):
         if invalid_abi:
             filename = "app-promax-release.apk" if invalid_abi == "universal" else f"app-{invalid_abi}-promax-release.apk"
             signer_body += f'if [[ "$3" = */{filename} ]]; then certificate={"0" * 64}; fi\n'
+        signer_body += 'printf "Signer #1 certificate DN: CN=Synthetic Test\\n"\n'
         signer_body += 'printf "Signer #1 certificate SHA-256 digest: %s\\n" "$certificate"\n'
         if extra_signer:
             signer_body += f"printf 'Signer #2 certificate SHA-256 digest: {'1' * 64}\\n'\n"

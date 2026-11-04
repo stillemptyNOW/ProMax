@@ -18,6 +18,7 @@ for abi in arm64-v8a armeabi-v7a x86_64 universal; do
   signer_count=$(printf '%s\n' "$certificates" | grep -c '^Signer #[0-9]* certificate SHA-256 digest: ' || true)
   if [ "$signer_count" != 1 ]; then
     echo "::error::Expected one Android signer for $abi, found $signer_count."
+    printf '%s\n' "$certificates" | sed -n '/[Ss]igner/p' | head -n 10
     exit 1
   fi
   if [ "$actual_certificate" != "$expected_certificate" ]; then
