@@ -48,10 +48,14 @@ if ! command -v pkg-config >/dev/null 2>&1; then
   brew install pkg-config
 fi
 
-curl -fsSL "https://downloads.xiph.org/releases/ogg/libogg-${VERSION_OGG}.tar.gz" -o libogg.tar.gz
-curl -fsSL "https://downloads.xiph.org/releases/opus/opus-${VERSION_OPUS}.tar.gz" -o opus.tar.gz
-curl -fsSL "https://downloads.xiph.org/releases/opus/libopusenc-${VERSION_OPUSENC}.tar.gz" -o libopusenc.tar.gz
-curl -fsSL "https://downloads.xiph.org/releases/opus/opusfile-${VERSION_OPUSFILE}.tar.gz" -o opusfile.tar.gz
+curl_retry() {
+  curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 "$@"
+}
+
+curl_retry "https://downloads.xiph.org/releases/ogg/libogg-${VERSION_OGG}.tar.gz" -o libogg.tar.gz
+curl_retry "https://downloads.xiph.org/releases/opus/opus-${VERSION_OPUS}.tar.gz" -o opus.tar.gz
+curl_retry "https://downloads.xiph.org/releases/opus/libopusenc-${VERSION_OPUSENC}.tar.gz" -o libopusenc.tar.gz
+curl_retry "https://downloads.xiph.org/releases/opus/opusfile-${VERSION_OPUSFILE}.tar.gz" -o opusfile.tar.gz
 
 tar xzf libogg.tar.gz
 tar xzf opus.tar.gz
