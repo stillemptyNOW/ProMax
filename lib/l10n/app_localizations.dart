@@ -14485,6 +14485,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open'**
   String get hubNotificationOpen;
+
+  /// No description provided for @groupEncryptionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group encryption'**
+  String get groupEncryptionTitle;
+
+  /// No description provided for @groupEncryptionIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'All participants must agree and have verified encrypted conversations with each other. Messages are blocked while encryption is being established or the group changes.'**
+  String get groupEncryptionIntro;
+
+  /// No description provided for @groupEncryptionOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Group encryption is not enabled.'**
+  String get groupEncryptionOff;
+
+  /// No description provided for @groupEncryptionEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable group encryption'**
+  String get groupEncryptionEnable;
+
+  /// No description provided for @groupEncryptionAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept group encryption'**
+  String get groupEncryptionAccept;
+
+  /// No description provided for @groupEncryptionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you agree to enable encryption for this group? All participants must agree before messages can be sent.'**
+  String get groupEncryptionConfirm;
+
+  /// No description provided for @groupEncryptionAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree'**
+  String get groupEncryptionAgree;
+
+  /// No description provided for @groupEncryptionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get groupEncryptionCancel;
+
+  /// No description provided for @groupEncryptionWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for participants to agree'**
+  String get groupEncryptionWaiting;
+
+  /// No description provided for @groupEncryptionKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for encryption keys'**
+  String get groupEncryptionKeys;
+
+  /// No description provided for @groupEncryptionReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Group encryption is active'**
+  String get groupEncryptionReady;
+
+  /// No description provided for @groupEncryptionChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The group members changed. Sending is blocked until encryption is set up again.'**
+  String get groupEncryptionChanged;
+
+  /// No description provided for @groupEncryptionRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up again'**
+  String get groupEncryptionRestart;
+
+  /// No description provided for @groupEncryptionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Group encryption is unavailable on this device.'**
+  String get groupEncryptionUnavailable;
+
+  /// No description provided for @groupEncryptionVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify encrypted conversations with all participants before continuing.'**
+  String get groupEncryptionVerification;
+
+  /// No description provided for @groupEncryptionMembership.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to verify the group participant list.'**
+  String get groupEncryptionMembership;
+
+  /// No description provided for @groupEncryptionTransport.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not exchange encryption information. Sending remains blocked.'**
+  String get groupEncryptionTransport;
+
+  /// No description provided for @groupEncryptionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update group encryption. Please try again.'**
+  String get groupEncryptionFailed;
 }
 
 class _AppLocalizationsDelegate

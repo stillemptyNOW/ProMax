@@ -96,6 +96,10 @@ KC_EXPORT kc_status kc_group_members_build(const int64_t *member_ids,
     const uint8_t *public_keys, size_t member_count, uint8_t *out_members,
     size_t members_cap, size_t *members_len);
 
+KC_EXPORT kc_status kc_group_members_digest(int64_t group_id,
+    const uint8_t *members, size_t members_len, uint8_t *out_digest,
+    size_t digest_cap, size_t *digest_len);
+
 KC_EXPORT kc_status kc_group_sender_create(const uint8_t *identity,
     size_t identity_len, int64_t group_id, int64_t sender_id, uint64_t epoch,
     const uint8_t *members, size_t members_len, const uint8_t *random,

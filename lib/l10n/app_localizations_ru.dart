@@ -8210,4 +8210,65 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get hubNotificationOpen => 'Открыть';
+
+  @override
+  String get groupEncryptionTitle => 'Шифрование группы';
+
+  @override
+  String get groupEncryptionIntro =>
+      'Все участники должны согласиться и подтвердить защищённые переписки друг с другом. Пока шифрование настраивается или состав группы меняется, отправка сообщений заблокирована.';
+
+  @override
+  String get groupEncryptionOff => 'Шифрование группы не включено.';
+
+  @override
+  String get groupEncryptionEnable => 'Включить шифрование группы';
+
+  @override
+  String get groupEncryptionAccept => 'Принять шифрование группы';
+
+  @override
+  String get groupEncryptionConfirm =>
+      'Вы согласны включить шифрование в этой группе? Отправка сообщений станет доступна после согласия всех участников.';
+
+  @override
+  String get groupEncryptionAgree => 'Согласен';
+
+  @override
+  String get groupEncryptionCancel => 'Отмена';
+
+  @override
+  String get groupEncryptionWaiting => 'Ожидаем согласия участников';
+
+  @override
+  String get groupEncryptionKeys => 'Ожидаем ключи шифрования';
+
+  @override
+  String get groupEncryptionReady => 'Шифрование группы включено';
+
+  @override
+  String get groupEncryptionChanged =>
+      'Состав группы изменился. Отправка заблокирована до повторной настройки шифрования.';
+
+  @override
+  String get groupEncryptionRestart => 'Настроить заново';
+
+  @override
+  String get groupEncryptionUnavailable =>
+      'Шифрование группы недоступно на этом устройстве.';
+
+  @override
+  String get groupEncryptionVerification =>
+      'Перед продолжением подтвердите защищённые переписки со всеми участниками.';
+
+  @override
+  String get groupEncryptionMembership => 'Не удалось проверить состав группы.';
+
+  @override
+  String get groupEncryptionTransport =>
+      'Не удалось обменяться данными шифрования. Отправка остаётся заблокированной.';
+
+  @override
+  String get groupEncryptionFailed =>
+      'Не удалось изменить настройки шифрования группы. Попробуйте ещё раз.';
 }

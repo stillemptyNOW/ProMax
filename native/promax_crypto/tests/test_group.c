@@ -253,6 +253,48 @@ static void test_group_membership_rotation(void)
         "distribution cannot substitute membership");
 }
 
+static void test_group_cross_epoch_replay(void)
+{
+    group_fixture fixture;
+    uint8_t rotated_distribution[KC_GROUP_DISTRIBUTION_SIZE];
+    uint8_t rotated_sender[KC_GROUP_STATE_MAX];
+    uint8_t rotated_receiver[KC_GROUP_STATE_MAX];
+    uint8_t output[KC_GROUP_STATE_MAX];
+    uint8_t before[KC_GROUP_STATE_MAX];
+    size_t distribution_len = 0u;
+    size_t sender_len = 0u;
+    size_t receiver_len = 0u;
+    size_t output_len = 123u;
+    group_fixture_init(&fixture);
+    group_expect(kc_group_sender_create(fixture.identities[0], KC_IDENTITY_SIZE,
+        -20001, 10001, 2u, fixture.members, 3u * KC_GROUP_MEMBER_SIZE,
+        fixture.random, sizeof(fixture.random), fixture.sender, fixture.sender_len,
+        rotated_distribution, sizeof(rotated_distribution), &distribution_len,
+        rotated_sender, sizeof(rotated_sender), &sender_len) == KC_OK,
+        "create signed rotated distribution");
+    group_expect(kc_group_receiver_import(-20001, 10001, fixture.members,
+        3u * KC_GROUP_MEMBER_SIZE, rotated_distribution, distribution_len,
+        fixture.receiver, fixture.receiver_len, rotated_receiver,
+        sizeof(rotated_receiver), &receiver_len) == KC_OK,
+        "import signed rotated distribution");
+    memset(output, 0xa5, sizeof(output));
+    memcpy(before, output, sizeof(output));
+    group_expect(kc_group_receiver_import(-20001, 10001, fixture.members,
+        2u * KC_GROUP_MEMBER_SIZE, fixture.distribution,
+        sizeof(fixture.distribution), rotated_receiver, receiver_len, output,
+        sizeof(output), &output_len) == KC_ERR_REPLAY,
+        "old signed distribution rejected after newer epoch");
+    group_expect(output_len == 123u && memcmp(before, output, sizeof(output)) == 0,
+        "rejected epoch replay leaves output untouched");
+    group_expect(kc_group_receiver_import(-20001, 10001, fixture.members,
+        2u * KC_GROUP_MEMBER_SIZE, rotated_distribution, distribution_len,
+        fixture.receiver, fixture.receiver_len, output, sizeof(output),
+        &output_len) == KC_ERR_BAD_PEER,
+        "signed rotated distribution rejects substituted membership");
+    group_expect(output_len == 123u && memcmp(before, output, sizeof(output)) == 0,
+        "rejected membership substitution leaves output untouched");
+}
+
 static void test_group_distribution_validation(void)
 {
     group_fixture fixture;
@@ -467,6 +509,7 @@ int kc_run_group_tests(void)
     test_group_out_of_order();
     test_group_authentication();
     test_group_membership_rotation();
+    test_group_cross_epoch_replay();
     test_group_distribution_validation();
     test_group_bounded_skip();
     test_group_capacity_and_malformed();

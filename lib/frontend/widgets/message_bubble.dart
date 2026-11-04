@@ -1143,6 +1143,7 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildBubble(BuildContext context) {
+    if (message.e2ee == CachedMessage.e2eeControl) return const SizedBox.shrink();
     final cs = Theme.of(context).colorScheme;
     final contentType = _contentType;
 

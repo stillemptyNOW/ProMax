@@ -6,6 +6,8 @@ Never _unavailable() =>
     throw const ProMaxCryptoException(CryptoStatus.unavailable);
 
 abstract final class ProMaxGroupCrypto {
+  static Uint8List membersDigest(int groupId, Uint8List members) => _unavailable();
+
   static bool get isAvailable => false;
 
   static Uint8List membersBuild(List<GroupMember> members) => _unavailable();

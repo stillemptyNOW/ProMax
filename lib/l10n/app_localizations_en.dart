@@ -8168,4 +8168,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hubNotificationOpen => 'Open';
+
+  @override
+  String get groupEncryptionTitle => 'Group encryption';
+
+  @override
+  String get groupEncryptionIntro =>
+      'All participants must agree and have verified encrypted conversations with each other. Messages are blocked while encryption is being established or the group changes.';
+
+  @override
+  String get groupEncryptionOff => 'Group encryption is not enabled.';
+
+  @override
+  String get groupEncryptionEnable => 'Enable group encryption';
+
+  @override
+  String get groupEncryptionAccept => 'Accept group encryption';
+
+  @override
+  String get groupEncryptionConfirm =>
+      'Do you agree to enable encryption for this group? All participants must agree before messages can be sent.';
+
+  @override
+  String get groupEncryptionAgree => 'I agree';
+
+  @override
+  String get groupEncryptionCancel => 'Cancel';
+
+  @override
+  String get groupEncryptionWaiting => 'Waiting for participants to agree';
+
+  @override
+  String get groupEncryptionKeys => 'Waiting for encryption keys';
+
+  @override
+  String get groupEncryptionReady => 'Group encryption is active';
+
+  @override
+  String get groupEncryptionChanged =>
+      'The group members changed. Sending is blocked until encryption is set up again.';
+
+  @override
+  String get groupEncryptionRestart => 'Set up again';
+
+  @override
+  String get groupEncryptionUnavailable =>
+      'Group encryption is unavailable on this device.';
+
+  @override
+  String get groupEncryptionVerification =>
+      'Verify encrypted conversations with all participants before continuing.';
+
+  @override
+  String get groupEncryptionMembership =>
+      'Unable to verify the group participant list.';
+
+  @override
+  String get groupEncryptionTransport =>
+      'Could not exchange encryption information. Sending remains blocked.';
+
+  @override
+  String get groupEncryptionFailed =>
+      'Could not update group encryption. Please try again.';
 }

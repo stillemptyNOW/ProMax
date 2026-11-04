@@ -836,6 +836,20 @@ class AppDatabase {
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  static Future<void> saveGroupEncryptionState(int accountId, String key,
+    String value, Map<String, dynamic>? message) async {
+    final db = await _instance;
+    await db.transaction((txn) async {
+      if (message != null) {
+        await txn.insert('messages', message,
+          conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await txn.insert('sync_state', {
+        'account_id': accountId, 'key': key, 'value': value,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    });
+  }
+
   static Future<bool> claimNotification(
     int accountId,
     int chatId,

@@ -10,6 +10,23 @@ import '../../backend/modules/messages.dart';
 import '../storage/app_database.dart';
 import '../storage/token_storage.dart';
 import '../utils/logger.dart';
+import 'group_e2ee_service.dart';
+
+class E2eeControlMessage {
+  const E2eeControlMessage({required this.accountId, required this.dialogId,
+    required this.peerId, required this.peerPublic, required this.verified,
+    required this.messageId, required this.plaintext});
+
+  final int accountId;
+  final int dialogId;
+  final int peerId;
+  final Uint8List peerPublic;
+  final bool verified;
+  final String messageId;
+  final Uint8List plaintext;
+}
+
+typedef E2eeControlHandler = Future<void> Function(E2eeControlMessage message);
 
 // #***! сквозное шифрование диалогов: identity-ключ, хендшейк сообщениями, рэтчет в C-ядре
 enum E2eePhase { none, offered, pendingConsent, established, keyChanged }
@@ -91,10 +108,61 @@ class E2eeService {
   final Map<int, Uint8List> _identities = {};
   final Map<int, Uint8List> _localKeys = {};
   MessagesModule? _messages;
+  final Map<String, E2eeControlHandler> _controlHandlers = {};
 
   bool get available => ProMaxCrypto.isAvailable;
 
-  void attach(MessagesModule messages) => _messages = messages;
+  void attach(MessagesModule messages) {
+    _messages = messages;
+    GroupE2eeService.instance.attach();
+  }
+
+  void registerControlHandler(String protocol, E2eeControlHandler handler) {
+    final current = _controlHandlers[protocol];
+    if (current != null && !identical(current, handler)) {
+      throw StateError('Control protocol already registered');
+    }
+    _controlHandlers[protocol] = handler;
+  }
+
+  void unregisterControlHandler(String protocol, E2eeControlHandler handler) {
+    if (identical(_controlHandlers[protocol], handler)) {
+      _controlHandlers.remove(protocol);
+    }
+  }
+
+  Future<void> _dispatchControl(CachedMessage message) async {
+    if (message.e2ee != CachedMessage.e2eeControl || message.sealedText == null) return;
+    final current = info(message.accountId, message.chatId);
+    if (current?.phase != E2eePhase.established || current?.peerPublic == null ||
+        current?.peerId != message.senderId) {
+      return;
+    }
+    final plaintext = await openBytes(message.accountId, message.chatId,
+      message.sealedText!);
+    if (plaintext == null) return;
+    try {
+      final decoded = jsonDecode(utf8.decode(plaintext));
+      if (decoded is! Map || decoded['p'] is! String) return;
+      final handler = _controlHandlers[decoded['p']];
+      if (handler == null) return;
+      final peerPublic = Uint8List.fromList(current!.peerPublic!);
+      try {
+        await handler(E2eeControlMessage(accountId: message.accountId,
+          dialogId: message.chatId, peerId: current.peerId,
+          peerPublic: peerPublic, verified: current.verified,
+          messageId: message.id, plaintext: plaintext));
+      } finally {
+        ProMaxCrypto.wipe(peerPublic);
+      }
+    } on FormatException {
+      return;
+    } catch (_) {
+      logger.w('Authenticated control handler failed');
+    } finally {
+      ProMaxCrypto.wipe(plaintext);
+    }
+  }
 
   String _key(int accountId, int chatId) => '$accountId/$chatId';
 
@@ -140,10 +208,12 @@ class E2eeService {
       info(accountId, chatId)?.phase ?? E2eePhase.none;
 
   bool isActive(int accountId, int chatId) =>
-      info(accountId, chatId)?.hasSession ?? false;
+      (info(accountId, chatId)?.hasSession ?? false) ||
+      GroupE2eeService.instance.isOn(accountId, chatId);
 
   bool isOn(int accountId, int chatId) =>
-      phaseOf(accountId, chatId) != E2eePhase.none;
+      phaseOf(accountId, chatId) != E2eePhase.none ||
+      GroupE2eeService.instance.isOn(accountId, chatId);
 
   E2eeSessionInfo _infoFromRow(Map<String, dynamic> row) => E2eeSessionInfo(
     phase: E2eePhase.values.firstWhere(
@@ -230,6 +300,16 @@ class E2eeService {
 
   Future<Uint8List> sealText(int accountId, int chatId, String text) =>
       sealBytes(accountId, chatId, Uint8List.fromList(utf8.encode(text)));
+
+  Future<Uint8List> sealGroupState(int accountId, int chatId,
+    Uint8List plaintext) async => ProMaxCrypto.localSeal(
+      key: await _localKey(accountId), plaintext: plaintext,
+      aad: _aad('group-state', accountId, chatId));
+
+  Future<Uint8List> openGroupState(int accountId, int chatId,
+    Uint8List sealed) async => ProMaxCrypto.localOpen(
+      key: await _localKey(accountId), blob: sealed,
+      aad: _aad('group-state', accountId, chatId));
 
   Future<Uint8List?> openBytes(
     int accountId,
@@ -513,7 +593,12 @@ class E2eeService {
     int chatId,
     ContentType contentType,
     Uint8List plaintext,
-  ) => _serial(_key(accountId, chatId), () async {
+  ) {
+    if (GroupE2eeService.instance.isOn(accountId, chatId)) {
+      return GroupE2eeService.instance.encryptBytes(accountId, chatId,
+        contentType, plaintext);
+    }
+    return _serial(_key(accountId, chatId), () async {
     final current = info(accountId, chatId);
     if (current == null || !current.hasSession) return null;
     final state = await _state(accountId, chatId);
@@ -533,7 +618,8 @@ class E2eeService {
       }
       return null;
     }
-  });
+    });
+  }
 
   bool fitsTransport(int plaintextBytes) =>
       plaintextBytes <= ProMaxCryptoSizes.sessionPlaintextMax;
@@ -545,6 +631,9 @@ class E2eeService {
   }) async {
     final text = message.text;
     if (!available || text == null || text.isEmpty) return message;
+    if (text.startsWith(GroupE2eeService.wirePrefix)) {
+      return GroupE2eeService.instance.inspect(message);
+    }
     if (message.senderId == 0 || message.senderId == message.accountId) {
       return message;
     }
@@ -563,10 +652,12 @@ class E2eeService {
         );
         return message;
       case TextClass.session:
-        return _serial(
+        final decrypted = await _serial(
           _key(message.accountId, message.chatId),
           () => _decryptIncoming(message, text, commit),
         );
+        await _dispatchControl(decrypted);
+        return decrypted;
       case TextClass.legacy:
         // #***! каждый 32-й legacy похож на v2 по длине, решает тег а не длина
         if (isActive(message.accountId, message.chatId)) {
@@ -750,7 +841,9 @@ class E2eeService {
           sealedText: await sealBytes(accountId, chatId, result.plaintext),
           e2ee: CachedMessage.e2eeFile,
         ),
-        ContentType.control => message.copyWith(e2ee: CachedMessage.e2eeFailed),
+        ContentType.control => message.copyWith(
+          sealedText: await sealBytes(accountId, chatId, result.plaintext),
+          e2ee: CachedMessage.e2eeControl),
       };
       // #***! текст на диск раньше состояния рэтчета, ключ сообщения уже потрачен
       if (commit != null) await commit(decrypted);
@@ -777,6 +870,15 @@ class E2eeService {
   ) async {
     if (!available || messages.isEmpty) return messages;
     await ensureLoaded(accountId);
+    if (messages.any((message) => message.text?.startsWith(
+        GroupE2eeService.wirePrefix) ?? false)) {
+      final result = <CachedMessage>[];
+      for (final message in [...messages]..sort((a, b) => a.time.compareTo(b.time))) {
+        result.add(await inspect(message));
+      }
+      final byId = {for (final message in result) message.id: message};
+      return messages.map((message) => byId[message.id] ?? message).toList();
+    }
     if (!isOn(accountId, chatId)) return messages;
     final existing = <String, Map<String, dynamic>>{};
     for (final row in await AppDatabase.loadMessagesByIds(
@@ -794,6 +896,7 @@ class E2eeService {
           row['text'] == message.text &&
           (row['e2ee'] as int? ?? 0) != CachedMessage.e2eeNone) {
         result[message.id] = _withStoredEncryption(message, row);
+        await _dispatchControl(result[message.id]!);
         continue;
       }
       if (row != null && message.senderId != accountId) {
@@ -872,6 +975,7 @@ class E2eeService {
 
   // #***! ушли в фон или сменили аккаунт, секреты из памяти вон
   void lock() {
+    GroupE2eeService.instance.lock();
     for (final state in _states.values) {
       ProMaxCrypto.wipe(state);
     }

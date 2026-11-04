@@ -1,5 +1,9 @@
 part of 'promax_crypto_ffi.dart';
 
+typedef _GroupDigestNative = ffi.Int32 Function(ffi.Int64, _Bytes,
+    ffi.Size, _Bytes, ffi.Size, _SizeOut);
+typedef _GroupDigest = int Function(int, _Bytes, int, _Bytes, int, _SizeOut);
+
 typedef _GroupMembersNative = ffi.Int32 Function(
     ffi.Pointer<ffi.Int64>, _Bytes, ffi.Size, _Bytes, ffi.Size, _SizeOut);
 typedef _GroupMembers = int Function(
@@ -35,7 +39,9 @@ typedef _GroupEncrypt = int Function(_Bytes, int, int, _Bytes, int, _Bytes, int,
 
 class _GroupBindings {
   _GroupBindings(_Lib owner)
-      : members = owner.library
+      : digest = owner.library.lookupFunction<_GroupDigestNative, _GroupDigest>(
+            'kc_group_members_digest'),
+        members = owner.library
             .lookupFunction<_GroupMembersNative, _GroupMembers>(
                 'kc_group_members_build'),
         sender = owner.library.lookupFunction<_GroupSenderNative, _GroupSender>(
@@ -54,6 +60,7 @@ class _GroupBindings {
             .lookupFunction<_DecryptNative, _Decrypt>('kc_group_decrypt');
 
   final _GroupMembers members;
+  final _GroupDigest digest;
   final _GroupSender sender;
   final _GroupImport receiver;
   final _Bound encryptBound;
@@ -78,6 +85,16 @@ class _GroupBindings {
 }
 
 abstract final class ProMaxGroupCrypto {
+  static Uint8List membersDigest(int groupId, Uint8List members) =>
+      _run((scope, lib) {
+        final out = scope.out(ProMaxCryptoSizes.key);
+        final length = scope.size();
+        _check(_GroupBindings.forLibrary(lib).digest(groupId,
+            scope.bytes(members), members.length, out, ProMaxCryptoSizes.key,
+            length));
+        return scope.take(out, length.value);
+      });
+
   static bool get isAvailable {
     try {
       _GroupBindings.forLibrary(_Lib.instance);

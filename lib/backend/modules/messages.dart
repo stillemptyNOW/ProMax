@@ -8,6 +8,7 @@ import '../../core/contacts/device_contacts_service.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
 import '../../core/crypto/e2ee_service.dart';
+import '../../core/crypto/group_e2ee_service.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/chat_activity_store.dart';
 import '../../core/storage/message_ranges.dart';
@@ -528,6 +529,7 @@ class CachedMessage {
   static const int e2eeText = 1;
   static const int e2eeFailed = 2;
   static const int e2eeFile = 3;
+  static const int e2eeControl = 4;
 
   // #***! дальше удобства для юишки
   const CachedMessage({
@@ -1213,11 +1215,28 @@ class MessagesModule {
     return null;
   }
 
+  Future<void Function()?> _groupSendGuard(Map<String, dynamic> payload,
+    int? accountId) async {
+    final groupId = payload['chatId'];
+    final body = payload['message'];
+    if (groupId is! int || body is! Map) return null;
+    final active = accountId ?? await TokenStorage.getActiveAccountId();
+    if (active == null || active == 0) return null;
+    final text = body['text'] as String? ?? '';
+    final attachments = body['attaches'];
+    final hasAttachments = attachments is! List || attachments.isNotEmpty;
+    await GroupE2eeService.instance.assertSendAllowed(active, groupId, text,
+      hasAttachments: hasAttachments);
+    return () => GroupE2eeService.instance.assertPrepared(active, groupId, text,
+      hasAttachments: hasAttachments);
+  }
+
   Future<Packet> _sendUserMessageRequest(
     Map<String, dynamic> payload, {
     void Function()? beforeSend,
     int? accountId,
   }) async {
+    final groupCheck = await _groupSendGuard(payload, accountId);
     final receipt = await ActionReadReceipt.forSend(
       _api,
       payload,
@@ -1226,7 +1245,10 @@ class MessagesModule {
     final response = await _api.sendRequest(
       Opcode.msgSend,
       payload,
-      beforeSend: beforeSend,
+      beforeSend: () {
+        beforeSend?.call();
+        groupCheck?.call();
+      },
     );
     if (response.isOk) await receipt?.send();
     return response;
@@ -1240,10 +1262,12 @@ class MessagesModule {
     required T Function(Packet response) onResult,
     required T onExhausted,
   }) async {
+    final groupCheck = await _groupSendGuard(payload, null);
     final receipt = await ActionReadReceipt.forSend(_api, payload);
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        final response = await _api.sendRequest(Opcode.msgSend, payload);
+        final response = await _api.sendRequest(Opcode.msgSend, payload,
+          beforeSend: groupCheck);
         if (response.isOk) await receipt?.send();
         return onResult(response);
       } on PacketError catch (e) {

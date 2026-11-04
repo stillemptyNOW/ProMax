@@ -81,11 +81,13 @@ and group epoch. Payloads are bounded to 65536 bytes.
 ### Preconditions and membership
 
 The application must obtain the current authoritative MAX group membership,
-verify each account's pinned ProMax identity using the Hub's account-attestation
-mechanism, and require explicit group encryption consent from every member.
-An arbitrary user ID, phone number or self-asserted public key is insufficient.
-The native core does not establish these facts. Until this integration is
-available and verified, G1 primitives must not be presented as enabled group E2EE.
+bind each member to the identity public key of an established pairwise v3 session
+whose fingerprint the user has explicitly marked verified, and require explicit
+group encryption consent from every member. An arbitrary user ID, phone number
+or self-asserted public key is insufficient. These are user-verified cryptographic
+identities, not MAX-certified identities; no MAX bot or account-attestation service
+is involved. The native core does not establish these facts. Until this integration
+is available and verified, G1 primitives must not be presented as enabled group E2EE.
 
 The manifest is 2..256 records, sorted by strictly increasing positive user ID.
 Each record is eight-byte user ID || 32-byte pinned identity public key.

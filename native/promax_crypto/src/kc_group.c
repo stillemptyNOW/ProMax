@@ -118,6 +118,29 @@ kc_status kc_group_members_build(const int64_t *member_ids,
     return status;
 }
 
+kc_status kc_group_members_digest(int64_t group_id,
+    const uint8_t *members, size_t members_len, uint8_t *out_digest,
+    size_t digest_cap, size_t *digest_len)
+{
+    uint8_t digest[32];
+    uint8_t sender_public[32];
+    kc_status status;
+    if (members == NULL || members_len < KC_GROUP_MEMBER_SIZE ||
+        digest_len == NULL) {
+        return KC_ERR_INVALID_ARGUMENT;
+    }
+    if (out_digest == NULL || digest_cap < sizeof(digest)) {
+        return KC_ERR_BUFFER_TOO_SMALL;
+    }
+    status = kc_group_members(group_id, kc_load_i64(members), members,
+                              members_len, digest, sender_public);
+    if (status == KC_OK) {
+        memcpy(out_digest, digest, sizeof(digest));
+        *digest_len = sizeof(digest);
+    }
+    return status;
+}
+
 static kc_status kc_group_parse(const uint8_t *state, size_t len, uint8_t mode)
 {
     uint32_t skipped;
