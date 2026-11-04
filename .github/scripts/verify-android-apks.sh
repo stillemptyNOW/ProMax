@@ -14,13 +14,18 @@ for abi in arm64-v8a armeabi-v7a x86_64 universal; do
     echo "::error::APK signature verification failed for $abi ($apk)."
     exit 1
   fi
-  actual_certificate=$(printf '%s\n' "$certificates" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]')
-  signer_count=$(printf '%s\n' "$certificates" | grep -c '^Signer #[0-9]* certificate SHA-256 digest: ' || true)
+  # apksigner prints one digest line per signing scheme that covers the APK
+  # (v1 as "Signer #N", v2/v3/v3.1 as "V2/V3/V3.1 Signer"), not one per
+  # distinct signer; an APK signed with a single key under multiple schemes
+  # is still one signer, so dedupe by digest instead of counting lines.
+  digests=$(printf '%s\n' "$certificates" | sed -n 's/^\(Signer #[0-9]*\|V[0-9][0-9.]* Signer\):\{0,1\} certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]' | sort -u)
+  signer_count=$(printf '%s\n' "$digests" | sed '/^$/d' | wc -l | tr -d ' ')
   if [ "$signer_count" != 1 ]; then
     echo "::error::Expected one Android signer for $abi, found $signer_count."
     printf '%s\n' "$certificates" | sed -n '/[Ss]igner/p' | head -n 10
     exit 1
   fi
+  actual_certificate=$digests
   if [ "$actual_certificate" != "$expected_certificate" ]; then
     echo "::error::Android signing certificate changed for $abi. Expected $expected_certificate; found ${actual_certificate:-unavailable}."
     exit 1
