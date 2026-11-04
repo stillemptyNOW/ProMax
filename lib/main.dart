@@ -30,6 +30,8 @@ import 'core/storage/retired_preferences.dart';
 import 'core/crypto/e2ee_service.dart';
 import 'core/storage/chat_encryption_store.dart';
 import 'core/config/app_accent.dart';
+import 'core/config/app_design.dart';
+import 'frontend/widgets/redesign_welcome_layer.dart';
 import 'core/config/app_amoled.dart';
 import 'core/config/app_badge.dart';
 import 'core/config/app_icon.dart';
@@ -65,6 +67,7 @@ import 'core/config/app_composer_background.dart';
 import 'core/config/app_composer_style.dart';
 import 'core/config/app_nav_pill_style.dart';
 import 'core/config/app_native_glass.dart';
+import 'core/config/native_ios_ui.dart';
 import 'core/config/app_wallpaper_tint.dart';
 import 'core/storage/chat_wallpaper_store.dart';
 import 'core/utils/wallpaper_seed.dart';
@@ -292,6 +295,7 @@ void main(List<String> args) async {
   final packageInfoFuture = PackageInfo.fromPlatform();
   final localeFuture = _loadInitialLocale();
   final glassFuture = ProMaxGlass.load();
+  final appDesignFuture = AppDesign.load();
   final atmosphereFuture = ProMaxAtmosphere.load();
   final presetFuture = ProMaxThemePresets.load();
   final navLayoutFuture = ProMaxNavLayout.load();
@@ -317,6 +321,7 @@ void main(List<String> args) async {
   final visualStyleFuture = AppVisualStyle.load();
   final liquidGlassFuture = LiquidGlass.load();
   final nativeGlassFuture = NativeGlass.load();
+  final nativeIosUiFuture = NativeIosUi.load();
   final meshGradientFuture = MeshGradient.load();
   final chatChromeFuture = AppChatChrome.load();
   final composerStyleFuture = AppComposerStyle.load();
@@ -357,6 +362,7 @@ void main(List<String> args) async {
 
   await hapticsFuture;
   await glassFuture;
+  await appDesignFuture;
   await atmosphereFuture;
   await presetFuture;
   await navLayoutFuture;
@@ -414,6 +420,7 @@ void main(List<String> args) async {
     visualStyleFuture,
     liquidGlassFuture,
     nativeGlassFuture,
+    nativeIosUiFuture,
     meshGradientFuture,
     chatChromeFuture,
     composerStyleFuture,
@@ -1361,6 +1368,9 @@ class ProMaxAppState extends State<ProMaxApp>
                                     ),
                                     const Positioned.fill(
                                       child: AppSwitcherCurtain(),
+                                    ),
+                                    const Positioned.fill(
+                                      child: RedesignWelcomeLayer(),
                                     ),
                                     if (fpsOn) const FpsOverlayLayer(),
                                   ],

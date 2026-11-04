@@ -761,13 +761,13 @@ abstract class AppLocalizations {
   /// No description provided for @infoFileUploadTypes.
   ///
   /// In en, this message translates to:
-  /// **'file-upload-unsupported-types'**
+  /// **'Unsupported file types'**
   String get infoFileUploadTypes;
 
   /// No description provided for @infoWhiteListLinks.
   ///
   /// In en, this message translates to:
-  /// **'white-list-links'**
+  /// **'Allowed links'**
   String get infoWhiteListLinks;
 
   /// No description provided for @infoRegistrationTime.
@@ -947,13 +947,13 @@ abstract class AppLocalizations {
   /// No description provided for @infoAccountRemovalEnabled.
   ///
   /// In en, this message translates to:
-  /// **'account-removal-enabled'**
+  /// **'Instant account deletion:'**
   String get infoAccountRemovalEnabled;
 
   /// No description provided for @infoImageSize.
   ///
   /// In en, this message translates to:
-  /// **'image-size'**
+  /// **'Image size:'**
   String get infoImageSize;
 
   /// No description provided for @infoGce.
@@ -971,25 +971,25 @@ abstract class AppLocalizations {
   /// No description provided for @infoMaxMsgLength.
   ///
   /// In en, this message translates to:
-  /// **'max-msg-length'**
+  /// **'Maximum message length:'**
   String get infoMaxMsgLength;
 
   /// No description provided for @infoQuotesEnabled.
   ///
   /// In en, this message translates to:
-  /// **'quotes-enabled'**
+  /// **'Quoting:'**
   String get infoQuotesEnabled;
 
   /// No description provided for @infoCallsEndpoint.
   ///
   /// In en, this message translates to:
-  /// **'calls-endpoint'**
+  /// **'Call server address:'**
   String get infoCallsEndpoint;
 
   /// No description provided for @infoSendLocationEnabled.
   ///
   /// In en, this message translates to:
-  /// **'send-location-enabled'**
+  /// **'Location sharing:'**
   String get infoSendLocationEnabled;
 
   /// No description provided for @infoLgce.
@@ -1007,7 +1007,7 @@ abstract class AppLocalizations {
   /// No description provided for @infoVideoMsgEnabled.
   ///
   /// In en, this message translates to:
-  /// **'video-msg-enabled'**
+  /// **'Video messages:'**
   String get infoVideoMsgEnabled;
 
   /// No description provided for @infoGrse.
@@ -1019,25 +1019,25 @@ abstract class AppLocalizations {
   /// No description provided for @infoEditTimeout.
   ///
   /// In en, this message translates to:
-  /// **'edit-timeout'**
+  /// **'Message editing allowed within:'**
   String get infoEditTimeout;
 
   /// No description provided for @infoImageQuality.
   ///
   /// In en, this message translates to:
-  /// **'image-quality'**
+  /// **'Image quality:'**
   String get infoImageQuality;
 
   /// No description provided for @infoUnsafeFilesAlert.
   ///
   /// In en, this message translates to:
-  /// **'unsafe-files-alert'**
+  /// **'Unsafe files warning:'**
   String get infoUnsafeFilesAlert;
 
   /// No description provided for @infoAccountNicknameEnabled.
   ///
   /// In en, this message translates to:
-  /// **'account-nickname-enabled'**
+  /// **'Account nickname:'**
   String get infoAccountNicknameEnabled;
 
   /// No description provided for @infoMentionsEntityNamesLimit.
@@ -1049,7 +1049,7 @@ abstract class AppLocalizations {
   /// No description provided for @infoReactionsEnabled.
   ///
   /// In en, this message translates to:
-  /// **'reactions-enabled'**
+  /// **'Reactions:'**
   String get infoReactionsEnabled;
 
   /// No description provided for @infoTile.
@@ -5537,7 +5537,7 @@ abstract class AppLocalizations {
   /// No description provided for @webPushInstallBody.
   ///
   /// In en, this message translates to:
-  /// **'Use native IPA notification settings in this ProMax version.'**
+  /// **'The WEB session is connected. Open proma-x.xyz/notifications/ in Safari, choose Share, then Add to Home Screen. Open ProMax Notifications, allow notifications, create a subscription and link it to ProMax. Wait for confirmation in the app, then test an incoming message from another account with your iPhone locked.'**
   String get webPushInstallBody;
 
   /// No description provided for @webPushLinkedTitle.
@@ -7775,7 +7775,7 @@ abstract class AppLocalizations {
   /// No description provided for @infoDeleteForAll.
   ///
   /// In en, this message translates to:
-  /// **'delete-for-all'**
+  /// **'Delete chat for everyone:'**
   String get infoDeleteForAll;
 
   /// No description provided for @chatActionProfileUnavailable.
@@ -9800,6 +9800,24 @@ abstract class AppLocalizations {
   /// **'Enter a valid phone number'**
   String get findUserInvalidPhone;
 
+  /// No description provided for @findUserConfirmPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Is this the complete number?'**
+  String get findUserConfirmPhone;
+
+  /// No description provided for @findUserContinueEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue editing'**
+  String get findUserContinueEditing;
+
+  /// No description provided for @findUserConfirmSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search this number'**
+  String get findUserConfirmSearch;
+
   /// No description provided for @findUserPhoneNotFound.
   ///
   /// In en, this message translates to:
@@ -10577,7 +10595,7 @@ abstract class AppLocalizations {
   /// No description provided for @appIconSeasonalSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Halloween from October 24 to November 2, New Year from December 20 to January 10. Your own icon comes back afterwards.'**
+  /// **'Each holiday icon is active for 7 days, then your selected icon returns.'**
   String get appIconSeasonalSubtitle;
 
   /// No description provided for @appIconSeasonalActive.
@@ -12989,7 +13007,7 @@ abstract class AppLocalizations {
   /// No description provided for @performanceModeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Balance between effects and interface smoothness'**
+  /// **'Auto adapts effects to your device and frame delays. Smooth reduces effects; Beauty keeps maximum effects.'**
   String get performanceModeSubtitle;
 
   /// No description provided for @performanceModeAuto.
@@ -13099,12 +13117,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Digital ID: native mode and report'**
   String get proMaxDigitalIdNative;
-
-  /// No description provided for @proMaxBasedOnKomet.
-  ///
-  /// In en, this message translates to:
-  /// **'ProMax is based on the open Komet client · GPLv3'**
-  String get proMaxBasedOnKomet;
 
   /// No description provided for @proMaxHeroVersion.
   ///
@@ -14011,6 +14023,600 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New announcement in the ProMax service chat'**
   String get hubNewAnnouncement;
+
+  /// No description provided for @proMaxLicenseInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax · Open source · GPLv3'**
+  String get proMaxLicenseInfo;
+
+  /// No description provided for @settingsLinkExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as link'**
+  String get settingsLinkExport;
+
+  /// No description provided for @settingsLinkImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from link'**
+  String get settingsLinkImport;
+
+  /// No description provided for @settingsLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax settings link'**
+  String get settingsLinkTitle;
+
+  /// No description provided for @settingsLinkPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'The link contains only ProMax settings, including client privacy preferences. Anyone with the link can import them. History, accounts and recovery keys are not included.'**
+  String get settingsLinkPrivacy;
+
+  /// No description provided for @settingsLinkCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get settingsLinkCopy;
+
+  /// No description provided for @settingsLinkShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get settingsLinkShare;
+
+  /// No description provided for @settingsLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get settingsLinkCopied;
+
+  /// No description provided for @settingsLinkPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a ProMax settings link'**
+  String get settingsLinkPaste;
+
+  /// No description provided for @settingsLinkInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The link is invalid, too long or unsupported by this version of ProMax'**
+  String get settingsLinkInvalid;
+
+  /// No description provided for @settingsLinkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not share settings by link'**
+  String get settingsLinkFailed;
+
+  /// No description provided for @settingsLinkConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply settings from this link? They may change ProMax appearance and privacy. Only included preferences will be replaced. Messages and accounts will be preserved. Preferences for another OS will not be applied.'**
+  String get settingsLinkConfirm;
+
+  /// No description provided for @settingsLinkApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get settingsLinkApply;
+
+  /// No description provided for @settingsLinkApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link settings applied'**
+  String get settingsLinkApplied;
+
+  /// No description provided for @settingsLinkCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get settingsLinkCancel;
+
+  /// No description provided for @settingsLinkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get settingsLinkDone;
+
+  /// No description provided for @platformSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Device settings'**
+  String get platformSettingsTitle;
+
+  /// No description provided for @platformSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Options for the current OS. Imports from another OS apply only shared settings and keep your device preferences.'**
+  String get platformSettingsHint;
+
+  /// No description provided for @platformMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera, microphone and calls'**
+  String get platformMedia;
+
+  /// No description provided for @platformNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'System notifications'**
+  String get platformNotifications;
+
+  /// No description provided for @platformNativeGlass.
+  ///
+  /// In en, this message translates to:
+  /// **'iOS 26 system glass'**
+  String get platformNativeGlass;
+
+  /// No description provided for @platformNativeGlassHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Apple styling on supported iOS versions'**
+  String get platformNativeGlassHint;
+
+  /// No description provided for @platformNativeIosUi.
+  ///
+  /// In en, this message translates to:
+  /// **'Native iOS interface'**
+  String get platformNativeIosUi;
+
+  /// No description provided for @platformNativeIosUiHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Experimental: the chat list is drawn by SwiftUI. Turn off if something breaks'**
+  String get platformNativeIosUiHint;
+
+  /// No description provided for @nativeChatListMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get nativeChatListMute;
+
+  /// No description provided for @nativeChatListUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get nativeChatListUnmute;
+
+  /// No description provided for @nativeChatListSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get nativeChatListSelect;
+
+  /// No description provided for @nativeChatListSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get nativeChatListSearch;
+
+  /// No description provided for @platformNativeUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'System glass requires iOS 26. ProMax glass is used on this device.'**
+  String get platformNativeUnsupported;
+
+  /// No description provided for @platformTabs.
+  ///
+  /// In en, this message translates to:
+  /// **'Tab labels'**
+  String get platformTabs;
+
+  /// No description provided for @platformTabsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Show labels under navigation icons'**
+  String get platformTabsHint;
+
+  /// No description provided for @platformIconTiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Colored settings icons'**
+  String get platformIconTiles;
+
+  /// No description provided for @platformIconTilesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Show icons on colored tiles'**
+  String get platformIconTilesHint;
+
+  /// No description provided for @hubConnectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax service'**
+  String get hubConnectionTitle;
+
+  /// No description provided for @hubCheckConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Check connection'**
+  String get hubCheckConnection;
+
+  /// No description provided for @hubConnectionOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Service is available'**
+  String get hubConnectionOk;
+
+  /// No description provided for @hubSendPerformance.
+  ///
+  /// In en, this message translates to:
+  /// **'Send performance report'**
+  String get hubSendPerformance;
+
+  /// No description provided for @hubPerformanceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow frame counts, rendering times, version, OS and effect mode. No messages or device model. Requires diagnostics to be enabled.'**
+  String get hubPerformanceHint;
+
+  /// No description provided for @hubPerformanceSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance report sent'**
+  String get hubPerformanceSent;
+
+  /// No description provided for @hubPerformanceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the app first to collect frame timings'**
+  String get hubPerformanceEmpty;
+
+  /// No description provided for @hubDiagnosticsDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics is disabled'**
+  String get hubDiagnosticsDisabled;
+
+  /// No description provided for @hubWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Working…'**
+  String get hubWorking;
+
+  /// No description provided for @appIconNameChristmas.
+  ///
+  /// In en, this message translates to:
+  /// **'Christmas'**
+  String get appIconNameChristmas;
+
+  /// No description provided for @appIconNameValentine.
+  ///
+  /// In en, this message translates to:
+  /// **'Valentine’s Day'**
+  String get appIconNameValentine;
+
+  /// No description provided for @appIconNameWomensDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Women’s Day'**
+  String get appIconNameWomensDay;
+
+  /// No description provided for @appIconNameVictoryDay.
+  ///
+  /// In en, this message translates to:
+  /// **'May 9'**
+  String get appIconNameVictoryDay;
+
+  /// No description provided for @proMaxWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax website'**
+  String get proMaxWebsite;
+
+  /// No description provided for @proMaxTelegram.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram'**
+  String get proMaxTelegram;
+
+  /// No description provided for @hubDraftUnsaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved changes'**
+  String get hubDraftUnsaved;
+
+  /// No description provided for @hubDraftSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft saved'**
+  String get hubDraftSaved;
+
+  /// No description provided for @proMaxReadOnActionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read on action'**
+  String get proMaxReadOnActionTitle;
+
+  /// No description provided for @proMaxReadOnActionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'While Don’t read is on, selected successful actions send read receipts. Reactions and replies read through their target; sending reads through messages received before sending. Later messages stay unread.'**
+  String get proMaxReadOnActionHint;
+
+  /// No description provided for @proMaxReadOnReaction.
+  ///
+  /// In en, this message translates to:
+  /// **'When adding a reaction'**
+  String get proMaxReadOnReaction;
+
+  /// No description provided for @proMaxReadOnReply.
+  ///
+  /// In en, this message translates to:
+  /// **'When replying'**
+  String get proMaxReadOnReply;
+
+  /// No description provided for @proMaxReadOnSend.
+  ///
+  /// In en, this message translates to:
+  /// **'When sending a message'**
+  String get proMaxReadOnSend;
+
+  /// No description provided for @appClassicDesignTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic design'**
+  String get appClassicDesignTitle;
+
+  /// No description provided for @appClassicDesignHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the previous chat list, conversations and profile layout. Your data and settings stay with you.'**
+  String get appClassicDesignHint;
+
+  /// No description provided for @appRedesignWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to the redesign'**
+  String get appRedesignWelcome;
+
+  /// No description provided for @hubKindNews.
+  ///
+  /// In en, this message translates to:
+  /// **'News'**
+  String get hubKindNews;
+
+  /// No description provided for @hubKindUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get hubKindUpdate;
+
+  /// No description provided for @hubKindImportant.
+  ///
+  /// In en, this message translates to:
+  /// **'Important'**
+  String get hubKindImportant;
+
+  /// No description provided for @hubKindPromo.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo'**
+  String get hubKindPromo;
+
+  /// No description provided for @hubKindHoliday.
+  ///
+  /// In en, this message translates to:
+  /// **'Holiday'**
+  String get hubKindHoliday;
+
+  /// No description provided for @hubActionLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Open link'**
+  String get hubActionLink;
+
+  /// No description provided for @hubActionUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Open update'**
+  String get hubActionUpdate;
+
+  /// No description provided for @hubActionSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get hubActionSettings;
+
+  /// No description provided for @hubFieldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get hubFieldTitle;
+
+  /// No description provided for @hubFieldImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image (https link)'**
+  String get hubFieldImage;
+
+  /// No description provided for @hubFieldButtonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Button label'**
+  String get hubFieldButtonLabel;
+
+  /// No description provided for @hubFieldButtonUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Button link (https)'**
+  String get hubFieldButtonUrl;
+
+  /// No description provided for @hubFieldAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Button action'**
+  String get hubFieldAction;
+
+  /// No description provided for @hubMenuCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get hubMenuCopy;
+
+  /// No description provided for @hubMenuHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get hubMenuHide;
+
+  /// No description provided for @hubMenuMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute announcements'**
+  String get hubMenuMute;
+
+  /// No description provided for @hubMenuUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute announcements'**
+  String get hubMenuUnmute;
+
+  /// No description provided for @hubCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get hubCopied;
+
+  /// No description provided for @hubToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get hubToday;
+
+  /// No description provided for @hubYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get hubYesterday;
+
+  /// No description provided for @hubNotificationChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'ProMax announcements'**
+  String get hubNotificationChannel;
+
+  /// No description provided for @hubNotificationOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get hubNotificationOpen;
+
+  /// No description provided for @groupEncryptionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group encryption'**
+  String get groupEncryptionTitle;
+
+  /// No description provided for @groupEncryptionIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'All participants must agree and have verified encrypted conversations with each other. Messages are blocked while encryption is being established or the group changes.'**
+  String get groupEncryptionIntro;
+
+  /// No description provided for @groupEncryptionOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Group encryption is not enabled.'**
+  String get groupEncryptionOff;
+
+  /// No description provided for @groupEncryptionEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable group encryption'**
+  String get groupEncryptionEnable;
+
+  /// No description provided for @groupEncryptionAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept group encryption'**
+  String get groupEncryptionAccept;
+
+  /// No description provided for @groupEncryptionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you agree to enable encryption for this group? All participants must agree before messages can be sent.'**
+  String get groupEncryptionConfirm;
+
+  /// No description provided for @groupEncryptionAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree'**
+  String get groupEncryptionAgree;
+
+  /// No description provided for @groupEncryptionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get groupEncryptionCancel;
+
+  /// No description provided for @groupEncryptionWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for participants to agree'**
+  String get groupEncryptionWaiting;
+
+  /// No description provided for @groupEncryptionKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for encryption keys'**
+  String get groupEncryptionKeys;
+
+  /// No description provided for @groupEncryptionReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Group encryption is active'**
+  String get groupEncryptionReady;
+
+  /// No description provided for @groupEncryptionChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The group members changed. Sending is blocked until encryption is set up again.'**
+  String get groupEncryptionChanged;
+
+  /// No description provided for @groupEncryptionRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up again'**
+  String get groupEncryptionRestart;
+
+  /// No description provided for @groupEncryptionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Group encryption is unavailable on this device.'**
+  String get groupEncryptionUnavailable;
+
+  /// No description provided for @groupEncryptionVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify encrypted conversations with all participants before continuing.'**
+  String get groupEncryptionVerification;
+
+  /// No description provided for @groupEncryptionMembership.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to verify the group participant list.'**
+  String get groupEncryptionMembership;
+
+  /// No description provided for @groupEncryptionTransport.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not exchange encryption information. Sending remains blocked.'**
+  String get groupEncryptionTransport;
+
+  /// No description provided for @groupEncryptionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update group encryption. Please try again.'**
+  String get groupEncryptionFailed;
+
+  /// No description provided for @groupEncryptionRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry key exchange'**
+  String get groupEncryptionRetry;
 }
 
 class _AppLocalizationsDelegate

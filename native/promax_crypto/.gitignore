@@ -1,4 +1,5 @@
 build/
+!docs/
 .DS_Store
 flutter/promax_crypto/.dart_tool/
 flutter/promax_crypto/build/

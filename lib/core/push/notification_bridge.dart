@@ -105,6 +105,29 @@ class NotificationBridge {
     }
   }
 
+  Future<void> showAnnouncement({
+    required int id,
+    required String title,
+    required String body,
+    required String kind,
+    required String channelName,
+    required String openLabel,
+  }) async {
+    if (!_native) return;
+    try {
+      await _method.invokeMethod<void>('showAnnouncement', {
+        'id': id,
+        'title': title,
+        'body': body,
+        'kind': kind,
+        'channelName': channelName,
+        'openLabel': openLabel,
+      });
+    } catch (e) {
+      logger.w('NotificationBridge.showAnnouncement: $e');
+    }
+  }
+
   Future<void> pruneChat(int chatId, int seen) async {
     if (!_native || chatId == 0 || seen <= 0) return;
     try {

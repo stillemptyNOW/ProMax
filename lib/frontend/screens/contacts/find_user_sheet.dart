@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../backend/api.dart';
 import '../../../backend/modules/contacts.dart';
 import '../../../backend/modules/messages.dart' show ContactCache;
 import '../../../core/config/app_shape.dart';
+import '../../../core/config/countries.dart';
 import '../../../core/protocol/opcode_map.dart';
-import '../../../core/protocol/packet.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../../core/utils/user_facing_error.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart';
 import '../../../models/contact_info.dart';
+import '../../widgets/hint_bubble.dart';
 import '../../widgets/sheet_helpers.dart';
 import '../../widgets/small_spinner.dart';
-import '../../../core/utils/user_facing_error.dart';
+import '../auth/select_country_screen.dart';
+import 'phone_lookup_input.dart';
 
 typedef FoundUser = ({int userId, int chatId, String name, String avatarUrl});
 
@@ -27,202 +31,281 @@ Future<FoundUser?> showFindUserSheet(
   return showModalBottomSheet<FoundUser>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
+    constraints: const BoxConstraints(maxWidth: 520),
     backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
     shape: kSheetShape,
-    builder: (_) => _FindUserSheet(title: title, actionLabel: actionLabel),
+    builder: (_) =>
+        FindUserSheet(client: api, title: title, actionLabel: actionLabel),
   );
 }
 
-class _FindUserSheet extends StatefulWidget {
+class FindUserSheet extends StatefulWidget {
+  final Api client;
   final String title;
   final String actionLabel;
 
-  const _FindUserSheet({required this.title, required this.actionLabel});
+  const FindUserSheet({
+    super.key,
+    required this.client,
+    required this.title,
+    required this.actionLabel,
+  });
 
   @override
-  State<_FindUserSheet> createState() => _FindUserSheetState();
+  State<FindUserSheet> createState() => _FindUserSheetState();
 }
 
-class _FindUserSheetState extends State<_FindUserSheet> {
-  final _controller = TextEditingController();
+class _FindUserSheetState extends State<FindUserSheet> {
+  final _phoneController = TextEditingController();
+  final _idController = TextEditingController();
+  final _focus = FocusNode();
+  final _inputKey = GlobalKey();
+  late CountryName _country;
   _FindMode _mode = _FindMode.phone;
   bool _loading = false;
+  bool _pickingCountry = false;
   String? _error;
+
+  bool get _isCurrent => mounted && ModalRoute.of(context)?.isCurrent == true;
+
+  @override
+  void initState() {
+    super.initState();
+    final countries = widget.client.registrationCountries;
+    _country = countries.firstWhere(
+      (country) => country.code == 'RU',
+      orElse: () => countries.isEmpty ? allCountries.first : countries.first,
+    );
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _phoneController.dispose();
+    _idController.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
   void _setMode(_FindMode mode) {
-    if (_mode == mode || _loading) return;
+    if (_mode == mode || _loading || _pickingCountry) return;
     setState(() {
       _mode = mode;
       _error = null;
     });
+    _focus.requestFocus();
+  }
+
+  Future<void> _pickCountry() async {
+    if (_loading || _pickingCountry) return;
+    setState(() => _pickingCountry = true);
+    _focus.unfocus();
+    final picked = await Navigator.of(context).push<CountryName>(
+      MaterialPageRoute(
+        builder: (_) => SelectCountryScreen(selectedCountry: _country),
+      ),
+    );
+    if (!mounted) return;
+    setState(() {
+      _pickingCountry = false;
+      if (picked != null && picked.code != _country.code) {
+        _country = picked;
+        _phoneController.clear();
+        _error = null;
+      }
+    });
+    if (_isCurrent) _focus.requestFocus();
+  }
+
+  void _showError(String message) {
+    if (!_isCurrent) return;
+    setState(() => _error = message);
+    _focus.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_isCurrent) {
+        showHintBubble(_inputKey.currentContext ?? context, message);
+      }
+    });
   }
 
   Future<void> _submit() async {
-    if (_mode == _FindMode.phone) {
-      await _submitPhone();
-    } else {
-      await _submitId();
+    if (_loading || _pickingCountry || !_isCurrent) return;
+    final l10n = AppLocalizations.of(context)!;
+    final mode = _mode;
+    final phone = phoneLookupNumber(_phoneController.text, _country);
+    final id = int.tryParse(_idController.text.trim());
+    if (mode == _FindMode.phone && phone == null) {
+      _showError(l10n.findUserInvalidPhone);
+      return;
     }
-  }
-
-  String? _phoneCandidate(String query) {
-    if (!RegExp(r'^[+\d\s\-()]+$').hasMatch(query)) return null;
-    final digits = query.replaceAll(RegExp(r'[^\d]'), '');
-    if (digits.length < 5) return null;
-    return query;
-  }
-
-  Future<void> _submitPhone() async {
-    final query = _phoneCandidate(_controller.text.trim());
-    if (query == null) {
-      setState(
-        () => _error = AppLocalizations.of(context)!.findUserInvalidPhone,
-      );
+    if (mode == _FindMode.id && (id == null || id <= 0)) {
+      _showError(l10n.findUserInvalidId);
       return;
     }
     setState(() {
       _loading = true;
       _error = null;
     });
+    final sessionEpoch = widget.client.sessionEpoch;
+    int? accountId;
     try {
-      final result = await ContactsModule.findByPhone(api, query);
+      accountId = await TokenStorage.getActiveAccountId();
+      if (!await _acceptsResult(accountId, sessionEpoch)) return;
       if (!mounted) return;
-      if (result == null) {
-        setState(() {
-          _loading = false;
-          _error = AppLocalizations.of(context)!.findUserPhoneNotFound;
-        });
-        return;
+      final digits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+      if (mode == _FindMode.phone &&
+          _country.phoneCode == '+7' &&
+          !_phoneController.text.trim().startsWith('+') &&
+          digits.length == _country.phoneDigits &&
+          digits.startsWith('8')) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l10n.findUserConfirmPhone),
+            content: Text(phone!),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.findUserContinueEditing),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(l10n.findUserConfirmSearch),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true ||
+            !await _acceptsResult(accountId, sessionEpoch)) {
+          return;
+        }
       }
-      await _finish(
-        userId: result.id,
-        name: result.name,
-        avatarUrl: result.avatarUrl,
-      );
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = AppLocalizations.of(
-            context,
-          )!.devicesGenericError(userFacingError(e));
-        });
+      if (mode == _FindMode.phone) {
+        final result = await ContactsModule.findByPhone(
+          widget.client,
+          phone!,
+          silent: true,
+          cacheResult: false,
+        );
+        if (!await _acceptsResult(accountId, sessionEpoch)) return;
+        if (result == null) {
+          _showError(l10n.findUserPhoneNotFound);
+          return;
+        }
+        final name = result.name;
+        if (name != null) ContactCache.put(result.id, name);
+        ContactCache.putAvatar(result.id, result.avatarUrl);
+        ContactCache.putPhone(result.id, result.phone);
+        await _finish(
+          accountId: accountId,
+          sessionEpoch: sessionEpoch,
+          userId: result.id,
+          name: result.name,
+          avatarUrl: result.avatarUrl,
+        );
+      } else {
+        final packet = await widget.client.sendRequest(Opcode.contactInfo, {
+          'contactIds': [id!],
+        }, silent: true);
+        if (!await _acceptsResult(accountId, sessionEpoch)) return;
+        final contacts = (packet.payload as Map?)?['contacts'] as List?;
+        final contact = contacts
+            ?.whereType<Map>()
+            .where((contact) => contact['id'] == id)
+            .firstOrNull;
+        if (contact == null) {
+          _showError(l10n.findUserIdNotFound);
+          return;
+        }
+        final raw = Map<String, dynamic>.from(contact);
+        final info = ContactInfo.fromMap(raw);
+        ContactsModule.primeContactCache(raw);
+        await _finish(
+          accountId: accountId,
+          sessionEpoch: sessionEpoch,
+          userId: id,
+          name: info.displayName,
+          avatarUrl: info.avatarUrl,
+        );
       }
+    } catch (error) {
+      if (await _acceptsResult(accountId, sessionEpoch)) {
+        _showError(l10n.devicesGenericError(userFacingError(error, l10n)));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _submitId() async {
-    final raw = _controller.text.trim();
-    final id = int.tryParse(raw);
-    if (id == null) {
-      setState(() => _error = AppLocalizations.of(context)!.findUserInvalidId);
-      return;
-    }
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final packet = await api.sendRequest(Opcode.contactInfo, {
-        'contactIds': [id],
-      });
-      final contacts = (packet.payload as Map?)?['contacts'] as List?;
-      if (contacts == null || contacts.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _loading = false;
-            _error = AppLocalizations.of(context)!.findUserIdNotFound;
-          });
-        }
-        return;
-      }
-      final raw = Map<String, dynamic>.from(contacts.first as Map);
-      final info = ContactInfo.fromMap(raw);
-      ContactsModule.primeContactCache(raw);
-      await _finish(
-        userId: id,
-        name: info.displayName,
-        avatarUrl: info.avatarUrl,
-      );
-    } on PacketError catch (e) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = e.message;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = AppLocalizations.of(
-            context,
-          )!.devicesGenericError(userFacingError(e));
-        });
-      }
-    }
+  Future<bool> _acceptsResult(int? accountId, int sessionEpoch) async {
+    if (!_isCurrent || widget.client.sessionEpoch != sessionEpoch) return false;
+    final activeAccount = await TokenStorage.getActiveAccountId();
+    return _isCurrent &&
+        widget.client.sessionEpoch == sessionEpoch &&
+        activeAccount == accountId;
   }
 
   Future<void> _finish({
+    required int? accountId,
+    required int sessionEpoch,
     required int userId,
     required String? name,
     required String? avatarUrl,
   }) async {
-    final accountId = await TokenStorage.getActiveAccountId();
+    final navigator = Navigator.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    if (!await _acceptsResult(accountId, sessionEpoch)) return;
     final existing = accountId == null
         ? null
         : await AppDatabase.findDialogChatByParticipant(accountId, userId);
-    if (!mounted) return;
-    Navigator.of(context).pop((
+    if (!await _acceptsResult(accountId, sessionEpoch)) return;
+    navigator.pop((
       userId: userId,
       chatId: existing ?? ((accountId ?? 0) ^ userId),
-      name:
-          ContactCache.get(userId) ??
-          name ??
-          AppLocalizations.of(context)!.userFallbackName(userId),
+      name: ContactCache.get(userId) ?? name ?? l10n.userFallbackName(userId),
       avatarUrl: avatarUrl ?? '',
     ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final viewInsets = MediaQuery.of(context).viewInsets;
+    final phoneMode = _mode == _FindMode.phone;
+    final busy = _loading || _pickingCountry;
     return Padding(
-      padding: EdgeInsets.only(bottom: viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.title,
-                      style: TextStyle(
-                        color: cs.onSurface,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Symbols.close, color: cs.onSurfaceVariant),
-                  ),
-                ],
+              SheetGrabberBar(
+                action: IconButton(
+                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Symbols.close, size: 20),
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
+              Text(
+                widget.title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (_error != null)
+                Semantics(
+                  liveRegion: true,
+                  label: _error,
+                  child: const SizedBox.shrink(),
+                ),
+              const SizedBox(height: 20),
               SegmentedButton<_FindMode>(
                 segments: [
                   ButtonSegment(
@@ -237,87 +320,156 @@ class _FindUserSheetState extends State<_FindUserSheet> {
                   ),
                 ],
                 selected: {_mode},
-                onSelectionChanged: (s) => _setMode(s.first),
+                onSelectionChanged: busy ? null : (s) => _setMode(s.first),
                 showSelectedIcon: false,
-                style: ButtonStyle(visualDensity: VisualDensity.compact),
+                expandedInsets: EdgeInsets.zero,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _controller,
-                autofocus: true,
-                keyboardType: _mode == _FindMode.phone
-                    ? TextInputType.phone
-                    : TextInputType.number,
-                enabled: !_loading,
-                onSubmitted: (_) => _submit(),
-                onChanged: (_) {
-                  if (_error != null) setState(() => _error = null);
-                },
-                style: TextStyle(color: cs.onSurface, fontSize: 16),
-                decoration: InputDecoration(
-                  hintText: _mode == _FindMode.phone
-                      ? l10n.findUserPhoneHint
-                      : l10n.findUserIdHint,
-                  hintStyle: TextStyle(
-                    color: cs.onSurfaceVariant,
-                    fontSize: 16,
-                  ),
-                  prefixIcon: Icon(
-                    _mode == _FindMode.phone ? Symbols.call : Symbols.tag,
-                    color: cs.onSurfaceVariant,
-                    size: 20,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 14,
-                  ),
-                ),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: cs.errorContainer.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 20),
+              if (phoneMode) ...[
+                OutlinedButton(
+                  onPressed: busy ? null : _pickCountry,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.all(14),
+                    foregroundColor: cs.onSurface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppShape.field),
+                    ),
+                    side: BorderSide(color: cs.outlineVariant),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Symbols.error_outline,
-                        size: 18,
-                        color: cs.onErrorContainer,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                            color: cs.onErrorContainer,
-                            fontSize: 13,
+                      ExcludeSemantics(
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: cs.surfaceContainerHighest,
+                          foregroundColor: cs.onSurfaceVariant,
+                          child: Text(
+                            _country.code,
+                            style: theme.textTheme.labelMedium,
                           ),
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.loginCountry,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              _country.displayName(
+                                Localizations.localeOf(context).languageCode,
+                              ),
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Symbols.unfold_more, color: cs.onSurfaceVariant),
                     ],
                   ),
                 ),
+                const SizedBox(height: 14),
               ],
-              const SizedBox(height: 16),
+              SizedBox(
+                key: _inputKey,
+                child: TextField(
+                  key: ValueKey(_mode),
+                  controller: phoneMode ? _phoneController : _idController,
+                  focusNode: _focus,
+                  autofocus: true,
+                  keyboardType: phoneMode
+                      ? TextInputType.phone
+                      : TextInputType.number,
+                  textInputAction: TextInputAction.search,
+                  autofillHints: phoneMode
+                      ? const [AutofillHints.telephoneNumberNational]
+                      : null,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  enabled: !busy,
+                  inputFormatters: phoneMode
+                      ? [
+                          PhoneLookupInputFormatter(
+                            country: _country,
+                            onCountryChanged: (country) {
+                              setState(() => _country = country);
+                            },
+                          ),
+                        ]
+                      : null,
+                  onSubmitted: (_) => _submit(),
+                  onChanged: (_) {
+                    if (phoneMode || _error != null) {
+                      setState(() => _error = null);
+                    }
+                  },
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: phoneMode ? l10n.loginPhoneNumber : 'ID',
+                    hintText: phoneMode
+                        ? _country.phoneMask.replaceAll('#', '0')
+                        : l10n.findUserIdHint,
+                    prefixText:
+                        phoneMode &&
+                            !_phoneController.text.startsWith('+') &&
+                            !(_country.phoneCode == '+7' &&
+                                _phoneController.text
+                                    .replaceAll(RegExp(r'\D'), '')
+                                    .startsWith('8') &&
+                                _phoneController.text
+                                        .replaceAll(RegExp(r'\D'), '')
+                                        .length >
+                                    _country.phoneDigits)
+                        ? '${_country.phoneCode}  '
+                        : null,
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppShape.field),
+                      borderSide: BorderSide(
+                        color: _error == null ? cs.outlineVariant : cs.error,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppShape.field),
+                      borderSide: BorderSide(
+                        color: _error == null ? cs.primary : cs.error,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 18,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
               FilledButton(
-                onPressed: _loading ? null : _submit,
+                onPressed: busy ? null : _submit,
                 style: FilledButton.styleFrom(
                   shape: AppShape.buttonBorder,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: _loading
-                    ? const SmallSpinner(size: 20)
-                    : Text(widget.actionLabel),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_loading) ...[
+                      const SmallSpinner(size: 20),
+                      const SizedBox(width: 10),
+                    ],
+                    Flexible(child: Text(widget.actionLabel)),
+                  ],
+                ),
               ),
             ],
           ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:promax/core/config/app_frost.dart';
+import 'package:promax/core/config/app_design.dart';
 import 'package:promax/core/config/app_stories.dart';
 import 'package:promax/core/utils/haptics.dart';
 import 'package:promax/frontend/screens/stories/story_owner_info.dart';
@@ -76,8 +77,181 @@ class ChatHeaderRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) =>
-      glossy ? _glossyRow(context) : _materialRow(context);
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+    valueListenable: AppDesign.classic,
+    builder: (context, classic, _) => classic
+        ? glossy
+              ? _glossyRow(context)
+              : _materialRow(context)
+        : _conversationRow(context),
+  );
+
+  Widget _conversationRow(BuildContext context) {
+    final row = MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: Row(
+        children: [
+          _backWithBadge(
+            cs,
+            IconButton(
+              tooltip: embedded
+                  ? MaterialLocalizations.of(context).closeButtonTooltip
+                  : MaterialLocalizations.of(context).backButtonTooltip,
+              onPressed: () =>
+                  embedded ? onClose?.call() : Navigator.pop(context),
+              icon: Icon(
+                embedded ? Symbols.close : Symbols.arrow_back,
+                color: cs.onSurface,
+              ),
+            ),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: onOpenInfo,
+              borderRadius: BorderRadius.circular(14),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    _withOnlineDot(
+                      cs,
+                      _heroAvatar(
+                        38,
+                        (diameter) => LocalAvatarBuilder(
+                          userId: _peerId,
+                          builder: (context, local) {
+                            final photo = _photo(local);
+                            return CircleAvatar(
+                              radius: diameter / 2,
+                              backgroundColor: _isSavedMessages
+                                  ? cs.primary
+                                  : cs.primaryContainer,
+                              backgroundImage: _isSavedMessages ? null : photo,
+                              child: _isSavedMessages
+                                  ? Icon(
+                                      Symbols.bookmark,
+                                      fill: 1,
+                                      size: 20,
+                                      color: cs.onPrimary,
+                                    )
+                                  : photo == null
+                                  ? Text(
+                                      name.isEmpty
+                                          ? '?'
+                                          : name.characters.first.toUpperCase(),
+                                      style: TextStyle(
+                                        color: cs.onPrimaryContainer,
+                                        fontSize: 16,
+                                      ),
+                                    )
+                                  : null,
+                            );
+                          },
+                        ),
+                      ),
+                      dotSize: 10,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: ProfileHeroName(
+                                  tag: heroTag,
+                                  text: name,
+                                  style: TextStyle(
+                                    color: cs.onSurface,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  child: Text(
+                                    name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: cs.onSurface,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (isOfficial) ...[
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Symbols.verified,
+                                  size: 15,
+                                  color: cs.primary,
+                                  fill: 1,
+                                ),
+                              ],
+                            ],
+                          ),
+                          ValueListenableBuilder<String>(
+                            valueListenable: headerStatus,
+                            builder: (context, status, _) => Text(
+                              status,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontSize: 12,
+                                height: 1.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          ValueListenableBuilder<int>(
+            valueListenable: scheduledCount,
+            builder: (_, count, _) => count > 0
+                ? IconButton(
+                    onPressed: onOpenScheduled,
+                    icon: Icon(Symbols.schedule, color: cs.onSurface, size: 22),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          if (showCall)
+            IconButton(
+              onPressed: onCall,
+              icon: Icon(Symbols.call, color: cs.onSurface, size: 22),
+            ),
+          Builder(
+            builder: (anchor) => IconButton(
+              onPressed: () => onMenu(anchor),
+              icon: Icon(Symbols.more_vert, color: cs.onSurface, size: 22),
+            ),
+          ),
+        ],
+      ),
+    );
+    return Padding(
+      padding: glossy
+          ? const EdgeInsets.fromLTRB(10, 4, 10, 8)
+          : const EdgeInsets.symmetric(horizontal: 4),
+      child: glossy
+          ? GlossyPill(
+              color: _pillColor,
+              blurSigma: _pillBlur,
+              liquid: liquid,
+              backdropKey: backdropKey,
+              borderRadius: BorderRadius.circular(22),
+              depth: 4,
+              child: SizedBox(height: 64, child: row),
+            )
+          : SizedBox(height: kToolbarHeight, child: row),
+    );
+  }
 
   Color? get _pillColor => frosted || liquid ? AppFrost.glassTint(cs) : null;
 

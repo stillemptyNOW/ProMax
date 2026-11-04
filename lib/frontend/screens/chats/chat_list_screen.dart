@@ -1,3 +1,8 @@
+import '../../../core/config/app_design.dart';
+import '../../../core/config/native_ios_ui.dart';
+import 'native/native_chat_list_bridge.dart';
+import 'native/native_chat_list_view.dart';
+import 'chat/view/conversation_tile.dart';
 import '../promax_hub/service_chat_tiles.dart';
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -2290,7 +2295,157 @@ class _ChatListScreenState extends State<ChatListScreen>
     );
   }
 
+  bool get _useNativeChatList =>
+      NativeIosUi.active &&
+      !widget.forwardMode &&
+      !widget.archiveMode &&
+      !_shareMode &&
+      widget.forwardBatch == null &&
+      !_isInitialLoading;
+
+  ({String title, String avatar}) _nativeIdentity(
+    CachedChat chat,
+    AppLocalizations l10n,
+  ) {
+    if (chat.type == 'DIALOG' && chat.id != 0) {
+      var secondId = _profile?.id ?? 0;
+      for (final entry in chat.participants.entries) {
+        if (entry.key != _profile?.id) {
+          secondId = entry.key;
+          break;
+        }
+      }
+      return (
+        title: ContactCache.get(secondId) ?? chat.title ?? '',
+        avatar: ContactCache.getAvatar(secondId) ?? chat.iconUrl ?? '',
+      );
+    }
+    return (
+      title: chat.id == 0
+          ? l10n.chatListSavedMessages
+          : chat.title ?? l10n.hubChatTileTitle,
+      avatar: chat.iconUrl ?? '',
+    );
+  }
+
+  NativeChatRow _nativeRowFor(CachedChat chat, AppLocalizations l10n) {
+    final identity = _nativeIdentity(chat, l10n);
+    final accountId = _profile?.id ?? 0;
+    final placeholder = chat.isLastMsgDeleted;
+    final savedWelcome = chat.id == 0 && chat.lastMsgText == _savedWelcomeKey;
+    final encrypted =
+        ChatEncryptionStore.instance.isEnabled(accountId, chat.id) ||
+        E2eeService.instance.isOn(accountId, chat.id);
+    final draft = chat.id == 0 ? null : _draftFor(chat.id);
+    final sender = chat.lastMsgSenderId != null
+        ? ContactCache.get(chat.lastMsgSenderId!)
+        : null;
+    final senderPrefix =
+        chat.type != 'DIALOG' &&
+            !placeholder &&
+            sender?.isNotEmpty == true &&
+            chat.id != 0
+        ? '$sender: '
+        : '';
+    final String body;
+    if (draft != null) {
+      body = draft;
+    } else if (placeholder) {
+      body = l10n.chatListOpenToLoad;
+    } else if (savedWelcome) {
+      body = l10n.savedMessagesEmptyPreview;
+    } else if (encrypted) {
+      body = l10n.chatListPreviewUnavailable;
+    } else {
+      body = '$senderPrefix${chat.lastMsgTextOneLine ?? ''}';
+    }
+    return NativeChatRow(
+      id: chat.id.toString(),
+      title: identity.title,
+      preview: body,
+      time: _formatTime(chat.lastMsgTime),
+      avatarUrl: identity.avatar,
+      kind: chat.type,
+      unread: chat.unreadCount,
+      mention: chat.hasUnreadMention,
+      muted: chat.isMuted,
+      pinned: (chat.favIndex ?? 0) > 0,
+      verified: chat.isOfficial,
+      selected: _selectedChats.contains(chat.id.toString()),
+      draft: draft != null,
+      italic: placeholder || savedWelcome || encrypted,
+      ownStatus: draft == null ? _ownStatusFor(chat, placeholder) : null,
+      ownRead: chat.lastMsgReadByOthers,
+      hasCall: chat.activeCall != null,
+    );
+  }
+
+  void _openNativeChat(String id) {
+    final chat = _chats.where((c) => c.id.toString() == id).firstOrNull;
+    if (chat == null) return;
+    final identity = _nativeIdentity(chat, AppLocalizations.of(context)!);
+    _openChatFromList(id, identity.title, identity.avatar, chat.type);
+  }
+
+  Future<void> _runNativeBulk(
+    List<String> ids,
+    Future<void> Function() handler,
+  ) async {
+    setState(() {
+      _selectedChats
+        ..clear()
+        ..addAll(ids);
+    });
+    await handler();
+  }
+
+  NativeChatListHandlers get _nativeHandlers => NativeChatListHandlers(
+    open: _openNativeChat,
+    select: _toggleSelection,
+    pin: (ids) => _runNativeBulk(ids, _onPinTap),
+    mute: (ids) => _runNativeBulk(ids, _onMuteTap),
+    archive: (ids) => _runNativeBulk(ids, _onArchiveTap),
+    delete: (ids) => _runNativeBulk(ids, _onDeleteTap),
+    search: _openSearch,
+  );
+
+  Widget _buildNativeChatPage(int pageIndex) {
+    final pageChats = _chatsForPageIndex(pageIndex);
+    final l10n = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final strings = NativeChatListStrings(
+      pin: l10n.msgActionsPin,
+      unpin: l10n.msgActionsUnpin,
+      mute: l10n.nativeChatListMute,
+      unmute: l10n.nativeChatListUnmute,
+      archive: l10n.chatListArchive,
+      delete: l10n.msgActionsDelete,
+      select: l10n.nativeChatListSelect,
+      search: l10n.nativeChatListSearch,
+      empty: l10n.chatListEmpty,
+      draft: l10n.chatListDraftPrefix,
+    );
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        for (final chat in pageChats) chats.chatListenable(chat),
+      ]),
+      builder: (context, _) => NativeChatListView(
+        rows: [
+          for (final chat in pageChats)
+            _nativeRowFor(chats.chatListenable(chat).value, l10n),
+        ],
+        selecting: _isSelectionMode,
+        handlers: _nativeHandlers,
+        theme: nativeChatListThemeOf(cs),
+        strings: strings,
+        topInset: 0,
+        bottomInset: MediaQuery.viewPaddingOf(context).bottom + 100,
+      ),
+    );
+  }
+
   Widget _buildFolderChatPage(int pageIndex) {
+    if (_useNativeChatList) return _buildNativeChatPage(pageIndex);
     final pageChats = _chatsForPageIndex(pageIndex);
     final sc = _folderChatScrollControllers[pageIndex];
     final cs = Theme.of(context).colorScheme;
@@ -3634,7 +3789,7 @@ class _ChatListScreenState extends State<ChatListScreen>
           int.tryParse(id) ?? 0,
         ) ||
         E2eeService.instance.isOn(_profile?.id ?? 0, int.tryParse(id) ?? 0);
-    final isVerified =
+    final isEncryptedVerified =
         e2eeInfo?.phase == E2eePhase.established && e2eeInfo!.verified;
     final Widget? statusIcon = (ownStatus != null && draft == null)
         ? _ownStatusIcon(cs, ownStatus, ownRead)
@@ -3774,212 +3929,266 @@ class _ChatListScreenState extends State<ChatListScreen>
               ),
             ),
           );
-    return SpringyTap(
-      key: ValueKey('chat_$id'),
-      child: InkWell(
-        onTap: () {
-          if (widget.forwardMode && !_forwardPicking) {
-            Navigator.of(context).pop(
-              ForwardTarget(
-                chatId: int.parse(id),
-                name: name,
-                imageUrl: imageUrl,
-                chatType: chatType,
-              ),
-            );
-            return;
-          }
-          if (_shareMode || _forwardPicking) {
-            _toggleRecipient(id, name);
-            return;
-          }
-          if (_isSelectionMode) {
-            _toggleSelection(id);
-            return;
-          }
-          _openChatFromList(id, name, imageUrl, chatType);
-        },
-        onLongPress: widget.forwardBatch != null
-            ? () => _toggleRecipient(id, name)
-            : (widget.forwardMode || _shareMode)
-            ? null
-            : () => _toggleSelection(id),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          color: isSelected
-              ? cs.primary.withValues(alpha: 0.08)
-              : Colors.transparent,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onLongPress: _canPreviewChats
-                      ? () => _previewChat(id, name, imageUrl, chatType)
-                      : null,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      avatarCircle,
-                      if (isEncrypted)
-                        Positioned(
-                          left: -2,
-                          bottom: -2,
-                          child: EncryptionLockBadge(
-                            size: 18,
-                            verified: isVerified,
-                          ),
-                        ),
-                      if (isSelected)
-                        Positioned(
-                          right: -2,
-                          bottom: -2,
-                          child: Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: cs.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: cs.surface, width: 2),
-                            ),
-                            child: Icon(
-                              Symbols.check,
-                              color: cs.onPrimary,
-                              size: 14,
-                            ),
-                          ),
-                        )
-                      else if (hasCall)
-                        Positioned(
-                          right: -2,
-                          bottom: -2,
-                          child: ChatCallBadge(borderColor: cs.surface),
-                        )
-                      else if (presenceUserId != 0)
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: OnlineDot(
-                            userId: presenceUserId,
-                            borderColor: cs.surface,
-                          ),
-                        ),
-                    ],
-                  ),
+    final avatar = GestureDetector(
+      onLongPress: _canPreviewChats
+          ? () => _previewChat(id, name, imageUrl, chatType)
+          : null,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          avatarCircle,
+          if (isEncrypted)
+            Positioned(
+              left: -2,
+              bottom: -2,
+              child: EncryptionLockBadge(size: 18, verified: isEncryptedVerified),
+            ),
+          if (isSelected)
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: cs.surface, width: 2),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    height: 76,
-                    padding: const EdgeInsets.fromLTRB(0, 10, 16, 10),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: cs.onSurface.withValues(alpha: 0.08),
-                          width: 0.5,
-                        ),
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Icon(Symbols.check, color: cs.onPrimary, size: 14),
+              ),
+            )
+          else if (hasCall)
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: ChatCallBadge(borderColor: cs.surface),
+            )
+          else if (presenceUserId != 0)
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: OnlineDot(userId: presenceUserId, borderColor: cs.surface),
+            ),
+        ],
+      ),
+    );
+    return ValueListenableBuilder<bool>(
+      valueListenable: AppDesign.classic,
+      builder: (context, classic, _) => SpringyTap(
+        key: ValueKey('chat_$id'),
+        child: InkWell(
+          onTap: () {
+            if (widget.forwardMode && !_forwardPicking) {
+              Navigator.of(context).pop(
+                ForwardTarget(
+                  chatId: int.parse(id),
+                  name: name,
+                  imageUrl: imageUrl,
+                  chatType: chatType,
+                ),
+              );
+              return;
+            }
+            if (_shareMode || _forwardPicking) {
+              _toggleRecipient(id, name);
+              return;
+            }
+            if (_isSelectionMode) {
+              _toggleSelection(id);
+              return;
+            }
+            _openChatFromList(id, name, imageUrl, chatType);
+          },
+          onLongPress: widget.forwardBatch != null
+              ? () => _toggleRecipient(id, name)
+              : (widget.forwardMode || _shareMode)
+              ? null
+              : () => _toggleSelection(id),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            color: classic && isSelected
+                ? cs.primary.withValues(alpha: 0.08)
+                : Colors.transparent,
+            child: classic
+                ? Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 5),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (titleIcon != null) ...[
-                                      Icon(
-                                        titleIcon,
-                                        color: cs.outline,
-                                        size: 15,
-                                        weight: 500,
-                                        fill: 1,
+                        avatar,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            height: 76,
+                            padding: const EdgeInsets.fromLTRB(0, 10, 16, 10),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: cs.onSurface.withValues(alpha: 0.08),
+                                  width: 0.5,
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 5),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (titleIcon != null) ...[
+                                              Icon(
+                                                titleIcon,
+                                                color: cs.outline,
+                                                size: 15,
+                                                weight: 500,
+                                                fill: 1,
+                                              ),
+                                              const SizedBox(width: 4),
+                                            ],
+                                            Flexible(
+                                              child: Text(
+                                                name,
+                                                style: TextStyle(
+                                                  color: cs.onSurface,
+                                                  fontSize: 16.5,
+                                                  fontWeight: FontWeight.w600,
+                                                  letterSpacing: -0.2,
+                                                  height: 1.1,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            if (isVerified) ...[
+                                              const SizedBox(width: 4),
+                                              Icon(
+                                                Symbols.verified,
+                                                color: cs.primary,
+                                                size: 16,
+                                                weight: 600,
+                                                fill: 1,
+                                              ),
+                                            ],
+                                          ],
+                                        ),
                                       ),
-                                      const SizedBox(width: 4),
-                                    ],
-                                    Flexible(
-                                      child: Text(
-                                        name,
+                                      if (isMuted) ...[
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Symbols.notifications_off,
+                                          color: cs.outlineVariant,
+                                          size: 14,
+                                          weight: 400,
+                                        ),
+                                      ],
+                                      if (isPinned) ...[
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Symbols.keep,
+                                          color: cs.outlineVariant,
+                                          size: 14,
+                                          weight: 400,
+                                        ),
+                                      ],
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        time,
                                         style: TextStyle(
-                                          color: cs.onSurface,
-                                          fontSize: 16.5,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: -0.2,
-                                          height: 1.1,
+                                          color: unreadCount > 0 && !isMuted
+                                              ? cs.primary
+                                              : cs.onSurfaceVariant.withValues(
+                                                  alpha: 0.75,
+                                                ),
+                                          fontSize: 13,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures(),
+                                          ],
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    if (isVerified) ...[
-                                      const SizedBox(width: 4),
-                                      Icon(
-                                        Symbols.verified,
-                                        color: cs.primary,
-                                        size: 16,
-                                        weight: 600,
-                                        fill: 1,
                                       ),
                                     ],
-                                  ],
+                                  ),
                                 ),
-                              ),
-                              if (isMuted) ...[
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Symbols.notifications_off,
-                                  color: cs.outlineVariant,
-                                  size: 14,
-                                  weight: 400,
-                                ),
-                              ],
-                              if (isPinned) ...[
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Symbols.keep,
-                                  color: cs.outlineVariant,
-                                  size: 14,
-                                  weight: 400,
-                                ),
-                              ],
-                              const SizedBox(width: 8),
-                              Text(
-                                time,
-                                style: TextStyle(
-                                  color: unreadCount > 0 && !isMuted
-                                      ? cs.primary
-                                      : cs.onSurfaceVariant.withValues(
-                                          alpha: 0.75,
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 2),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Expanded(
+                                        child: ActivitySubtitle(
+                                          chatId: int.tryParse(id) ?? 0,
+                                          group: chatType != 'DIALOG',
+                                          child: messageLine,
                                         ),
-                                  fontSize: 13,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures(),
-                                  ],
+                                      ),
+                                      ?statusIcon,
+                                      const SizedBox(width: 8),
+                                      if (hasMention) ...[
+                                        _countBadge(cs, '@', muted: isMuted),
+                                        const SizedBox(width: 4),
+                                      ],
+                                      if (unreadCount > 0)
+                                        _countBadge(
+                                          cs,
+                                          unreadCount.toString(),
+                                          muted: isMuted,
+                                        )
+                                      else if (isRead)
+                                        Icon(
+                                          Symbols.done_all,
+                                          color: cs.primary,
+                                          size: 16,
+                                          weight: 400,
+                                        ),
+                                      if (hasMiniApp) ...[
+                                        const SizedBox(width: 8),
+                                        _miniAppButton(
+                                          cs,
+                                          botId: presenceUserId,
+                                          chatId: int.tryParse(id) ?? 0,
+                                          name: name,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 2),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                      ],
+                    ),
+                  )
+                : ConversationTile(
+                    avatar: avatar,
+                    title: name,
+                    time: time,
+                    selected: isSelected,
+                    muted: isMuted,
+                    pinned: isPinned,
+                    verified: isVerified,
+                    titleIcon: titleIcon,
+                    preview: ActivitySubtitle(
+                      chatId: int.tryParse(id) ?? 0,
+                      group: chatType != 'DIALOG',
+                      child: messageLine,
+                    ),
+                    indicator:
+                        statusIcon != null ||
+                            hasMention ||
+                            unreadCount > 0 ||
+                            isRead
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Expanded(
-                                child: ActivitySubtitle(
-                                  chatId: int.tryParse(id) ?? 0,
-                                  group: chatType != 'DIALOG',
-                                  child: messageLine,
-                                ),
-                              ),
                               ?statusIcon,
-                              const SizedBox(width: 8),
                               if (hasMention) ...[
                                 _countBadge(cs, '@', muted: isMuted),
                                 const SizedBox(width: 4),
@@ -3997,24 +4206,18 @@ class _ChatListScreenState extends State<ChatListScreen>
                                   size: 16,
                                   weight: 400,
                                 ),
-                              if (hasMiniApp) ...[
-                                const SizedBox(width: 8),
-                                _miniAppButton(
-                                  cs,
-                                  botId: presenceUserId,
-                                  chatId: int.tryParse(id) ?? 0,
-                                  name: name,
-                                ),
-                              ],
                             ],
-                          ),
-                        ),
-                      ],
-                    ),
+                          )
+                        : null,
+                    action: hasMiniApp
+                        ? _miniAppButton(
+                            cs,
+                            botId: presenceUserId,
+                            chatId: int.tryParse(id) ?? 0,
+                            name: name,
+                          )
+                        : null,
                   ),
-                ),
-              ],
-            ),
           ),
         ),
       ),

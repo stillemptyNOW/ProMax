@@ -44,6 +44,7 @@ class ChatMediaSendController {
   final Future<String?> Function(String text, {bool notify}) encryptOutgoing;
   final VoidCallback markHasScheduled;
   final Future<bool> Function() confirmSend;
+  final Future<bool> Function() allowAttachment;
 
   ChatMediaSendController({
     required this.chatController,
@@ -57,6 +58,7 @@ class ChatMediaSendController {
     required this.encryptionEnabled,
     required this.encryptOutgoing,
     required this.confirmSend,
+    required this.allowAttachment,
     required this.markHasScheduled,
   });
 
@@ -174,8 +176,9 @@ class ChatMediaSendController {
     List<MessageAttachment> optimistic,
     Future<Map<String, dynamic>?> Function() send,
   ) async {
-    if (_myId == 0) return;
+    if (_myId == 0 || !await allowAttachment()) return;
     if (!await confirmSend() || !isMounted()) return;
+    if (!await allowAttachment()) return;
     final tempId = chatController.nextTempId();
     final now = DateTime.now().millisecondsSinceEpoch;
 
@@ -288,6 +291,7 @@ class ChatMediaSendController {
   }
 
   Future<void> shareLocation() async {
+    if (!await allowAttachment()) return;
     final position = await _resolveCurrentPosition();
     if (position == null || !isMounted()) return;
     final lat = position.latitude;
@@ -316,7 +320,10 @@ class ChatMediaSendController {
   }
 
   Future<void> sendVoice(File file, int durationMs, List<double> amps) async {
-    if (_myId == 0 || !await confirmSend()) {
+    if (_myId == 0 ||
+        !await allowAttachment() ||
+        !await confirmSend() ||
+        !await allowAttachment()) {
       try {
         await file.delete();
       } catch (_) {}
@@ -344,7 +351,10 @@ class ChatMediaSendController {
   }
 
   Future<void> sendVideoNote(File file, int durationMs) async {
-    if (_myId == 0 || !await confirmSend()) {
+    if (_myId == 0 ||
+        !await allowAttachment() ||
+        !await confirmSend() ||
+        !await allowAttachment()) {
       try {
         await file.delete();
       } catch (_) {}
@@ -367,7 +377,9 @@ class ChatMediaSendController {
   }
 
   Future<void> sendHistoryFile(FileHistoryEntry entry) async {
+    if (!await allowAttachment()) return;
     if (!await confirmSend() || !isMounted()) return;
+    if (!await allowAttachment()) return;
     final tempId = addOptimisticMediaMessage(
       FileAttachment(
         fileId: entry.fileId,
@@ -394,7 +406,9 @@ class ChatMediaSendController {
   }
 
   Future<bool> sendFileById(int fileId) async {
+    if (!await allowAttachment()) return false;
     if (!await confirmSend() || !isMounted()) return false;
+    if (!await allowAttachment()) return false;
     final tempId = addOptimisticMediaMessage(FileAttachment(fileId: fileId)).id;
     try {
       final realId = await messagesModule.sendFileMessage(_chatId, fileId);
@@ -424,6 +438,7 @@ class ChatMediaSendController {
     bool waitForUpload = false,
     bool separate = false,
   }) async {
+    if (!await allowAttachment()) return;
     if (_myId == 0) return;
     if (!await confirmSend() || !isMounted()) return;
     if (encryptionEnabled()) return sendEncryptedPhotos(picked, caption);
@@ -455,6 +470,7 @@ class ChatMediaSendController {
     String caption, {
     required bool waitForUpload,
   }) async {
+    if (!await allowAttachment()) return;
     final jobs = <({File file, GalleryItem? item})>[];
     final attachments = <PhotoAttachment>[];
     for (final photo in photos) {
@@ -471,6 +487,7 @@ class ChatMediaSendController {
       );
     }
     if (jobs.isEmpty || !isMounted()) return;
+    if (!await allowAttachment() || !isMounted()) return;
 
     final tempId = chatController.nextTempId();
     final placeholder = CachedMessage(
@@ -511,6 +528,7 @@ class ChatMediaSendController {
     String caption, {
     int? scheduledTime,
   }) async {
+    if (!await allowAttachment()) return;
     if (_myId == 0) return;
     final file =
         video.editedFile ??
@@ -547,6 +565,7 @@ class ChatMediaSendController {
     final thumbData = thumbBytes == null || thumbBytes.isEmpty
         ? null
         : 'data:image/jpeg;base64,${base64Encode(thumbBytes)}';
+    if (!await allowAttachment() || !isMounted()) return;
 
     final tempId = chatController.nextTempId();
     CachedMessage? placeholder;
@@ -599,6 +618,7 @@ class ChatMediaSendController {
     int scheduledTime, {
     bool separate = false,
   }) async {
+    if (!await allowAttachment()) return;
     if (_myId == 0) return;
     if (!await confirmSend() || !isMounted()) return;
     final videos = picked.where((ph) => ph.item.isVideo).toList();
@@ -629,6 +649,7 @@ class ChatMediaSendController {
     String caption,
     int scheduledTime,
   ) async {
+    if (!await allowAttachment()) return;
     final jobs = <({File file, GalleryItem? item})>[];
     for (final photo in photos) {
       final edited = photo.editedFile;
@@ -639,6 +660,7 @@ class ChatMediaSendController {
       }
     }
     if (jobs.isEmpty || !isMounted()) return;
+    if (!await allowAttachment() || !isMounted()) return;
 
     if (encryptionEnabled()) {
       notify(_l10n.chatMediaSendScheduledEncryptedPhotos);
@@ -662,6 +684,7 @@ class ChatMediaSendController {
     List<PickedPhoto> picked,
     String caption,
   ) async {
+    if (!await allowAttachment()) return;
     final photos = picked.where((ph) => !ph.item.isVideo).toList();
     if (photos.length != picked.length && isMounted()) {
       notify(_l10n.chatMediaSendVideoNotEncryptable);
@@ -756,6 +779,7 @@ class ChatMediaSendController {
     Uint8List? sealedText,
     int e2ee = CachedMessage.e2eeNone,
   }) async {
+    if (!await allowAttachment()) return;
     if (_myId == 0) return;
     if (!await confirmSend() || !isMounted()) return;
     await _uploadAsFile(
@@ -778,6 +802,7 @@ class ChatMediaSendController {
     Uint8List? sealedText,
     int e2ee = CachedMessage.e2eeNone,
   }) async {
+    if (!await allowAttachment()) return;
     if (_myId == 0) return;
 
     showAttachmentPanel.value = false;

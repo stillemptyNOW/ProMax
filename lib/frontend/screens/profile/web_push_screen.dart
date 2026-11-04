@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../backend/api.dart';
+import '../../../core/config/product_links.dart';
 import '../../../core/utils/format.dart';
 import '../../../core/webpush/max_web_socket.dart';
 import '../../../core/webpush/web_push_service.dart';
@@ -267,13 +268,13 @@ class _WebPushScreenState extends State<WebPushScreen> {
       const SizedBox(height: 16),
       _primary(l10n.webPushOpenSite, () async {
         final opened = await launchUrl(
-          Uri.parse('https://boriskino.qd.je'),
+          Uri.parse(ProductLinks.notifications),
           mode: LaunchMode.externalApplication,
         );
         if (!opened && context.mounted) {
           showCustomNotification(
             context,
-            'Не удалось открыть Safari. Откройте boriskino.qd.je вручную.',
+            'Не удалось открыть Safari. Откройте ${ProductLinks.notifications} вручную.',
           );
         }
       }),

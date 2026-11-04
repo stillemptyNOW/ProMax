@@ -454,7 +454,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get infoAccountRemovalEnabled => 'Мгновенное удаление аккаунта:';
 
   @override
-  String get infoImageSize => 'image-size';
+  String get infoImageSize => 'Размер изображения:';
 
   @override
   String get infoGce => 'gce';
@@ -466,13 +466,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get infoMaxMsgLength => 'макс. длина сообщения:';
 
   @override
-  String get infoQuotesEnabled => 'quotes-enabled';
+  String get infoQuotesEnabled => 'Цитирование:';
 
   @override
-  String get infoCallsEndpoint => 'calls-endpoint';
+  String get infoCallsEndpoint => 'Адрес сервера звонков:';
 
   @override
-  String get infoSendLocationEnabled => 'отправка гео.:';
+  String get infoSendLocationEnabled => 'Отправка геопозиции:';
 
   @override
   String get infoLgce => 'lgce';
@@ -487,22 +487,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get infoGrse => 'grse';
 
   @override
-  String get infoEditTimeout => 'Можно редактировать сообщение в течении:';
+  String get infoEditTimeout => 'Можно редактировать сообщение в течение:';
 
   @override
-  String get infoImageQuality => 'image-quality';
+  String get infoImageQuality => 'Качество изображений:';
 
   @override
-  String get infoUnsafeFilesAlert => 'unsafe-files-alert';
+  String get infoUnsafeFilesAlert => 'Предупреждение о небезопасных файлах:';
 
   @override
-  String get infoAccountNicknameEnabled => 'account-nickname-enabled';
+  String get infoAccountNicknameEnabled => 'Никнейм аккаунта:';
 
   @override
   String get infoMentionsEntityNamesLimit => 'макс. кол-во упоминаний:';
 
   @override
-  String get infoReactionsEnabled => 'reactions-enabled';
+  String get infoReactionsEnabled => 'Реакции:';
 
   @override
   String get infoTile => 'tile';
@@ -2950,7 +2950,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get webPushInstallBody =>
-      'WEB-сессия подключена. Откройте boriskino.qd.je в Safari → «Поделиться» → «На экран Домой». Запустите новую иконку ProMax Уведомления, разрешите уведомления, создайте подписку и нажмите «Связать с ProMax». Дождитесь подтверждения регистрации в приложении. Затем проверьте входящее сообщение с другого аккаунта на заблокированном iPhone.';
+      'WEB-сессия подключена. Откройте proma-x.xyz/notifications/ в Safari → «Поделиться» → «На экран Домой». Запустите новую иконку ProMax Уведомления, разрешите уведомления, создайте подписку и нажмите «Связать с ProMax». Дождитесь подтверждения регистрации в приложении. Затем проверьте входящее сообщение с другого аккаунта на заблокированном iPhone.';
 
   @override
   String get webPushLinkedTitle => 'Уведомления подключены';
@@ -4310,8 +4310,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Часть выбранных сообщений нельзя удалить у участников, поэтому все они удалятся только у вас';
 
   @override
-  String get infoDeleteForAll =>
-      'Удаление чата у собеседника (delete-for-all):';
+  String get infoDeleteForAll => 'Удаление чата у собеседника:';
 
   @override
   String get chatActionProfileUnavailable =>
@@ -5513,6 +5512,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get findUserInvalidPhone => 'Введите корректный номер телефона';
 
   @override
+  String get findUserConfirmPhone => 'Это полный номер?';
+
+  @override
+  String get findUserContinueEditing => 'Продолжить ввод';
+
+  @override
+  String get findUserConfirmSearch => 'Искать этот номер';
+
+  @override
   String get findUserPhoneNotFound => 'Контакт с таким номером не найден';
 
   @override
@@ -5987,7 +5995,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appIconSeasonalSubtitle =>
-      'Хэллоуин с 24 октября по 2 ноября, Новый год с 20 декабря по 10 января. Потом вернётся выбранная вами иконка.';
+      'Каждая праздничная иконка включается на 7 дней. После праздника возвращается выбранная иконка.';
 
   @override
   String appIconSeasonalActive(String name, DateTime date) {
@@ -6116,11 +6124,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsTabCloudStorageLimitsBody =>
-      'Можете хранить массивный обьем информации.';
+      'Вы можете хранить большой объём информации.';
 
   @override
   String get settingsTabCloudStoragePrivacyTitle =>
-      'Не обеспечивается конфединциальность файлов';
+      'Конфиденциальность файлов не гарантируется';
 
   @override
   String get settingsTabCloudStoragePrivacyBody =>
@@ -7396,7 +7404,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get performanceModeSubtitle =>
-      'Баланс между эффектами и плавностью интерфейса';
+      'Авто подстраивает эффекты под устройство и задержки кадров. Плавность упрощает эффекты; красота сохраняет максимальные эффекты.';
 
   @override
   String get performanceModeAuto => 'Авто';
@@ -7455,10 +7463,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proMaxDigitalIdNative => 'Цифровой ID: нативный режим и отчёт';
-
-  @override
-  String get proMaxBasedOnKomet =>
-      'ProMax основан на открытом клиенте Komet · GPLv3';
 
   @override
   String proMaxHeroVersion(String version, String theme) {
@@ -7964,4 +7968,319 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get hubNewAnnouncement => 'Новое объявление в служебном чате ProMax';
+
+  @override
+  String get proMaxLicenseInfo => 'ProMax · Открытый исходный код · GPLv3';
+
+  @override
+  String get settingsLinkExport => 'Экспорт в ссылку';
+
+  @override
+  String get settingsLinkImport => 'Импорт по ссылке';
+
+  @override
+  String get settingsLinkTitle => 'Настройки ProMax по ссылке';
+
+  @override
+  String get settingsLinkPrivacy =>
+      'Ссылка содержит только настройки ProMax, включая настройки приватности клиента. Любой получатель сможет их импортировать. История, аккаунт и ключи восстановления в ссылку не входят.';
+
+  @override
+  String get settingsLinkCopy => 'Скопировать ссылку';
+
+  @override
+  String get settingsLinkShare => 'Поделиться';
+
+  @override
+  String get settingsLinkCopied => 'Ссылка скопирована';
+
+  @override
+  String get settingsLinkPaste => 'Вставьте ссылку настроек ProMax';
+
+  @override
+  String get settingsLinkInvalid =>
+      'Ссылка повреждена, слишком длинная или не поддерживается этой версией ProMax';
+
+  @override
+  String get settingsLinkFailed => 'Не удалось передать настройки по ссылке';
+
+  @override
+  String get settingsLinkConfirm =>
+      'Применить настройки из ссылки? Они могут изменить оформление и приватность ProMax. Будут заменены только переданные параметры. Сообщения и аккаунты сохранятся. Параметры другой ОС применяться не будут.';
+
+  @override
+  String get settingsLinkApply => 'Применить';
+
+  @override
+  String get settingsLinkApplied => 'Настройки из ссылки применены';
+
+  @override
+  String get settingsLinkCancel => 'Отмена';
+
+  @override
+  String get settingsLinkDone => 'Готово';
+
+  @override
+  String get platformSettingsTitle => 'Настройки устройства';
+
+  @override
+  String get platformSettingsHint =>
+      'Здесь параметры текущей ОС. При импорте из другой ОС применяются только общие настройки: параметры устройства остаются вашими.';
+
+  @override
+  String get platformMedia => 'Камера, микрофон и звонки';
+
+  @override
+  String get platformNotifications => 'Системные уведомления';
+
+  @override
+  String get platformNativeGlass => 'Системное стекло iOS 26';
+
+  @override
+  String get platformNativeGlassHint =>
+      'Использовать оформление Apple на поддерживаемой версии iOS';
+
+  @override
+  String get platformNativeIosUi => 'Нативный интерфейс iOS';
+
+  @override
+  String get platformNativeIosUiHint =>
+      'Эксперимент: список чатов рисует SwiftUI. Выключите, если что-то сломалось';
+
+  @override
+  String get nativeChatListMute => 'Без звука';
+
+  @override
+  String get nativeChatListUnmute => 'Включить звук';
+
+  @override
+  String get nativeChatListSelect => 'Выбрать';
+
+  @override
+  String get nativeChatListSearch => 'Поиск';
+
+  @override
+  String get platformNativeUnsupported =>
+      'Системное стекло доступно начиная с iOS 26. Сейчас используется стекло ProMax.';
+
+  @override
+  String get platformTabs => 'Подписи вкладок';
+
+  @override
+  String get platformTabsHint => 'Показывать подписи под иконками навигации';
+
+  @override
+  String get platformIconTiles => 'Цветные иконки настроек';
+
+  @override
+  String get platformIconTilesHint => 'Показывать иконки на цветных плитках';
+
+  @override
+  String get hubConnectionTitle => 'Сервис ProMax';
+
+  @override
+  String get hubCheckConnection => 'Проверить соединение';
+
+  @override
+  String get hubConnectionOk => 'Сервис доступен';
+
+  @override
+  String get hubSendPerformance => 'Отправить отчёт о плавности';
+
+  @override
+  String get hubPerformanceHint =>
+      'Количество медленных кадров, время отрисовки, версия, ОС и режим эффектов. Без переписки и названия устройства. Доступно при включённой диагностике.';
+
+  @override
+  String get hubPerformanceSent => 'Отчёт о плавности отправлен';
+
+  @override
+  String get hubPerformanceEmpty =>
+      'Сначала попользуйтесь приложением, чтобы собрать данные о кадрах';
+
+  @override
+  String get hubDiagnosticsDisabled => 'Отправка диагностики выключена';
+
+  @override
+  String get hubWorking => 'Выполняется…';
+
+  @override
+  String get appIconNameChristmas => 'Рождество';
+
+  @override
+  String get appIconNameValentine => '14 февраля';
+
+  @override
+  String get appIconNameWomensDay => '8 марта';
+
+  @override
+  String get appIconNameVictoryDay => '9 мая';
+
+  @override
+  String get proMaxWebsite => 'Сайт ProMax';
+
+  @override
+  String get proMaxTelegram => 'Телеграм';
+
+  @override
+  String get hubDraftUnsaved => 'Есть несохранённые изменения';
+
+  @override
+  String get hubDraftSaved => 'Черновик сохранён';
+
+  @override
+  String get proMaxReadOnActionTitle => 'Читать при действии';
+
+  @override
+  String get proMaxReadOnActionHint =>
+      'При включённом «Не читать» выбранные успешные действия отправляют отметку прочтения. Реакция и ответ читают до выбранного сообщения, отправка — до сообщений, полученных перед ней. Более новые сообщения остаются непрочитанными.';
+
+  @override
+  String get proMaxReadOnReaction => 'При добавлении реакции';
+
+  @override
+  String get proMaxReadOnReply => 'При ответе';
+
+  @override
+  String get proMaxReadOnSend => 'При отправке сообщения';
+
+  @override
+  String get appClassicDesignTitle => 'Классический дизайн';
+
+  @override
+  String get appClassicDesignHint =>
+      'Прежнее оформление списка чатов, переписки и профиля. Ваши данные и настройки сохраняются.';
+
+  @override
+  String get appRedesignWelcome => 'Добро пожаловать в редизайн';
+
+  @override
+  String get hubKindNews => 'Новость';
+
+  @override
+  String get hubKindUpdate => 'Обновление';
+
+  @override
+  String get hubKindImportant => 'Важное';
+
+  @override
+  String get hubKindPromo => 'Акция';
+
+  @override
+  String get hubKindHoliday => 'Праздник';
+
+  @override
+  String get hubActionLink => 'Открыть ссылку';
+
+  @override
+  String get hubActionUpdate => 'Открыть обновление';
+
+  @override
+  String get hubActionSettings => 'Открыть настройки';
+
+  @override
+  String get hubFieldTitle => 'Заголовок';
+
+  @override
+  String get hubFieldImage => 'Картинка (ссылка https)';
+
+  @override
+  String get hubFieldButtonLabel => 'Текст кнопки';
+
+  @override
+  String get hubFieldButtonUrl => 'Ссылка кнопки (https)';
+
+  @override
+  String get hubFieldAction => 'Действие кнопки';
+
+  @override
+  String get hubMenuCopy => 'Копировать';
+
+  @override
+  String get hubMenuHide => 'Скрыть';
+
+  @override
+  String get hubMenuMute => 'Отключить уведомления об объявлениях';
+
+  @override
+  String get hubMenuUnmute => 'Включить уведомления об объявлениях';
+
+  @override
+  String get hubCopied => 'Скопировано';
+
+  @override
+  String get hubToday => 'Сегодня';
+
+  @override
+  String get hubYesterday => 'Вчера';
+
+  @override
+  String get hubNotificationChannel => 'Объявления ProMax';
+
+  @override
+  String get hubNotificationOpen => 'Открыть';
+
+  @override
+  String get groupEncryptionTitle => 'Шифрование группы';
+
+  @override
+  String get groupEncryptionIntro =>
+      'Все участники должны согласиться и подтвердить защищённые переписки друг с другом. Пока шифрование настраивается или состав группы меняется, отправка сообщений заблокирована.';
+
+  @override
+  String get groupEncryptionOff => 'Шифрование группы не включено.';
+
+  @override
+  String get groupEncryptionEnable => 'Включить шифрование группы';
+
+  @override
+  String get groupEncryptionAccept => 'Принять шифрование группы';
+
+  @override
+  String get groupEncryptionConfirm =>
+      'Вы согласны включить шифрование в этой группе? Отправка сообщений станет доступна после согласия всех участников.';
+
+  @override
+  String get groupEncryptionAgree => 'Согласен';
+
+  @override
+  String get groupEncryptionCancel => 'Отмена';
+
+  @override
+  String get groupEncryptionWaiting => 'Ожидаем согласия участников';
+
+  @override
+  String get groupEncryptionKeys => 'Ожидаем ключи шифрования';
+
+  @override
+  String get groupEncryptionReady => 'Шифрование группы включено';
+
+  @override
+  String get groupEncryptionChanged =>
+      'Состав группы изменился. Отправка заблокирована до повторной настройки шифрования.';
+
+  @override
+  String get groupEncryptionRestart => 'Настроить заново';
+
+  @override
+  String get groupEncryptionUnavailable =>
+      'Шифрование группы недоступно на этом устройстве.';
+
+  @override
+  String get groupEncryptionVerification =>
+      'Перед продолжением подтвердите защищённые переписки со всеми участниками.';
+
+  @override
+  String get groupEncryptionMembership => 'Не удалось проверить состав группы.';
+
+  @override
+  String get groupEncryptionTransport =>
+      'Не удалось обменяться данными шифрования. Отправка остаётся заблокированной.';
+
+  @override
+  String get groupEncryptionFailed =>
+      'Не удалось изменить настройки шифрования группы. Попробуйте ещё раз.';
+
+  @override
+  String get groupEncryptionRetry => 'Повторить обмен ключами';
 }

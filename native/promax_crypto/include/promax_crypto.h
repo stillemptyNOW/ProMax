@@ -63,6 +63,13 @@ extern "C" {
 #define KC_TEXT_ANSWER 3
 #define KC_TEXT_SESSION 4
 
+#define KC_GROUP_MEMBER_SIZE 40u
+#define KC_GROUP_MEMBERS_MAX 256u
+#define KC_GROUP_DISTRIBUTION_SIZE 188u
+#define KC_GROUP_STATE_MAX 9376u
+#define KC_GROUP_PLAINTEXT_MAX 65536u
+#define KC_GROUP_MAX_SKIP 256u
+
 typedef enum {
     KC_OK = 0,
     KC_ERR_EMPTY_PASSWORD = -1,
@@ -84,6 +91,42 @@ typedef enum {
     KC_ERR_TOO_LONG = -17,
     KC_ERR_AWAITING_PEER = -18
 } kc_status;
+
+KC_EXPORT kc_status kc_group_members_build(const int64_t *member_ids,
+    const uint8_t *public_keys, size_t member_count, uint8_t *out_members,
+    size_t members_cap, size_t *members_len);
+
+KC_EXPORT kc_status kc_group_members_digest(int64_t group_id,
+    const uint8_t *members, size_t members_len, uint8_t *out_digest,
+    size_t digest_cap, size_t *digest_len);
+
+KC_EXPORT kc_status kc_group_sender_create(const uint8_t *identity,
+    size_t identity_len, int64_t group_id, int64_t sender_id, uint64_t epoch,
+    const uint8_t *members, size_t members_len, const uint8_t *random,
+    size_t random_len, const uint8_t *old_state, size_t old_state_len,
+    uint8_t *out_distribution, size_t distribution_cap,
+    size_t *distribution_len, uint8_t *out_state, size_t state_cap,
+    size_t *state_len);
+
+KC_EXPORT kc_status kc_group_receiver_import(int64_t group_id,
+    int64_t sender_id, const uint8_t *members, size_t members_len,
+    const uint8_t *distribution, size_t distribution_len,
+    const uint8_t *old_state, size_t old_state_len,
+    uint8_t *out_state, size_t state_cap, size_t *state_len);
+
+KC_EXPORT size_t kc_group_encrypt_bound(size_t plaintext_len);
+
+KC_EXPORT kc_status kc_group_encrypt(const uint8_t *state, size_t state_len,
+    uint8_t content_type, const uint8_t *plaintext, size_t plaintext_len,
+    uint8_t *out_envelope, size_t envelope_cap, size_t *envelope_len,
+    uint8_t *out_state, size_t state_cap, size_t *state_out_len);
+
+KC_EXPORT size_t kc_group_decrypt_bound(size_t envelope_len);
+
+KC_EXPORT kc_status kc_group_decrypt(const uint8_t *state, size_t state_len,
+    const uint8_t *envelope, size_t envelope_len, uint8_t *out_content_type,
+    uint8_t *out_plaintext, size_t plaintext_cap, size_t *plaintext_len,
+    uint8_t *out_state, size_t state_cap, size_t *state_out_len);
 
 KC_EXPORT const char *kc_status_string(kc_status status);
 

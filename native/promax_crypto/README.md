@@ -11,6 +11,11 @@ repository and is compiled directly by the Flutter plugin in
   encryption, sealed local storage, passphrase-protected device transfer.
   Formats: [docs/PROTOCOL.md](docs/PROTOCOL.md).
 * **legacy (v1)** — shared-passphrase scheme for group chats.
+* **Group G1 native primitives** — signed sender-key distributions, authenticated
+  membership epochs, key rotation and bounded replay-safe receive chains. These
+  primitives require verified group membership, consent, pairwise distribution
+  and atomic protected state persistence in the client before group E2EE can be
+  enabled. They do not provide account attestation or membership consensus.
 
 The API is `include/promax_crypto.h`: stateless functions over caller-provided
 buffers, `*_bound()` helpers for sizing, `kc_status` results. The core has no

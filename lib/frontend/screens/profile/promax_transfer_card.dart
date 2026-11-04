@@ -1,24 +1,21 @@
+import '../../../core/config/promax_settings_link.dart';
+import '../../../core/utils/share_origin.dart';
+import 'package:share_plus/share_plus.dart';
+import 'promax_import.dart';
+import 'settings_link_import.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/config/promax_atmosphere.dart';
-import '../../../core/config/promax_glass.dart';
-import '../../../core/config/promax_theme_presets.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../../../core/config/app_accent.dart';
-import '../../../core/config/app_amoled.dart';
-import '../../../core/config/app_theme_mode.dart';
-import '../../../core/config/app_video_note_quality.dart';
 import '../../../core/config/promax_archive.dart';
 import '../../../core/security/app_lock.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/save_file_as.dart';
-import '../../../main.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/confirm_dialog.dart';
 import '../../widgets/with_text_controller.dart';
@@ -79,6 +76,134 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
       }
     } finally {
       if (file != null && await file.exists()) await file.delete();
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _exportLink() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final link = await ProMaxSettingsLink.export();
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.settingsLinkTitle),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.settingsLinkPrivacy),
+                  const SizedBox(height: 16),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 140),
+                    child: SingleChildScrollView(child: SelectableText(link)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(l10n.settingsLinkDone),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await Clipboard.setData(ClipboardData(text: link));
+                  if (!dialogContext.mounted) return;
+                  Navigator.pop(dialogContext);
+                  if (mounted) {
+                    showCustomNotification(context, l10n.settingsLinkCopied);
+                  }
+                } catch (_) {
+                  if (dialogContext.mounted) {
+                    showCustomNotification(
+                      dialogContext,
+                      l10n.settingsLinkFailed,
+                    );
+                  }
+                }
+              },
+              child: Text(l10n.settingsLinkCopy),
+            ),
+            FilledButton(
+              onPressed: () async {
+                try {
+                  await AppLock.instance.external(
+                    () => Share.share(
+                      link,
+                      sharePositionOrigin: shareOriginOf(dialogContext),
+                    ),
+                  );
+                } catch (_) {
+                  if (dialogContext.mounted) {
+                    showCustomNotification(
+                      dialogContext,
+                      l10n.settingsLinkFailed,
+                    );
+                  }
+                }
+              },
+              child: Text(l10n.settingsLinkShare),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        showCustomNotification(
+          context,
+          AppLocalizations.of(context)!.settingsLinkFailed,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _importLink() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final l10n = AppLocalizations.of(context)!;
+      final link = await showDialog<String>(
+        context: context,
+        builder: (_) => WithTextController(
+          builder: (dialogContext, controller) => AlertDialog(
+            title: Text(l10n.settingsLinkImport),
+            content: TextField(
+              controller: controller,
+              maxLength: ProMaxSettingsLink.maxLength,
+              maxLines: 4,
+              autocorrect: false,
+              enableSuggestions: false,
+              keyboardType: TextInputType.url,
+              decoration: InputDecoration(hintText: l10n.settingsLinkPaste),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(l10n.settingsLinkCancel),
+              ),
+              FilledButton(
+                onPressed: () =>
+                    Navigator.pop(dialogContext, controller.text.trim()),
+                child: Text(l10n.settingsLinkApply),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (link == null || !mounted) return;
+      await importProMaxSettingsLink(context, link);
+    } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
@@ -153,35 +278,11 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
         confirmLabel: 'Импортировать',
       );
       if (!confirmed || !mounted) return;
-      final restored = await ProMaxArchive.apply(data, deleted: deleted);
-      await AppThemeModeConfig.load();
-      await AppAmoled.load();
-      await AppVideoNoteResolution.load();
-      await AppVideoNoteFps.load();
-      await AppVideoNoteRearCamera.load();
-      await ProMaxGlass.load();
-      await ProMaxAtmosphere.load();
-      await ProMaxThemePresets.load();
-      if (!mounted) return;
-      final prefs = await ProMaxArchive.settings();
-      if (!mounted) return;
-      final app = ProMaxApp.stateOf(context);
-      if (prefs['app_theme_mode'] is String) {
-        await app?.applyThemeMode(AppThemeModeConfig.current.value);
-      }
-      if (prefs['app_amoled'] is bool) {
-        await app?.applyAmoled(AppAmoled.current.value);
-      }
-      if (prefs['app_accent_seed'] is int) {
-        await app?.applyAccentColor(await AppAccent.load());
-      }
-      if (prefs['app_font'] is String) {
-        await app?.applyAppFont(prefs['app_font'] as String);
-      }
-      if (prefs['app_font_scale'] is num) {
-        await app?.applyFontScale((prefs['app_font_scale'] as num).toDouble());
-      }
-      api.refreshPresence();
+      final restored = await applyProMaxArchive(
+        context,
+        data,
+        deleted: deleted,
+      );
       if (mounted) {
         showCustomNotification(
           context,
@@ -256,6 +357,16 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
         icon: Symbols.upload,
         label: AppLocalizations.of(context)!.proMaxArchiveImport,
         onTap: _import,
+      ),
+      SettingsNavTile(
+        icon: Symbols.link,
+        label: AppLocalizations.of(context)!.settingsLinkExport,
+        onTap: _exportLink,
+      ),
+      SettingsNavTile(
+        icon: Symbols.add_link,
+        label: AppLocalizations.of(context)!.settingsLinkImport,
+        onTap: _importLink,
       ),
       SettingsNavTile(
         icon: Symbols.key,

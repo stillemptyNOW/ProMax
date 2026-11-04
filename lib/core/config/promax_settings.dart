@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/recents_privacy.dart';
 import 'build_profile.dart';
 
-// #***! фирменные настройки комета которых нет в оригинале
 class ProMaxSettings {
   static const _kViewDeleted = 'promax_view_deleted';
   static const _kViewRedacted = 'promax_view_redacted';
@@ -16,6 +15,9 @@ class ProMaxSettings {
   static const _kShowReadStamp = 'promax_show_read_stamp';
   static const _kGhostMode = 'promax_ghost_mode';
   static const _kAntiRead = 'promax_anti_read';
+  static const _kReadOnReaction = 'promax_read_on_reaction';
+  static const _kReadOnReply = 'promax_read_on_reply';
+  static const _kReadOnSend = 'promax_read_on_send';
   static const _kSelfOnlineCheck = 'promax_self_online_check';
   static const _kHideAllChatsFolder = 'promax_hide_all_chats_folder';
   static const _kShowHiddenChats = 'promax_show_hidden_chats';
@@ -36,6 +38,9 @@ class ProMaxSettings {
   static final ValueNotifier<bool> ghostMode = ValueNotifier(false);
   static final ValueNotifier<bool> switcherBlur = ValueNotifier(false);
   static final ValueNotifier<bool> antiRead = ValueNotifier(false);
+  static final ValueNotifier<bool> readOnReaction = ValueNotifier(false);
+  static final ValueNotifier<bool> readOnReply = ValueNotifier(false);
+  static final ValueNotifier<bool> readOnSend = ValueNotifier(false);
   static final ValueNotifier<bool> selfOnlineCheck = ValueNotifier(true);
   static final ValueNotifier<bool> hideAllChatsFolder = ValueNotifier(false);
   static final ValueNotifier<bool> showHiddenChats = ValueNotifier(false);
@@ -61,6 +66,9 @@ class ProMaxSettings {
     showReadStamp.value = prefs.getBool(_kShowReadStamp) ?? true;
     ghostMode.value = prefs.getBool(_kGhostMode) ?? false;
     antiRead.value = prefs.getBool(_kAntiRead) ?? false;
+    readOnReaction.value = prefs.getBool(_kReadOnReaction) ?? false;
+    readOnReply.value = prefs.getBool(_kReadOnReply) ?? false;
+    readOnSend.value = prefs.getBool(_kReadOnSend) ?? false;
     quickReaction.value = prefs.getString(_kQuickReaction) ?? '❤️';
     noTyping.value = prefs.getBool(_kNoTyping) ?? false;
     hideStoryViews.value = prefs.getBool(_kHideStoryViews) ?? false;
@@ -128,6 +136,24 @@ class ProMaxSettings {
     antiRead.value = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kAntiRead, value);
+  }
+
+  static Future<void> setReadOnReaction(bool value) async {
+    readOnReaction.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kReadOnReaction, value);
+  }
+
+  static Future<void> setReadOnReply(bool value) async {
+    readOnReply.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kReadOnReply, value);
+  }
+
+  static Future<void> setReadOnSend(bool value) async {
+    readOnSend.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kReadOnSend, value);
   }
 
   static Future<void> setQuickReaction(String value) async {

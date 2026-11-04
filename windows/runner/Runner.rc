@@ -59,6 +59,10 @@ IDI_ICON_SUNSET         ICON                    "resources\\app_icon_sunset.ico"
 IDI_ICON_GLASS          ICON                    "resources\\app_icon_glass.ico"
 IDI_ICON_HALLOWEEN      ICON                    "resources\\app_icon_halloween.ico"
 IDI_ICON_NEWYEAR        ICON                    "resources\\app_icon_newyear.ico"
+IDI_ICON_CHRISTMAS ICON "resources\\app_icon_christmas.ico"
+IDI_ICON_VALENTINE ICON "resources\\app_icon_valentine.ico"
+IDI_ICON_WOMENSDAY ICON "resources\\app_icon_womensday.ico"
+IDI_ICON_VICTORYDAY ICON "resources\\app_icon_victoryday.ico"
 
 
 /////////////////////////////////////////////////////////////////////////////

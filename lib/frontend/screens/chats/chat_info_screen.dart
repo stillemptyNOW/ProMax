@@ -19,6 +19,7 @@ import '../../../core/cache/info_cache.dart';
 import '../../../core/calls/call_controller.dart';
 import '../../../core/config/app_show_extra_info.dart';
 import '../../../core/config/app_stories.dart';
+import '../../../core/config/app_design.dart';
 import '../../../core/protocol/packet.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/chat_members_store.dart';
@@ -49,6 +50,7 @@ import '../../widgets/glossy_pill.dart';
 import '../../widgets/promax_avatar.dart';
 import '../../widgets/profile_header_scroll.dart';
 import '../../widgets/profile_hero.dart';
+import '../../widgets/person_profile_scroll_view.dart';
 import '../../widgets/swipe_route.dart';
 import '../../widgets/local_avatar_builder.dart';
 import '../../../backend/modules/chats.dart';
@@ -89,6 +91,7 @@ class ChatInfoScreen extends StatefulWidget {
   final ChatInfoTab? initialTab;
   final Object? heroTag;
   final bool openedFromChat;
+  final ProfileData? selfPreview;
 
   final void Function(String messageId, int time)? onJumpToMessage;
 
@@ -102,6 +105,7 @@ class ChatInfoScreen extends StatefulWidget {
     this.initialTab,
     this.heroTag,
     this.openedFromChat = false,
+    this.selfPreview,
     this.onJumpToMessage,
   });
 
@@ -239,6 +243,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   AppLocalizations get l10n => AppLocalizations.of(context)!;
 
   List<String> get _tabs {
+    if (widget.selfPreview != null) return const [];
     final showInfo = AppShowExtraInfo.current.value;
     switch (widget.chatType) {
       case 'DIALOG':
@@ -252,12 +257,20 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
           ];
         }
         return [
+          if (!AppDesign.classic.value) ...[
+            l10n.chatInfoTabMedia,
+            l10n.chatInfoTabFiles,
+            l10n.chatInfoTabVoice,
+            l10n.chatInfoTabLinks,
+          ],
           l10n.chatInfoTabGeneralChats,
-          l10n.chatInfoTabMedia,
+          if (AppDesign.classic.value) l10n.chatInfoTabMedia,
           if (showInfo) l10n.chatInfoTabInfo,
-          l10n.chatInfoTabFiles,
-          l10n.chatInfoTabVoice,
-          l10n.chatInfoTabLinks,
+          if (AppDesign.classic.value) ...[
+            l10n.chatInfoTabFiles,
+            l10n.chatInfoTabVoice,
+            l10n.chatInfoTabLinks,
+          ],
         ];
       case 'CHAT':
         return [
@@ -285,6 +298,16 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   void reloadAfterReconnect() => _load();
 
   Future<void> _load() async {
+    final preview = widget.selfPreview;
+    if (preview != null) {
+      _myId = preview.id;
+      _otherId = preview.id;
+      _contactData = await ContactInfoFetch.get(preview.id);
+      if (!mounted) return;
+      if (!_identityKnown.isCompleted) _identityKnown.complete();
+      _loadedUpdate(() => _isLoading = false);
+      return;
+    }
     final results = await Future.wait([
       AppDatabase.loadActiveProfile(),
       ChatInfoFetch.get(widget.chatId),
@@ -417,9 +440,13 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     }
   }
 
-  String get _chatName => _chatAdmin?.name ?? widget.name;
+  String get _chatName => widget.selfPreview != null
+      ? _contactData?.onemeFullName ?? widget.name
+      : _chatAdmin?.name ?? widget.name;
 
-  String get _chatImageUrl => _chatAdmin?.imageUrl ?? widget.imageUrl;
+  String get _chatImageUrl => widget.selfPreview != null
+      ? _contactData?.avatarUrl ?? widget.imageUrl
+      : _chatAdmin?.imageUrl ?? widget.imageUrl;
 
   Future<void> _loadBlockedState(int peerId) async {
     final blocked = await ContactsModule.isBlocked(api, peerId);
@@ -480,8 +507,27 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     return Scaffold(
       backgroundColor: cs.surface,
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-      floatingActionButton: const ConnectionSpinner(),
-      body: _buildScrollBody(cs),
+      floatingActionButton: widget.selfPreview == null
+          ? const ConnectionSpinner()
+          : null,
+      body: ValueListenableBuilder<bool>(
+        valueListenable: AppDesign.classic,
+        builder: (context, classic, _) {
+          if (classic || widget.chatType != 'DIALOG') {
+            return _buildScrollBody(cs);
+          }
+          final controller = _bodyScrollController ??= ScrollController()
+            ..addListener(_onBodyScroll);
+          return PersonProfileScrollView(
+            name: _customName,
+            subtitle: _subtitle(),
+            controller: controller,
+            trailing: widget.selfPreview == null ? _buildMoreButton(cs) : null,
+            avatarBuilder: (size) => _headerAvatar(cs, size / 2, 0, size: size),
+            body: _buildBody(cs),
+          );
+        },
+      ),
     );
   }
 
@@ -825,7 +871,12 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     );
   }
 
-  Widget _headerAvatar(ColorScheme cs, double radius, double t) {
+  Widget _headerAvatar(
+    ColorScheme cs,
+    double radius,
+    double t, {
+    double? size,
+  }) {
     final expanded = t > 0.5;
     final openHistory = _headerHasPhoto
         ? () => _openAvatarHistory(expanded: expanded, radius: radius)
@@ -846,7 +897,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
             children: [
               ProfileHeroAvatar(
                 tag: widget.heroTag,
-                size: _headerAvatarSize,
+                size: size ?? _headerAvatarSize,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(radius),
                   child: local == null
@@ -899,7 +950,11 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     return pages[_avatarIndex.clamp(0, pages.length - 1)];
   }
 
-  int get _avatarMemWidth => _headerEverExpanded ? 720 : 288;
+  int get _avatarMemWidth =>
+      _headerEverExpanded ||
+          (widget.chatType == 'DIALOG' && !AppDesign.classic.value)
+      ? 720
+      : 288;
 
   Widget _avatarPager(ColorScheme cs, double t) {
     final pages = _avatarPages;
@@ -1082,7 +1137,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
           if (_isLoading)
             ..._loadingBlocks(cs)
           else ...[
-            _buildActions(cs),
+            if (widget.selfPreview == null) _buildActions(cs),
             const SizedBox(height: 16),
             _buildPersistentInfo(cs),
             if (widget.chatType == 'DIALOG' && _otherId != null) ...[
@@ -1097,9 +1152,16 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
                 onClearHistory: _clearHistory,
                 onDelete: _deleteOwnedChat,
               ),
-            _buildTabBar(cs),
-            const SizedBox(height: 12),
-            _buildTabContent(cs),
+            if (widget.selfPreview != null)
+              Text(
+                l10n.selfProfilePreviewPrivacy,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              )
+            else ...[
+              _buildTabBar(cs),
+              const SizedBox(height: 12),
+              _buildTabContent(cs),
+            ],
             SizedBox(height: 40 + MediaQuery.paddingOf(context).bottom),
           ],
         ],
@@ -1166,7 +1228,8 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     row('ID', '$_otherId', accent: true),
-                    if (date != null) row('Регистрация', date),
+                    if (date != null)
+                      row(l10n.contactProfileInfoRegistration, date),
                   ],
                 ),
               ),
@@ -1228,6 +1291,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
 
   List<({IconData icon, String label, bool destructive, VoidCallback onTap})>
   _moreMenuEntries() {
+    if (widget.selfPreview != null) return const [];
     if (_isLoading) return const [];
     final entries =
         <
@@ -1506,6 +1570,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
   }
 
   String _subtitle() {
+    if (widget.selfPreview != null) return l10n.selfProfilePreview;
     switch (widget.chatType) {
       case 'DIALOG':
         if (_peerDeleted) return l10n.chatInfoMemberDeleted;
@@ -1592,7 +1657,6 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
     if (widget.chatType == 'DIALOG') {
       btns = [
         chatBtn,
-        muteBtn,
         if (!_isBot)
           (
             icon: Symbols.call,
@@ -1601,6 +1665,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
             label: l10n.contactProfileActionCall,
             onTap: _confirmAndStartCall,
           ),
+        muteBtn,
       ];
     } else if (widget.chatType == 'CHANNEL') {
       btns = [muteBtn, membershipBtn];
@@ -2093,7 +2158,9 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
           );
         }
       } else {
-        final phone = _contactData?.raw['phone'];
+        final phone = widget.selfPreview == null
+            ? _contactData?.raw['phone']
+            : null;
         final phoneInt = phone is int
             ? phone
             : int.tryParse(phone?.toString() ?? '');
@@ -2104,7 +2171,8 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
         }
         final bio =
             (_contactData?.raw['description'] as String?) ??
-            (_contactData?.raw['about'] as String?);
+            (_contactData?.raw['about'] as String?) ??
+            widget.selfPreview?.description;
         if (bio != null && bio.isNotEmpty) {
           if (items.isNotEmpty) items.add(const SizedBox(height: 8));
           items.add(_simpleInfoCard(cs, l10n.chatInfoBio, bio));
@@ -2337,6 +2405,33 @@ class _ChatInfoScreenState extends State<ChatInfoScreen>
 
   Widget _tabChip(ColorScheme cs, String tab) {
     final selected = tab == _selectedTab;
+    if (widget.chatType == 'DIALOG' && !AppDesign.classic.value) {
+      return Semantics(
+        selected: selected,
+        button: true,
+        child: InkWell(
+          onTap: () => setState(() => _selectedTab = tab),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: selected ? cs.primary : Colors.transparent,
+                  width: 2.5,
+                ),
+              ),
+            ),
+            child: Text(
+              tab,
+              style: TextStyle(
+                color: selected ? cs.primary : cs.onSurfaceVariant,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return GestureDetector(
       onTap: () => setState(() => _selectedTab = tab),
       child: AnimatedContainer(

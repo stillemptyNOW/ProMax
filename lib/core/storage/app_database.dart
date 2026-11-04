@@ -836,6 +836,20 @@ class AppDatabase {
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  static Future<void> saveGroupEncryptionState(int accountId, String key,
+    String value, Map<String, dynamic>? message) async {
+    final db = await _instance;
+    await db.transaction((txn) async {
+      if (message != null) {
+        await txn.insert('messages', message,
+          conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await txn.insert('sync_state', {
+        'account_id': accountId, 'key': key, 'value': value,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    });
+  }
+
   static Future<bool> claimNotification(
     int accountId,
     int chatId,
@@ -1589,6 +1603,22 @@ class AppDatabase {
   }
 
   // #***! дальше выборки истории, с конца до сообщения между и вокруг
+  static Future<Map<String, dynamic>?> loadLatestIncomingMessage(
+    int accountId,
+    int chatId,
+  ) async {
+    final db = await _instance;
+    final rows = await db.query(
+      'messages',
+      where:
+          'account_id = ? AND chat_id = ? AND sender_id != ? AND deleted = 0',
+      whereArgs: [accountId, chatId, accountId],
+      orderBy: 'time DESC',
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first;
+  }
+
   static Future<List<Map<String, dynamic>>> loadMessages(
     int accountId,
     int chatId, {

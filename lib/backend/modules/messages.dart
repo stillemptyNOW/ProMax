@@ -8,6 +8,7 @@ import '../../core/contacts/device_contacts_service.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
 import '../../core/crypto/e2ee_service.dart';
+import '../../core/crypto/group_e2ee_service.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/chat_activity_store.dart';
 import '../../core/storage/message_ranges.dart';
@@ -17,6 +18,7 @@ import '../../core/utils/server_clock.dart';
 import '../../core/utils/text_format.dart';
 import '../../models/attachment.dart';
 import 'chat_activity_sender.dart';
+import 'action_read_receipt.dart';
 import 'chats.dart' show chats;
 import 'message_copy.dart';
 import 'server_outcome.dart';
@@ -527,6 +529,7 @@ class CachedMessage {
   static const int e2eeText = 1;
   static const int e2eeFailed = 2;
   static const int e2eeFile = 3;
+  static const int e2eeControl = 4;
 
   // #***! дальше удобства для юишки
   const CachedMessage({
@@ -1127,6 +1130,7 @@ class MessagesModule {
       payload,
       'Ошибка отправки',
       beforeSend: beforeSend,
+      accountId: accountId,
     );
   }
 
@@ -1173,11 +1177,12 @@ class MessagesModule {
     Map<String, dynamic> payload,
     String defaultError, {
     void Function()? beforeSend,
+    int? accountId,
   }) async {
-    final response = await _api.sendRequest(
-      Opcode.msgSend,
+    final response = await _sendUserMessageRequest(
       payload,
       beforeSend: beforeSend,
+      accountId: accountId,
     );
     if (!response.isOk) {
       _throwSendError(response.payload, defaultError);
@@ -1210,6 +1215,45 @@ class MessagesModule {
     return null;
   }
 
+  Future<void Function()?> _groupSendGuard(Map<String, dynamic> payload,
+    int? accountId) async {
+    final groupId = payload['chatId'];
+    final body = payload['message'];
+    if (groupId is! int || body is! Map) return null;
+    final active = accountId ?? await TokenStorage.getActiveAccountId();
+    if (active == null || active == 0) return null;
+    final text = body['text'] as String? ?? '';
+    final attachments = body['attaches'];
+    final hasAttachments = attachments is! List || attachments.isNotEmpty;
+    await GroupE2eeService.instance.assertSendAllowed(active, groupId, text,
+      hasAttachments: hasAttachments);
+    return () => GroupE2eeService.instance.assertPrepared(active, groupId, text,
+      hasAttachments: hasAttachments);
+  }
+
+  Future<Packet> _sendUserMessageRequest(
+    Map<String, dynamic> payload, {
+    void Function()? beforeSend,
+    int? accountId,
+  }) async {
+    final groupCheck = await _groupSendGuard(payload, accountId);
+    final receipt = await ActionReadReceipt.forSend(
+      _api,
+      payload,
+      accountId: accountId,
+    );
+    final response = await _api.sendRequest(
+      Opcode.msgSend,
+      payload,
+      beforeSend: () {
+        beforeSend?.call();
+        groupCheck?.call();
+      },
+    );
+    if (response.isOk) await receipt?.send();
+    return response;
+  }
+
   // #***! not.ready значит сервер ещё готовит чат, повторяем
   Future<T> _sendWithNotReadyRetry<T>({
     required Map<String, dynamic> payload,
@@ -1218,9 +1262,13 @@ class MessagesModule {
     required T Function(Packet response) onResult,
     required T onExhausted,
   }) async {
+    final groupCheck = await _groupSendGuard(payload, null);
+    final receipt = await ActionReadReceipt.forSend(_api, payload);
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        final response = await _api.sendRequest(Opcode.msgSend, payload);
+        final response = await _api.sendRequest(Opcode.msgSend, payload,
+          beforeSend: groupCheck);
+        if (response.isOk) await receipt?.send();
         return onResult(response);
       } on PacketError catch (e) {
         if (!(e.errorKey?.contains('not.ready') ?? false)) {
@@ -1273,7 +1321,7 @@ class MessagesModule {
     bool notify = true,
     void Function()? beforeSend,
   }) async {
-    final response = await _api.sendRequest(Opcode.msgSend, {
+    final response = await _sendUserMessageRequest({
       'chatId': chatId,
       'message': {
         'cid': -_nextCid(),
@@ -1407,11 +1455,15 @@ class MessagesModule {
       ],
       'attaches': [],
     };
-    return _api.sendRequestOk(Opcode.msgSend, {
+    final payload = <String, dynamic>{
       'chatId': chatId,
       'message': message,
       'notify': true,
-    });
+    };
+    final receipt = await ActionReadReceipt.forSend(_api, payload);
+    final ok = await _api.sendRequestOk(Opcode.msgSend, payload);
+    if (ok) await receipt?.send();
+    return ok;
   }
 
   // #***! отложенные сообщения
@@ -1557,12 +1609,19 @@ class MessagesModule {
   ) async {
     final id = int.tryParse(messageId);
     if (id == null) return (ok: false, info: null);
+    final receipt = await ActionReadReceipt.forReaction(
+      _api,
+      chatId,
+      messageId,
+    );
     final response = await _api.sendRequest(Opcode.msgReaction, {
       'chatId': chatId,
       'messageId': id,
       'reaction': {'reactionType': 'EMOJI', 'id': emoji},
     });
-    return _applyReactionResponse(chatId, messageId, response);
+    final result = await _applyReactionResponse(chatId, messageId, response);
+    if (result.ok) await receipt?.send();
+    return result;
   }
 
   // #***! снять реакцию
@@ -2048,7 +2107,7 @@ class MessagesModule {
       'notify': notify,
     };
 
-    final response = await _api.sendRequest(Opcode.msgSend, payload);
+    final response = await _sendUserMessageRequest(payload);
     return _sentMessageMap(response);
   }
 
@@ -2068,7 +2127,7 @@ class MessagesModule {
       'notify': notify,
     };
 
-    final response = await _api.sendRequest(Opcode.msgSend, payload);
+    final response = await _sendUserMessageRequest(payload);
     return _sentMessageMap(response);
   }
 
@@ -2104,7 +2163,7 @@ class MessagesModule {
       'notify': notify,
     };
 
-    final response = await _api.sendRequest(Opcode.msgSend, payload);
+    final response = await _sendUserMessageRequest(payload);
     return _sentMessageMap(response);
   }
 
@@ -2137,7 +2196,7 @@ class MessagesModule {
       'notify': notify,
     };
 
-    final response = await _api.sendRequest(Opcode.msgSend, payload);
+    final response = await _sendUserMessageRequest(payload);
     return _sentMessageMap(response);
   }
 

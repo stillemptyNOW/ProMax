@@ -60,6 +60,10 @@ class MainActivity : AudioServiceFragmentActivity(), LaunchHost {
         "IconGlass",
         "IconHalloween",
         "IconNewYear",
+        "IconChristmas",
+        "IconValentine",
+        "IconWomensDay",
+        "IconVictoryDay",
     ).associateWith { "$iconPackage.$it" }
 
     private var secureForRecents = false

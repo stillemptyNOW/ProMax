@@ -4,8 +4,11 @@ import 'dart:ui' as ui;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 
 import 'persisted_setting.dart';
+import 'frame_health.dart';
+import '../utils/app_foreground.dart';
 
 enum PerformanceMode { auto, smooth, beauty }
 
@@ -207,19 +210,40 @@ class AppPerformance {
     EffectBudget.high,
   );
   static double? _appliedRefreshCap;
+  static final frameHealth = FrameHealth();
+  static DeviceTier? _adaptiveTier;
+  static bool _monitoring = false;
+  static final _warmup = Stopwatch();
 
   static ValueNotifier<PerformanceMode> get mode => _mode.current;
 
   static EffectBudget get current => budget.value;
+  static DeviceTier get effectiveTier => _adaptiveTier ?? tier.value;
 
   static Future<void> load() async {
+    final previousMode = mode.value;
     await _mode.load();
-    tier.value = await DeviceTierDetector.detect();
+    final detectedTier = await DeviceTierDetector.detect();
+    if (_adaptiveTier == null ||
+        detectedTier != tier.value ||
+        mode.value != previousMode) {
+      _adaptiveTier = detectedTier;
+    }
+    tier.value = detectedTier;
+    frameHealth.resetWindow();
+    if (!_monitoring) {
+      _monitoring = true;
+      _warmup.start();
+      SchedulerBinding.instance.addTimingsCallback(_onTimings);
+      AppForeground.notifier.addListener(frameHealth.resetWindow);
+    }
     _refresh();
   }
 
   static Future<void> save(PerformanceMode value) async {
     await _mode.save(value);
+    _adaptiveTier = tier.value;
+    frameHealth.resetWindow();
     _refresh();
   }
 
@@ -230,12 +254,36 @@ class AppPerformance {
   }) {
     _mode.current.value = mode;
     AppPerformance.tier.value = tier;
+    _adaptiveTier = tier;
     budget.value = EffectBudget.resolve(mode, tier);
   }
 
   static void _refresh() {
-    budget.value = EffectBudget.resolve(mode.value, tier.value);
+    budget.value = EffectBudget.resolve(
+      mode.value,
+      _adaptiveTier ?? tier.value,
+    );
     _applyRefreshCap(budget.value.maxRefreshRate);
+  }
+
+  static void _onTimings(List<ui.FrameTiming> timings) {
+    if (!AppForeground.value || _warmup.elapsed < const Duration(seconds: 3)) {
+      frameHealth.resetWindow();
+      return;
+    }
+    final hz = displayRefreshRate();
+    for (final timing in timings) {
+      final reduce = frameHealth.add(
+        buildUs: timing.buildDuration.inMicroseconds,
+        rasterUs: timing.rasterDuration.inMicroseconds,
+        hz: hz,
+      );
+      if (!reduce || mode.value != PerformanceMode.auto) continue;
+      final currentTier = _adaptiveTier ?? tier.value;
+      if (currentTier == DeviceTier.low) continue;
+      _adaptiveTier = DeviceTier.values[currentTier.index - 1];
+      _refresh();
+    }
   }
 
   static void _applyRefreshCap(double hz) {

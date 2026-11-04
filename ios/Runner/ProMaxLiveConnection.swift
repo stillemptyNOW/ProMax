@@ -159,6 +159,7 @@ final class ProMaxLiveConnection: NSObject {
     displacedSession = nil
     let session = AVAudioSession.sharedInstance()
     guard session.category == .playback, session.categoryOptions.contains(.mixWithOthers) else { return }
+    try? session.setActive(false, options: .notifyOthersOnDeactivation)
     do {
       try session.setCategory(previous.category, mode: previous.mode, options: previous.options)
       if previous.ioBuffer > 0 { try session.setPreferredIOBufferDuration(previous.ioBuffer) }

@@ -120,6 +120,7 @@ class ContactsModule {
     Api api,
     String phone, {
     bool silent = false,
+    bool cacheResult = true,
   }) async {
     final normalized = _normalizePhone(phone);
     if (normalized == null) return null;
@@ -138,13 +139,13 @@ class ContactsModule {
     if (id is! int) return null;
 
     // #***! заодно греем кэши имени аватарки и телефона
-    primeContactCache(contact);
+    if (cacheResult) primeContactCache(contact);
 
     final payloadPhone = contact['phone'];
     final resolvedPhone = payloadPhone is int && payloadPhone > 0
         ? payloadPhone
         : int.tryParse(normalized.substring(1)) ?? 0;
-    ContactCache.putPhone(id, resolvedPhone);
+    if (cacheResult) ContactCache.putPhone(id, resolvedPhone);
 
     final name = ContactInfo.fromMap(
       Map<String, dynamic>.from(contact),

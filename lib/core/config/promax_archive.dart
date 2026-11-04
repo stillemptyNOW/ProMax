@@ -11,6 +11,7 @@ import '../storage/app_database.dart';
 import '../storage/token_storage.dart';
 import 'promax_settings.dart';
 import 'call_lighting.dart';
+import 'platform_settings.dart';
 
 class ProMaxArchive {
   static const maxBytes = 64 * 1024 * 1024;
@@ -22,6 +23,10 @@ class ProMaxArchive {
     'promax_show_typing_time',
     'promax_ghost_mode',
     'promax_anti_read',
+    'promax_read_on_reaction',
+    'promax_read_on_reply',
+    'promax_read_on_send',
+    'promax_classic_design',
     'promax_self_online_check',
     'promax_hide_all_chats_folder',
     'promax_show_hidden_chats',
@@ -155,6 +160,25 @@ class ProMaxArchive {
         'В файле есть неизвестные или некорректные настройки',
       );
     }
+    if (value.containsKey('platform') ||
+        value.containsKey('platformSettings')) {
+      final platform = value['platform'];
+      final scoped = value['platformSettings'];
+      if (platform is! String ||
+          !PlatformSettings.platforms.contains(platform) ||
+          scoped is! Map ||
+          scoped.entries.any(
+            (entry) =>
+                entry.key is! String ||
+                !PlatformSettings.valid(
+                  platform,
+                  entry.key as String,
+                  entry.value,
+                ),
+          )) {
+        throw const FormatException('Invalid platform settings');
+      }
+    }
     if (value['deleted'] != null) {
       final backup = value['deleted'];
       if (backup is! Map ||
@@ -233,11 +257,7 @@ class ProMaxArchive {
 
   static Future<Uint8List> export() async {
     final accountId = await TokenStorage.getActiveAccountId();
-    final data = <String, dynamic>{
-      'format': 'ProMax',
-      'version': 1,
-      'settings': await settings(),
-    };
+    final data = await settingsDocument();
     if (accountId != null) {
       final rows = await AppDatabase.deletedMessageArchive(accountId);
       if (rows.messages.isNotEmpty) {
@@ -282,6 +302,25 @@ class ProMaxArchive {
       throw const FormatException('Файл .promax слишком большой');
     }
     return bytes;
+  }
+
+  static Future<Map<String, dynamic>> settingsDocument() async {
+    final prefs = await SharedPreferences.getInstance();
+    final platform = PlatformSettings.current;
+    final common = await settings();
+    common.removeWhere((key, _) => PlatformSettings.allKeys.contains(key));
+    final scoped = PlatformSettings.defaults(platform);
+    for (final key in scoped.keys.toList()) {
+      final value = prefs.get(key);
+      if (PlatformSettings.valid(platform, key, value)) scoped[key] = value!;
+    }
+    return {
+      'format': 'ProMax',
+      'version': 1,
+      'settings': common,
+      'platform': platform,
+      'platformSettings': scoped,
+    };
   }
 
   static Future<Map<String, dynamic>?> prepareDeleted(
@@ -362,8 +401,18 @@ class ProMaxArchive {
       );
     }
     final prefs = await SharedPreferences.getInstance();
-    for (final entry in (validated['settings'] as Map).entries) {
-      final key = entry.key as String;
+    final incoming = Map<String, dynamic>.from(validated['settings'] as Map);
+    if (validated.containsKey('platform') ||
+        !PlatformSettings.mobile.contains(PlatformSettings.current)) {
+      incoming.removeWhere((key, _) => PlatformSettings.allKeys.contains(key));
+    }
+    if (validated['platform'] == PlatformSettings.current) {
+      incoming.addAll(
+        Map<String, dynamic>.from(validated['platformSettings'] as Map),
+      );
+    }
+    for (final entry in incoming.entries) {
+      final key = entry.key;
       final value = entry.value;
       if (value is bool) {
         await prefs.setBool(key, value);

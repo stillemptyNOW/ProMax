@@ -9,6 +9,7 @@ import '../storage/app_database.dart';
 import '../storage/chat_encryption_store.dart';
 import 'chat_crypto_service.dart';
 import 'e2ee_service.dart';
+import 'group_e2ee_service.dart';
 
 // #***! расшифровалось, ключ не тот, либо копии текста на этом устройстве нет
 enum MessageDecryptionState { decrypted, wrongKey, unavailable }
@@ -113,7 +114,8 @@ class MessageDecryptionCache {
     String cipherText,
   ) {
     if (cipherText.isEmpty) return null;
-    final e2ee = E2eeService.instance.isOn(accountId, chatId);
+    final e2ee = E2eeService.instance.isOn(accountId, chatId) ||
+      cipherText.startsWith(GroupE2eeService.wirePrefix);
     if (!e2ee && !ChatCryptoService.instance.isEnabled(accountId, chatId)) {
       return null;
     }

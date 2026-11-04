@@ -12,6 +12,7 @@ import '../../core/cache/info_cache.dart';
 import '../../core/cache/message_session_cache.dart';
 import 'shared_content.dart';
 import '../../core/crypto/e2ee_service.dart';
+import '../../core/crypto/group_e2ee_service.dart';
 import '../../core/crypto/message_decryption_cache.dart';
 import '../../core/media/deleted_media_keeper.dart';
 import '../../core/storage/app_database.dart';
@@ -946,6 +947,7 @@ class ChatsModule {
     final event = control?.event;
     if (control == null || event == null) return;
     if (!_membershipEvents.contains(event)) return;
+    GroupE2eeService.instance.membershipChanged(accountId, chatId);
 
     if (message.senderId != accountId) {
       final affected = control.userIds?.length ?? 1;

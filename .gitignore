@@ -1,4 +1,6 @@
 # Miscellaneous
+media/promo/node_modules/
+media/promo/output/
 *.class
 *.log
 *.pyc

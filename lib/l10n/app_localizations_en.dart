@@ -357,10 +357,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get infoYMapSection => 'Y-Map';
 
   @override
-  String get infoFileUploadTypes => 'file-upload-unsupported-types';
+  String get infoFileUploadTypes => 'Unsupported file types';
 
   @override
-  String get infoWhiteListLinks => 'white-list-links';
+  String get infoWhiteListLinks => 'Allowed links';
 
   @override
   String get infoRegistrationTime => 'registrationTime';
@@ -450,10 +450,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get infoChatsMessages => 'messages in loaded chats';
 
   @override
-  String get infoAccountRemovalEnabled => 'account-removal-enabled';
+  String get infoAccountRemovalEnabled => 'Instant account deletion:';
 
   @override
-  String get infoImageSize => 'image-size';
+  String get infoImageSize => 'Image size:';
 
   @override
   String get infoGce => 'gce';
@@ -462,16 +462,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get infoGcce => 'gcce';
 
   @override
-  String get infoMaxMsgLength => 'max-msg-length';
+  String get infoMaxMsgLength => 'Maximum message length:';
 
   @override
-  String get infoQuotesEnabled => 'quotes-enabled';
+  String get infoQuotesEnabled => 'Quoting:';
 
   @override
-  String get infoCallsEndpoint => 'calls-endpoint';
+  String get infoCallsEndpoint => 'Call server address:';
 
   @override
-  String get infoSendLocationEnabled => 'send-location-enabled';
+  String get infoSendLocationEnabled => 'Location sharing:';
 
   @override
   String get infoLgce => 'lgce';
@@ -480,28 +480,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get infoWud => 'wud';
 
   @override
-  String get infoVideoMsgEnabled => 'video-msg-enabled';
+  String get infoVideoMsgEnabled => 'Video messages:';
 
   @override
   String get infoGrse => 'grse';
 
   @override
-  String get infoEditTimeout => 'edit-timeout';
+  String get infoEditTimeout => 'Message editing allowed within:';
 
   @override
-  String get infoImageQuality => 'image-quality';
+  String get infoImageQuality => 'Image quality:';
 
   @override
-  String get infoUnsafeFilesAlert => 'unsafe-files-alert';
+  String get infoUnsafeFilesAlert => 'Unsafe files warning:';
 
   @override
-  String get infoAccountNicknameEnabled => 'account-nickname-enabled';
+  String get infoAccountNicknameEnabled => 'Account nickname:';
 
   @override
   String get infoMentionsEntityNamesLimit => 'mentions_entity_names_limit';
 
   @override
-  String get infoReactionsEnabled => 'reactions-enabled';
+  String get infoReactionsEnabled => 'Reactions:';
 
   @override
   String get infoTile => 'tile';
@@ -2936,7 +2936,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webPushInstallBody =>
-      'Use native IPA notification settings in this ProMax version.';
+      'The WEB session is connected. Open proma-x.xyz/notifications/ in Safari, choose Share, then Add to Home Screen. Open ProMax Notifications, allow notifications, create a subscription and link it to ProMax. Wait for confirmation in the app, then test an incoming message from another account with your iPhone locked.';
 
   @override
   String get webPushLinkedTitle => 'Notifications connected';
@@ -4274,7 +4274,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Some of the selected messages cannot be deleted for members, so all of them will be deleted only for you';
 
   @override
-  String get infoDeleteForAll => 'delete-for-all';
+  String get infoDeleteForAll => 'Delete chat for everyone:';
 
   @override
   String get chatActionProfileUnavailable =>
@@ -5472,6 +5472,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get findUserInvalidPhone => 'Enter a valid phone number';
 
   @override
+  String get findUserConfirmPhone => 'Is this the complete number?';
+
+  @override
+  String get findUserContinueEditing => 'Continue editing';
+
+  @override
+  String get findUserConfirmSearch => 'Search this number';
+
+  @override
   String get findUserPhoneNotFound => 'No contact with this number was found';
 
   @override
@@ -5940,7 +5949,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appIconSeasonalSubtitle =>
-      'Halloween from October 24 to November 2, New Year from December 20 to January 10. Your own icon comes back afterwards.';
+      'Each holiday icon is active for 7 days, then your selected icon returns.';
 
   @override
   String appIconSeasonalActive(String name, DateTime date) {
@@ -7348,7 +7357,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get performanceModeSubtitle =>
-      'Balance between effects and interface smoothness';
+      'Auto adapts effects to your device and frame delays. Smooth reduces effects; Beauty keeps maximum effects.';
 
   @override
   String get performanceModeAuto => 'Auto';
@@ -7407,10 +7416,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proMaxDigitalIdNative => 'Digital ID: native mode and report';
-
-  @override
-  String get proMaxBasedOnKomet =>
-      'ProMax is based on the open Komet client · GPLv3';
 
   @override
   String proMaxHeroVersion(String version, String theme) {
@@ -7921,4 +7926,320 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hubNewAnnouncement =>
       'New announcement in the ProMax service chat';
+
+  @override
+  String get proMaxLicenseInfo => 'ProMax · Open source · GPLv3';
+
+  @override
+  String get settingsLinkExport => 'Export as link';
+
+  @override
+  String get settingsLinkImport => 'Import from link';
+
+  @override
+  String get settingsLinkTitle => 'ProMax settings link';
+
+  @override
+  String get settingsLinkPrivacy =>
+      'The link contains only ProMax settings, including client privacy preferences. Anyone with the link can import them. History, accounts and recovery keys are not included.';
+
+  @override
+  String get settingsLinkCopy => 'Copy link';
+
+  @override
+  String get settingsLinkShare => 'Share';
+
+  @override
+  String get settingsLinkCopied => 'Link copied';
+
+  @override
+  String get settingsLinkPaste => 'Paste a ProMax settings link';
+
+  @override
+  String get settingsLinkInvalid =>
+      'The link is invalid, too long or unsupported by this version of ProMax';
+
+  @override
+  String get settingsLinkFailed => 'Could not share settings by link';
+
+  @override
+  String get settingsLinkConfirm =>
+      'Apply settings from this link? They may change ProMax appearance and privacy. Only included preferences will be replaced. Messages and accounts will be preserved. Preferences for another OS will not be applied.';
+
+  @override
+  String get settingsLinkApply => 'Apply';
+
+  @override
+  String get settingsLinkApplied => 'Link settings applied';
+
+  @override
+  String get settingsLinkCancel => 'Cancel';
+
+  @override
+  String get settingsLinkDone => 'Done';
+
+  @override
+  String get platformSettingsTitle => 'Device settings';
+
+  @override
+  String get platformSettingsHint =>
+      'Options for the current OS. Imports from another OS apply only shared settings and keep your device preferences.';
+
+  @override
+  String get platformMedia => 'Camera, microphone and calls';
+
+  @override
+  String get platformNotifications => 'System notifications';
+
+  @override
+  String get platformNativeGlass => 'iOS 26 system glass';
+
+  @override
+  String get platformNativeGlassHint =>
+      'Use Apple styling on supported iOS versions';
+
+  @override
+  String get platformNativeIosUi => 'Native iOS interface';
+
+  @override
+  String get platformNativeIosUiHint =>
+      'Experimental: the chat list is drawn by SwiftUI. Turn off if something breaks';
+
+  @override
+  String get nativeChatListMute => 'Mute';
+
+  @override
+  String get nativeChatListUnmute => 'Unmute';
+
+  @override
+  String get nativeChatListSelect => 'Select';
+
+  @override
+  String get nativeChatListSearch => 'Search';
+
+  @override
+  String get platformNativeUnsupported =>
+      'System glass requires iOS 26. ProMax glass is used on this device.';
+
+  @override
+  String get platformTabs => 'Tab labels';
+
+  @override
+  String get platformTabsHint => 'Show labels under navigation icons';
+
+  @override
+  String get platformIconTiles => 'Colored settings icons';
+
+  @override
+  String get platformIconTilesHint => 'Show icons on colored tiles';
+
+  @override
+  String get hubConnectionTitle => 'ProMax service';
+
+  @override
+  String get hubCheckConnection => 'Check connection';
+
+  @override
+  String get hubConnectionOk => 'Service is available';
+
+  @override
+  String get hubSendPerformance => 'Send performance report';
+
+  @override
+  String get hubPerformanceHint =>
+      'Slow frame counts, rendering times, version, OS and effect mode. No messages or device model. Requires diagnostics to be enabled.';
+
+  @override
+  String get hubPerformanceSent => 'Performance report sent';
+
+  @override
+  String get hubPerformanceEmpty =>
+      'Use the app first to collect frame timings';
+
+  @override
+  String get hubDiagnosticsDisabled => 'Diagnostics is disabled';
+
+  @override
+  String get hubWorking => 'Working…';
+
+  @override
+  String get appIconNameChristmas => 'Christmas';
+
+  @override
+  String get appIconNameValentine => 'Valentine’s Day';
+
+  @override
+  String get appIconNameWomensDay => 'Women’s Day';
+
+  @override
+  String get appIconNameVictoryDay => 'May 9';
+
+  @override
+  String get proMaxWebsite => 'ProMax website';
+
+  @override
+  String get proMaxTelegram => 'Telegram';
+
+  @override
+  String get hubDraftUnsaved => 'Unsaved changes';
+
+  @override
+  String get hubDraftSaved => 'Draft saved';
+
+  @override
+  String get proMaxReadOnActionTitle => 'Read on action';
+
+  @override
+  String get proMaxReadOnActionHint =>
+      'While Don’t read is on, selected successful actions send read receipts. Reactions and replies read through their target; sending reads through messages received before sending. Later messages stay unread.';
+
+  @override
+  String get proMaxReadOnReaction => 'When adding a reaction';
+
+  @override
+  String get proMaxReadOnReply => 'When replying';
+
+  @override
+  String get proMaxReadOnSend => 'When sending a message';
+
+  @override
+  String get appClassicDesignTitle => 'Classic design';
+
+  @override
+  String get appClassicDesignHint =>
+      'Use the previous chat list, conversations and profile layout. Your data and settings stay with you.';
+
+  @override
+  String get appRedesignWelcome => 'Welcome to the redesign';
+
+  @override
+  String get hubKindNews => 'News';
+
+  @override
+  String get hubKindUpdate => 'Update';
+
+  @override
+  String get hubKindImportant => 'Important';
+
+  @override
+  String get hubKindPromo => 'Promo';
+
+  @override
+  String get hubKindHoliday => 'Holiday';
+
+  @override
+  String get hubActionLink => 'Open link';
+
+  @override
+  String get hubActionUpdate => 'Open update';
+
+  @override
+  String get hubActionSettings => 'Open settings';
+
+  @override
+  String get hubFieldTitle => 'Title';
+
+  @override
+  String get hubFieldImage => 'Image (https link)';
+
+  @override
+  String get hubFieldButtonLabel => 'Button label';
+
+  @override
+  String get hubFieldButtonUrl => 'Button link (https)';
+
+  @override
+  String get hubFieldAction => 'Button action';
+
+  @override
+  String get hubMenuCopy => 'Copy';
+
+  @override
+  String get hubMenuHide => 'Hide';
+
+  @override
+  String get hubMenuMute => 'Mute announcements';
+
+  @override
+  String get hubMenuUnmute => 'Unmute announcements';
+
+  @override
+  String get hubCopied => 'Copied';
+
+  @override
+  String get hubToday => 'Today';
+
+  @override
+  String get hubYesterday => 'Yesterday';
+
+  @override
+  String get hubNotificationChannel => 'ProMax announcements';
+
+  @override
+  String get hubNotificationOpen => 'Open';
+
+  @override
+  String get groupEncryptionTitle => 'Group encryption';
+
+  @override
+  String get groupEncryptionIntro =>
+      'All participants must agree and have verified encrypted conversations with each other. Messages are blocked while encryption is being established or the group changes.';
+
+  @override
+  String get groupEncryptionOff => 'Group encryption is not enabled.';
+
+  @override
+  String get groupEncryptionEnable => 'Enable group encryption';
+
+  @override
+  String get groupEncryptionAccept => 'Accept group encryption';
+
+  @override
+  String get groupEncryptionConfirm =>
+      'Do you agree to enable encryption for this group? All participants must agree before messages can be sent.';
+
+  @override
+  String get groupEncryptionAgree => 'I agree';
+
+  @override
+  String get groupEncryptionCancel => 'Cancel';
+
+  @override
+  String get groupEncryptionWaiting => 'Waiting for participants to agree';
+
+  @override
+  String get groupEncryptionKeys => 'Waiting for encryption keys';
+
+  @override
+  String get groupEncryptionReady => 'Group encryption is active';
+
+  @override
+  String get groupEncryptionChanged =>
+      'The group members changed. Sending is blocked until encryption is set up again.';
+
+  @override
+  String get groupEncryptionRestart => 'Set up again';
+
+  @override
+  String get groupEncryptionUnavailable =>
+      'Group encryption is unavailable on this device.';
+
+  @override
+  String get groupEncryptionVerification =>
+      'Verify encrypted conversations with all participants before continuing.';
+
+  @override
+  String get groupEncryptionMembership =>
+      'Unable to verify the group participant list.';
+
+  @override
+  String get groupEncryptionTransport =>
+      'Could not exchange encryption information. Sending remains blocked.';
+
+  @override
+  String get groupEncryptionFailed =>
+      'Could not update group encryption. Please try again.';
+
+  @override
+  String get groupEncryptionRetry => 'Retry key exchange';
 }

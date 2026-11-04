@@ -234,12 +234,14 @@ static void test_image_blob(void)
 
 int main(void)
 {
+    extern int kc_run_group_tests(void);
     test_derive_key();
     test_message();
     test_rust_message_vector();
     test_message_whitespace();
     test_image_blob();
     failures += kc_run_v2_tests();
+    failures += kc_run_group_tests();
     if (failures != 0) {
         fprintf(stderr, "%d failures\n", failures);
         return 1;

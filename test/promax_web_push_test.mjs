@@ -32,7 +32,7 @@ test('notification routes preserve group, user and incoming call targets', () =>
   assert.equal(openLink('/inbound-call/303/synthetic'), 'promax://open?callerId=303');
   assert.equal(openLink('javascript:alert(1)'), 'promax://open');
 });
-function worker() {
+function worker(prefix = '/') {
   const handlers = new Map();
   const stores = new Map();
   const notifications = [];
@@ -47,7 +47,7 @@ function worker() {
     async keys() {return [...stores.keys()];},
     async delete(name) {return stores.delete(name);},
   };
-  const self = {location: {origin: 'https://push.example.test'},
+  const self = {location: {origin: 'https://push.example.test', href: `https://push.example.test${prefix}sw.js`},
     registration: {async showNotification(title, options) {notifications.push({title, options});},
       pushManager: {async subscribe() {throw new Error('Synthetic subscription failure');}}},
     clients: {async matchAll() {return [];}, async openWindow(url) {opened.push(url);}, async claim() {}},
@@ -61,6 +61,14 @@ function worker() {
   }
   return {dispatch, notifications, stores, opened};
 }
+
+test('notifications remain within their deployment subpath', async () => {
+  const value = worker('/notifications/');
+  await value.dispatch('push');
+  assert.equal(value.notifications[0].options.icon, '/notifications/icons/icon-1024.png');
+  await value.dispatch('notificationclick', {notification: {close() {}, data: {url: '/messages/202'}}});
+  assert.equal(new URL(value.opened[0], 'https://push.example.test').pathname, '/notifications/open.html');
+});
 test('a malformed remote payload still produces a visible notification and a receipt', async () => {
   const value = worker();
   await value.dispatch('push', {data: {json() {throw new Error('Synthetic malformed payload');}}});

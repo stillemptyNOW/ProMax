@@ -59,6 +59,10 @@ class ProMaxNotifier(private val ctx: Context) {
         private const val FLN_INPUT_RESULT = "FlutterLocalNotificationsPluginInputResult"
         private const val HISTORY_LIMIT = 8
         private const val ACCENT = 0xFF7C6BF0.toInt()
+        private const val ANNOUNCE_CHANNEL_ID = "promax_announcements"
+        private const val ANNOUNCE_GROUP_KEY = "promax_announcements_group"
+        private const val ANNOUNCE_SUMMARY_ID = 424299
+        private const val ANNOUNCE_ID_BASE = 424300
     }
 
     private data class Hist(
@@ -135,6 +139,57 @@ class ProMaxNotifier(private val ctx: Context) {
 
         render(chatId, notifId, meta, history, alertOnce = false)
         updateSummary(notifId, senderName, text, ts, active)
+    }
+
+    private fun announcementColor(kind: String): Int = when (kind) {
+        "update" -> 0xFF2E9E6B.toInt()
+        "important" -> 0xFFE5484D.toInt()
+        "promo" -> 0xFFE08A00.toInt()
+        "holiday" -> 0xFFD0409B.toInt()
+        else -> ACCENT
+    }
+
+    fun showAnnouncement(id: Int, title: String, body: String, kind: String, channelName: String, openLabel: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            manager().getNotificationChannel(ANNOUNCE_CHANNEL_ID) == null
+        ) {
+            manager().createNotificationChannel(
+                NotificationChannel(ANNOUNCE_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_DEFAULT),
+            )
+        }
+        val notifId = ANNOUNCE_ID_BASE + (id and 0xffff)
+        val intent = LaunchIntents.app(ctx)
+        intent.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP,
+        )
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val open = PendingIntent.getActivity(ctx, notifId, intent, flags)
+        val color = announcementColor(kind)
+        val notification = NotificationCompat.Builder(ctx, ANNOUNCE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setColor(color)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body).setBigContentTitle(title))
+            .setGroup(ANNOUNCE_GROUP_KEY)
+            .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
+            .setAutoCancel(true)
+            .setContentIntent(open)
+            .addAction(0, openLabel, open)
+            .build()
+        val summary = NotificationCompat.Builder(ctx, ANNOUNCE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setColor(ACCENT)
+            .setContentTitle(channelName)
+            .setGroup(ANNOUNCE_GROUP_KEY)
+            .setGroupSummary(true)
+            .setAutoCancel(true)
+            .setContentIntent(open)
+            .build()
+        manager().notify(notifId, notification)
+        manager().notify(ANNOUNCE_SUMMARY_ID, summary)
     }
 
     fun cancelChat(chatId: Long) {

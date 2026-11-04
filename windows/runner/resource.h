@@ -20,3 +20,8 @@
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
+
+#define IDI_ICON_CHRISTMAS 108
+#define IDI_ICON_VALENTINE 109
+#define IDI_ICON_WOMENSDAY 110
+#define IDI_ICON_VICTORYDAY 111

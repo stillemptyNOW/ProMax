@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/backend/modules/messages.dart';
 import 'package:promax/core/config/app_chat_chrome.dart';
+import 'package:promax/core/config/app_design.dart';
 import 'package:promax/core/config/app_composer_background.dart';
 import 'package:promax/core/config/app_composer_style.dart';
 import 'package:promax/backend/modules/forward_sender.dart';
@@ -52,6 +53,9 @@ void main() {
       var sendCount = 0;
       var cancelCount = 0;
       var toggleCount = 0;
+      var attachCount = 0;
+      AppDesign.classic.value = false;
+      addTearDown(() => AppDesign.classic.value = false);
       final voice = VoiceRecordController(
         contextOf: () => composerContext,
         isMounted: () => true,
@@ -94,7 +98,7 @@ void main() {
                   onToggleStickerPanel: () {},
                   onSendText: () => sendCount++,
                   onScheduleMessage: () {},
-                  onOpenAttach: () {},
+                  onOpenAttach: () => attachCount++,
                   onOpenAttachScheduled: () {},
                   onSendHistory: (_) async {},
                   onCancelReply: () {},
@@ -115,7 +119,7 @@ void main() {
                   isMuted: false,
                   onToggleMute: () {},
                   showStickerButton: false,
-                  showAttachButton: false,
+                  showAttachButton: true,
                 ),
               );
             },
@@ -163,6 +167,18 @@ void main() {
       expect(find.text('Пересылка от вас'), findsNothing);
       expect(find.byIcon(Symbols.send), findsNothing);
       expect(find.byIcon(Symbols.mic), findsOneWidget);
+
+      messageController.text = 'Synthetic draft';
+      hasText.value = true;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byIcon(Symbols.attachment), findsOneWidget);
+      await tester.tap(find.byIcon(Symbols.attachment));
+      expect(attachCount, 1);
+      AppDesign.classic.value = true;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byIcon(Symbols.attachment), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());
       forwards.dispose();

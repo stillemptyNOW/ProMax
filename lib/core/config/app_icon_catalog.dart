@@ -22,6 +22,30 @@ enum AppIcon {
     'Новый год',
     'assets/icons/promax_newyear.png',
     'IconNewYear',
+  ),
+  christmas(
+    'christmas',
+    'Рождество',
+    'assets/icons/promax_christmas.png',
+    'IconChristmas',
+  ),
+  valentine(
+    'valentine',
+    '14 февраля',
+    'assets/icons/promax_valentine.png',
+    'IconValentine',
+  ),
+  womensday(
+    'womensday',
+    '8 марта',
+    'assets/icons/promax_womensday.png',
+    'IconWomensDay',
+  ),
+  victoryday(
+    'victoryday',
+    '9 мая',
+    'assets/icons/promax_victoryday.png',
+    'IconVictoryDay',
   );
 
   final String id;
@@ -87,30 +111,25 @@ enum AppIconPlatform {
 }
 
 enum IconSeason {
-  halloween(AppIcon.halloween, 10, 24, 11, 2),
-  newYear(AppIcon.newYear, 12, 20, 1, 10);
+  halloween(AppIcon.halloween, 10, 28),
+  newYear(AppIcon.newYear, 12, 29),
+  christmas(AppIcon.christmas, 1, 5),
+  valentine(AppIcon.valentine, 2, 11),
+  womensday(AppIcon.womensday, 3, 5),
+  victoryday(AppIcon.victoryday, 5, 6);
 
   final AppIcon icon;
   final int startMonth;
   final int startDay;
-  final int endMonth;
-  final int endDay;
+  static const durationDays = 7;
 
-  const IconSeason(
-    this.icon,
-    this.startMonth,
-    this.startDay,
-    this.endMonth,
-    this.endDay,
-  );
-
-  bool get _wrapsYear => endMonth < startMonth;
+  const IconSeason(this.icon, this.startMonth, this.startDay);
 
   SeasonPeriod? periodAt(DateTime now) {
     final day = DateTime(now.year, now.month, now.day);
     for (final year in [day.year, day.year - 1]) {
       final start = DateTime(year, startMonth, startDay);
-      final end = DateTime(_wrapsYear ? year + 1 : year, endMonth, endDay);
+      final end = DateTime(year, startMonth, startDay + durationDays - 1);
       if (!day.isBefore(start) && !day.isAfter(end)) {
         return SeasonPeriod(this, year, end);
       }

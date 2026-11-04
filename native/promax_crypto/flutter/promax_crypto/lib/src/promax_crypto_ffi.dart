@@ -8,6 +8,8 @@ import 'package:ffi/ffi.dart';
 
 import 'types.dart';
 
+part 'group_ffi.dart';
+
 typedef _Bytes = ffi.Pointer<ffi.Uint8>;
 typedef _SizeOut = ffi.Pointer<ffi.Size>;
 
@@ -312,7 +314,8 @@ typedef _ExportSeal =
 
 class _Lib {
   _Lib(ffi.DynamicLibrary lib)
-    : wipe = lib.lookupFunction<_WipeNative, _Wipe>('kc_wipe'),
+    : library = lib,
+      wipe = lib.lookupFunction<_WipeNative, _Wipe>('kc_wipe'),
       deriveKey = lib.lookupFunction<_DeriveKeyNative, _DeriveKey>(
         'kc_derive_key',
       ),
@@ -404,6 +407,7 @@ class _Lib {
       ),
       exportOpen = lib.lookupFunction<_Buf3Native, _Buf3>('kc_export_open');
 
+  final ffi.DynamicLibrary library;
   final _Wipe wipe;
   final _DeriveKey deriveKey;
   final _Bound encryptMessageBound;

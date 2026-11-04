@@ -7,6 +7,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'hub_client.dart';
+import '../config/app_performance.dart';
+import '../config/platform_settings.dart';
 
 abstract final class Diagnostics {
   static const enabledKey = 'promax_diagnostics_enabled';
@@ -97,6 +99,30 @@ abstract final class Diagnostics {
     }
   }
 
+  static Future<bool> sendPerformance() async {
+    if (!_ready || !enabled.value || AppPerformance.frameHealth.frames == 0) {
+      return false;
+    }
+    final generation = _generation;
+    await _client.request(
+      '/v1/performance',
+      method: 'POST',
+      body: {
+        'installation': _installation,
+        'version': _version,
+        'platform': PlatformSettings.current,
+        'mode': AppPerformance.mode.value.name,
+        'tier': AppPerformance.effectiveTier.name,
+        'refresh_hz': AppPerformance.displayRefreshRate().round().clamp(
+          30,
+          1000,
+        ),
+        'summary': AppPerformance.frameHealth.summary,
+      },
+    );
+    return enabled.value && generation == _generation;
+  }
+
   @visibleForTesting
   static List<String> appFrames(StackTrace? stack) =>
       RegExp(
@@ -114,7 +140,7 @@ abstract final class Diagnostics {
       'error_type': error.runtimeType.toString(),
       'frames': appFrames(stack),
       'version': _version,
-      'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
+      'platform': PlatformSettings.current,
     });
     unawaited(_persist());
     _schedule();

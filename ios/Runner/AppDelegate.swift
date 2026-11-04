@@ -50,6 +50,7 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
       registerCallKit(messenger)
       registerCallPip(messenger, view: controller.view)
       registerNativeGlass(messenger)
+      registerNativeUi(messenger)
       method("io.github.stillemptynow.promax/fkm", messenger) { call, result in
         ProMaxLiveConnection.shared.handle(call, result: result)
       }
@@ -235,6 +236,15 @@ final class ProMaxStreamHandler: NSObject, FlutterStreamHandler {
     }
     method(ProMaxNativeGlass.supportChannel, messenger) { call, result in
       ProMaxNativeGlass.handleSupport(call, result: result)
+    }
+  }
+
+  private func registerNativeUi(_ messenger: FlutterBinaryMessenger) {
+    if let registrar = registrar(forPlugin: "ProMaxNativeChatList") {
+      ProMaxNativeUi.register(with: registrar)
+    }
+    method(ProMaxNativeUi.supportChannel, messenger) { call, result in
+      ProMaxNativeUi.handleSupport(call, result: result)
     }
   }
 

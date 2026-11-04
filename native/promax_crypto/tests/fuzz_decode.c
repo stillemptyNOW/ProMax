@@ -10,6 +10,14 @@ static uint8_t fuzz_state_b[KC_SESSION_STATE_MAX];
 static size_t fuzz_state_b_len;
 static uint8_t fuzz_pending[KC_PENDING_STATE_SIZE];
 static size_t fuzz_pending_len;
+static uint8_t fuzz_group_members[2u * KC_GROUP_MEMBER_SIZE];
+static uint8_t fuzz_group_sender[KC_GROUP_STATE_MAX];
+static size_t fuzz_group_sender_len;
+static uint8_t fuzz_group_receiver[KC_GROUP_STATE_MAX];
+static size_t fuzz_group_receiver_len;
+static uint8_t fuzz_group_distribution[KC_GROUP_DISTRIBUTION_SIZE];
+static uint8_t fuzz_group_envelope[256];
+static size_t fuzz_group_envelope_len;
 static int fuzz_ready;
 
 static void fuzz_fill(uint8_t *out, size_t len, uint64_t seed)
@@ -34,6 +42,8 @@ static void fuzz_setup(void)
     size_t offer_len = 0u;
     size_t answer_len = 0u;
     size_t len = 0u;
+    int64_t member_ids[2] = {10, 20};
+    uint8_t public_keys[64];
 
     if (fuzz_ready) {
         return;
@@ -55,6 +65,23 @@ static void fuzz_setup(void)
                       KC_ANSWER_RANDOM_SIZE, answer_text, sizeof(answer_text),
                       &answer_len, fuzz_state_b, sizeof(fuzz_state_b),
                       &fuzz_state_b_len);
+    memcpy(public_keys, fuzz_identity_a + KC_SEED_SIZE, KC_PUBLIC_KEY_SIZE);
+    memcpy(public_keys + KC_PUBLIC_KEY_SIZE,
+             fuzz_identity_b + KC_SEED_SIZE, KC_PUBLIC_KEY_SIZE);
+    kc_group_members_build(member_ids, public_keys, 2u, fuzz_group_members,
+        sizeof(fuzz_group_members), &len);
+    kc_group_sender_create(fuzz_identity_a, sizeof(fuzz_identity_a), 1, 10,
+        1u, fuzz_group_members, sizeof(fuzz_group_members), random, 32u,
+        NULL, 0u, fuzz_group_distribution, sizeof(fuzz_group_distribution),
+        &len, fuzz_group_sender, sizeof(fuzz_group_sender), &fuzz_group_sender_len);
+    kc_group_receiver_import(1, 10, fuzz_group_members,
+        sizeof(fuzz_group_members), fuzz_group_distribution,
+        sizeof(fuzz_group_distribution), NULL, 0u, fuzz_group_receiver,
+        sizeof(fuzz_group_receiver), &fuzz_group_receiver_len);
+    kc_group_encrypt(fuzz_group_sender, fuzz_group_sender_len,
+        KC_CONTENT_CONTROL, random, 8u, fuzz_group_envelope,
+        sizeof(fuzz_group_envelope), &fuzz_group_envelope_len,
+        fuzz_group_sender, sizeof(fuzz_group_sender), &fuzz_group_sender_len);
     fuzz_ready = 1;
 }
 
@@ -82,7 +109,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (size == 0u) {
         return 0;
     }
-    op = data[0] % 10u;
+    op = data[0] % 15u;
     data++;
     size--;
     out = (uint8_t *)malloc(size + KC_FILE_CHUNK_SIZE + 64u);
@@ -136,9 +163,35 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         kc_local_open(key, sizeof(key), NULL, 0u, data, size, out, size,
                       &out_len);
         break;
-    default:
+    case 9:
         kc_handshake_peek(data, size, &peek_type, peek_id, sizeof(peek_id),
                           peek_public, sizeof(peek_public));
+        break;
+    case 10:
+        kc_group_decrypt(fuzz_group_receiver, fuzz_group_receiver_len,
+            data, size, &content_type, out, size, &out_len,
+            state_out, sizeof(state_out), &state_len);
+        break;
+    case 11:
+        kc_group_encrypt(data, size, KC_CONTENT_CONTROL, key, 8u,
+            text_out, sizeof(text_out), &text_len, state_out,
+            sizeof(state_out), &state_len);
+        break;
+    case 12:
+        kc_group_receiver_import(1, 10, fuzz_group_members,
+            sizeof(fuzz_group_members), data, size, fuzz_group_receiver,
+            fuzz_group_receiver_len, state_out, sizeof(state_out), &state_len);
+        break;
+    case 13:
+        kc_group_receiver_import(1, 10, data, size, fuzz_group_distribution,
+            sizeof(fuzz_group_distribution), NULL, 0u, state_out,
+            sizeof(state_out), &state_len);
+        break;
+    default:
+        kc_group_decrypt(data, size, fuzz_group_envelope,
+            fuzz_group_envelope_len, &content_type, out,
+            size + KC_FILE_CHUNK_SIZE, &out_len, state_out,
+            sizeof(state_out), &state_len);
         break;
     }
     free(out);

@@ -1,8 +1,10 @@
-importScripts('/push-core.js');
-const SHELL_CACHE = 'promax-push-shell-v1';
+importScripts('push-core.js');
+const BASE_URL = new URL('.', self.location.href);
+const SHELL_CACHE = 'promax-push-shell-v2';
 const STATUS_CACHE = 'promax-push-status-v1';
-const SHELL = ['/', '/index.html', '/app.js', '/push-core.js', '/styles.css', '/manifest.webmanifest', '/icons/icon-1024.png', '/open.html', '/open.js'];
-const STATUS_URL = new URL('/_push_receipt', self.location.origin).href;
+const SHELL = ['', 'index.html', 'app.js', 'push-core.js', 'styles.css', 'manifest.webmanifest', 'icons/icon-1024.png', 'open.html', 'open.js'].map(path => new URL(path, BASE_URL).pathname);
+const STATUS_URL = new URL('_push_receipt', BASE_URL).href;
+const ICON_URL = new URL('icons/icon-1024.png', BASE_URL).pathname;
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(SHELL_CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -25,7 +27,7 @@ async function receipt() {
 async function receivePush(event) {
   const payload = ProMaxPush.notificationPayload(event.data);
   await self.registration.showNotification(payload.title, {
-    body: payload.body, icon: '/icons/icon-1024.png', badge: '/icons/icon-1024.png',
+    body: payload.body, icon: ICON_URL, badge: ICON_URL,
     data: {url: payload.url},
   });
   try {
@@ -44,7 +46,7 @@ self.addEventListener('message', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const link = ProMaxPush.openLink(event.notification.data?.url);
-  event.waitUntil(self.clients.openWindow(`/open.html?to=${encodeURIComponent(link)}`));
+  event.waitUntil(self.clients.openWindow(new URL(`open.html?to=${encodeURIComponent(link)}`, BASE_URL).href));
 });
 self.addEventListener('pushsubscriptionchange', event => {
   event.waitUntil((async () => {

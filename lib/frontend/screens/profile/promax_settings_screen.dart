@@ -1,7 +1,10 @@
 import '../../../core/config/update_channel.dart';
 import '../../../core/hub/diagnostics.dart';
-import 'translation_settings_screen.dart';
-import '../../../core/translation/translation_backend.dart';
+import 'platform_settings_screen.dart';
+import 'hub_settings_screen.dart';
+import '../../../core/config/platform_settings.dart';
+import '../../../core/config/product_links.dart';
+import '../../../core/utils/link_opener.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -84,17 +87,21 @@ class ProMaxSettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            if (MethodChannelTranslationBackend.platformSupported)
-              SettingsCard(
-                children: [
-                  SettingsNavTile(
-                    icon: Symbols.translate,
-                    label: l10n.translationSettingsTitle,
-                    onTap: () =>
-                        _open(context, const TranslationSettingsScreen()),
-                  ),
-                ],
-              ),
+            SettingsCard(
+              children: [
+                SettingsNavTile(
+                  icon: Symbols.devices,
+                  label:
+                      '${l10n.platformSettingsTitle} · ${PlatformSettings.label}',
+                  onTap: () => _open(context, const PlatformSettingsScreen()),
+                ),
+                SettingsNavTile(
+                  icon: Symbols.cloud_sync,
+                  label: l10n.hubConnectionTitle,
+                  onTap: () => _open(context, const HubSettingsScreen()),
+                ),
+              ],
+            ),
             ProMaxSectionTitle(
               AppLocalizations.of(context)!.proMaxSectionAppearance,
             ),
@@ -155,6 +162,12 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     value: value,
                     onChanged: ProMaxSettings.setAntiRead,
                   ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ProMaxSettings.antiRead,
+                  builder: (context, enabled, _) => enabled
+                      ? const _ReadOnActionOptions()
+                      : const SizedBox.shrink(),
                 ),
                 ValueListenableBuilder<bool>(
                   valueListenable: ProMaxSettings.noTyping,
@@ -379,9 +392,24 @@ class ProMaxSettingsScreen extends StatelessWidget {
             ProMaxSectionTitle(l10n.proMaxArchiveTitle),
             const ProMaxTransferCard(),
             const SizedBox(height: 18),
+            SettingsCard(
+              children: [
+                SettingsNavTile(
+                  icon: Symbols.language,
+                  label: l10n.proMaxWebsite,
+                  onTap: () => openExternalUrl(context, ProductLinks.website),
+                ),
+                SettingsNavTile(
+                  icon: Symbols.send,
+                  label: l10n.proMaxTelegram,
+                  onTap: () => openExternalUrl(context, ProductLinks.telegram),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
             Center(
               child: Text(
-                AppLocalizations.of(context)!.proMaxBasedOnKomet,
+                AppLocalizations.of(context)!.proMaxLicenseInfo,
                 style: TextStyle(color: cs.outline, fontSize: 12),
               ),
             ),
@@ -548,6 +576,64 @@ class _ProMaxHero extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _ReadOnActionOptions extends StatelessWidget {
+  const _ReadOnActionOptions();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.proMaxReadOnActionTitle,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l10n.proMaxReadOnActionHint,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: ProMaxSettings.readOnReaction,
+          builder: (context, value, _) => SettingsToggleTile(
+            icon: Symbols.add_reaction,
+            label: l10n.proMaxReadOnReaction,
+            value: value,
+            onChanged: ProMaxSettings.setReadOnReaction,
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: ProMaxSettings.readOnReply,
+          builder: (context, value, _) => SettingsToggleTile(
+            icon: Symbols.reply,
+            label: l10n.proMaxReadOnReply,
+            value: value,
+            onChanged: ProMaxSettings.setReadOnReply,
+          ),
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: ProMaxSettings.readOnSend,
+          builder: (context, value, _) => SettingsToggleTile(
+            icon: Symbols.send,
+            label: l10n.proMaxReadOnSend,
+            value: value,
+            onChanged: ProMaxSettings.setReadOnSend,
+          ),
+        ),
+      ],
     );
   }
 }
