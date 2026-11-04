@@ -374,7 +374,9 @@ class _FindUserSheetState extends State<FindUserSheet> {
                       : null,
                   onSubmitted: (_) => _submit(),
                   onChanged: (_) {
-                    if (_error != null) setState(() => _error = null);
+                    if (phoneMode || _error != null) {
+                      setState(() => _error = null);
+                    }
                   },
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontSize: 20,
@@ -385,7 +387,10 @@ class _FindUserSheetState extends State<FindUserSheet> {
                     hintText: phoneMode
                         ? _country.phoneMask.replaceAll('#', '0')
                         : l10n.findUserIdHint,
-                    prefixText: phoneMode ? '${_country.phoneCode}  ' : null,
+                    prefixText:
+                        phoneMode && !_phoneController.text.startsWith('+')
+                        ? '${_country.phoneCode}  '
+                        : null,
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppShape.field),

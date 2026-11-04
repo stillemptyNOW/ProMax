@@ -121,19 +121,23 @@ class _AddContactCardState extends State<_AddContactCard> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final width = MediaQuery.sizeOf(context).width;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Material(
-          color: Colors.transparent,
-          child: BlurredCardSurface(
-            width: width > 420 ? 380 : double.infinity,
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              child: _notFoundPhone != null
-                  ? _buildNotFound(cs)
-                  : _buildForm(cs),
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 200),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Material(
+            color: Colors.transparent,
+            child: BlurredCardSurface(
+              width: width > 420 ? 380 : double.infinity,
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                child: _notFoundPhone != null
+                    ? _buildNotFound(cs)
+                    : _buildForm(cs),
+              ),
             ),
           ),
         ),

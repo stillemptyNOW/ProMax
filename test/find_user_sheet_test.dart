@@ -76,6 +76,19 @@ String _input(WidgetTester tester) =>
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  testWidgets(
+    'does not duplicate the prefix while entering an international number',
+    (tester) async {
+      await _openSheet(tester);
+      await tester.enterText(find.byType(TextField), '+7');
+      await tester.pump();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).decoration!.prefixText,
+        isNull,
+      );
+    },
+  );
+
   testWidgets('phone and ID keep separate input when switching modes', (
     tester,
   ) async {
