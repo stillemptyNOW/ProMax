@@ -13,7 +13,6 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from releases import ReleaseCatalog
-from wallpapers import purge_expired_wallpapers, wallpaper_routes
 
 
 class Pair(BaseModel):
@@ -172,17 +171,12 @@ class Hub:
             db.execute("DELETE FROM pair_codes WHERE expires < ?", (int(time.time()),))
             db.execute("DELETE FROM rate_limits WHERE window < ?", (int(time.time()) // 3600 - 48,))
             db.execute("DELETE FROM download_clicks WHERE created < ?", (int(time.time()) - 86400,))
-            tables = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='wallpaper_files'").fetchone()
-            if tables:
-                now = int(time.time())
-                purge_expired_wallpapers(db, now)
 
 
 def create_app(database=None, admin_account_id=None):
     hub = Hub(database or os.environ.get("PROMAX_HUB_DB", "/var/lib/promax-hub/hub.sqlite3"), admin_account_id)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.hub = hub
-    app.include_router(wallpaper_routes(hub))
     owner_id = hub.owner_id
     catalog = ReleaseCatalog()
     app.state.catalog = catalog
@@ -194,7 +188,7 @@ def create_app(database=None, admin_account_id=None):
         notifications = Path(__file__).parent.parent / "web-push"
     if notifications.is_dir():
         app.mount("/notifications", StaticFiles(directory=notifications, html=True), name="notifications")
-    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Authorization", "Content-Type"])
+    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT"], allow_headers=["Authorization", "Content-Type"])
 
     @app.middleware("http")
     async def bounded_body(request: Request, call_next):
