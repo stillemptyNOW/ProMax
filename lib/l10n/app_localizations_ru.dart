@@ -8271,4 +8271,7 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get groupEncryptionFailed =>
       'Не удалось изменить настройки шифрования группы. Попробуйте ещё раз.';
+
+  @override
+  String get groupEncryptionRetry => 'Повторить обмен ключами';
 }

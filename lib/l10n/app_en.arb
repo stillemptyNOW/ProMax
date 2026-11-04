@@ -3021,5 +3021,6 @@
   "groupEncryptionVerification": "Verify encrypted conversations with all participants before continuing.",
   "groupEncryptionMembership": "Unable to verify the group participant list.",
   "groupEncryptionTransport": "Could not exchange encryption information. Sending remains blocked.",
-  "groupEncryptionFailed": "Could not update group encryption. Please try again."
+  "groupEncryptionFailed": "Could not update group encryption. Please try again.",
+  "groupEncryptionRetry": "Retry key exchange"
 }

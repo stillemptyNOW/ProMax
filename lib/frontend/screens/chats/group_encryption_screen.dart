@@ -78,6 +78,19 @@ class _GroupEncryptionScreenState extends State<GroupEncryptionScreen> {
     }
   }
 
+  Future<void> _retry() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await _service.retry(widget.accountId, widget.groupId);
+    } catch (_) {
+      if (mounted) showCustomNotification(context, l10n.groupEncryptionFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   String _status(AppLocalizations l10n, GroupEncryptionInfo info) {
     if (!_service.available) return l10n.groupEncryptionUnavailable;
     switch (info.block) {
@@ -166,6 +179,15 @@ class _GroupEncryptionScreenState extends State<GroupEncryptionScreen> {
                                 ? l10n.groupEncryptionAccept
                                 : l10n.groupEncryptionEnable,
                           ),
+                        ),
+                      ],
+                      if (!_loadFailed &&
+                          _service.available &&
+                          info.canRetry) ...[
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: _busy ? null : _retry,
+                          child: Text(l10n.groupEncryptionRetry),
                         ),
                       ],
                     ],

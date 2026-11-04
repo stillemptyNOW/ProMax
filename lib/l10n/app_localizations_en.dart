@@ -8230,4 +8230,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get groupEncryptionFailed =>
       'Could not update group encryption. Please try again.';
+
+  @override
+  String get groupEncryptionRetry => 'Retry key exchange';
 }

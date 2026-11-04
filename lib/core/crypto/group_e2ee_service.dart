@@ -60,6 +60,7 @@ class GroupEncryptionInfo {
     this.consented = false,
     this.ready = false,
     this.proposalReceived = false,
+    this.canRetry = false,
     this.block,
     this.coordinator = 0,
   });
@@ -72,6 +73,7 @@ class GroupEncryptionInfo {
   final bool consented;
   final bool ready;
   final bool proposalReceived;
+  final bool canRetry;
   final int coordinator;
   final GroupEncryptionBlock? block;
 }
@@ -219,6 +221,9 @@ class _GroupState {
     consented: consent.contains(accountId),
     ready: ready(accountId),
     proposalReceived: proposalReceived,
+    canRetry:
+        pendingDistribution != null &&
+        (block == null || block == GroupEncryptionBlock.transport),
     block: block,
     coordinator: coordinator,
   );
@@ -731,7 +736,8 @@ class GroupE2eeService {
     String messageId,
     Uint8List plaintext,
   ) async {
-    if (!available || plaintext.length > ProMaxCryptoSizes.sessionPlaintextMax) {
+    if (!available ||
+        plaintext.length > ProMaxCryptoSizes.sessionPlaintextMax) {
       return;
     }
     final Object? decoded;
@@ -835,7 +841,8 @@ class GroupE2eeService {
         } else if (type == 'consent') {
           state.consent.add(senderId);
         } else if (type == 'key') {
-          if (control['k'] is! String || state.receivers.containsKey(senderId)) {
+          if (control['k'] is! String ||
+              state.receivers.containsKey(senderId)) {
             return;
           }
           final encoded = control['k'] as String;

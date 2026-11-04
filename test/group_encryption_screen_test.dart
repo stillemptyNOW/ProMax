@@ -11,6 +11,7 @@ class SyntheticGroupService implements GroupE2eeService {
   GroupEncryptionInfo state = const GroupEncryptionInfo();
   int starts = 0;
   int accepts = 0;
+  int retries = 0;
 
   @override
   bool get available => true;
@@ -48,6 +49,11 @@ class SyntheticGroupService implements GroupE2eeService {
   }
 
   @override
+  Future<void> retry(int accountId, int groupId) async {
+    retries++;
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -58,6 +64,22 @@ void main() {
     supportedLocales: AppLocalizations.supportedLocales,
     home: GroupEncryptionScreen(accountId: 1, groupId: 10, service: service),
   );
+
+  testWidgets('offers retry for a saved undelivered group key', (tester) async {
+    final service = SyntheticGroupService()
+      ..state = const GroupEncryptionInfo(
+        required: true,
+        epoch: 1,
+        block: GroupEncryptionBlock.transport,
+        canRetry: true,
+      );
+    addTearDown(service.revision.dispose);
+    await tester.pumpWidget(host(service));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Retry key exchange'));
+    await tester.pumpAndSettle();
+    expect(service.retries, 1);
+  });
 
   testWidgets('starting requires confirmation and shows waiting state', (
     tester,

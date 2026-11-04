@@ -14593,6 +14593,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not update group encryption. Please try again.'**
   String get groupEncryptionFailed;
+
+  /// No description provided for @groupEncryptionRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry key exchange'**
+  String get groupEncryptionRetry;
 }
 
 class _AppLocalizationsDelegate
