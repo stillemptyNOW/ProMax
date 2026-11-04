@@ -274,6 +274,12 @@ class _FindUserSheetState extends State<FindUserSheet> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              if (_error != null)
+                Semantics(
+                  liveRegion: true,
+                  label: _error,
+                  child: const SizedBox.shrink(),
+                ),
               const SizedBox(height: 20),
               SegmentedButton<_FindMode>(
                 segments: [

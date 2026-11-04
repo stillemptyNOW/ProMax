@@ -135,6 +135,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     expect(client.requests, isEmpty);
     expect(find.text('Enter a valid phone number'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.liveRegion == true &&
+            widget.properties.label == 'Enter a valid phone number',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
