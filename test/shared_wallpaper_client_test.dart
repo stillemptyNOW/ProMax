@@ -144,6 +144,17 @@ void main() {
     expect(requests, isEmpty);
   });
 
+  test('cleanup keeps another account capability intact', () async {
+    const otherId = 'fedcba9876543210fedcba9876543210';
+    await cleanupQueue.remember(1, id, write);
+    await cleanupQueue.remember(2, otherId, write);
+    await cleanupQueue.requestDeletion(1, id);
+    final result = await cleanupQueue.retry(1);
+    expect(result.deleted, 1);
+    expect(store.values.length, 1);
+    expect(store.values.keys.single, contains(otherId));
+  });
+
   test(
     'retains deletion capability after network failure and retries',
     () async {
