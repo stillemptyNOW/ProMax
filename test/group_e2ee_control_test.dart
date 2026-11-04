@@ -57,6 +57,7 @@ class SyntheticGroupEnvironment implements GroupEncryptionEnvironment {
   String digest = base64Encode(Uint8List(32));
   String? stored;
   bool failKeyDelivery = false;
+  String? failControlDelivery;
   void Function()? onKeyDelivery;
   final List<({int sender, int recipient, Uint8List payload})> outgoing = [];
 
@@ -101,10 +102,11 @@ class SyntheticGroupEnvironment implements GroupEncryptionEnvironment {
     Uint8List payload, {
     void Function()? beforeSend,
   }) async {
-    final isKey = jsonDecode(utf8.decode(payload))['t'] == 'key';
+    final type = jsonDecode(utf8.decode(payload))['t'];
+    final isKey = type == 'key';
     if (isKey) onKeyDelivery?.call();
     beforeSend?.call();
-    if (failKeyDelivery && isKey) {
+    if ((failKeyDelivery && isKey) || type == failControlDelivery) {
       throw StateError('synthetic delivery failure');
     }
     outgoing.add((
@@ -155,6 +157,62 @@ void main() {
       expect(first.info(1, -10).block, GroupEncryptionBlock.changed);
     },
   );
+
+  for (final type in ['proposal', 'consent', 'invite']) {
+    test('retries $type after delivery failure and restart', () async {
+      final environment = SyntheticGroupEnvironment();
+      environment.failControlDelivery = type;
+      var service = GroupE2eeService(
+        environment: environment,
+        native: SyntheticGroupNative(),
+      );
+      addTearDown(() => service.dispose());
+      final account = type == 'invite' ? 2 : 1;
+      await expectLater(service.begin(account, -10), throwsStateError);
+      expect(service.info(account, -10).ready, isFalse);
+      service.dispose();
+      service = GroupE2eeService(
+        environment: environment,
+        native: SyntheticGroupNative(),
+      );
+      environment.failControlDelivery = null;
+      await service.ensureLoaded(account, -10);
+      expect(service.info(account, -10).canRetry, isTrue);
+      if (type == 'invite') {
+        expect(service.info(account, -10).consented, isFalse);
+      }
+      await service.retry(account, -10);
+      expect(
+        environment.outgoing.any(
+          (message) => jsonDecode(utf8.decode(message.payload))['t'] == type,
+        ),
+        isTrue,
+      );
+      if (type == 'invite') {
+        expect(service.info(account, -10).consented, isFalse);
+      }
+    });
+  }
+
+  test('refuses to retry control messages after membership changes', () async {
+    final environment = SyntheticGroupEnvironment();
+    environment.failControlDelivery = 'proposal';
+    final service = GroupE2eeService(
+      environment: environment,
+      native: SyntheticGroupNative(),
+    );
+    addTearDown(service.dispose);
+    await expectLater(service.begin(1, -10), throwsStateError);
+    environment.failControlDelivery = null;
+    environment.digest = base64Encode(Uint8List.fromList(List.filled(32, 1)));
+    await expectLater(
+      service.retry(1, -10),
+      throwsA(isA<GroupEncryptionException>()),
+    );
+    expect(environment.outgoing, isEmpty);
+    expect(service.info(1, -10).ready, isFalse);
+    expect(service.info(1, -10).block, GroupEncryptionBlock.changed);
+  });
 
   test('retains verified consent received before the group proposal', () async {
     final environment = SyntheticGroupEnvironment();

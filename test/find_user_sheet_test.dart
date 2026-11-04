@@ -76,6 +76,85 @@ String _input(WidgetTester tester) =>
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  testWidgets('an extra digit after a complete trunk number is rejected', (
+    tester,
+  ) async {
+    final client = _LookupApi();
+    addTearDown(client.dispose);
+    await _openSheet(tester, client: client);
+    for (final digit in '840000000001'.split('')) {
+      await tester.enterText(find.byType(TextField), '${_input(tester)}$digit');
+      await tester.pump();
+    }
+    await tester.tap(find.widgetWithText(FilledButton, 'Find'));
+    await tester.pump();
+    expect(client.requests, isEmpty);
+  });
+
+  testWidgets('an eleven digit trunk number searches with +7', (tester) async {
+    final client = _LookupApi();
+    addTearDown(client.dispose);
+    await _openSheet(tester, client: client);
+    await tester.enterText(find.byType(TextField), '84000000000');
+    await tester.pump();
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).decoration!.prefixText,
+      isNull,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Find'));
+    await tester.pumpAndSettle();
+    expect(client.requests.single.$2, {'phone': '+74000000000'});
+  });
+
+  testWidgets('a ten digit subscriber starting with 8 remains intact', (
+    tester,
+  ) async {
+    final client = _LookupApi();
+    addTearDown(client.dispose);
+    await _openSheet(tester, client: client);
+    await tester.enterText(find.byType(TextField), '8000000000');
+    await tester.tap(find.widgetWithText(FilledButton, 'Find'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(client.requests, isEmpty);
+    expect(find.text('+78000000000'), findsOneWidget);
+    await tester.tap(find.text('Search this number'));
+    await tester.pumpAndSettle();
+    expect(client.requests.single.$2, {'phone': '+78000000000'});
+  });
+
+  testWidgets('continuing an ambiguous number does not send a lookup', (
+    tester,
+  ) async {
+    final client = _LookupApi();
+    addTearDown(client.dispose);
+    await _openSheet(tester, client: client);
+    await tester.enterText(find.byType(TextField), '8000000000');
+    await tester.tap(find.widgetWithText(FilledButton, 'Find'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Continue editing'));
+    await tester.pumpAndSettle();
+    expect(client.requests, isEmpty);
+    expect(_input(tester).replaceAll(RegExp(r'\D'), ''), '8000000000');
+  });
+
+  testWidgets('account switch during confirmation prevents lookup', (
+    tester,
+  ) async {
+    final client = _LookupApi();
+    addTearDown(client.dispose);
+    await _openSheet(tester, client: client);
+    await tester.enterText(find.byType(TextField), '8000000000');
+    await tester.tap(find.widgetWithText(FilledButton, 'Find'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await TokenStorage.setActiveAccount(202);
+    await tester.tap(find.text('Search this number'));
+    await tester.pumpAndSettle();
+    expect(client.requests, isEmpty);
+  });
+
   testWidgets(
     'does not duplicate the prefix while entering an international number',
     (tester) async {
@@ -154,10 +233,10 @@ void main() {
       await _openSheet(tester, client: client);
       await tester.enterText(find.byType(TextField), '+1 (000) 000-0000');
       await tester.pump();
-      expect(_input(tester), '(000) 000-0000');
+      expect(_input(tester), '+1 (000) 000-0000');
       expect(
         tester.widget<TextField>(find.byType(TextField)).decoration!.prefixText,
-        '+1  ',
+        isNull,
       );
       await tester.tap(find.widgetWithText(FilledButton, 'Find'));
       await tester.pumpAndSettle();

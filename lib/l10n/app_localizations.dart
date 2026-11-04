@@ -9800,6 +9800,24 @@ abstract class AppLocalizations {
   /// **'Enter a valid phone number'**
   String get findUserInvalidPhone;
 
+  /// No description provided for @findUserConfirmPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Is this the complete number?'**
+  String get findUserConfirmPhone;
+
+  /// No description provided for @findUserContinueEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue editing'**
+  String get findUserContinueEditing;
+
+  /// No description provided for @findUserConfirmSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search this number'**
+  String get findUserConfirmSearch;
+
   /// No description provided for @findUserPhoneNotFound.
   ///
   /// In en, this message translates to:

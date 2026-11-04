@@ -5472,6 +5472,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get findUserInvalidPhone => 'Enter a valid phone number';
 
   @override
+  String get findUserConfirmPhone => 'Is this the complete number?';
+
+  @override
+  String get findUserContinueEditing => 'Continue editing';
+
+  @override
+  String get findUserConfirmSearch => 'Search this number';
+
+  @override
   String get findUserPhoneNotFound => 'No contact with this number was found';
 
   @override

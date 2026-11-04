@@ -201,6 +201,7 @@ class _GroupState {
   Uint8List? sender;
   Uint8List? pendingDistribution;
   final Set<int> pendingRecipients = {};
+  final Map<String, Set<int>> pendingControls = {};
   final List<String> seen = [];
   final List<String> outbound = [];
 
@@ -209,6 +210,7 @@ class _GroupState {
       block == null &&
       sender != null &&
       pendingDistribution == null &&
+      pendingControls.isEmpty &&
       members.every(consent.contains) &&
       members.where((id) => id != accountId).every(receivers.containsKey);
 
@@ -222,7 +224,7 @@ class _GroupState {
     ready: ready(accountId),
     proposalReceived: proposalReceived,
     canRetry:
-        pendingDistribution != null &&
+        (pendingDistribution != null || pendingControls.isNotEmpty) &&
         (block == null || block == GroupEncryptionBlock.transport),
     block: block,
     coordinator: coordinator,
@@ -244,6 +246,9 @@ class _GroupState {
         ? null
         : base64Encode(pendingDistribution!),
     'pendingRecipients': pendingRecipients.toList(),
+    'pendingControls': pendingControls.map(
+      (type, ids) => MapEntry(type, ids.toList()),
+    ),
     'receivers': receivers.map(
       (id, state) => MapEntry('$id', base64Encode(state)),
     ),
@@ -318,6 +323,30 @@ class _GroupState {
             state.pendingDistribution == null)) {
       throw const FormatException('Invalid pending group recipients');
     }
+    final controls = json['pendingControls'] as Map<String, dynamic>? ?? {};
+    for (final entry in controls.entries) {
+      if (!const {'invite', 'proposal', 'consent'}.contains(entry.key)) {
+        throw const FormatException('Invalid pending group control');
+      }
+      final ids = (entry.value as List).cast<int>().toSet();
+      if (ids.isEmpty ||
+          !ids.every((id) => id != accountId && members.contains(id)) ||
+          (entry.key == 'invite' &&
+              (accountId == state.coordinator ||
+                  ids.length != 1 ||
+                  !ids.contains(state.coordinator))) ||
+          (entry.key == 'invite' &&
+              (!state.pendingInitiation ||
+                  state.consent.contains(accountId))) ||
+          (entry.key == 'proposal' &&
+              (accountId != state.coordinator ||
+                  !state.consent.contains(accountId))) ||
+          (entry.key == 'consent' && !state.consent.contains(accountId)) ||
+          !state.required) {
+        throw const FormatException('Invalid pending group control');
+      }
+      state.pendingControls[entry.key] = ids;
+    }
     for (final entry in (json['receivers'] as Map<String, dynamic>).entries) {
       final id = int.parse(entry.key);
       if (id == accountId || !members.contains(id)) {
@@ -344,6 +373,7 @@ class _GroupState {
     if (pendingDistribution != null) ProMaxCrypto.wipe(pendingDistribution!);
     pendingDistribution = null;
     pendingRecipients.clear();
+    pendingControls.clear();
     for (final state in receivers.values) {
       ProMaxCrypto.wipe(state);
     }
@@ -582,15 +612,10 @@ class GroupE2eeService {
       state.proposalReceived = accountId == roster.coordinator;
       state.generation = _operationGeneration;
       previous?.wipe();
-      await _save(accountId, groupId, state);
       if (accountId != roster.coordinator) {
-        final coordinator = roster.peers.first;
-        final payload = _control('invite', groupId, state);
-        try {
-          await _environment.send(accountId, coordinator, payload);
-        } finally {
-          ProMaxCrypto.wipe(payload);
-        }
+        state.pendingControls['invite'] = {roster.coordinator};
+        await _save(accountId, groupId, state);
+        await _sendPendingControls(accountId, groupId, state);
         return;
       }
       await _accept(accountId, groupId, state, roster, announce: true);
@@ -626,12 +651,60 @@ class GroupE2eeService {
     state.required = true;
     state.proposalReceived = true;
     state.consent.add(accountId);
+    final recipients = state.members.where((id) => id != accountId).toSet();
+    if (announce) state.pendingControls['proposal'] = {...recipients};
+    state.pendingControls['consent'] = {...recipients};
     await _save(accountId, groupId, state);
-    if (announce) {
-      await _broadcast(accountId, groupId, state, roster, 'proposal');
-    }
-    await _broadcast(accountId, groupId, state, roster, 'consent');
+    await _sendPendingControls(accountId, groupId, state);
     await _finish(accountId, groupId, state, roster);
+  }
+
+  Future<void> _sendPendingControls(
+    int accountId,
+    int groupId,
+    _GroupState state,
+  ) async {
+    try {
+      for (final type in state.pendingControls.keys.toList()) {
+        for (final id in state.pendingControls[type]!.toList()) {
+          final roster = await _check(accountId, groupId, state);
+          if (state.block != null) {
+            throw GroupEncryptionException(state.block!);
+          }
+          final payload = _control(type, groupId, state);
+          try {
+            await _environment.send(
+              accountId,
+              roster.peers.firstWhere((peer) => peer.id == id),
+              payload,
+              beforeSend: () {
+                if (state.generation != _generation || state.block != null) {
+                  throw GroupEncryptionException(
+                    state.block ?? GroupEncryptionBlock.unavailable,
+                  );
+                }
+              },
+            );
+          } finally {
+            ProMaxCrypto.wipe(payload);
+          }
+          state.pendingControls[type]!.remove(id);
+          if (state.pendingControls[type]!.isEmpty) {
+            state.pendingControls.remove(type);
+          }
+          try {
+            await _save(accountId, groupId, state);
+          } catch (_) {
+            state.pendingControls.putIfAbsent(type, () => {}).add(id);
+            rethrow;
+          }
+        }
+      }
+    } catch (_) {
+      state.block ??= GroupEncryptionBlock.transport;
+      await _save(accountId, groupId, state);
+      rethrow;
+    }
   }
 
   Future<void> _finish(
@@ -642,6 +715,7 @@ class GroupE2eeService {
   ) async {
     if (!state.required ||
         state.block != null ||
+        state.pendingControls.isNotEmpty ||
         !state.members.every(state.consent.contains)) {
       return;
     }
@@ -711,24 +785,24 @@ class GroupE2eeService {
     await _save(accountId, groupId, state);
   }
 
-  Future<void> retry(int accountId, int groupId) => _serial(
-    accountId,
-    groupId,
-    () async {
-      await _load(accountId, groupId);
-      final state = _states[_key(accountId, groupId)];
-      if (state == null ||
-          state.pendingDistribution == null ||
-          (state.block != null &&
-              state.block != GroupEncryptionBlock.transport)) {
-        throw const GroupEncryptionException(GroupEncryptionBlock.unavailable);
-      }
-      final roster = await _check(accountId, groupId, state);
-      state.block = null;
-      await _save(accountId, groupId, state);
-      await _finish(accountId, groupId, state, roster);
-    },
-  );
+  Future<void> retry(
+    int accountId,
+    int groupId,
+  ) => _serial(accountId, groupId, () async {
+    await _load(accountId, groupId);
+    final state = _states[_key(accountId, groupId)];
+    if (state == null ||
+        (state.pendingDistribution == null && state.pendingControls.isEmpty) ||
+        (state.block != null &&
+            state.block != GroupEncryptionBlock.transport)) {
+      throw const GroupEncryptionException(GroupEncryptionBlock.unavailable);
+    }
+    final roster = await _check(accountId, groupId, state);
+    state.block = null;
+    await _save(accountId, groupId, state);
+    await _sendPendingControls(accountId, groupId, state);
+    await _finish(accountId, groupId, state, roster);
+  });
 
   Future<void> handleControl(
     int accountId,
@@ -825,6 +899,7 @@ class GroupE2eeService {
           state.block = GroupEncryptionBlock.changed;
         } else if (state.pendingInitiation && state.required) {
           state.pendingInitiation = false;
+          state.pendingControls.remove('invite');
           acceptInitiatedProposal = true;
         }
         state.proposalReceived = true;
@@ -832,7 +907,8 @@ class GroupE2eeService {
         if (state == null ||
             state.epoch != epoch ||
             state.digest != digest ||
-            state.block != null) {
+            (state.block != null &&
+                state.block != GroupEncryptionBlock.transport)) {
           return;
         }
         if (type == 'stop') {

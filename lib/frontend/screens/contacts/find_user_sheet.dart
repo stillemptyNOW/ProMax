@@ -132,13 +132,9 @@ class _FindUserSheetState extends State<FindUserSheet> {
     if (_loading || _pickingCountry || !_isCurrent) return;
     final l10n = AppLocalizations.of(context)!;
     final mode = _mode;
-    final digits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    final phone = '${_country.phoneCode}$digits';
+    final phone = phoneLookupNumber(_phoneController.text, _country);
     final id = int.tryParse(_idController.text.trim());
-    if (mode == _FindMode.phone &&
-        (_phoneController.text.startsWith('+') ||
-            digits.length != _country.phoneDigits ||
-            phone.length > 16)) {
+    if (mode == _FindMode.phone && phone == null) {
       _showError(l10n.findUserInvalidPhone);
       return;
     }
@@ -155,10 +151,39 @@ class _FindUserSheetState extends State<FindUserSheet> {
     try {
       accountId = await TokenStorage.getActiveAccountId();
       if (!await _acceptsResult(accountId, sessionEpoch)) return;
+      if (!mounted) return;
+      final digits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+      if (mode == _FindMode.phone &&
+          _country.phoneCode == '+7' &&
+          !_phoneController.text.trim().startsWith('+') &&
+          digits.length == _country.phoneDigits &&
+          digits.startsWith('8')) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l10n.findUserConfirmPhone),
+            content: Text(phone!),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.findUserContinueEditing),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(l10n.findUserConfirmSearch),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true ||
+            !await _acceptsResult(accountId, sessionEpoch)) {
+          return;
+        }
+      }
       if (mode == _FindMode.phone) {
         final result = await ContactsModule.findByPhone(
           widget.client,
-          phone,
+          phone!,
           silent: true,
           cacheResult: false,
         );
@@ -394,7 +419,16 @@ class _FindUserSheetState extends State<FindUserSheet> {
                         ? _country.phoneMask.replaceAll('#', '0')
                         : l10n.findUserIdHint,
                     prefixText:
-                        phoneMode && !_phoneController.text.startsWith('+')
+                        phoneMode &&
+                            !_phoneController.text.startsWith('+') &&
+                            !(_country.phoneCode == '+7' &&
+                                _phoneController.text
+                                    .replaceAll(RegExp(r'\D'), '')
+                                    .startsWith('8') &&
+                                _phoneController.text
+                                        .replaceAll(RegExp(r'\D'), '')
+                                        .length >
+                                    _country.phoneDigits)
                         ? '${_country.phoneCode}  '
                         : null,
                     floatingLabelBehavior: FloatingLabelBehavior.always,

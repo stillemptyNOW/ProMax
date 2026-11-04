@@ -57,6 +57,7 @@ import '../../../core/storage/chat_activity_store.dart';
 import '../../../core/storage/chat_members_store.dart';
 import '../../../core/crypto/chat_crypto_service.dart';
 import '../../../core/crypto/e2ee_service.dart';
+import '../../../core/crypto/group_e2ee_service.dart';
 import '../../../core/crypto/message_decryption_cache.dart';
 import '../../../core/storage/chat_encryption_store.dart';
 import '../../../core/storage/chat_wallpaper_store.dart';
@@ -158,6 +159,7 @@ import '../../widgets/chat_wallpaper_sheet.dart';
 import 'scheduled_messages_screen.dart';
 import 'chat_encryption_screen.dart';
 import 'e2ee_screen.dart';
+import 'group_encryption_screen.dart';
 import 'chat_wallpaper_preview_screen.dart';
 import 'profile_action_sheets.dart';
 import '../../../core/media/media_playback.dart';
@@ -693,6 +695,7 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   void initState() {
     super.initState();
+    _encryptionEnabled = widget.chatType == 'CHAT';
     _previewChat = widget.channelSubscribed == false;
     _chatController.chatId = widget.chatId;
     _chatController.isMounted = () => mounted;
@@ -708,6 +711,7 @@ class _ChatScreenState extends State<ChatScreen>
       },
       isMounted: () => mounted,
       encryptionEnabled: () => _encryptionEnabled,
+      allowAttachment: _allowGroupAttachment,
       encryptOutgoing: _encryptOutgoing,
       markHasScheduled: _markHasScheduled,
       confirmSend: _confirmSend,
@@ -2603,6 +2607,7 @@ class _ChatScreenState extends State<ChatScreen>
     if (_encryptionListening) {
       ChatEncryptionStore.instance.revision.removeListener(_applyEncryption);
       E2eeService.instance.revision.removeListener(_applyEncryption);
+      GroupE2eeService.instance.revision.removeListener(_applyEncryption);
     }
     _headerStatusNotifier.dispose();
     _otherReadTime.dispose();
@@ -3685,7 +3690,9 @@ class _ChatScreenState extends State<ChatScreen>
         ),
         ChatMenuItem(
           icon: _encryptionEnabled ? Symbols.lock : Symbols.lock_open,
-          label: l10n.chatScreenMenuEncryption,
+          label: widget.chatType == 'CHAT'
+              ? l10n.groupEncryptionTitle
+              : l10n.chatScreenMenuEncryption,
           onTap: _openEncryptionSettings,
         ),
         ChatMenuItem(
@@ -3959,18 +3966,41 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   bool _encryptionListening = false;
+  int? _groupEncryptionLoadedAccount;
 
   Future<void> _loadEncryption() async {
-    await ChatEncryptionStore.instance.load();
-    await E2eeService.instance.ensureLoaded(_myId);
-    if (!mounted) return;
+    final accountId = _myId;
     if (!_encryptionListening) {
       _encryptionListening = true;
       ChatEncryptionStore.instance.revision.addListener(_applyEncryption);
       E2eeService.instance.revision.addListener(_applyEncryption);
+      GroupE2eeService.instance.revision.addListener(_applyEncryption);
     }
-    _applyEncryption();
+    try {
+      await ChatEncryptionStore.instance.load();
+      await E2eeService.instance.ensureLoaded(accountId);
+      if (widget.chatType == 'CHAT' && accountId != 0) {
+        await GroupE2eeService.instance.ensureLoaded(accountId, widget.chatId);
+        if (mounted && _myId == accountId) {
+          _groupEncryptionLoadedAccount = accountId;
+        }
+      }
+    } catch (_) {
+      if (mounted && _myId == accountId) {
+        _groupEncryptionLoadedAccount = null;
+      }
+    }
+    if (mounted) _applyEncryption();
   }
+
+  bool get _groupEncryptionRequired =>
+      widget.chatType == 'CHAT' &&
+      GroupE2eeService.instance.isOn(_myId, widget.chatId);
+
+  bool get _groupEncryptionReady =>
+      _groupEncryptionRequired &&
+      _groupEncryptionLoadedAccount == _myId &&
+      GroupE2eeService.instance.info(_myId, widget.chatId).ready;
 
   bool get _e2eeActive =>
       widget.chatType == 'DIALOG' &&
@@ -3983,12 +4013,24 @@ class _ChatScreenState extends State<ChatScreen>
   void _applyEncryption() {
     if (!mounted) return;
     final e2ee = _e2eeActive;
+    final groupPending =
+        widget.chatType == 'CHAT' &&
+        (_myId == 0 || _groupEncryptionLoadedAccount != _myId);
     final enabled =
-        e2ee || ChatEncryptionStore.instance.isEnabled(_myId, widget.chatId);
+        groupPending ||
+        _groupEncryptionRequired ||
+        e2ee ||
+        ChatEncryptionStore.instance.isEnabled(_myId, widget.chatId);
     if (enabled != _encryptionEnabled) {
       setState(() => _encryptionEnabled = enabled);
+    } else if (widget.chatType == 'CHAT') {
+      setState(() {});
     }
-    if (enabled && !e2ee && _myId != 0) {
+    if (enabled &&
+        !e2ee &&
+        !groupPending &&
+        !_groupEncryptionRequired &&
+        _myId != 0) {
       unawaited(ChatCryptoService.instance.warmKey(_myId, widget.chatId));
     }
   }
@@ -4004,10 +4046,12 @@ class _ChatScreenState extends State<ChatScreen>
               peerId: _resolveOtherId() ?? 0,
               peerName: widget.name,
             )
+          : widget.chatType == 'CHAT'
+          ? GroupEncryptionScreen(accountId: _myId, groupId: widget.chatId)
           : ChatEncryptionScreen(accountId: _myId, chatId: widget.chatId),
     );
     if (!mounted) return;
-    _applyEncryption();
+    await _loadEncryption();
   }
 
   bool _wallpaperListening = false;
@@ -4473,7 +4517,64 @@ class _ChatScreenState extends State<ChatScreen>
     return ok;
   }
 
+  Future<bool> _allowGroupAttachment() async {
+    if (widget.chatType != 'CHAT') return true;
+    final accountId = _myId;
+    if (accountId == 0) return false;
+    try {
+      await GroupE2eeService.instance.ensureLoaded(accountId, widget.chatId);
+      if (!mounted || _myId != accountId) return false;
+      _groupEncryptionLoadedAccount = accountId;
+      _applyEncryption();
+      if (!GroupE2eeService.instance.isOn(accountId, widget.chatId)) {
+        return true;
+      }
+    } catch (_) {
+      if (mounted) {
+        showCustomNotification(
+          context,
+          AppLocalizations.of(context)!.groupEncryptionFailed,
+        );
+      }
+      return false;
+    }
+    if (mounted) {
+      showCustomNotification(
+        context,
+        AppLocalizations.of(context)!.chatScreenNoEncryptFiles,
+      );
+    }
+    return false;
+  }
+
   Future<String?> _encryptOutgoing(String text, {bool notify = true}) async {
+    if (widget.chatType == 'CHAT') {
+      final accountId = _myId;
+      if (accountId == 0) return null;
+      try {
+        await GroupE2eeService.instance.ensureLoaded(accountId, widget.chatId);
+        if (!mounted || _myId != accountId) return null;
+        _groupEncryptionLoadedAccount = accountId;
+        _applyEncryption();
+        if (_groupEncryptionRequired) {
+          final wire = await GroupE2eeService.instance.encryptText(
+            accountId,
+            widget.chatId,
+            text,
+          );
+          if (!mounted || _myId != accountId) return null;
+          return wire;
+        }
+      } catch (_) {
+        if (mounted && notify) {
+          showCustomNotification(
+            context,
+            AppLocalizations.of(context)!.groupEncryptionFailed,
+          );
+        }
+        return null;
+      }
+    }
     if (!_encryptionEnabled || _myId == 0) return text;
     if (_e2eeActive) {
       final l10n = AppLocalizations.of(context)!;
@@ -5257,7 +5358,9 @@ class _ChatScreenState extends State<ChatScreen>
                       imageUrl: _headerAvatarUrl(),
                       chatType: widget.chatType,
                       isOfficial: chat?.isOfficial ?? false,
-                      encrypted: _encryptionEnabled,
+                      encrypted: widget.chatType == 'CHAT'
+                          ? _groupEncryptionReady
+                          : _encryptionEnabled,
                       verified: _e2eeVerified,
                       myId: _myId,
                       headerStatus: _headerStatusNotifier,

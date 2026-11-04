@@ -5512,6 +5512,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get findUserInvalidPhone => 'Введите корректный номер телефона';
 
   @override
+  String get findUserConfirmPhone => 'Это полный номер?';
+
+  @override
+  String get findUserContinueEditing => 'Продолжить ввод';
+
+  @override
+  String get findUserConfirmSearch => 'Искать этот номер';
+
+  @override
   String get findUserPhoneNotFound => 'Контакт с таким номером не найден';
 
   @override
