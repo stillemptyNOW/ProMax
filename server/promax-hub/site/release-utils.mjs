@@ -3,7 +3,6 @@ export function detectPlatform(userAgent = '', platform = '', touchPoints = 0) {
   if (/iphone|ipad|ipod/i.test(userAgent) || (/mac/i.test(platform) && touchPoints > 1)) return 'ios';
   if (/windows/i.test(userAgent)) return 'windows';
   if (/macintosh|mac os x/i.test(userAgent) || /mac/i.test(platform)) return 'macos';
-  if (/linux/i.test(userAgent)) return 'linux';
   return null;
 }
 
@@ -15,7 +14,6 @@ export function assetsFor(release, platform) {
       android: /-promax-(?:universal|arm64-v8a|armeabi-v7a|x86_64)\.apk$/,
       ios: /-ios-unsigned\.ipa$/,
       windows: /(?:-Setup-[\d.-]+\.exe|-windows-x64\.zip)$/,
-      linux: /-linux-x64\.tar\.gz$/,
       macos: /-macos-universal\.zip$/,
     }[platform]?.test(asset.name);
   }).sort((a, b) => priority(a.name) - priority(b.name));
@@ -36,7 +34,7 @@ export function assetLabel(asset) {
   if (asset.name.endsWith('-windows-x64.zip')) return 'Portable · без установщика';
   if (asset.name.endsWith('.ipa')) return 'IPA · требуется собственная подпись';
   if (asset.name.endsWith('-macos-universal.zip')) return 'macOS · Apple Silicon и Intel';
-  return 'Архив Linux x64';
+  return 'Архив';
 }
 
 export function chooseRelease(releases, channel, platform) {

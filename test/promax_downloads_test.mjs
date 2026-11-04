@@ -15,6 +15,8 @@ assert.deepEqual(assetsFor(unsafe, 'android'), []);
 assert.deepEqual(assetsFor(previous, 'android'), [apk]);
 assert.equal(detectPlatform('Mozilla Android', '', 0), 'android');
 assert.equal(detectPlatform('Mozilla Windows NT', '', 0), 'windows');
+assert.equal(detectPlatform('Mozilla Linux x86_64', 'Linux x86_64', 0), null);
+assert.deepEqual(assetsFor({assets: [{name: 'ProMax-linux-x64.tar.gz', url: 'https://github.com/stillemptyNOW/ProMax/releases/download/test/ProMax-linux-x64.tar.gz'}]}, 'linux'), []);
 assert.equal(detectPlatform('Mozilla Macintosh', 'MacIntel', 5), 'ios');
 assert.equal(detectPlatform('Mozilla Macintosh', 'MacIntel', 0), 'macos');
 const mac = {name: 'ProMax-macos-universal.zip', url: base + 'synthetic.zip'};

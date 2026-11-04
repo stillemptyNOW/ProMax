@@ -1,4 +1,4 @@
-import {assetsFor, assetLabel, chooseRelease, detectPlatform, formatSize, safeDownload} from './release-utils.mjs';
+import {assetsFor, assetLabel, chooseRelease, detectPlatform, formatSize, safeDownload} from './release-utils.mjs?v=20261104b';
 import {recordDownload} from './download-counter.mjs';
 
 const byId = id => document.getElementById(id);
@@ -14,7 +14,7 @@ for (const id of ['hero-download', 'asset-download']) {
     recordDownload(asset, key).then(showDownloads).catch(() => {});
   });
 }
-const labels = {android: 'Android', ios: 'iPhone', windows: 'Windows', macos: 'macOS', linux: 'Linux'};
+const labels = {android: 'Android', ios: 'iPhone', windows: 'Windows', macos: 'macOS'};
 const detected = detectPlatform(navigator.userAgent, navigator.platform, navigator.maxTouchPoints);
 let platform = detected ?? 'android';
 let releases = [];
@@ -25,7 +25,6 @@ const instructions = {
   android: ['Скачай подходящий APK. Универсальный вариант подходит всем поддерживаемым архитектурам.', 'Открой файл. Если Android попросит разрешение установки для браузера, предоставь его этому источнику.', 'Подтверди установку и войди в свой аккаунт MAX.'],
   ios: ['Скачай IPA на iPhone или компьютер.', 'Подпиши файл своим сертификатом через совместимый инструмент, например eSign или AltStore.', 'Установи подписанную копию и войди в аккаунт. Прямая установка неподписанного IPA в iOS недоступна.'],
   windows: ['Скачай установщик .exe. Для запуска без установки выбери Portable.', 'Запусти установщик и выбери папку. Portable-архив сначала распакуй полностью.', 'Открой ProMax. В установленной версии доступны встроенные обновления.'],
-  linux: ['Скачай архив Linux x64.', 'Распакуй архив целиком, сохраняя папки lib и data рядом с приложением.', 'Запусти ProMax из распакованной папки. Системе могут понадобиться библиотеки GTK и мультимедиа.'],
   macos: ['Скачай ZIP для macOS и распакуй его.', 'Перенеси ProMax.app в папку «Программы». Архив подходит для Apple Silicon и Intel.', 'Бета не подписана Developer ID и не нотарифицирована Apple. Если macOS блокирует запуск, проверь источник и контрольную сумму файла; решение о запуске принимай в настройках безопасности macOS.'],
 };
 
@@ -33,7 +32,6 @@ const hints = {
   android: 'Подписанные APK из официального репозитория ProMax. Android 6.0 и новее.',
   ios: 'Файл IPA без подписи. Для установки нужен собственный сертификат или совместимый способ sideload.',
   windows: 'Установщик для Windows x64 и переносимый ZIP-архив.',
-  linux: 'Готовый архив для Linux x64. Необходимо графическое окружение с GTK.',
   macos: 'Универсальное приложение для Apple Silicon и Intel. Без подписи Developer ID и нотарификации Apple.',
 };
 
