@@ -454,7 +454,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get infoAccountRemovalEnabled => 'Мгновенное удаление аккаунта:';
 
   @override
-  String get infoImageSize => 'image-size';
+  String get infoImageSize => 'Размер изображения:';
 
   @override
   String get infoGce => 'gce';
@@ -466,13 +466,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get infoMaxMsgLength => 'макс. длина сообщения:';
 
   @override
-  String get infoQuotesEnabled => 'quotes-enabled';
+  String get infoQuotesEnabled => 'Цитирование:';
 
   @override
-  String get infoCallsEndpoint => 'calls-endpoint';
+  String get infoCallsEndpoint => 'Адрес сервера звонков:';
 
   @override
-  String get infoSendLocationEnabled => 'отправка гео.:';
+  String get infoSendLocationEnabled => 'Отправка геопозиции:';
 
   @override
   String get infoLgce => 'lgce';
@@ -487,22 +487,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get infoGrse => 'grse';
 
   @override
-  String get infoEditTimeout => 'Можно редактировать сообщение в течении:';
+  String get infoEditTimeout => 'Можно редактировать сообщение в течение:';
 
   @override
-  String get infoImageQuality => 'image-quality';
+  String get infoImageQuality => 'Качество изображений:';
 
   @override
-  String get infoUnsafeFilesAlert => 'unsafe-files-alert';
+  String get infoUnsafeFilesAlert => 'Предупреждение о небезопасных файлах:';
 
   @override
-  String get infoAccountNicknameEnabled => 'account-nickname-enabled';
+  String get infoAccountNicknameEnabled => 'Никнейм аккаунта:';
 
   @override
   String get infoMentionsEntityNamesLimit => 'макс. кол-во упоминаний:';
 
   @override
-  String get infoReactionsEnabled => 'reactions-enabled';
+  String get infoReactionsEnabled => 'Реакции:';
 
   @override
   String get infoTile => 'tile';
@@ -4310,8 +4310,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Часть выбранных сообщений нельзя удалить у участников, поэтому все они удалятся только у вас';
 
   @override
-  String get infoDeleteForAll =>
-      'Удаление чата у собеседника (delete-for-all):';
+  String get infoDeleteForAll => 'Удаление чата у собеседника:';
 
   @override
   String get chatActionProfileUnavailable =>
@@ -6116,11 +6115,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsTabCloudStorageLimitsBody =>
-      'Можете хранить массивный обьем информации.';
+      'Вы можете хранить большой объём информации.';
 
   @override
   String get settingsTabCloudStoragePrivacyTitle =>
-      'Не обеспечивается конфединциальность файлов';
+      'Конфиденциальность файлов не гарантируется';
 
   @override
   String get settingsTabCloudStoragePrivacyBody =>

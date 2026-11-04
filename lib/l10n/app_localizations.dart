@@ -761,13 +761,13 @@ abstract class AppLocalizations {
   /// No description provided for @infoFileUploadTypes.
   ///
   /// In en, this message translates to:
-  /// **'file-upload-unsupported-types'**
+  /// **'Unsupported file types'**
   String get infoFileUploadTypes;
 
   /// No description provided for @infoWhiteListLinks.
   ///
   /// In en, this message translates to:
-  /// **'white-list-links'**
+  /// **'Allowed links'**
   String get infoWhiteListLinks;
 
   /// No description provided for @infoRegistrationTime.
@@ -947,13 +947,13 @@ abstract class AppLocalizations {
   /// No description provided for @infoAccountRemovalEnabled.
   ///
   /// In en, this message translates to:
-  /// **'account-removal-enabled'**
+  /// **'Instant account deletion:'**
   String get infoAccountRemovalEnabled;
 
   /// No description provided for @infoImageSize.
   ///
   /// In en, this message translates to:
-  /// **'image-size'**
+  /// **'Image size:'**
   String get infoImageSize;
 
   /// No description provided for @infoGce.
@@ -971,25 +971,25 @@ abstract class AppLocalizations {
   /// No description provided for @infoMaxMsgLength.
   ///
   /// In en, this message translates to:
-  /// **'max-msg-length'**
+  /// **'Maximum message length:'**
   String get infoMaxMsgLength;
 
   /// No description provided for @infoQuotesEnabled.
   ///
   /// In en, this message translates to:
-  /// **'quotes-enabled'**
+  /// **'Quoting:'**
   String get infoQuotesEnabled;
 
   /// No description provided for @infoCallsEndpoint.
   ///
   /// In en, this message translates to:
-  /// **'calls-endpoint'**
+  /// **'Call server address:'**
   String get infoCallsEndpoint;
 
   /// No description provided for @infoSendLocationEnabled.
   ///
   /// In en, this message translates to:
-  /// **'send-location-enabled'**
+  /// **'Location sharing:'**
   String get infoSendLocationEnabled;
 
   /// No description provided for @infoLgce.
@@ -1007,7 +1007,7 @@ abstract class AppLocalizations {
   /// No description provided for @infoVideoMsgEnabled.
   ///
   /// In en, this message translates to:
-  /// **'video-msg-enabled'**
+  /// **'Video messages:'**
   String get infoVideoMsgEnabled;
 
   /// No description provided for @infoGrse.
@@ -1019,25 +1019,25 @@ abstract class AppLocalizations {
   /// No description provided for @infoEditTimeout.
   ///
   /// In en, this message translates to:
-  /// **'edit-timeout'**
+  /// **'Message editing allowed within:'**
   String get infoEditTimeout;
 
   /// No description provided for @infoImageQuality.
   ///
   /// In en, this message translates to:
-  /// **'image-quality'**
+  /// **'Image quality:'**
   String get infoImageQuality;
 
   /// No description provided for @infoUnsafeFilesAlert.
   ///
   /// In en, this message translates to:
-  /// **'unsafe-files-alert'**
+  /// **'Unsafe files warning:'**
   String get infoUnsafeFilesAlert;
 
   /// No description provided for @infoAccountNicknameEnabled.
   ///
   /// In en, this message translates to:
-  /// **'account-nickname-enabled'**
+  /// **'Account nickname:'**
   String get infoAccountNicknameEnabled;
 
   /// No description provided for @infoMentionsEntityNamesLimit.
@@ -1049,7 +1049,7 @@ abstract class AppLocalizations {
   /// No description provided for @infoReactionsEnabled.
   ///
   /// In en, this message translates to:
-  /// **'reactions-enabled'**
+  /// **'Reactions:'**
   String get infoReactionsEnabled;
 
   /// No description provided for @infoTile.
@@ -7775,7 +7775,7 @@ abstract class AppLocalizations {
   /// No description provided for @infoDeleteForAll.
   ///
   /// In en, this message translates to:
-  /// **'delete-for-all'**
+  /// **'Delete chat for everyone:'**
   String get infoDeleteForAll;
 
   /// No description provided for @chatActionProfileUnavailable.

@@ -357,10 +357,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get infoYMapSection => 'Y-Map';
 
   @override
-  String get infoFileUploadTypes => 'file-upload-unsupported-types';
+  String get infoFileUploadTypes => 'Unsupported file types';
 
   @override
-  String get infoWhiteListLinks => 'white-list-links';
+  String get infoWhiteListLinks => 'Allowed links';
 
   @override
   String get infoRegistrationTime => 'registrationTime';
@@ -450,10 +450,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get infoChatsMessages => 'messages in loaded chats';
 
   @override
-  String get infoAccountRemovalEnabled => 'account-removal-enabled';
+  String get infoAccountRemovalEnabled => 'Instant account deletion:';
 
   @override
-  String get infoImageSize => 'image-size';
+  String get infoImageSize => 'Image size:';
 
   @override
   String get infoGce => 'gce';
@@ -462,16 +462,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get infoGcce => 'gcce';
 
   @override
-  String get infoMaxMsgLength => 'max-msg-length';
+  String get infoMaxMsgLength => 'Maximum message length:';
 
   @override
-  String get infoQuotesEnabled => 'quotes-enabled';
+  String get infoQuotesEnabled => 'Quoting:';
 
   @override
-  String get infoCallsEndpoint => 'calls-endpoint';
+  String get infoCallsEndpoint => 'Call server address:';
 
   @override
-  String get infoSendLocationEnabled => 'send-location-enabled';
+  String get infoSendLocationEnabled => 'Location sharing:';
 
   @override
   String get infoLgce => 'lgce';
@@ -480,28 +480,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get infoWud => 'wud';
 
   @override
-  String get infoVideoMsgEnabled => 'video-msg-enabled';
+  String get infoVideoMsgEnabled => 'Video messages:';
 
   @override
   String get infoGrse => 'grse';
 
   @override
-  String get infoEditTimeout => 'edit-timeout';
+  String get infoEditTimeout => 'Message editing allowed within:';
 
   @override
-  String get infoImageQuality => 'image-quality';
+  String get infoImageQuality => 'Image quality:';
 
   @override
-  String get infoUnsafeFilesAlert => 'unsafe-files-alert';
+  String get infoUnsafeFilesAlert => 'Unsafe files warning:';
 
   @override
-  String get infoAccountNicknameEnabled => 'account-nickname-enabled';
+  String get infoAccountNicknameEnabled => 'Account nickname:';
 
   @override
   String get infoMentionsEntityNamesLimit => 'mentions_entity_names_limit';
 
   @override
-  String get infoReactionsEnabled => 'reactions-enabled';
+  String get infoReactionsEnabled => 'Reactions:';
 
   @override
   String get infoTile => 'tile';
@@ -4274,7 +4274,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Some of the selected messages cannot be deleted for members, so all of them will be deleted only for you';
 
   @override
-  String get infoDeleteForAll => 'delete-for-all';
+  String get infoDeleteForAll => 'Delete chat for everyone:';
 
   @override
   String get chatActionProfileUnavailable =>
