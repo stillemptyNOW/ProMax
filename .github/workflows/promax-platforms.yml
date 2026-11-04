@@ -228,6 +228,8 @@ jobs:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
       - name: Dependencies
         run: flutter pub get
+      - name: Rebuild bundled audio libraries without LTO bitcode
+        run: .github/scripts/build-macos-opus-libs.sh
       - name: Build
         run: |
           flutter config --no-enable-swift-package-manager
@@ -237,7 +239,7 @@ jobs:
         run: |
           app=build/macos/Build/Products/Release/ProMax.app
           test -d "$app"
-          lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/ProMax"
+          lipo "$app/Contents/MacOS/ProMax" -verify_arch arm64 x86_64
           mkdir -p dist
           ditto -c -k --sequesterRsrc --keepParent "$app" dist/ProMax-macos-universal.zip
       - name: Publish release

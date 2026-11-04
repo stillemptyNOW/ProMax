@@ -18,14 +18,21 @@ class AndroidReleaseSigningTests(unittest.TestCase):
         self.bash = shutil.which("bash") or r"C:\Program Files\Git\bin\bash.exe"
         self.env = {**os.environ, "ANDROID_HOME": (self.root / "sdk").as_posix()}
 
+    ABI_VERSION_MULTIPLIER = {"armeabi-v7a": 1, "arm64-v8a": 2, "x86_64": 4}
+
+    def expected_code_for(self, abi, base_code):
+        multiplier = self.ABI_VERSION_MULTIPLIER.get(abi)
+        return base_code if multiplier is None else multiplier * 1000 + base_code
+
     def run_guard(
         self,
         certificate="e83be69ec2ea9cc8f418b533636c1a114824bfc05a940fca6060205f390d72b6",
         package="io.github.stillemptynow.promax",
-        code=121,
+        base_code=121,
         valid=True,
         version="0.0.0",
         invalid_abi=None,
+        wrong_code_abi=None,
         extra_signer=False,
         valid_badging=True,
     ):
@@ -46,13 +53,18 @@ class AndroidReleaseSigningTests(unittest.TestCase):
         signer.write_text(signer_body, newline="\n")
         signer.chmod(0o755)
         aapt = self.tools / "aapt"
-        aapt.write_text(
-            '#!/usr/bin/env bash\n'
-            '[ "$1" = dump ] && [ "$2" = badging ] || exit 2\n'
-            f'echo "package: name=\'{package}\' versionCode=\'{code}\' versionName=\'{version}\'"\n'
-            f'exit {0 if valid_badging else 1}\n',
-            newline="\n",
-        )
+        aapt_body = '#!/usr/bin/env bash\n[ "$1" = dump ] && [ "$2" = badging ] || exit 2\n'
+        for abi, multiplier in (*self.ABI_VERSION_MULTIPLIER.items(), ("universal", None)):
+            code = self.expected_code_for(abi, base_code)
+            if abi == wrong_code_abi:
+                code += 1
+            filename = "app-promax-release.apk" if abi == "universal" else f"app-{abi}-promax-release.apk"
+            aapt_body += (
+                f'if [[ "$3" = */{filename} ]]; then '
+                f"echo \"package: name='{package}' versionCode='{code}' versionName='{version}'\"; "
+                f"exit {0 if valid_badging else 1}; fi\n"
+            )
+        aapt.write_text(aapt_body, newline="\n")
         aapt.chmod(0o755)
         return subprocess.run([self.bash, self.script.as_posix()], cwd=self.root, env=self.env, capture_output=True, text=True)
 
@@ -68,7 +80,10 @@ class AndroidReleaseSigningTests(unittest.TestCase):
         self.assertNotEqual(self.run_guard(package="test.synthetic.other").returncode, 0)
 
     def test_rejects_a_wrong_version_code(self):
-        self.assertNotEqual(self.run_guard(code=120).returncode, 0)
+        self.assertNotEqual(self.run_guard(wrong_code_abi="arm64-v8a").returncode, 0)
+
+    def test_rejects_a_wrong_universal_version_code(self):
+        self.assertNotEqual(self.run_guard(wrong_code_abi="universal").returncode, 0)
 
     def test_rejects_a_wrong_version_name(self):
         self.assertNotEqual(self.run_guard(version="0.0.1").returncode, 0)
