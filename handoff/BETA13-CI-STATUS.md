@@ -1,5 +1,17 @@
 # Статус CI (второй ИИ) — beta 13
 
+## Итог: оба задания подтверждены зелёным прогоном
+
+Run `41814429138` (https://github.com/stillemptyNOW/ProMax/actions/runs/41814429138),
+коммит `a7edf42` (ветка `b13-ci`): **все 4 job'а завершились `success`** — `android`, `macos`,
+`windows`, `linux`. В частности:
+- `android` → `Verify update compatibility`: **success** (постоянный сертификат, пакет и
+  per-ABI versionCode все совпали).
+- `macos` → `Build`, `Package`, `Run actions/upload-artifact@v4`: **success**.
+
+Ничего не публиковалось (`Publish release` пропущен — нет `RELEASE_TAG`), PR не создан,
+релиз не запущен — только артефакты собраны и проверены.
+
 Ветка: `b13-ci` (от `origin/claude/confident-bohr-2dd5e7`, после `7996f66`).
 
 ## 1. macOS: LTO bitcode mismatch
@@ -28,8 +40,7 @@ input-файл ПЕРВЫМ аргументом, затем команду — 
 начала (просто никогда не доходило до этого шага, так как job всегда проваливался раньше на
 bitcode). Исправлено коммитом `e4fcc06`: `lipo "$app/.../ProMax" -verify_arch arm64 x86_64`.
 
-Статус: **исправлено, ждёт финального прогона** (run `41814429138`, не был отдельно
-подтверждён в изоляции, но логика проверена по документации `lipo`).
+Статус: **подтверждено** run `41814429138` — `Package`: success.
 
 ## 2. Android: "Expected one Android signer ... found 0"
 
@@ -70,8 +81,7 @@ Store; universal APK сохраняет обычный versionCode. `lib/core/ut
 `apksigner` теперь отдают правильные per-ABI коды), добавлен тест на неверный код у universal.
 Все 10 python-тестов зелёные локально (`python3 -m unittest verify_android_apks_test -v`).
 
-Статус: **исправлено, ждёт финального прогона** (run `41814429138`, in progress на момент
-записи).
+Статус: **подтверждено** run `41814429138` — `Verify update compatibility`: success.
 
 ## Изменённые файлы (b13-ci)
 
@@ -81,7 +91,6 @@ Store; universal APK сохраняет обычный versionCode. `lib/core/ut
   `48967cb`, `12b159f`)
 - `test/verify_android_apks_test.py` (синтетические стабы под реальную схему, коммит `12b159f`)
 
-Финальный прогон со всеми тремя фиксами: run `41814429138`
-(https://github.com/stillemptyNOW/ProMax/actions/runs/41814429138) — в процессе, обновлю этот
-файл реальным результатом сразу после завершения. Ничего не выпущено, PR не слит, релиз не
-запущен.
+Оба задания из `handoff/BETA13-PARALLEL.md` выполнены и подтверждены реальным зелёным прогоном
+`41814429138`. Готово к переносу основным ИИ в ветку владельца, когда остальные задачи beta 13
+завершатся. Ничего не выпущено, PR не слит, релиз не запущен.
