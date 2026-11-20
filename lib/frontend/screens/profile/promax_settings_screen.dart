@@ -5,6 +5,7 @@ import 'hub_settings_screen.dart';
 import '../../../core/config/platform_settings.dart';
 import '../../../core/config/product_links.dart';
 import '../../../core/utils/link_opener.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -83,6 +84,16 @@ class ProMaxSettingsScreen extends StatelessWidget {
                     subtitle: l10n.diagnosticsHint,
                     value: enabled,
                     onChanged: Diagnostics.setEnabled,
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: Diagnostics.operationsEnabled,
+                  builder: (context, enabled, _) => SettingsToggleTile(
+                    icon: Symbols.monitoring,
+                    label: l10n.diagnosticsOperationsTitle,
+                    subtitle: l10n.diagnosticsOperationsHint,
+                    value: enabled,
+                    onChanged: Diagnostics.setOperationsEnabled,
                   ),
                 ),
               ],
@@ -184,9 +195,8 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.auto_stories,
                     label: AppLocalizations.of(context)!.proMaxHideStoryViews,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    )!.proMaxHideStoryViewsHint,
+                    subtitle: AppLocalizations.of(context)!
+                        .proMaxHideStoryViewsHint,
                     value: value,
                     onChanged: ProMaxSettings.setHideStoryViews,
                   ),
@@ -196,9 +206,8 @@ class ProMaxSettingsScreen extends StatelessWidget {
                   builder: (context, value, _) => SettingsToggleTile(
                     icon: Symbols.blur_on,
                     label: AppLocalizations.of(context)!.proMaxSwitcherBlur,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    )!.proMaxSwitcherBlurHint,
+                    subtitle: AppLocalizations.of(context)!
+                        .proMaxSwitcherBlurHint,
                     value: value,
                     onChanged: ProMaxSettings.setSwitcherBlur,
                   ),
@@ -490,18 +499,15 @@ class _ProMaxHero extends StatelessWidget {
                           future: PackageInfo.fromPlatform(),
                           builder: (context, snapshot) => Text(
                             snapshot.hasData
-                                ? AppLocalizations.of(
-                                    context,
-                                  )!.proMaxHeroVersion(
-                                    snapshot.data!.version,
-                                    preset?.title ??
-                                        AppLocalizations.of(
-                                          context,
-                                        )!.proMaxHeroCustomTheme,
-                                  )
-                                : AppLocalizations.of(
-                                    context,
-                                  )!.proMaxHeroTagline,
+                                ? AppLocalizations.of(context)!
+                                      .proMaxHeroVersion(
+                                        snapshot.data!.version,
+                                        preset?.title ??
+                                            AppLocalizations.of(context)!
+                                                .proMaxHeroCustomTheme,
+                                      )
+                                : AppLocalizations.of(context)!
+                                      .proMaxHeroTagline,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.72),
                               fontSize: 13,

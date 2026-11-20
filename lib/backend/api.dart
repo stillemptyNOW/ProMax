@@ -15,6 +15,7 @@ import '../core/config/privacy_settings.dart';
 import '../core/config/promax_settings.dart';
 import '../core/config/proxy_config.dart';
 import '../core/config/web_client_profile.dart';
+import '../core/hub/diagnostics.dart';
 import '../core/protocol/opcode_map.dart';
 import '../core/protocol/packet.dart';
 import '../core/storage/app_database.dart';
@@ -156,6 +157,10 @@ class Api {
       logger.i('connect пропущен: состояние ${_sessionState.name}');
       return;
     }
+    final stopwatch = Diagnostics.operationsEnabled.value
+        ? (Stopwatch()..start())
+        : null;
+    DiagnosticOutcome? outcome;
     _autoReconnect = true;
     // #***! номер поколения
     final gen = ++_connectGen;
@@ -229,6 +234,9 @@ class Api {
         info = await session.connect();
       } catch (e) {
         if (gen != _connectGen) return;
+        outcome = e is TimeoutException
+            ? DiagnosticOutcome.timeout
+            : DiagnosticOutcome.failed;
         await _handleConnectFailure(e, phase: 'Ошибка хэндшейка');
         return;
       } finally {
@@ -258,6 +266,9 @@ class Api {
       }
       if (gen != _connectGen) return;
       if (_loginGate.loginUnanswered || _loginGate.loginRejected) {
+        outcome = _loginGate.loginRejected
+            ? DiagnosticOutcome.denied
+            : DiagnosticOutcome.timeout;
         await _handleConnectFailure(
           StateError(
             _loginGate.loginRejected
@@ -270,13 +281,22 @@ class Api {
       }
       _loginGate.open();
       if (_sessionState == SessionState.online) {
+        outcome = DiagnosticOutcome.success;
         _stateController.add(SessionState.online);
         _handshakeSuccessController.add(info.deviceName ?? 'Unknown');
       }
     } catch (e, st) {
+      outcome ??= DiagnosticOutcome.failed;
       logger.e('connect: непредвиденная ошибка: $e\n$st');
       if (gen == _connectGen) await _resetStuckConnect(gen);
     } finally {
+      if (outcome != null && stopwatch != null) {
+        Diagnostics.recordOperation(
+          DiagnosticStage.maxConnection,
+          outcome,
+          elapsed: stopwatch.elapsed,
+        );
+      }
       // #***! на случай если несколько раз подключиться решили
       if (built != null && !identical(_session, built)) _releaseSession(built);
     }
@@ -291,6 +311,11 @@ class Api {
           _sessionState == SessionState.disconnected) {
         return;
       }
+      Diagnostics.recordOperation(
+        DiagnosticStage.maxConnection,
+        DiagnosticOutcome.timeout,
+        elapsed: _connectWatchdogTimeout,
+      );
       logger.e(
         'connect: watchdog ${_connectWatchdogTimeout.inSeconds}с — застряли в '
         '${_sessionState.name}, принудительный сброс',

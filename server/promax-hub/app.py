@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import secrets
 import sqlite3
@@ -7,12 +8,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 from releases import ReleaseCatalog
+from request_body import read_bounded_body
+from settings_links import LINK_CODE, LINK_LIFETIME, MAX_LINKS, parse_settings_link
 
 
 class Pair(BaseModel):
@@ -61,6 +64,43 @@ class Diagnostics(BaseModel):
     model_config = ConfigDict(extra="forbid")
     installation: str = Field(min_length=32, max_length=64, pattern=r"^[a-f0-9]+$")
     events: list[Diagnostic] = Field(min_length=1, max_length=16)
+
+
+OperationStage = Literal[
+    "digitalIdLaunch", "digitalIdCallback", "digitalIdExchange", "digitalIdWebView",
+    "digitalIdDocuments", "digitalIdVerification", "apnsPermission", "apnsToken",
+    "apnsRegistration", "apnsUnregistration", "apnsDelivery", "apnsLocalTest",
+    "apnsRelayHealth", "hubRequest", "maxConnection", "webPushAuth",
+    "webPushLink", "webPushReceipt", "webPushSubscription",
+]
+OperationOutcome = Literal[
+    "started", "success", "failed", "timeout", "denied", "cancelled", "skipped",
+    "invalid", "unavailable", "retry", "offline",
+]
+OPERATIONS_PATH = "/v1/telemetry/operations"
+
+
+class OperationEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    stage: OperationStage
+    outcome: OperationOutcome
+    duration_ms: int | None = Field(default=None, ge=0, le=3600000)
+    status_code: int | None = Field(default=None, ge=100, le=599)
+    version: str = Field(max_length=40, pattern=r"^(unknown|[0-9]{1,5}\.[0-9]{1,5}\.[0-9]{1,5}(?:\+[0-9]{0,10})?)$")
+    platform: Literal["android", "ios", "windows", "linux", "macos", "fuchsia", "web"]
+
+
+class Operations(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    events: list[OperationEvent] = Field(min_length=1, max_length=16)
+
+
+async def parse_operations(request: Request):
+    data = await read_bounded_body(request, 8192)
+    try:
+        return Operations.model_validate_json(data)
+    except ValidationError:
+        raise HTTPException(422, "invalid_operations") from None
 
 
 class FrameSummary(BaseModel):
@@ -117,6 +157,8 @@ class Hub:
                 CREATE TABLE IF NOT EXISTS download_total(id INTEGER PRIMARY KEY CHECK(id=1), started INTEGER NOT NULL);
                 INSERT OR IGNORE INTO download_total VALUES(1, 1);
                 CREATE TABLE IF NOT EXISTS download_clicks(event TEXT PRIMARY KEY, created INTEGER NOT NULL);
+                CREATE TABLE IF NOT EXISTS settings_links(digest TEXT PRIMARY KEY, payload TEXT NOT NULL, expires INTEGER NOT NULL);
+                CREATE INDEX IF NOT EXISTS settings_links_expires ON settings_links(expires);
             """)
             for table in ("draft", "announcements"):
                 have = {row[1] for row in db.execute(f"PRAGMA table_info({table})")}
@@ -171,6 +213,33 @@ class Hub:
             db.execute("DELETE FROM pair_codes WHERE expires < ?", (int(time.time()),))
             db.execute("DELETE FROM rate_limits WHERE window < ?", (int(time.time()) // 3600 - 48,))
             db.execute("DELETE FROM download_clicks WHERE created < ?", (int(time.time()) - 86400,))
+            db.execute("DELETE FROM settings_links WHERE expires <= ?", (int(time.time()),))
+
+    def operation_summary(self, hours, limit, stage=None):
+        cutoff = int(time.time()) - hours * 3600
+        with self.db() as db:
+            rows = db.execute("""
+                WITH operations AS (
+                    SELECT json_extract(event, '$.stage') AS stage,
+                           json_extract(event, '$.outcome') AS outcome,
+                           json_extract(event, '$.version') AS version,
+                           json_extract(event, '$.platform') AS platform,
+                           json_extract(event, '$.status_code') AS status_code,
+                           json_extract(event, '$.duration_ms') AS duration_ms
+                    FROM telemetry
+                    WHERE created >= ? AND installation = ''
+                      AND json_extract(event, '$.kind') = 'operation'
+                )
+                SELECT stage, outcome, version, platform, status_code, COUNT(*) AS count,
+                       COUNT(duration_ms) AS timed, ROUND(AVG(duration_ms)) AS mean_duration_ms,
+                       MAX(duration_ms) AS max_duration_ms
+                FROM operations
+                WHERE ? IS NULL OR stage = ?
+                GROUP BY stage, outcome, version, platform, status_code
+                ORDER BY count DESC, stage, outcome, platform, version, status_code
+                LIMIT ?
+            """, (cutoff, stage, stage, limit)).fetchall()
+        return {"hours": hours, "limit": limit, "groups": [dict(row) for row in rows]}
 
 
 def create_app(database=None, admin_account_id=None):
@@ -202,6 +271,10 @@ def create_app(database=None, admin_account_id=None):
             response.headers["Cache-Control"] = "public, max-age=3600"
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
+
+    @app.get("/push")
+    def web_push_alias():
+        return RedirectResponse("/notifications/")
 
     @app.get("/")
     def landing():
@@ -243,6 +316,7 @@ def create_app(database=None, admin_account_id=None):
             return {"started": db.execute("SELECT started FROM download_total WHERE id=1").fetchone()[0]}
 
     @app.get("/settings")
+    @app.get("/s")
     def settings_link():
         return FileResponse(Path(__file__).with_name("settings.html"), headers={
             "Referrer-Policy": "no-referrer",
@@ -252,6 +326,38 @@ def create_app(database=None, admin_account_id=None):
     @app.get("/settings-link.js")
     def settings_script():
         return FileResponse(Path(__file__).with_name("settings-link.js"), media_type="text/javascript")
+
+    @app.post("/v1/settings-links", status_code=201)
+    def create_settings_link(request: Request, payload: str = Depends(parse_settings_link)):
+        address = request.client.host if request.client else "unknown"
+        hub.limit("settings-link-ip:" + digest(address), 20, 3600)
+        hub.limit("settings-link-create", 1200, 3600)
+        now = int(time.time())
+        code = secrets.token_urlsafe(16)
+        with hub.db() as db:
+            db.execute("DELETE FROM settings_links WHERE expires <= ?", (now,))
+            if db.execute("SELECT count(*) FROM settings_links").fetchone()[0] >= MAX_LINKS:
+                raise HTTPException(503, "settings_link_capacity")
+            inserted = db.execute(
+                "INSERT OR IGNORE INTO settings_links VALUES (?, ?, ?)",
+                (digest(code), payload, now + LINK_LIFETIME),
+            ).rowcount
+            if not inserted:
+                raise HTTPException(503, "settings_link_unavailable")
+        return {"code": code}
+
+    @app.get("/v1/settings-links/{code}")
+    def get_settings_link(code: str):
+        if not LINK_CODE.fullmatch(code):
+            raise HTTPException(404, "settings_link_not_found")
+        with hub.db() as db:
+            row = db.execute(
+                "SELECT payload FROM settings_links WHERE digest=? AND expires>?",
+                (digest(code), int(time.time())),
+            ).fetchone()
+        if row is None:
+            raise HTTPException(404, "settings_link_not_found")
+        return Response(row["payload"], media_type="application/json")
 
     @app.get("/.well-known/assetlinks.json")
     def android_links():
@@ -326,7 +432,6 @@ def create_app(database=None, admin_account_id=None):
 
     @app.post("/v1/telemetry", status_code=202)
     def telemetry(body: Diagnostics, request: Request):
-        import json
         address = request.client.host if request.client else "unknown"
         hub.limit("telemetry-ip:" + digest(address), 120, 3600)
         hub.limit("telemetry-install:" + body.installation, 20, 3600)
@@ -341,9 +446,35 @@ def create_app(database=None, admin_account_id=None):
         hub.cleanup()
         return {"accepted": len(events)}
 
+    @app.post(OPERATIONS_PATH, status_code=202)
+    def record_operations(request: Request, body: Operations = Depends(parse_operations)):
+        address = request.client.host if request.client else "unknown"
+        hub.limit("operations-ip:" + digest(address), 240, 3600)
+        created = int(time.time())
+        events = [{"kind": "operation", **event.model_dump(exclude_none=True)} for event in body.events]
+        with hub.db() as db:
+            db.executemany(
+                "INSERT INTO telemetry(created,installation,event) VALUES(?,'',?)",
+                [(created, json.dumps(event)) for event in events],
+            )
+        hub.cleanup()
+        return {"accepted": len(events)}
+
+    @app.get("/v1/admin/telemetry/operations")
+    def operation_summary(
+        request: Request,
+        authorization: str | None = Header(default=None),
+        hours: int = Query(default=24, ge=1, le=336),
+        limit: int = Query(default=200, ge=1, le=2000),
+        stage: OperationStage | None = None,
+    ):
+        hub.admin(authorization)
+        address = request.client.host if request.client else "unknown"
+        hub.limit("operations-summary-ip:" + digest(address), 60, 3600)
+        return hub.operation_summary(hours, limit, stage)
+
     @app.post("/v1/performance", status_code=202)
     def performance(body: PerformanceReport, request: Request):
-        import json
         address = request.client.host if request.client else "unknown"
         hub.limit("performance-ip:" + digest(address), 30, 3600)
         hub.limit("performance-install:" + body.installation, 6, 3600)

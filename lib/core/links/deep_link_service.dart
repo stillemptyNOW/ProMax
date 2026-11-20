@@ -12,6 +12,7 @@ import '../../frontend/screens/digital_id/digital_id_web_screen.dart';
 import '../../frontend/widgets/custom_notification.dart';
 import '../../frontend/widgets/max_link_handler.dart';
 import '../../frontend/widgets/max_link_nav.dart';
+import '../privacy/host_policy.dart';
 import '../storage/app_database.dart';
 import '../storage/token_storage.dart';
 import '../../frontend/widgets/swipe_route.dart';
@@ -42,6 +43,7 @@ class DeepLinkService {
   WebPushSubscription? _pendingWebPush;
   ({int? chatId, int? userId})? _pendingPushTarget;
   String? _lastExternalCallback;
+  final Set<String> _externalCallbacksInFlight = {};
   Timer? _externalCallbackRetry;
   Timer? _webPushRetry;
   Timer? _pushTargetRetry;
@@ -102,10 +104,12 @@ class DeepLinkService {
       _flushPending();
       return;
     }
-    if (_isExternalCallback(uri)) {
+    if (BuildProfile.digitalId && HostPolicy.isDigitalIdCallback(uri)) {
       final callbackUrl = uri.toString();
-      if (callbackUrl == _lastExternalCallback) return;
-      _lastExternalCallback = callbackUrl;
+      if (callbackUrl == _lastExternalCallback ||
+          _externalCallbacksInFlight.contains(callbackUrl)) {
+        return;
+      }
       _pendingExternalCallback = callbackUrl;
       _flushPending();
       return;
@@ -186,27 +190,23 @@ class DeepLinkService {
   }
 
   // #***! вернулись из браузера после госуслуг
-  bool _isExternalCallback(Uri uri) {
-    if (!BuildProfile.digitalId) return false;
-    final scheme = uri.scheme.toLowerCase();
-    if (scheme != 'https' && scheme != 'http' && scheme != 'max') return false;
-    final host = uri.host.toLowerCase();
-    if (host != 'max.ru' && host != 'www.max.ru') return false;
-    return uri.queryParameters['externalCallback'] == '1';
-  }
-
   Future<void> _handleExternalCallback(BuildContext context, String url) async {
+    if (!_externalCallbacksInFlight.add(url)) return;
     try {
       final launch = await webAppModule.handleExternalCallback(url);
       if (!context.mounted) return;
-      await pushSwipeable(
+      final route = pushSwipeable<void>(
         context,
         (_) => DigitalIdWebScreen(initialLaunch: launch),
       );
+      _lastExternalCallback = url;
+      await route;
     } catch (e) {
       if (context.mounted) {
         showCustomNotification(context, 'Не удалось завершить Цифровой ID: $e');
       }
+    } finally {
+      _externalCallbacksInFlight.remove(url);
     }
   }
 

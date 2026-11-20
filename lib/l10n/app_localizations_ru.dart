@@ -944,7 +944,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get themeSettingsCustomTitle => 'Своя';
 
   @override
-  String get appearanceTitle => 'Внешний вид';
+  String get appearanceTitle => 'Студия оформления';
+
+  @override
+  String get appearanceSectionStyle => 'Стиль';
+
+  @override
+  String get appearanceSectionPanels => 'Панели';
+
+  @override
+  String get appearanceLivePreview => 'Предпросмотр';
+
+  @override
+  String get appearanceCustomColor => 'Свой цвет';
+
+  @override
+  String get appearanceHexColorError => 'Введите цвет в формате #RRGGBB';
 
   @override
   String get appearanceVisualStyleTitle => 'Визуал';
@@ -7883,11 +7898,18 @@ class AppLocalizationsRu extends AppLocalizations {
       'Выключено — только стабильные выпуски. Включено — также бета-версии и кандидаты в релиз.';
 
   @override
-  String get diagnosticsTitle => 'Отправлять диагностику';
+  String get diagnosticsTitle => 'Отправлять отчёты об ошибках';
 
   @override
   String get diagnosticsHint =>
       'Случайный ID установки, типы ошибок, стек ProMax, версия и ОС отправляются на сервер ProMax. Без переписки, телефона и токенов. Можно выключить в любой момент.';
+
+  @override
+  String get diagnosticsOperationsTitle => 'Отправлять диагностические события';
+
+  @override
+  String get diagnosticsOperationsHint =>
+      'Отправляет в ProMax этапы, результаты и время работы Цифрового ID, уведомлений iOS и подключения, а также версию приложения и ОС. Без данных аккаунта, ссылок и содержимого.';
 
   @override
   String get hubAnnouncements => 'Объявления ProMax';
@@ -7986,6 +8008,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Ссылка содержит только настройки ProMax, включая настройки приватности клиента. Любой получатель сможет их импортировать. История, аккаунт и ключи восстановления в ссылку не входят.';
 
   @override
+  String get settingsLinkUploadConsent =>
+      'Для короткой ссылки ProMax загружает настройки, включая параметры приватности, на свой сервер. Любой получатель ссылки сможет импортировать их в течение 30 дней. Если сервер недоступен, ProMax создаст ссылку с настройками внутри.';
+
+  @override
   String get settingsLinkCopy => 'Скопировать ссылку';
 
   @override
@@ -7999,7 +8025,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsLinkInvalid =>
-      'Ссылка повреждена, слишком длинная или не поддерживается этой версией ProMax';
+      'Ссылка повреждена, устарела, слишком длинная или не поддерживается этой версией ProMax';
 
   @override
   String get settingsLinkFailed => 'Не удалось передать настройки по ссылке';

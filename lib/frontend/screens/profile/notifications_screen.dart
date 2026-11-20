@@ -160,7 +160,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       children: [
                         SettingsNavTile(
                           icon: Symbols.notifications_active,
-                          label: l10n.proMaxNativePush,
+                          label: 'Web Push',
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(

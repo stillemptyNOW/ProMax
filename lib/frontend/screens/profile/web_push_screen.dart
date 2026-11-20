@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../backend/api.dart';
 import '../../../core/config/product_links.dart';
+import '../../../core/hub/diagnostics.dart';
 import '../../../core/utils/format.dart';
 import '../../../core/webpush/max_web_socket.dart';
 import '../../../core/webpush/web_push_service.dart';
@@ -124,13 +125,32 @@ class _WebPushScreenState extends State<WebPushScreen> {
     }
 
     final service = WebPushService.instance;
-    final track = await service.startQrAuth();
-    if (!mounted) return;
-    setState(() => _stage = _Stage.waiting);
+    final watch = Stopwatch()..start();
+    try {
+      final track = await service.startQrAuth();
+      if (!mounted) return;
+      setState(() => _stage = _Stage.waiting);
 
-    await accountModule.authorizeWebQrLogin(track.qrLink);
-    final step = await service.awaitApproval(track);
-    await _applyStep(step);
+      await accountModule.authorizeWebQrLogin(track.qrLink);
+      final step = await service.awaitApproval(track);
+      await _applyStep(step);
+      Diagnostics.recordOperation(
+        DiagnosticStage.webPushAuth,
+        step.needsPassword
+            ? DiagnosticOutcome.started
+            : DiagnosticOutcome.success,
+        elapsed: watch.elapsed,
+      );
+    } catch (_) {
+      if (mounted) setState(() => _stage = _Stage.intro);
+      await service.cancelAuth();
+      Diagnostics.recordOperation(
+        DiagnosticStage.webPushAuth,
+        DiagnosticOutcome.failed,
+        elapsed: watch.elapsed,
+      );
+      rethrow;
+    }
   });
 
   Future<void> _submitPassword() => _run(() async {

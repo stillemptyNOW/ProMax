@@ -1,6 +1,8 @@
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -13,6 +15,7 @@ class _Client extends HubClient {
   List<HubMessage> feed = const [];
   bool fail = false;
   final uploads = <Map<String, dynamic>>[];
+  final uploadPaths = <String>[];
   final cursors = <int>[];
   @override
   Future<List<HubMessage>> messages({int after = 0}) async {
@@ -28,6 +31,7 @@ class _Client extends HubClient {
     Object? body,
     String? token,
   }) async {
+    uploadPaths.add(path);
     uploads.add(jsonDecode(jsonEncode(body)) as Map<String, dynamic>);
     return {'accepted': 1};
   }
@@ -198,6 +202,70 @@ void main() {
       jsonEncode(client.uploads),
       isNot(contains('synthetic private body')),
     );
+  });
+
+  test('operation diagnostics require separate opt-in', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final client = _Client();
+    await Diagnostics.init(operationsClient: client);
+    Diagnostics.recordOperation(
+      DiagnosticStage.apnsRegistration,
+      DiagnosticOutcome.started,
+    );
+    await Diagnostics.flush();
+    expect(client.uploads, isEmpty);
+
+    await Diagnostics.setOperationsEnabled(true);
+    Diagnostics.recordOperation(
+      DiagnosticStage.apnsRegistration,
+      DiagnosticOutcome.success,
+      elapsed: const Duration(milliseconds: 123),
+      statusCode: 200,
+    );
+    await Diagnostics.flush();
+    expect(client.uploadPaths, ['/v1/telemetry/operations']);
+    final upload = client.uploads.single;
+    expect(upload.keys, ['events']);
+    expect((upload['events'] as List).single, {
+      'stage': 'apnsRegistration',
+      'outcome': 'success',
+      'duration_ms': 123,
+      'status_code': 200,
+      'version': '0.0.0+1',
+      'platform': 'ios',
+    });
+
+    Diagnostics.recordOperation(
+      DiagnosticStage.apnsRegistration,
+      DiagnosticOutcome.retry,
+    );
+    await Diagnostics.setOperationsEnabled(false);
+    await Diagnostics.flush();
+    expect(client.uploads, hasLength(1));
+  });
+
+  test('Hub requests report status without requests or credentials', () async {
+    final uploads = _Client();
+    await Diagnostics.init(operationsClient: uploads);
+    await Diagnostics.setOperationsEnabled(true);
+    final client = HubClient(
+      createClient: () =>
+          MockClient((_) async => http.Response('synthetic response', 503)),
+    );
+    await expectLater(
+      client.request(
+        '/v1/announcements?after=synthetic-private-query',
+        token: 'synthetic-private-token',
+      ),
+      throwsA(isA<HubException>()),
+    );
+    await Diagnostics.flush();
+    final event = uploads.uploads.single['events'][0] as Map;
+    expect(event['stage'], 'hubRequest');
+    expect(event['outcome'], 'failed');
+    expect(event['status_code'], 503);
+    expect(jsonEncode(event), isNot(contains('synthetic')));
   });
   test(
     'hub HTTP client sends JSON and bearer token without following redirects',

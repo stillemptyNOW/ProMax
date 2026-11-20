@@ -207,7 +207,7 @@ class ProMaxDesignScreen extends StatelessWidget {
                 ),
                 SettingsNavTile(
                   icon: Symbols.tune,
-                  label: 'Шрифты, пузыри, обои и панели',
+                  label: AppLocalizations.of(context)!.appearanceTitle,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const AppearanceScreen()),

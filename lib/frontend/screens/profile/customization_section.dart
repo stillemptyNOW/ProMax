@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
-
-import '../../../core/config/promax_atmosphere.dart';
-import '../../../core/config/promax_theme_presets.dart';
-import '../../widgets/promax_ui.dart';
-import 'atmosphere_screen.dart';
-import 'promax_design_screen.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/config/ios_release.dart';
+import '../../../core/config/promax_atmosphere.dart';
+import '../../../core/config/promax_theme_presets.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../widgets/promax_ui.dart';
 import '../../widgets/settings_card.dart';
 import 'app_icon_screen.dart';
 import 'appearance_screen.dart';
+import 'atmosphere_screen.dart';
 import 'chat_background_screen.dart';
 import 'font_settings_screen.dart';
 import 'message_actions_screen.dart';
+import 'promax_design_screen.dart';
 import 'theme_settings_screen.dart';
 
 class _CustomizationCategory {
@@ -47,11 +46,6 @@ class _CustomizationSectionState extends State<CustomizationSection> {
       icon: Symbols.dark_mode,
       title: (l10n) => l10n.themeSettingsTitle,
       builder: (context) => const ThemeSettingsScreen(),
-    ),
-    _CustomizationCategory(
-      icon: Symbols.styler,
-      title: (l10n) => l10n.appearanceTitle,
-      builder: (context) => const AppearanceScreen(),
     ),
     _CustomizationCategory(
       icon: Symbols.wallpaper,
@@ -94,9 +88,14 @@ class _CustomizationSectionState extends State<CustomizationSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const ProMaxSectionTitle('Оформление'),
+        ProMaxSectionTitle(l10n.proMaxSectionAppearance),
         SettingsCard(
           children: [
+            SettingsNavTile(
+              icon: Symbols.styler,
+              label: l10n.appearanceTitle,
+              onTap: () => _open((_) => const AppearanceScreen()),
+            ),
             ValueListenableBuilder<String?>(
               valueListenable: ProMaxThemePresets.selected,
               builder: (context, id, _) => SettingsNavTile(

@@ -7,7 +7,7 @@ import vm from 'node:vm';
 const root = resolve('server/web-push');
 const core = readFileSync(resolve(root, 'push-core.js'), 'utf8');
 function context(extra = {}) {
-  const value = vm.createContext({URL, URLSearchParams, Uint8Array, atob, Response, setTimeout, clearTimeout, ...extra});
+  const value = vm.createContext({URL, URLSearchParams, Uint8Array, atob, Response, AbortController, setTimeout, clearTimeout, ...extra});
   vm.runInContext(core, value);
   return value;
 }
@@ -37,11 +37,13 @@ function worker(prefix = '/') {
   const stores = new Map();
   const notifications = [];
   const opened = [];
+  const reports = [];
   const caches = {
     async open(name) {
       if (!stores.has(name)) stores.set(name, new Map());
       const store = stores.get(name);
       return {async addAll() {}, async match(key) {return store.get(key)?.clone();},
+        async delete(key) {return store.delete(key);},
         async put(key, value) {store.set(key, value.clone());}};
     },
     async keys() {return [...stores.keys()];},
@@ -52,15 +54,42 @@ function worker(prefix = '/') {
       pushManager: {async subscribe() {throw new Error('Synthetic subscription failure');}}},
     clients: {async matchAll() {return [];}, async openWindow(url) {opened.push(url);}, async claim() {}},
     addEventListener(name, action) {handlers.set(name, action);}, async skipWaiting() {}};
-  const value = context({self, caches, importScripts() {}});
+  const value = context({self, caches, importScripts() {}, async fetch(url, options) {
+    reports.push({url: url.toString(), options});
+    return new Response(null, {status: 202});
+  }});
   vm.runInContext(readFileSync(resolve(root, 'sw.js'), 'utf8'), value);
   async function dispatch(name, extra = {}) {
     let work;
     handlers.get(name)({waitUntil(promise) {work = promise;}, ...extra});
     await work;
   }
-  return {dispatch, notifications, stores, opened};
+  return {dispatch, notifications, stores, opened, reports};
 }
+
+test('a remote push reports only its display result, after explicit opt-in', async () => {
+  const value = worker('/notifications/');
+  const push = {data: {json: () => ({body: 'Synthetic private text', url: '/messages/c101'})}};
+  await value.dispatch('push', push);
+  assert.equal(value.reports.length, 0);
+
+  const changeConsent = enabled => value.dispatch('message', {
+    data: {type: 'set-diagnostics', enabled},
+    ports: [{postMessage(answer) {assert.equal(answer, enabled);}}],
+  });
+  await changeConsent(true);
+  await value.dispatch('push', push);
+  assert.equal(value.reports.length, 1);
+  assert.equal(value.reports[0].url, 'https://push.example.test/v1/telemetry/operations');
+  assert.equal(value.reports[0].options.credentials, 'omit');
+  assert.deepEqual(JSON.parse(value.reports[0].options.body), {
+    events: [{stage: 'webPushReceipt', outcome: 'success', platform: 'web', version: 'unknown'}],
+  });
+
+  await changeConsent(false);
+  await value.dispatch('push', push);
+  assert.equal(value.reports.length, 1);
+});
 
 test('notifications remain within their deployment subpath', async () => {
   const value = worker('/notifications/');

@@ -680,6 +680,12 @@ class _SettingsTabState extends State<SettingsTab>
                     margin: EdgeInsets.fromLTRB(16, 8, 16, 0),
                   ),
                 ),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+                    child: CustomizationSection(),
+                  ),
+                ),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -767,12 +773,6 @@ class _SettingsTabState extends State<SettingsTab>
                         );
                       },
                     ),
-                  ),
-                ),
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-                    child: CustomizationSection(),
                   ),
                 ),
                 SliverToBoxAdapter(

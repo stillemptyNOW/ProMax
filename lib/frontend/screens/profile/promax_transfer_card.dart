@@ -1,26 +1,25 @@
-import '../../../core/config/promax_settings_link.dart';
-import '../../../core/utils/share_origin.dart';
-import 'package:share_plus/share_plus.dart';
-import 'promax_import.dart';
-import 'settings_link_import.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/config/promax_archive.dart';
+import '../../../core/config/promax_settings_link.dart';
 import '../../../core/security/app_lock.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/save_file_as.dart';
+import '../../../core/utils/share_origin.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/confirm_dialog.dart';
-import '../../widgets/with_text_controller.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/settings_card.dart';
+import '../../widgets/with_text_controller.dart';
+import 'promax_import.dart';
+import 'settings_link_import.dart';
 
 class ProMaxTransferCard extends StatefulWidget {
   const ProMaxTransferCard({super.key});
@@ -84,9 +83,16 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      final link = await ProMaxSettingsLink.export();
-      if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
+      final confirmed = await showConfirmDialog(
+        context,
+        title: l10n.settingsLinkTitle,
+        message: l10n.settingsLinkUploadConsent,
+        confirmLabel: l10n.settingsLinkExport,
+      );
+      if (!confirmed || !mounted || AppLock.instance.locked.value) return;
+      final link = await ProMaxSettingsLink.export();
+      if (!mounted || AppLock.instance.locked.value) return;
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(

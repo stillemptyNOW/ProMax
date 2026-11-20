@@ -1823,8 +1823,38 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceTitle.
   ///
   /// In en, this message translates to:
-  /// **'Appearance'**
+  /// **'Appearance Studio'**
   String get appearanceTitle;
+
+  /// No description provided for @appearanceSectionStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style'**
+  String get appearanceSectionStyle;
+
+  /// No description provided for @appearanceSectionPanels.
+  ///
+  /// In en, this message translates to:
+  /// **'Panels'**
+  String get appearanceSectionPanels;
+
+  /// No description provided for @appearanceLivePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Live preview'**
+  String get appearanceLivePreview;
+
+  /// No description provided for @appearanceCustomColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom color'**
+  String get appearanceCustomColor;
+
+  /// No description provided for @appearanceHexColorError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a color in #RRGGBB format'**
+  String get appearanceHexColorError;
 
   /// No description provided for @appearanceVisualStyleTitle.
   ///
@@ -13871,7 +13901,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Send diagnostics'**
+  /// **'Send crash diagnostics'**
   String get diagnosticsTitle;
 
   /// No description provided for @diagnosticsHint.
@@ -13879,6 +13909,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A random installation ID, error types, ProMax stack frames, version and OS are sent to the ProMax server. No chats, phone numbers or tokens. You can turn this off at any time.'**
   String get diagnosticsHint;
+
+  /// No description provided for @diagnosticsOperationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share troubleshooting events'**
+  String get diagnosticsOperationsTitle;
+
+  /// No description provided for @diagnosticsOperationsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Digital ID, iOS notification and connection outcomes and timings to ProMax, along with the app version and OS. Events contain no account data, URLs or content.'**
+  String get diagnosticsOperationsHint;
 
   /// No description provided for @hubAnnouncements.
   ///
@@ -14054,6 +14096,12 @@ abstract class AppLocalizations {
   /// **'The link contains only ProMax settings, including client privacy preferences. Anyone with the link can import them. History, accounts and recovery keys are not included.'**
   String get settingsLinkPrivacy;
 
+  /// No description provided for @settingsLinkUploadConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'To create a short link, ProMax uploads your settings, including privacy preferences, to its server. Anyone with the link can import them for 30 days. If the server is unavailable, ProMax creates a link with the settings in the link itself.'**
+  String get settingsLinkUploadConsent;
+
   /// No description provided for @settingsLinkCopy.
   ///
   /// In en, this message translates to:
@@ -14081,7 +14129,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLinkInvalid.
   ///
   /// In en, this message translates to:
-  /// **'The link is invalid, too long or unsupported by this version of ProMax'**
+  /// **'The link is invalid, expired, too long or unsupported by this version of ProMax'**
   String get settingsLinkInvalid;
 
   /// No description provided for @settingsLinkFailed.

@@ -4,7 +4,7 @@ import vm from 'node:vm';
 
 const script = fs.readFileSync('server/promax-hub/settings-link.js', 'utf8');
 
-function run(hash, copyFails = false) {
+function run(hash, copyFails = false, pathname = '/settings', search = '') {
   const elements = new Map(['open', 'copy', 'status'].map(id => [id, {
     hidden: true,
     textContent: '',
@@ -13,7 +13,7 @@ function run(hash, copyFails = false) {
   }]));
   const copied = [];
   vm.runInNewContext(script, {
-    location: {hash, href: 'https://boriskino.qd.je/settings' + hash},
+    location: {hash, pathname, search, href: 'https://boriskino.qd.je' + pathname + search + hash},
     document: {getElementById: id => elements.get(id)},
     navigator: {clipboard: {async writeText(value) {
       if (copyFails) throw new Error('synthetic clipboard denial');
@@ -28,6 +28,16 @@ assert.equal(valid.elements.get('open').href, 'promax://settings#v1.c3ludGhldGlj
 assert.equal(valid.elements.get('open').hidden, false);
 await valid.elements.get('copy').listeners.click();
 assert.deepEqual(valid.copied, ['https://proma-x.xyz/settings#v1.c3ludGhldGlj']);
+
+const shortCode = 'Abcdef0123456789_-abcd';
+const short = run('#' + shortCode, false, '/s');
+assert.equal(short.elements.get('open').href, 'promax://settings#v2.' + shortCode);
+await short.elements.get('copy').listeners.click();
+assert.deepEqual(short.copied, ['https://proma-x.xyz/s#' + shortCode]);
+for (const invalid of [run('#too-short', false, '/s'), run('#' + shortCode, false, '/s', '?x=1')]) {
+  assert.equal(invalid.elements.get('open').hidden, true);
+  assert.equal(invalid.elements.get('copy').hidden, true);
+}
 
 for (const hash of ['', '#v2.synthetic', '#v1.<script>', '#v1.' + 'a'.repeat(16384)]) {
   const invalid = run(hash);

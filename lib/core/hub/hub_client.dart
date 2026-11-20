@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../config/product_links.dart';
+import 'diagnostics.dart';
 import 'hub_content.dart';
 
 class HubException implements Exception {
@@ -53,10 +57,16 @@ class HubDraft {
 }
 
 class HubClient {
-  HubClient({Uri? baseUri, http.Client Function()? createClient})
-    : baseUri = baseUri ?? Uri.parse(ProductLinks.website),
-      _createClient = createClient ?? http.Client.new;
+  HubClient({
+    Uri? baseUri,
+    http.Client Function()? createClient,
+    this.maxResponseBytes = 4 * 1024 * 1024,
+    this.requestTimeout = timeout,
+  }) : baseUri = baseUri ?? Uri.parse(ProductLinks.website),
+       _createClient = createClient ?? http.Client.new;
   final Uri baseUri;
+  final int maxResponseBytes;
+  final Duration requestTimeout;
   final http.Client Function() _createClient;
   final Set<http.Client> _active = {};
   void cancel() {
@@ -67,6 +77,7 @@ class HubClient {
   }
 
   static const timeout = Duration(seconds: 12);
+  static final _productUri = Uri.parse(ProductLinks.website);
 
   Future<Map<String, dynamic>> request(
     String path, {
@@ -76,30 +87,60 @@ class HubClient {
   }) async {
     final client = _createClient();
     _active.add(client);
+    Stopwatch? stopwatch;
+    int? statusCode;
+    var outcome = DiagnosticOutcome.failed;
     try {
-      final request = http.Request(method, baseUri.resolve(path))
-        ..followRedirects = false;
+      final uri = baseUri.resolve(path);
+      if (Diagnostics.operationsEnabled.value &&
+          uri.scheme == _productUri.scheme &&
+          uri.host == _productUri.host &&
+          uri.port == _productUri.port &&
+          const {
+            '/health',
+            '/v1/announcements',
+            '/v1/releases',
+            '/v1/downloads',
+          }.contains(uri.path)) {
+        stopwatch = Stopwatch()..start();
+      }
+      final request = http.Request(method, uri)..followRedirects = false;
       request.headers['Accept'] = 'application/json';
       if (token != null) request.headers['Authorization'] = 'Bearer $token';
       if (body != null) {
         request.headers['Content-Type'] = 'application/json';
         request.body = jsonEncode(body);
       }
-      final response = await client.send(request).timeout(timeout);
+      final response = await client.send(request).timeout(requestTimeout);
+      statusCode = response.statusCode;
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HubException(response.statusCode);
       }
       final bytes = <int>[];
-      await for (final chunk in response.stream.timeout(timeout)) {
+      await for (final chunk in response.stream.timeout(requestTimeout)) {
+        if (bytes.length + chunk.length > maxResponseBytes) {
+          throw const HubException(413);
+        }
         bytes.addAll(chunk);
-        if (bytes.length > 4 * 1024 * 1024) throw const HubException(413);
       }
       final decoded = jsonDecode(utf8.decode(bytes));
       if (decoded is! Map<String, dynamic>) throw const HubException(502);
+      outcome = DiagnosticOutcome.success;
       return decoded;
+    } on TimeoutException {
+      outcome = DiagnosticOutcome.timeout;
+      rethrow;
     } finally {
       _active.remove(client);
       client.close();
+      if (stopwatch != null) {
+        Diagnostics.recordOperation(
+          DiagnosticStage.hubRequest,
+          outcome,
+          elapsed: stopwatch.elapsed,
+          statusCode: statusCode,
+        );
+      }
     }
   }
 

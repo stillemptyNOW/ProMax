@@ -34,6 +34,17 @@ runuser -u promax-hub -- /opt/promax-hub/venv/bin/python manage.py issue-code > 
 
 До 16 событий в локальной очереди; сервер принимает только разрешённые поля и ограничивает размер и частоту запросов. Это диагностические сведения от недоверенных клиентов, не доказательство подлинности устройства. Срок хранения 14 дней, общий предел 100000 событий.
 
+Отдельный переключатель «Отправлять диагностические события» в настройках ProMax выключен по умолчанию. После включения приложение отправляет до 16 событий за запрос на `POST /v1/telemetry/operations`. Очередь приложения хранится только в памяти и очищается при выключении. События содержат этап и результат операции Цифрового ID, уведомлений или подключения, длительность и HTTP-статус (при наличии), версию приложения и ОС. У веб-приложения уведомлений свой переключатель. Оно может отправлять результат показа уведомления без текста и ссылки. Эти отчёты не содержат ID установки. Хранилище и срок хранения общие с отчётами об ошибках.
+
+Сводка группирует события по этапу, результату, версии, ОС и HTTP-статусу. Для каждой группы доступны число событий, число замеров, средняя и максимальная длительность в миллисекундах. Через HTTP сводка доступна с токеном администратора на `GET /v1/admin/telemetry/operations` с параметрами `hours`, `stage` и `limit`. Для уведомлений `--stage webPushReceipt` показывает отчёты от устройств, где включена диагностика и сервис-воркер смог отправить результат.
+
+Пример сводки на сервере за последние сутки:
+
+```sh
+cd /opt/promax-hub/current
+runuser -u promax-hub -- /opt/promax-hub/venv/bin/python manage.py operations --hours 24 --stage digitalIdCallback
+```
+
 Прочитать последние диагностические записи:
 
 ```sh
@@ -52,6 +63,8 @@ curl -f https://boriskino.qd.je/health
 
 ## Beta 13 additions
 
-`GET /settings` serves the settings-link landing page. The payload is kept in the URL fragment and never sent to this service. No settings database or upload endpoint is used. The page opens the registered `promax://settings` scheme; the app validates and confirms imports. `/.well-known/assetlinks.json` associates the permanent ProMax Android signing certificate with the domain.
+`GET /s` serves short links in the form `https://proma-x.xyz/s#<code>`. The app sends allowlisted preferences to `POST /v1/settings-links` and resolves the random 128-bit code with `GET /v1/settings-links/{code}`. Links are valid for 30 days. SQLite stores the code digest and settings payload. Expired records are pruned on creation and by `manage.py cleanup`. The Hub bounds creation by client IP, overall request volume, and active link count. Link API responses use `Cache-Control: no-store`.
+
+`GET /settings` continues to serve the portable `#v1.` links, whose payload stays in the URL fragment. Both landing pages open the registered `promax://settings` scheme. The app validates the settings and asks for confirmation before applying them. `/.well-known/assetlinks.json` associates the permanent ProMax Android signing certificate with the domain.
 
 `POST /v1/performance` accepts manually submitted aggregate frame reports when client diagnostics are enabled. It records the random installation ID, version, OS, effect mode/tier, display refresh rate and bounded numeric frame totals/timings. Extra fields are rejected; reports are limited to six per installation per hour and use the existing 14-day telemetry cleanup. They appear in `manage.py logs` with `kind=performance`.

@@ -47,6 +47,9 @@ class HubTests(unittest.TestCase):
         self.assertEqual(self.client.post("/v1/admin/publish", json={"revision": 1}).status_code, 401)
 
     def test_notifications_static_app_is_separate_from_download_landing(self):
+        alias = self.client.get("/push", follow_redirects=False)
+        self.assertEqual(alias.status_code, 307)
+        self.assertEqual(alias.headers["location"], "/notifications/")
         response = self.client.get("/notifications/")
         self.assertEqual(response.status_code, 200)
         self.assertIn("Уведомления MAX", response.text)
@@ -141,6 +144,49 @@ class HubTests(unittest.TestCase):
         del event["text"]
         event["frames"] = ["/home/synthetic-user/secret"]
         self.assertEqual(self.client.post("/v1/telemetry", json=body).status_code, 422)
+
+    def test_operations_accept_only_bounded_allowlisted_fields(self):
+        event = {"stage": "digitalIdCallback", "outcome": "success",
+                 "duration_ms": 230, "version": "1.1.0+120", "platform": "ios"}
+        endpoint = "/v1/telemetry/operations"
+        body = {"events": [event]}
+        self.assertEqual(self.client.post(endpoint, json=body).status_code, 202)
+        for patch in ({"url": "https://synthetic.example/"}, {"outcome": "private message"},
+                      {"stage": "account123"}, {"duration_ms": 3600001},
+                      {"duration_ms": "230"}, {"status_code": 999}):
+            rejected = {"events": [{**event, **patch}]}
+            response = self.client.post(endpoint, json=rejected)
+            self.assertEqual(response.status_code, 422)
+            self.assertEqual(response.json(), {"detail": "invalid_operations"})
+        response = self.client.post(endpoint, content=iter([b" " * 4096] * 3))
+        self.assertEqual(response.status_code, 413)
+        with self.app.state.hub.db() as db:
+            rows = db.execute("SELECT installation, event FROM telemetry").fetchall()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["installation"], "")
+
+    def test_operations_summary_is_admin_only_and_groups_timed_results(self):
+        endpoint = "/v1/admin/telemetry/operations"
+        self.assertEqual(self.client.get(endpoint).status_code, 401)
+        event = {"stage": "apnsRegistration", "outcome": "failed",
+                 "status_code": 503, "version": "1.1.0+120", "platform": "ios"}
+        body = {"events": [{**event, "duration_ms": 100},
+                           {**event, "duration_ms": 300}, event]}
+        self.assertEqual(self.client.post("/v1/telemetry/operations", json=body).status_code, 202)
+        response = self.client.get(endpoint, headers=self.admin(), params={"hours": 12})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"hours": 12, "limit": 200, "groups": [{
+            **event, "count": 3, "timed": 2, "mean_duration_ms": 200,
+            "max_duration_ms": 300,
+        }]})
+
+    def test_web_push_operations_require_no_installation_identifier(self):
+        body = {"events": [{"stage": stage, "outcome": "success", "version": "unknown", "platform": "web"}
+                           for stage in ("webPushAuth", "webPushLink", "webPushReceipt", "webPushSubscription")]}
+        self.assertEqual(self.client.post("/v1/telemetry/operations", json=body).status_code, 202)
+        response = self.client.get("/v1/admin/telemetry/operations", headers=self.admin(),
+                                   params={"stage": "webPushReceipt"})
+        self.assertEqual([group["stage"] for group in response.json()["groups"]], ["webPushReceipt"])
 
 
 if __name__ == "__main__":

@@ -36,15 +36,29 @@ class DigitalIdWebScreen extends StatefulWidget {
 }
 
 class _DigitalIdWebScreenState extends State<DigitalIdWebScreen> {
+  WebAppLaunch? _callbackLaunch;
   bool _initialLaunchUsed = false;
 
   Future<WebAppLaunch> _loadLaunch() async {
     if (!_initialLaunchUsed) {
       _initialLaunchUsed = true;
       final initial = widget.initialLaunch;
-      if (initial != null) return initial;
+      if (initial != null) {
+        _callbackLaunch = initial;
+        return initial;
+      }
+    }
+    final callbackLaunch = _callbackLaunch;
+    if (callbackLaunch != null) {
+      return webAppModule.reloadDigitalIdLaunch(callbackLaunch);
     }
     return webAppModule.fetchDigitalId();
+  }
+
+  Future<WebAppLaunch> _completeExternalCallback(String url) async {
+    final launch = await webAppModule.handleExternalCallback(url);
+    _callbackLaunch = launch;
+    return launch;
   }
 
   @override
@@ -56,7 +70,7 @@ class _DigitalIdWebScreenState extends State<DigitalIdWebScreen> {
       recoverTechnicalError: true,
       mobileIdVerifier: digitalIdModule.fetchMobileIdVerification,
       loader: _loadLaunch,
-      onExternalCallback: webAppModule.handleExternalCallback,
+      onExternalCallback: _completeExternalCallback,
       onConsoleMessage: (controller, consoleMessage) {
         final lvl = consoleMessage.messageLevel.toString().toUpperCase();
         if (kDebugMode) logger.i('[DID] console level: $lvl');

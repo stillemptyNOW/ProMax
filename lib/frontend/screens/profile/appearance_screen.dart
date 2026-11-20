@@ -1,28 +1,36 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../widgets/color_wheel_picker.dart';
-import '../../widgets/connection_status.dart';
-
+import '../../../core/config/app_accent.dart';
 import '../../../core/config/app_bubble_behavior.dart';
-import '../../../core/config/app_design.dart';
 import '../../../core/config/app_bubble_shape.dart';
-import '../../../core/config/app_pill_gradient.dart';
-import '../../../core/config/app_visual_style.dart';
 import '../../../core/config/app_chat_chrome.dart';
 import '../../../core/config/app_composer_background.dart';
 import '../../../core/config/app_composer_style.dart';
+import '../../../core/config/app_design.dart';
 import '../../../core/config/app_nav_pill_style.dart';
+import '../../../core/config/app_pill_gradient.dart';
 import '../../../core/config/app_spectrum_background.dart';
+import '../../../core/config/app_visual_style.dart';
 import '../../../core/utils/bubble_radius.dart';
 import '../../../core/utils/debouncer.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart';
+import '../../theme/promax_theme.dart';
+import '../../widgets/color_wheel_picker.dart';
+import '../../widgets/connection_status.dart';
 import '../../widgets/liquid_glass.dart';
 import '../../widgets/settings_card.dart';
-import '../../../core/config/app_shape.dart';
-import '../../theme/promax_theme.dart';
+
+part 'appearance_preview.dart';
+
+enum _Section { style, chats, panels }
+
+String _hex(Color color) =>
+    '#${(color.toARGB32() & 0xffffff).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
 class AppearanceScreen extends StatefulWidget {
   const AppearanceScreen({super.key});
@@ -32,68 +40,93 @@ class AppearanceScreen extends StatefulWidget {
 }
 
 class _AppearanceScreenState extends State<AppearanceScreen> {
-  static const _fallback = Color(0xFFC1C4FF);
-
-  final ValueNotifier<Color> _color = ValueNotifier(_fallback);
-  final ValueNotifier<bool> _isSystem = ValueNotifier(false);
-  bool _initialized = false;
-  bool _accentExpanded = false;
+  final _accent = ValueNotifier<Color?>(null);
   final _debounce = Debouncer(const Duration(milliseconds: 350));
+  ProMaxAppState? _app;
+  var _section = _Section.style;
+  var _editingColor = false;
+  var _accentPending = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_initialized) {
-      _initialized = true;
-      final seed = ProMaxApp.stateOf(context)?.accentSeed.value;
-      _isSystem.value = seed == null;
-      _color.value = seed ?? _fallback;
+    final app = ProMaxApp.stateOf(context);
+    if (app != _app) {
+      _app = app;
+      _accent.value = app?.accentSeed.value;
+    }
+  }
+
+  void _commitAccent() {
+    _debounce.cancel();
+    if (!_accentPending) return;
+    _accentPending = false;
+    final app = _app;
+    if (app != null && app.mounted) {
+      unawaited(app.applyAccentColor(_accent.value));
+    }
+  }
+
+  void _changeAccent(Color? value, {bool dragging = false}) {
+    if (_accent.value == value) return;
+    _accent.value = value;
+    _accentPending = true;
+    if (dragging) {
+      _debounce.run(_commitAccent);
+    } else {
+      Haptics.selection();
+      _commitAccent();
     }
   }
 
   @override
   void dispose() {
+    _commitAccent();
     _debounce.dispose();
-    _color.dispose();
-    _isSystem.dispose();
+    _accent.dispose();
     super.dispose();
-  }
-
-  void _onColorChanged(Color color) {
-    _color.value = color;
-    _isSystem.value = false;
-    _debounce.run(() {
-      if (mounted) ProMaxApp.stateOf(context)?.applyAccentColor(color);
-    });
-  }
-
-  void _resetToSystem() {
-    Haptics.selection();
-    _debounce.cancel();
-    _isSystem.value = true;
-    _color.value = _fallback;
-    ProMaxApp.stateOf(context)?.applyAccentColor(null);
-  }
-
-  void _toggleAccentExpanded() {
-    Haptics.tap();
-    setState(() => _accentExpanded = !_accentExpanded);
-  }
-
-  void _onStyleChanged(BubbleStyle style) {
-    Haptics.selection();
-    AppBubbleShape.save(style);
-  }
-
-  void _onBehaviorChanged(BubbleBehavior behavior) {
-    Haptics.selection();
-    AppBubbleBehavior.save(behavior);
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+    final preview = _AppearancePreview(accent: _accent);
+    final sections = {
+      _Section.style: (l10n.appearanceSectionStyle, Symbols.palette),
+      _Section.chats: (l10n.chatListNavChats, Symbols.chat_bubble),
+      _Section.panels: (l10n.appearanceSectionPanels, Symbols.layers),
+    };
+    final controls = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            for (final MapEntry(key: section, value: (label, icon))
+                in sections.entries)
+              ChoiceChip(
+                avatar: Icon(icon, size: 18),
+                label: Text(label),
+                selected: _section == section,
+                showCheckmark: false,
+                onSelected: (selected) {
+                  if (!selected) return;
+                  Haptics.selection();
+                  setState(() => _section = section);
+                },
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...switch (_section) {
+          _Section.style => _styleControls(l10n),
+          _Section.chats => _chatControls(l10n),
+          _Section.panels => _panelControls(l10n),
+        },
+      ],
+    );
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -103,64 +136,253 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
       ),
       body: SafeArea(
         top: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: _PreviewSection(color: _color, isSystem: _isSystem),
-            ),
-            Expanded(
-              child: ListView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                children: [
-                  SettingsCard(
-                    children: [
-                      ValueListenableBuilder<bool>(
-                        valueListenable: AppDesign.classic,
-                        builder: (context, classic, _) => SettingsToggleTile(
-                          icon: Symbols.design_services,
-                          label: l10n.appClassicDesignTitle,
-                          subtitle: l10n.appClassicDesignHint,
-                          value: classic,
-                          onChanged: AppDesign.saveClassic,
-                        ),
-                      ),
-                    ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 780;
+            return ListView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1040),
+                    child: wide
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: preview),
+                              const SizedBox(width: 24),
+                              Expanded(flex: 2, child: controls),
+                            ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              preview,
+                              const SizedBox(height: 16),
+                              controls,
+                            ],
+                          ),
                   ),
-                  const SizedBox(height: 12),
-                  _ColorPickerCard(
-                    color: _color,
-                    isSystem: _isSystem,
-                    expanded: _accentExpanded,
-                    onToggle: _toggleAccentExpanded,
-                    onColorChanged: _onColorChanged,
-                    onReset: _resetToSystem,
-                  ),
-                  const SizedBox(height: 12),
-                  _BubbleShapeCard(onChanged: _onStyleChanged),
-                  const SizedBox(height: 12),
-                  _BubbleBehaviorCard(onChanged: _onBehaviorChanged),
-                  const SizedBox(height: 12),
-                  const _VisualStyleCard(),
-                  const SizedBox(height: 12),
-                  const _ChatChromeCard(),
-                  const SizedBox(height: 12),
-                  const _ComposerBarCard(),
-                  const SizedBox(height: 12),
-                  const _NavPillStyleCard(),
-                  const SizedBox(height: 12),
-                  const _GradientToggleCard(),
-                  const SizedBox(height: 12),
-                  const _SpectrumToggleCard(),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
+
+  List<Widget> _styleControls(AppLocalizations l10n) => [
+    _Panel(
+      title: l10n.appearanceAccentColorTitle,
+      subtitle: l10n.appearanceAccentColorSubtitle,
+      child: ValueListenableBuilder(
+        valueListenable: _accent,
+        builder: (context, accent, _) {
+          final color = accent ?? Theme.of(context).colorScheme.primary;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final preset in AppAccent.presets)
+                    _AccentSwatch(
+                      color: preset.seed,
+                      label: preset.seed == null
+                          ? l10n.appearanceAccentColorSystem
+                          : _hex(preset.seed!),
+                      selected: accent?.toARGB32() == preset.seed?.toARGB32(),
+                      onTap: () => _changeAccent(preset.seed),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => setState(() => _editingColor = !_editingColor),
+                icon: Icon(
+                  _editingColor ? Symbols.expand_less : Symbols.palette,
+                  size: 18,
+                ),
+                label: Text(
+                  accent == null
+                      ? l10n.appearanceCustomColor
+                      : "${l10n.appearanceCustomColor} · ${_hex(accent)}",
+                ),
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                alignment: Alignment.topCenter,
+                child: !_editingColor
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Column(
+                          children: [
+                            ColorWheelPicker(
+                              color: color,
+                              onChanged: (color) =>
+                                  _changeAccent(color, dragging: true),
+                            ),
+                            const SizedBox(height: 16),
+                            _HexColorField(
+                              color: color,
+                              onApply: _changeAccent,
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    ),
+    _Panel(
+      title: l10n.appearanceVisualStyleTitle,
+      subtitle: l10n.appearanceVisualStyleSubtitle,
+      child: _Choices(
+        setting: AppVisualStyle.current,
+        fallback: LiquidGlass.isSupported ? null : VisualStyle.glossy,
+        options: {
+          VisualStyle.materialYou: l10n.appearanceVisualStyleMaterialYou,
+          VisualStyle.glossy: l10n.appearanceVisualStyleGlossy,
+          if (LiquidGlass.isSupported)
+            VisualStyle.liquidGlass: l10n.appearanceVisualStyleLiquidGlass,
+        },
+        onSelected: _applyVisualStyle,
+      ),
+    ),
+    SettingsCard(
+      children: [
+        _Toggle(
+          icon: Symbols.design_services,
+          title: l10n.appClassicDesignTitle,
+          subtitle: l10n.appClassicDesignHint,
+          setting: AppDesign.classic,
+          onChanged: AppDesign.saveClassic,
+        ),
+        _Toggle(
+          icon: Symbols.graphic_eq,
+          title: l10n.appearanceSpectrumTitle,
+          subtitle: l10n.appearanceSpectrumSubtitle,
+          setting: AppSpectrumBackground.current,
+          onChanged: AppSpectrumBackground.save,
+        ),
+      ],
+    ),
+  ];
+
+  List<Widget> _chatControls(AppLocalizations l10n) => [
+    _Panel(
+      title: l10n.appearanceBubbleShapeTitle,
+      subtitle: l10n.appearanceBubbleShapeSubtitle,
+      child: _Choices(
+        setting: AppBubbleShape.current,
+        options: {
+          BubbleStyle.promax: 'ProMax',
+          BubbleStyle.mobile: l10n.appearanceBubbleShapeMobile,
+          BubbleStyle.desktop: l10n.appearanceBubbleShapeDesktop,
+        },
+        onSelected: AppBubbleShape.save,
+      ),
+    ),
+    _Panel(
+      title: l10n.appearanceBubbleBehaviorTitle,
+      subtitle: l10n.appearanceBubbleBehaviorSubtitle,
+      child: _Choices(
+        setting: AppBubbleBehavior.current,
+        options: {
+          BubbleBehavior.mutable: l10n.appearanceBubbleBehaviorMutable,
+          BubbleBehavior.immutable: l10n.appearanceBubbleBehaviorImmutable,
+        },
+        onSelected: AppBubbleBehavior.save,
+      ),
+    ),
+  ];
+
+  List<Widget> _panelControls(AppLocalizations l10n) => [
+    _Panel(
+      title: l10n.appearanceChatChromeTitle,
+      subtitle: l10n.appearanceChatChromeSubtitle,
+      child: _Choices(
+        setting: AppChatChrome.current,
+        fallback: LiquidGlass.isSupported ? null : ChatChromeStyle.transparent,
+        options: {
+          ChatChromeStyle.color: l10n.appearanceChatChromeColor,
+          ChatChromeStyle.blur: l10n.appearanceChatChromeBlur,
+          ChatChromeStyle.none: l10n.appearanceChatChromeNone,
+          ChatChromeStyle.transparent: l10n.appearanceChatChromeTransparent,
+          if (LiquidGlass.isSupported)
+            ChatChromeStyle.liquidGlass: l10n.appearanceGlassMaterial,
+        },
+        onSelected: AppChatChrome.save,
+      ),
+    ),
+    _Panel(
+      title: l10n.appearanceComposerTitle,
+      subtitle: l10n.appearanceComposerSubtitle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Choices(
+            setting: AppComposerStyle.current,
+            options: {
+              ComposerStyle.auto: l10n.appearanceStyleAuto,
+              ComposerStyle.glossy: l10n.appearanceVisualStyleGlossy,
+              ComposerStyle.materialYou: l10n.appearanceVisualStyleMaterialYou,
+            },
+            onSelected: AppComposerStyle.save,
+          ),
+          const Divider(height: 20),
+          _Choices(
+            setting: AppComposerBackground.current,
+            fallback: LiquidGlass.isSupported
+                ? null
+                : ComposerBackground.frostBlur,
+            options: {
+              ComposerBackground.standard:
+                  l10n.appearanceComposerBackgroundStandard,
+              ComposerBackground.frostBlur:
+                  l10n.appearanceComposerBackgroundFrost,
+              if (LiquidGlass.isSupported)
+                ComposerBackground.liquidGlass: l10n.appearanceGlassMaterial,
+            },
+            onSelected: AppComposerBackground.save,
+          ),
+        ],
+      ),
+    ),
+    _Panel(
+      title: l10n.appearanceNavPillTitle,
+      subtitle: l10n.appearanceNavPillSubtitle,
+      child: _Choices(
+        setting: AppNavPillStyle.current,
+        fallback: LiquidGlass.isSupported ? null : NavPillStyle.frostBlur,
+        options: {
+          NavPillStyle.auto: l10n.appearanceStyleAuto,
+          NavPillStyle.glossy: l10n.appearanceNavPillGlossy,
+          NavPillStyle.frostBlur: l10n.appearanceNavPillFrost,
+          if (LiquidGlass.isSupported)
+            NavPillStyle.liquidGlass: l10n.appearanceGlassMaterial,
+        },
+        onSelected: AppNavPillStyle.save,
+      ),
+    ),
+    SettingsCard(
+      children: [
+        _Toggle(
+          icon: Symbols.blur_on,
+          title: l10n.appearanceGradientTitle,
+          subtitle: l10n.appearanceGradientSubtitle,
+          setting: AppPillGradient.current,
+          onChanged: AppPillGradient.save,
+        ),
+      ],
+    ),
+  ];
 }
 
 void _applyVisualStyle(VisualStyle style) {
@@ -184,845 +406,238 @@ void _applyVisualStyle(VisualStyle style) {
   }
 }
 
-class _VisualStyleCard extends StatelessWidget {
-  const _VisualStyleCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    return SettingsPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.appearanceVisualStyleTitle,
-            style: TextStyle(
-              color: cs.onSurface,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.appearanceVisualStyleSubtitle,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-          ),
-          const SizedBox(height: 16),
-          ValueListenableBuilder<VisualStyle>(
-            valueListenable: AppVisualStyle.current,
-            builder: (context, current, _) {
-              final selectable =
-                  current == VisualStyle.liquidGlass && !LiquidGlass.isSupported
-                  ? VisualStyle.glossy
-                  : current;
-              return SegmentedButton<VisualStyle>(
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(
-                    value: VisualStyle.materialYou,
-                    label: Text(l10n.appearanceVisualStyleMaterialYou),
-                  ),
-                  ButtonSegment(
-                    value: VisualStyle.glossy,
-                    label: Text(l10n.appearanceVisualStyleGlossy),
-                  ),
-                  if (LiquidGlass.isSupported)
-                    ButtonSegment(
-                      value: VisualStyle.liquidGlass,
-                      label: Text(l10n.appearanceVisualStyleLiquidGlass),
-                    ),
-                ],
-                selected: {selectable},
-                onSelectionChanged: (set) {
-                  if (set.isNotEmpty) {
-                    Haptics.selection();
-                    _applyVisualStyle(set.first);
-                  }
-                },
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChatChromeCard extends StatelessWidget {
-  const _ChatChromeCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    return SettingsPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.appearanceChatChromeTitle,
-            style: TextStyle(
-              color: cs.onSurface,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.appearanceChatChromeSubtitle,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-          ),
-          const SizedBox(height: 16),
-          ValueListenableBuilder<ChatChromeStyle>(
-            valueListenable: AppChatChrome.current,
-            builder: (context, current, _) {
-              final selectable =
-                  current == ChatChromeStyle.liquidGlass &&
-                      !LiquidGlass.isSupported
-                  ? ChatChromeStyle.transparent
-                  : current;
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SegmentedButton<ChatChromeStyle>(
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(
-                      value: ChatChromeStyle.color,
-                      label: Text(l10n.appearanceChatChromeColor),
-                    ),
-                    ButtonSegment(
-                      value: ChatChromeStyle.blur,
-                      label: Text(l10n.appearanceChatChromeBlur),
-                    ),
-                    ButtonSegment(
-                      value: ChatChromeStyle.none,
-                      label: Text(l10n.appearanceChatChromeNone),
-                    ),
-                    ButtonSegment(
-                      value: ChatChromeStyle.transparent,
-                      label: Text(l10n.appearanceChatChromeTransparent),
-                    ),
-                    if (LiquidGlass.isSupported)
-                      ButtonSegment(
-                        value: ChatChromeStyle.liquidGlass,
-                        label: Text(l10n.appearanceGlassMaterial),
-                      ),
-                  ],
-                  selected: {selectable},
-                  onSelectionChanged: (set) {
-                    if (set.isNotEmpty) {
-                      Haptics.selection();
-                      AppChatChrome.save(set.first);
-                    }
-                  },
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ComposerBarCard extends StatelessWidget {
-  const _ComposerBarCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    return SettingsPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.appearanceComposerTitle,
-            style: TextStyle(
-              color: cs.onSurface,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.appearanceComposerSubtitle,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-          ),
-          const SizedBox(height: 16),
-          ValueListenableBuilder<ComposerStyle>(
-            valueListenable: AppComposerStyle.current,
-            builder: (context, current, _) {
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SegmentedButton<ComposerStyle>(
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(
-                      value: ComposerStyle.auto,
-                      label: Text(l10n.appearanceStyleAuto),
-                    ),
-                    ButtonSegment(
-                      value: ComposerStyle.glossy,
-                      label: Text(l10n.appearanceVisualStyleGlossy),
-                    ),
-                    ButtonSegment(
-                      value: ComposerStyle.materialYou,
-                      label: Text(l10n.appearanceVisualStyleMaterialYou),
-                    ),
-                  ],
-                  selected: {current},
-                  onSelectionChanged: (set) {
-                    if (set.isNotEmpty) {
-                      Haptics.selection();
-                      AppComposerStyle.save(set.first);
-                    }
-                  },
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 10),
-          ValueListenableBuilder<ComposerBackground>(
-            valueListenable: AppComposerBackground.current,
-            builder: (context, current, _) {
-              final selectable =
-                  current == ComposerBackground.liquidGlass &&
-                      !LiquidGlass.isSupported
-                  ? ComposerBackground.frostBlur
-                  : current;
-              return SegmentedButton<ComposerBackground>(
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(
-                    value: ComposerBackground.standard,
-                    label: Text(l10n.appearanceComposerBackgroundStandard),
-                  ),
-                  ButtonSegment(
-                    value: ComposerBackground.frostBlur,
-                    label: Text(l10n.appearanceComposerBackgroundFrost),
-                  ),
-                  if (LiquidGlass.isSupported)
-                    ButtonSegment(
-                      value: ComposerBackground.liquidGlass,
-                      label: Text(l10n.appearanceGlassMaterial),
-                    ),
-                ],
-                selected: {selectable},
-                onSelectionChanged: (set) {
-                  if (set.isNotEmpty) {
-                    Haptics.selection();
-                    AppComposerBackground.save(set.first);
-                  }
-                },
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavPillStyleCard extends StatelessWidget {
-  const _NavPillStyleCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    return SettingsPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.appearanceNavPillTitle,
-            style: TextStyle(
-              color: cs.onSurface,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.appearanceNavPillSubtitle,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-          ),
-          const SizedBox(height: 16),
-          ValueListenableBuilder<NavPillStyle>(
-            valueListenable: AppNavPillStyle.current,
-            builder: (context, current, _) {
-              final selectable =
-                  current == NavPillStyle.liquidGlass &&
-                      !LiquidGlass.isSupported
-                  ? NavPillStyle.frostBlur
-                  : current;
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SegmentedButton<NavPillStyle>(
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(
-                      value: NavPillStyle.auto,
-                      label: Text(l10n.appearanceStyleAuto),
-                    ),
-                    ButtonSegment(
-                      value: NavPillStyle.glossy,
-                      label: Text(l10n.appearanceNavPillGlossy),
-                    ),
-                    ButtonSegment(
-                      value: NavPillStyle.frostBlur,
-                      label: Text(l10n.appearanceNavPillFrost),
-                    ),
-                    if (LiquidGlass.isSupported)
-                      ButtonSegment(
-                        value: NavPillStyle.liquidGlass,
-                        label: Text(l10n.appearanceGlassMaterial),
-                      ),
-                  ],
-                  selected: {selectable},
-                  onSelectionChanged: (set) {
-                    if (set.isNotEmpty) {
-                      Haptics.selection();
-                      AppNavPillStyle.save(set.first);
-                    }
-                  },
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GradientToggleCard extends StatelessWidget {
-  const _GradientToggleCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    return SettingsPanel(
-      padding: const EdgeInsets.fromLTRB(20, 14, 12, 14),
-      child: Row(
-        children: [
-          Icon(Symbols.blur_on, color: cs.onSurface, size: 24, weight: 500),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.appearanceGradientTitle,
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  l10n.appearanceGradientSubtitle,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          ValueListenableBuilder<bool>(
-            valueListenable: AppPillGradient.current,
-            builder: (context, value, _) => Switch(
-              value: value,
-              onChanged: (v) {
-                Haptics.selection();
-                AppPillGradient.save(v);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SpectrumToggleCard extends StatelessWidget {
-  const _SpectrumToggleCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    return SettingsPanel(
-      padding: const EdgeInsets.fromLTRB(20, 14, 12, 14),
-      child: Row(
-        children: [
-          Icon(Symbols.graphic_eq, color: cs.onSurface, size: 24, weight: 500),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.appearanceSpectrumTitle,
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  l10n.appearanceSpectrumSubtitle,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          ValueListenableBuilder<bool>(
-            valueListenable: AppSpectrumBackground.current,
-            builder: (context, value, _) => Switch(
-              value: value,
-              onChanged: (v) {
-                Haptics.selection();
-                AppSpectrumBackground.save(v);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreviewSection extends StatefulWidget {
-  final ValueNotifier<Color> color;
-  final ValueNotifier<bool> isSystem;
-
-  const _PreviewSection({required this.color, required this.isSystem});
-
-  @override
-  State<_PreviewSection> createState() => _PreviewSectionState();
-}
-
-class _PreviewSectionState extends State<_PreviewSection> {
-  ColorScheme? _cachedScheme;
-  Color? _cachedColor;
-  Brightness? _cachedBrightness;
-
-  ColorScheme _schemeFor(Color color, Brightness brightness) {
-    if (_cachedScheme != null &&
-        _cachedColor == color &&
-        _cachedBrightness == brightness) {
-      return _cachedScheme!;
-    }
-    _cachedColor = color;
-    _cachedBrightness = brightness;
-    _cachedScheme = ColorScheme.fromSeed(
-      seedColor: color,
-      brightness: brightness,
-    );
-    return _cachedScheme!;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final outerCs = Theme.of(context).colorScheme;
-    final brightness = Theme.of(context).brightness;
-
-    return ValueListenableBuilder<bool>(
-      valueListenable: widget.isSystem,
-      builder: (context, isSystem, _) {
-        if (isSystem) {
-          return Theme(
-            data: Theme.of(context).copyWith(colorScheme: outerCs),
-            child: const _ChatPreview(),
-          );
-        }
-        return ValueListenableBuilder<Color>(
-          valueListenable: widget.color,
-          builder: (context, color, _) {
-            return Theme(
-              data: Theme.of(
-                context,
-              ).copyWith(colorScheme: _schemeFor(color, brightness)),
-              child: const _ChatPreview(),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class _ChatPreview extends StatelessWidget {
-  const _ChatPreview();
-
-  List<_PreviewMsg> _messagesFor(AppLocalizations l10n) => [
-    _PreviewMsg(l10n.appearancePreviewHello, true, true, false),
-    _PreviewMsg(l10n.appearancePreviewHowIsIt, true, false, true),
-    _PreviewMsg(l10n.appearancePreviewHello, false, true, false),
-    _PreviewMsg(l10n.appearancePreviewHmm, false, false, false),
-    _PreviewMsg(l10n.appearancePreviewNotBad, false, false, true),
-  ];
-
-  BorderRadius _radiusFor(
-    _PreviewMsg msg,
-    BubbleStyle style,
-    BubbleBehavior behavior,
-  ) {
-    return computeBubbleRadius(
-      isMe: msg.isMe,
-      isTop: msg.isTop,
-      isBottom: msg.isBottom,
-      style: style,
-      behavior: behavior,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    final messages = _messagesFor(l10n);
-
-    return ListenableBuilder(
-      listenable: Listenable.merge([
-        AppBubbleShape.current,
-        AppBubbleBehavior.current,
-      ]),
-      builder: (context, _) {
-        final style = AppBubbleShape.current.value;
-        final behavior = AppBubbleBehavior.current.value;
-        return SettingsPanel(
-          color: cs.surfaceContainerLow,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < messages.length; i++) ...[
-                if (i > 0) SizedBox(height: messages[i].isTop ? 8 : 2),
-                _PreviewBubble(
-                  text: messages[i].text,
-                  isMe: messages[i].isMe,
-                  radius: _radiusFor(messages[i], style, behavior),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _PreviewMsg {
-  final String text;
-  final bool isMe;
-  final bool isTop;
-  final bool isBottom;
-  const _PreviewMsg(this.text, this.isMe, this.isTop, this.isBottom);
-}
-
-class _PreviewBubble extends StatelessWidget {
-  final String text;
-  final bool isMe;
-  final BorderRadius radius;
-
-  const _PreviewBubble({
-    required this.text,
-    required this.isMe,
-    required this.radius,
+class _Panel extends StatelessWidget {
+  const _Panel({
+    required this.title,
+    required this.subtitle,
+    required this.child,
   });
 
+  final String title;
+  final String subtitle;
+  final Widget child;
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final bg = isMe ? cs.primaryContainer : cs.incomingBubble;
-    final fg = Theme.of(context).brightness == Brightness.dark
-        ? Colors.white
-        : Colors.black;
-
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 220),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(color: bg, borderRadius: radius),
-        child: Text(
-          text,
-          style: TextStyle(color: fg, fontSize: 15, height: 1.3),
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: SettingsPanel(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
         ),
       ),
     );
   }
 }
 
-class _ColorPickerCard extends StatelessWidget {
-  final ValueNotifier<Color> color;
-  final ValueNotifier<bool> isSystem;
-  final bool expanded;
-  final VoidCallback onToggle;
-  final ValueChanged<Color> onColorChanged;
-  final VoidCallback onReset;
-
-  const _ColorPickerCard({
-    required this.color,
-    required this.isSystem,
-    required this.expanded,
-    required this.onToggle,
-    required this.onColorChanged,
-    required this.onReset,
+class _Choices<T extends Enum> extends StatelessWidget {
+  const _Choices({
+    required this.setting,
+    required this.options,
+    required this.onSelected,
+    this.fallback,
   });
 
+  final ValueNotifier<T> setting;
+  final Map<T, String> options;
+  final ValueChanged<T> onSelected;
+  final T? fallback;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder(
+    valueListenable: setting,
+    builder: (context, value, _) {
+      final displayed = options.containsKey(value) ? value : fallback;
+      return Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        children: [
+          for (final MapEntry(key: option, value: label) in options.entries)
+            ChoiceChip(
+              label: Text(label),
+              selected: displayed == option,
+              onSelected: (selected) {
+                if (!selected && option == value) return;
+                Haptics.selection();
+                onSelected(option);
+              },
+            ),
+        ],
+      );
+    },
+  );
+}
+
+class _Toggle extends StatelessWidget {
+  const _Toggle({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.setting,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final ValueNotifier<bool> setting;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder(
+    valueListenable: setting,
+    builder: (context, value, _) => SettingsToggleTile(
+      icon: icon,
+      label: title,
+      subtitle: subtitle,
+      value: value,
+      onChanged: onChanged,
+    ),
+  );
+}
+
+class _AccentSwatch extends StatelessWidget {
+  const _AccentSwatch({
+    required this.color,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Color? color;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-    return ValueListenableBuilder<bool>(
-      valueListenable: isSystem,
-      builder: (context, sys, _) {
-        return ValueListenableBuilder<Color>(
-          valueListenable: color,
-          builder: (context, col, _) => _buildBody(cs, l10n, col, sys),
-        );
-      },
-    );
-  }
-
-  Widget _buildBody(
-    ColorScheme cs,
-    AppLocalizations l10n,
-    Color col,
-    bool sys,
-  ) {
-    final swatchColor = sys ? cs.primary : col;
-
-    return SettingsPanel(
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onToggle,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 16, 18),
-              child: Row(
-                children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: swatchColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: cs.outlineVariant.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.appearanceAccentColorTitle,
-                          style: TextStyle(
-                            color: cs.onSurface,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          sys
-                              ? l10n.appearanceAccentColorSystem
-                              : l10n.appearanceAccentColorSubtitle,
-                          style: TextStyle(
-                            color: cs.onSurfaceVariant,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  AnimatedRotation(
-                    duration: const Duration(milliseconds: 200),
-                    turns: expanded ? 0.5 : 0,
-                    child: Icon(
-                      Symbols.expand_more,
-                      color: cs.onSurfaceVariant,
-                      size: 24,
-                    ),
-                  ),
-                ],
+    final contrast = color == null
+        ? cs.onPrimaryContainer
+        : ThemeData.estimateBrightnessForColor(color!) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
+    return Semantics(
+      label: label,
+      selected: selected,
+      child: Tooltip(
+        message: label,
+        excludeFromSemantics: true,
+        child: SizedBox.square(
+          dimension: 46,
+          child: IconButton(
+            onPressed: onTap,
+            style: IconButton.styleFrom(
+              backgroundColor: color ?? cs.primaryContainer,
+              foregroundColor: contrast,
+              side: BorderSide(
+                color: selected ? cs.onSurface : cs.outlineVariant,
+                width: selected ? 2 : 1,
               ),
             ),
+            icon: Icon(
+              selected
+                  ? Symbols.check
+                  : color == null
+                  ? Symbols.auto_awesome
+                  : null,
+              size: 18,
+            ),
           ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: expanded
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ColorWheelPicker(
-                          color: swatchColor,
-                          onChanged: onColorChanged,
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.tonal(
-                            onPressed: sys ? null : onReset,
-                            style: FilledButton.styleFrom(
-                              shape: AppShape.buttonBorder,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Symbols.auto_awesome,
-                                  size: 18,
-                                  weight: 500,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  sys
-                                      ? l10n.appearanceAccentColorSystemActive
-                                      : l10n.appearanceAccentColorReset,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : const SizedBox(width: double.infinity),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _BubbleShapeCard extends StatelessWidget {
-  final ValueChanged<BubbleStyle> onChanged;
+class _HexColorField extends StatefulWidget {
+  const _HexColorField({required this.color, required this.onApply});
 
-  const _BubbleShapeCard({required this.onChanged});
+  final Color color;
+  final ValueChanged<Color> onApply;
 
   @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
-
-    return SettingsPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.appearanceBubbleShapeTitle,
-            style: TextStyle(
-              color: cs.onSurface,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.appearanceBubbleShapeSubtitle,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-          ),
-          const SizedBox(height: 16),
-          ValueListenableBuilder<BubbleStyle>(
-            valueListenable: AppBubbleShape.current,
-            builder: (context, current, _) {
-              return SegmentedButton<BubbleStyle>(
-                segments: [
-                  const ButtonSegment(
-                    value: BubbleStyle.promax,
-                    label: Text('ProMax'),
-                    icon: Icon(Symbols.chat_bubble),
-                  ),
-                  ButtonSegment(
-                    value: BubbleStyle.mobile,
-                    label: Text(l10n.appearanceBubbleShapeMobile),
-                    icon: const Icon(Symbols.smartphone),
-                  ),
-                  ButtonSegment(
-                    value: BubbleStyle.desktop,
-                    label: Text(l10n.appearanceBubbleShapeDesktop),
-                    icon: const Icon(Symbols.desktop_windows),
-                  ),
-                ],
-                selected: {current},
-                onSelectionChanged: (set) {
-                  if (set.isNotEmpty) onChanged(set.first);
-                },
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  State<_HexColorField> createState() => _HexColorFieldState();
 }
 
-class _BubbleBehaviorCard extends StatelessWidget {
-  final ValueChanged<BubbleBehavior> onChanged;
+class _HexColorFieldState extends State<_HexColorField> {
+  late final _controller = TextEditingController(text: _hex(widget.color));
+  final _focus = FocusNode();
+  var _invalid = false;
 
-  const _BubbleBehaviorCard({required this.onChanged});
+  @override
+  void didUpdateWidget(covariant _HexColorField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.color != widget.color && !_focus.hasFocus) {
+      _controller.text = _hex(widget.color);
+      _invalid = false;
+    }
+  }
+
+  void _apply() {
+    final input = _controller.text.trim();
+    final match = RegExp(r'^#?([0-9a-fA-F]{6})$').firstMatch(input);
+    if (match == null) {
+      setState(() => _invalid = true);
+      return;
+    }
+    final color = Color(0xff000000 | int.parse(match.group(1)!, radix: 16));
+    _controller.text = _hex(color);
+    setState(() => _invalid = false);
+    _focus.unfocus();
+    widget.onApply(color);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-
-    return SettingsPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.appearanceBubbleBehaviorTitle,
-            style: TextStyle(
-              color: cs.onSurface,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.appearanceBubbleBehaviorSubtitle,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-          ),
-          const SizedBox(height: 16),
-          ValueListenableBuilder<BubbleBehavior>(
-            valueListenable: AppBubbleBehavior.current,
-            builder: (context, current, _) {
-              return SegmentedButton<BubbleBehavior>(
-                segments: [
-                  ButtonSegment(
-                    value: BubbleBehavior.mutable,
-                    label: Text(l10n.appearanceBubbleBehaviorMutable),
-                    icon: const Icon(Symbols.auto_fix),
-                  ),
-                  ButtonSegment(
-                    value: BubbleBehavior.immutable,
-                    label: Text(l10n.appearanceBubbleBehaviorImmutable),
-                    icon: const Icon(Symbols.lock),
-                  ),
-                ],
-                selected: {current},
-                onSelectionChanged: (set) {
-                  if (set.isNotEmpty) onChanged(set.first);
-                },
-              );
-            },
-          ),
-        ],
+    return TextField(
+      controller: _controller,
+      focusNode: _focus,
+      textCapitalization: TextCapitalization.characters,
+      textInputAction: TextInputAction.done,
+      autocorrect: false,
+      enableSuggestions: false,
+      onSubmitted: (_) => _apply(),
+      onChanged: (_) {
+        if (_invalid) setState(() => _invalid = false);
+      },
+      decoration: InputDecoration(
+        labelText: 'HEX',
+        hintText: '#8C9EFF',
+        errorText: _invalid ? l10n.appearanceHexColorError : null,
+        border: const OutlineInputBorder(),
+        suffixIcon: IconButton(
+          onPressed: _apply,
+          tooltip: l10n.settingsLinkApply,
+          icon: const Icon(Symbols.check),
+        ),
       ),
     );
   }

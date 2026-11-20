@@ -2,6 +2,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/core/privacy/host_policy.dart';
 
 void main() {
+  group('возврат в Цифровой ID', () {
+    test('принимает callback MAX из браузера и deep link', () {
+      for (final url in [
+        'https://max.ru/?externalCallback=1',
+        'https://www.max.ru/?externalCallback=1',
+        'max://max.ru/?externalCallback=1',
+      ]) {
+        expect(HostPolicy.isDigitalIdCallback(Uri.parse(url)), isTrue);
+      }
+    });
+
+    test('игнорирует callback на постороннем адресе и обычные ссылки', () {
+      for (final url in [
+        'https://example.org/?externalCallback=1',
+        'https://max.ru.example.org/?externalCallback=1',
+        'https://max.ru:8443/?externalCallback=1',
+        'https://max.ru/?externalCallback=0',
+        'https://max.ru/',
+      ]) {
+        expect(HostPolicy.isDigitalIdCallback(Uri.parse(url)), isFalse);
+      }
+    });
+  });
+
   group('Минцифры доверяем только для MAX и Госуслуг', () {
     test('хосты MAX и Госуслуг', () {
       expect(HostPolicy.trustsMincifryCa('api.oneme.ru'), isTrue);

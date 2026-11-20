@@ -940,7 +940,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeSettingsCustomTitle => 'Custom';
 
   @override
-  String get appearanceTitle => 'Appearance';
+  String get appearanceTitle => 'Appearance Studio';
+
+  @override
+  String get appearanceSectionStyle => 'Style';
+
+  @override
+  String get appearanceSectionPanels => 'Panels';
+
+  @override
+  String get appearanceLivePreview => 'Live preview';
+
+  @override
+  String get appearanceCustomColor => 'Custom color';
+
+  @override
+  String get appearanceHexColorError => 'Enter a color in #RRGGBB format';
 
   @override
   String get appearanceVisualStyleTitle => 'Visual style';
@@ -7839,11 +7854,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Off: stable releases only. On: also beta versions and release candidates.';
 
   @override
-  String get diagnosticsTitle => 'Send diagnostics';
+  String get diagnosticsTitle => 'Send crash diagnostics';
 
   @override
   String get diagnosticsHint =>
       'A random installation ID, error types, ProMax stack frames, version and OS are sent to the ProMax server. No chats, phone numbers or tokens. You can turn this off at any time.';
+
+  @override
+  String get diagnosticsOperationsTitle => 'Share troubleshooting events';
+
+  @override
+  String get diagnosticsOperationsHint =>
+      'Send Digital ID, iOS notification and connection outcomes and timings to ProMax, along with the app version and OS. Events contain no account data, URLs or content.';
 
   @override
   String get hubAnnouncements => 'ProMax announcements';
@@ -7944,6 +7966,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The link contains only ProMax settings, including client privacy preferences. Anyone with the link can import them. History, accounts and recovery keys are not included.';
 
   @override
+  String get settingsLinkUploadConsent =>
+      'To create a short link, ProMax uploads your settings, including privacy preferences, to its server. Anyone with the link can import them for 30 days. If the server is unavailable, ProMax creates a link with the settings in the link itself.';
+
+  @override
   String get settingsLinkCopy => 'Copy link';
 
   @override
@@ -7957,7 +7983,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLinkInvalid =>
-      'The link is invalid, too long or unsupported by this version of ProMax';
+      'The link is invalid, expired, too long or unsupported by this version of ProMax';
 
   @override
   String get settingsLinkFailed => 'Could not share settings by link';

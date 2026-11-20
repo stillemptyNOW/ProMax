@@ -14,8 +14,8 @@ Future<void> importProMaxSettingsLink(BuildContext context, String link) async {
   _importing = true;
   final l10n = AppLocalizations.of(context)!;
   try {
-    final data = ProMaxSettingsLink.decode(link);
-    if (!context.mounted) return;
+    final data = await ProMaxSettingsLink.resolve(link);
+    if (!context.mounted || AppLock.instance.locked.value) return;
     final confirmed = await showConfirmDialog(
       context,
       title: l10n.settingsLinkTitle,

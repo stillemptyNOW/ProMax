@@ -250,7 +250,10 @@ class _WebAppScreenState extends State<WebAppScreen> {
   ) async {
     final uri = action.request.url;
     final callback = widget.onExternalCallback;
-    if (callback != null && uri?.queryParameters['externalCallback'] == '1') {
+    if (callback != null &&
+        action.isForMainFrame &&
+        uri != null &&
+        HostPolicy.isDigitalIdCallback(uri)) {
       try {
         final launch = await callback(uri.toString());
         if (!mounted) return NavigationActionPolicy.CANCEL;

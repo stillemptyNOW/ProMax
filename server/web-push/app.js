@@ -24,16 +24,29 @@ function displayReceipt(value) {
     ? `Удалённый push получен ${date.toLocaleString('ru-RU')}.`
     : 'Удалённая доставка ещё не проверена. Подтверждение регистрации смотрите в ProMax.';
 }
-async function loadReceipt() {
-  if (!registration?.active) return;
+async function workerRequest(message) {
+  if (!registration?.active) return null;
   const channel = new MessageChannel();
   try {
     const response = new Promise(resolve => { channel.port1.onmessage = event => resolve(event.data); });
-    registration.active.postMessage({type: 'get-receipt'}, [channel.port2]);
-    displayReceipt(await timeout(response, 2000, 'Проверка доставки пока недоступна.'));
-  } catch { displayReceipt(null); }
+    registration.active.postMessage(message, [channel.port2]);
+    return await timeout(response, 2000, 'Проверка доставки пока недоступна.');
+  } catch { return null; }
   finally { channel.port1.close(); channel.port2.close(); }
 }
+const diagnostics = document.getElementById('diagnostics');
+const diagnosticsState = document.getElementById('diagnostics-state');
+let savingDiagnostics = false;
+diagnostics.addEventListener('change', async () => {
+  savingDiagnostics = true;
+  diagnostics.disabled = true;
+  const enabled = diagnostics.checked;
+  const saved = await workerRequest({type: 'set-diagnostics', enabled});
+  diagnostics.checked = saved === null ? !enabled : saved;
+  diagnosticsState.textContent = saved === null ? 'Не удалось сохранить настройку. Попробуйте ещё раз.' : '';
+  diagnostics.disabled = false;
+  savingDiagnostics = false;
+});
 async function refresh() {
   if (!standalone()) return show('install');
   if (!('serviceWorker' in navigator) || !('PushManager' in globalThis) || !('Notification' in globalThis)) return show('unsupported');
@@ -48,7 +61,15 @@ async function refresh() {
   document.getElementById('status-permission').textContent = 'Разрешено';
   document.getElementById('status-subscription').textContent = 'Создана';
   show('link');
-  await loadReceipt();
+  const [receipt, enabled] = await Promise.all([
+    workerRequest({type: 'get-receipt'}),
+    workerRequest({type: 'get-diagnostics'}),
+  ]);
+  displayReceipt(receipt);
+  if (!savingDiagnostics) {
+    diagnostics.checked = enabled === true;
+    diagnostics.disabled = enabled === null;
+  }
 }
 async function safeRefresh() { try { await refresh(); } catch (error) { failure(error); } }
 function button(id, action) {

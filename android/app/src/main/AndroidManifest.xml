@@ -296,6 +296,7 @@
                 <data android:path="/export-logs"/>
                 <data android:path="/export-logs/"/>
                 <data android:path="/settings"/>
+                <data android:path="/s"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>

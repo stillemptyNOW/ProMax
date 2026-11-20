@@ -74,6 +74,15 @@ abstract final class HostPolicy {
   static bool isPersistentWebHost(String host) =>
       matchesAny(host, persistentWebDomains);
 
+  static bool isDigitalIdCallback(Uri uri) {
+    if (uri.scheme != 'https' && uri.scheme != 'http' && uri.scheme != 'max') {
+      return false;
+    }
+    if (uri.userInfo.isNotEmpty || uri.hasPort) return false;
+    return (uri.host == 'max.ru' || uri.host == 'www.max.ru') &&
+        uri.queryParameters['externalCallback'] == '1';
+  }
+
   static bool isTracker(Uri uri) {
     if (!uri.isScheme('http') && !uri.isScheme('https')) return false;
     return matchesAny(uri.host, trackerDomains);

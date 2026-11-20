@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:device_info_plus/device_info_plus.dart';
 
 import '../../core/config/privacy_settings.dart';
+import '../../core/hub/diagnostics.dart';
 import '../../core/privacy/host_policy.dart';
 import '../../core/privacy/neutral_user_agent.dart';
 import '../../core/storage/app_database.dart';
@@ -529,6 +530,30 @@ class DigitalIdModule {
     bool createIfMissing = false,
     int attempts = 5,
   }) async {
+    final watch = Stopwatch()..start();
+    var outcome = DiagnosticOutcome.failed;
+    try {
+      final docs = await _loadDocuments(
+        createIfMissing: createIfMissing,
+        attempts: attempts,
+      );
+      outcome = docs == null
+          ? DiagnosticOutcome.unavailable
+          : DiagnosticOutcome.success;
+      return docs;
+    } finally {
+      Diagnostics.recordOperation(
+        DiagnosticStage.digitalIdDocuments,
+        outcome,
+        elapsed: watch.elapsed,
+      );
+    }
+  }
+
+  Future<DigitalIdUserDocs?> _loadDocuments({
+    required bool createIfMissing,
+    required int attempts,
+  }) async {
     var token = await _storedToken();
     if (token == null) {
       if (!createIfMissing) return null;
@@ -550,7 +575,15 @@ class DigitalIdModule {
     for (var attempt = 0; attempt < attempts; attempt++) {
       final docs = await getUserDocs(state);
       if (docs != null) return docs;
-      await Future.delayed(const Duration(seconds: 2));
+      if (attempt + 1 < attempts) {
+        await Future.delayed(const Duration(seconds: 2));
+      }
+    }
+    if (createIfMissing) {
+      throw const DigitalIdException(
+        'DOCS_PENDING',
+        'Документы ещё обрабатываются. Попробуйте обновить их позже.',
+      );
     }
     return null;
   }
@@ -560,23 +593,29 @@ class DigitalIdModule {
     final parsed = Uri.tryParse(url);
     if (parsed == null) return null;
     var uri = parsed;
+    final watch = Stopwatch()..start();
+    final client = _newClient();
+    var outcome = DiagnosticOutcome.failed;
+    int? statusCode;
     try {
       for (var hop = 0; hop <= _mobileIdMaxRedirects; hop++) {
         if (!HostPolicy.allowsMobileIdFetch(uri)) {
           logger.w('[DID] mobile id: хост ${uri.host} вне белого списка');
+          outcome = DiagnosticOutcome.invalid;
           return null;
         }
-        final request = await _http.getUrl(uri);
+        final request = await client.getUrl(uri).timeout(_stepTimeout);
         request.followRedirects = false;
-        final response = await request.close();
+        final response = await request.close().timeout(_stepTimeout);
+        statusCode = response.statusCode;
         final location = response.headers.value(HttpHeaders.locationHeader);
         if (response.isRedirect && location != null) {
-          await response.drain<void>();
+          await response.drain<void>().timeout(_stepTimeout);
           uri = uri.resolve(location);
           continue;
         }
         final builder = BytesBuilder(copy: false);
-        await for (final chunk in response) {
+        await for (final chunk in response.timeout(_stepTimeout)) {
           builder.add(chunk);
           if (builder.length > _mobileIdMaxBytes) return null;
         }
@@ -584,6 +623,9 @@ class DigitalIdModule {
         response.headers.forEach((name, values) {
           headers[name] = values.join(',');
         });
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          outcome = DiagnosticOutcome.success;
+        }
         return {
           'statusCode': response.statusCode,
           'headers': headers,
@@ -591,8 +633,19 @@ class DigitalIdModule {
         };
       }
       return null;
+    } on TimeoutException {
+      outcome = DiagnosticOutcome.timeout;
+      return null;
     } catch (_) {
       return null;
+    } finally {
+      client.close(force: true);
+      Diagnostics.recordOperation(
+        DiagnosticStage.digitalIdVerification,
+        outcome,
+        elapsed: watch.elapsed,
+        statusCode: statusCode,
+      );
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:device_info_plus/device_info_plus.dart';
 
+import '../hub/diagnostics.dart';
 import '../protocol/opcode_map.dart';
 import '../storage/token_storage.dart';
 import '../utils/ids.dart';
@@ -206,7 +207,10 @@ class WebPushService {
   }
 
   // #***! второй шаг при 2FA
-  Future<WebPushAuthStep> submitPassword(String trackId, String password) async {
+  Future<WebPushAuthStep> submitPassword(
+    String trackId,
+    String password,
+  ) async {
     final socket = _requireSocket();
     final payload = _asMap(
       await socket.request(Opcode.authLoginCheckPassword, <String, Object?>{
@@ -235,10 +239,14 @@ class WebPushService {
   Future<void> registerSubscription(WebPushSubscription subscription) async {
     final token = await TokenStorage.readSecure(_tokenKey);
     if (token == null || token.isEmpty) {
-      throw const MaxWebException('сначала подключите уведомления в настройках');
+      throw const MaxWebException(
+        'сначала подключите уведомления в настройках',
+      );
     }
 
     final socket = MaxWebSocketSession(device: await device());
+    final watch = Stopwatch()..start();
+    var outcome = DiagnosticOutcome.failed;
     try {
       await socket.connect();
       await socket.request(Opcode.login, <String, Object?>{
@@ -263,7 +271,16 @@ class WebPushService {
       );
       _notifyChanged();
       logger.i('WebPush: подписка зарегистрирована');
+      outcome = DiagnosticOutcome.success;
+    } on TimeoutException {
+      outcome = DiagnosticOutcome.timeout;
+      rethrow;
     } finally {
+      Diagnostics.recordOperation(
+        DiagnosticStage.webPushLink,
+        outcome,
+        elapsed: watch.elapsed,
+      );
       await socket.close();
     }
   }
