@@ -4,8 +4,9 @@ description: >
   its crates afresh on every build. libc 0.2.190 dropped the dyld functions that
   backtrace 0.3.76 calls on Apple mobile targets, which breaks the kolibri_dart
   build for aarch64-apple-ios. This writes a lockfile next to kolibri's manifest
-  in the pub cache and holds libc at the last release that builds. Run it after
-  `flutter pub get`; drop it once kolibri ships its own Cargo.lock.
+  in the pub cache and holds libc at the last release that builds. Mio 1.2.5
+  requires libc 0.2.190, so Mio also stays on its compatible release. Run it
+  after `flutter pub get`; drop it once kolibri ships its own Cargo.lock.
 
 runs:
   using: composite
@@ -17,5 +18,6 @@ runs:
         version=$(awk '/^  kolibri:$/ {found=1} found && /^    version:/ {gsub(/"/, "", $2); print $2; exit}' pubspec.lock)
         manifest="${PUB_CACHE:-$HOME/.pub-cache}/hosted/pub.dev/kolibri-$version/rust/Cargo.toml"
         cargo generate-lockfile --manifest-path "$manifest"
+        cargo update --manifest-path "$manifest" -p mio --precise 1.2.4
         cargo update --manifest-path "$manifest" -p libc --precise 0.2.189
         grep -A1 '^name = "libc"' "$(dirname "$manifest")/Cargo.lock"
