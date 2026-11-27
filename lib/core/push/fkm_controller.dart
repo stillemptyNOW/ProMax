@@ -62,7 +62,7 @@ class FkmController {
               packet.opcode == Opcode.notifMessage ||
               packet.opcode == Opcode.notifMsgDelete,
         )
-        .listen(_onPush);
+        .listen(handlePush);
     _stateSub = api.stateStream.listen(_onSessionState);
 
     await _syncWithNative();
@@ -171,7 +171,8 @@ class FkmController {
   };
 
   // #***! роутер пушей, новое правка удаление
-  Future<void> _onPush(Packet packet) async {
+  @visibleForTesting
+  Future<void> handlePush(Packet packet) async {
     if (!enabled.value) return;
     try {
       if (packet.opcode == Opcode.notifMsgDelete) {

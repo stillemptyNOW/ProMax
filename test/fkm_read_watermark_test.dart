@@ -1,5 +1,4 @@
 import 'package:promax/core/storage/notified_messages.dart';
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -39,11 +38,6 @@ class _Paths extends PathProviderPlatform with MockPlatformInterfaceMixin {
 }
 
 class _PushApi extends Api {
-  final pushes = StreamController<Packet>.broadcast();
-
-  @override
-  Stream<Packet> get pushStream => pushes.stream;
-
   @override
   Future<Packet> sendRequest(
     int opcode,
@@ -127,7 +121,6 @@ void main() {
     addTearDown(() async {
       ProMaxSettings.antiRead.value = false;
       controller.dispose();
-      await api.pushes.close();
       await api.dispose();
       Api.keepAliveInBackground = false;
       _messenger.setMockMethodCallHandler(_fkm, null);
@@ -142,10 +135,7 @@ void main() {
     await controller.init(api);
   });
 
-  Future<void> deliver(Packet packet) async {
-    api.pushes.add(packet);
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-  }
+  Future<void> deliver(Packet packet) => controller.handlePush(packet);
 
   List<String> shownIds() => [for (final data in shown) '${data['msgid']}'];
 
