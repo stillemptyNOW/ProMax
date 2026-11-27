@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
-import '../../../backend/modules/webapp.dart' show WebAppLaunch;
+import '../../../backend/modules/webapp.dart'
+    show DigitalIdCallback, WebAppLaunch;
 import '../../../core/security/webview_sandbox.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/utils/link_opener.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../main.dart' show digitalIdModule, webAppModule;
+import '../webapp/web_app_bridge.dart';
 import '../webapp/web_app_screen.dart';
 
 Future<void> resetDigitalIdWebData() async {
@@ -27,44 +29,35 @@ Future<void> resetDigitalIdSession() async {
 }
 
 class DigitalIdWebScreen extends StatefulWidget {
-  final WebAppLaunch? initialLaunch;
+  final DigitalIdCallback? initialCallback;
 
-  const DigitalIdWebScreen({super.key, this.initialLaunch});
+  const DigitalIdWebScreen({super.key, this.initialCallback});
 
   @override
   State<DigitalIdWebScreen> createState() => _DigitalIdWebScreenState();
 }
 
 class _DigitalIdWebScreenState extends State<DigitalIdWebScreen> {
-  WebAppLaunch? _callbackLaunch;
-  bool _initialLaunchUsed = false;
+  late DigitalIdCallback? _callback = widget.initialCallback;
 
-  Future<WebAppLaunch> _loadLaunch() async {
-    if (!_initialLaunchUsed) {
-      _initialLaunchUsed = true;
-      final initial = widget.initialLaunch;
-      if (initial != null) {
-        _callbackLaunch = initial;
-        return initial;
-      }
-    }
-    final callbackLaunch = _callbackLaunch;
-    if (callbackLaunch != null) {
-      return webAppModule.reloadDigitalIdLaunch(callbackLaunch);
-    }
-    return webAppModule.fetchDigitalId();
-  }
+  Future<WebAppLaunch> _loadLaunch() =>
+      _callback?.launch() ?? webAppModule.fetchDigitalId();
 
-  Future<WebAppLaunch> _completeExternalCallback(String url) async {
-    final launch = await webAppModule.handleExternalCallback(url);
-    _callbackLaunch = launch;
-    return launch;
+  Future<WebAppLaunch> _completeExternalCallback(String url) {
+    final current = _callback;
+    if (current != null && current.uri.toString() == url) {
+      return current.launch();
+    }
+    return (_callback = webAppModule.digitalIdCallback(url)).launch();
   }
 
   @override
   Widget build(BuildContext context) {
     return WebAppScreen(
       title: AppLocalizations.of(context)!.digitalIdTitle,
+      entryPoint: widget.initialCallback == null
+          ? WebAppEntryPoint.webApp
+          : WebAppEntryPoint.externalCallback,
       preferSystemUserAgent: true,
       privateChannel: true,
       recoverTechnicalError: true,

@@ -92,6 +92,8 @@ class _WebAppScreenState extends State<WebAppScreen> {
   String _userAgent = '';
   double _progress = 0;
   bool _recovering = false;
+  bool _loading = false;
+  bool _receivedExternalCallback = false;
   Size _viewport = Size.zero;
   final MiniAppVisitedOrigins _visitedOrigins = MiniAppVisitedOrigins();
   MiniAppPrivacy? _privacy;
@@ -111,18 +113,28 @@ class _WebAppScreenState extends State<WebAppScreen> {
     super.dispose();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({Future<WebAppLaunch> Function()? loader}) async {
+    if (_loading || !mounted) return;
+    _loading = true;
     setState(() {
       _loadError = null;
       _launch = null;
+      _progress = 0;
+      _controller = null;
       _bridge?.dispose();
       _bridge = null;
     });
     try {
-      _userAgent = await _resolveUserAgent();
-      _environment = await WebViewSandbox.environment();
-      final launch = await widget.loader();
+      if (loader == null) {
+        _userAgent = await _resolveUserAgent();
+        _environment = await WebViewSandbox.environment();
+      }
+      final launch = await (loader ?? widget.loader)();
       if (!mounted) return;
+      if (loader != null && widget.closeAfterExternalCallback) {
+        Navigator.of(context).pop(launch);
+        return;
+      }
       final origins = WebAppOriginPolicy(Uri.parse(launch.url));
       setState(() {
         _launch = launch;
@@ -132,7 +144,14 @@ class _WebAppScreenState extends State<WebAppScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _loadError = userFacingError(e));
+      setState(
+        () => _loadError = switch (e) {
+          WebAppUnavailable(:final message) => message,
+          _ => userFacingError(e),
+        },
+      );
+    } finally {
+      _loading = false;
     }
   }
 
@@ -171,7 +190,9 @@ class _WebAppScreenState extends State<WebAppScreen> {
   WebAppBridge _createBridge(int botId, WebAppOriginPolicy origins) =>
       WebAppBridge(
         botId: botId,
-        entryPoint: widget.entryPoint,
+        entryPoint: _receivedExternalCallback
+            ? WebAppEntryPoint.externalCallback
+            : widget.entryPoint,
         privateChannel: widget.privateChannel,
         mobileIdVerifier: widget.mobileIdVerifier,
         origins: origins,
@@ -182,7 +203,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
       );
 
   Future<void> _closeFromWebApp() async {
-    if (_recovering) return;
+    if (_recovering || _loading) return;
     if (widget.recoverTechnicalError && _controller != null) {
       _recovering = true;
       try {
@@ -254,24 +275,8 @@ class _WebAppScreenState extends State<WebAppScreen> {
         action.isForMainFrame &&
         uri != null &&
         HostPolicy.isDigitalIdCallback(uri)) {
-      try {
-        final launch = await callback(uri.toString());
-        if (!mounted) return NavigationActionPolicy.CANCEL;
-        if (widget.closeAfterExternalCallback) {
-          Navigator.of(context).pop(launch);
-          return NavigationActionPolicy.CANCEL;
-        }
-        _origins?.trust(Uri.parse(launch.url));
-        setState(() {
-          _launch = launch;
-          _loadError = null;
-        });
-        await controller.loadUrl(
-          urlRequest: URLRequest(url: WebUri(launch.url)),
-        );
-      } catch (e) {
-        if (mounted) setState(() => _loadError = userFacingError(e));
-      }
+      _receivedExternalCallback = true;
+      unawaited(_load(loader: () => callback(uri.toString())));
       return NavigationActionPolicy.CANCEL;
     }
     final handler = widget.shouldOverrideUrlLoading;
@@ -483,7 +488,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
           : null,
       shouldOverrideUrlLoading: _handleNavigation,
       onProgressChanged: (controller, progress) {
-        if (!mounted) return;
+        if (!mounted || !identical(_controller, controller)) return;
         setState(() => _progress = progress / 100);
       },
       onReceivedError: (controller, request, error) {
@@ -492,7 +497,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
           'WebView ${widget.title}: ${error.type} ${error.description} '
           '($host${request.isForMainFrame ?? false ? ', главный фрейм' : ''})',
         );
-        if (!mounted) return;
+        if (!mounted || !identical(_controller, controller)) return;
         if (request.isForMainFrame ?? false) {
           setState(() => _loadError = error.description);
         }

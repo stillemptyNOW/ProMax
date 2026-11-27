@@ -25,13 +25,17 @@ class ActionReadReceipt {
   final int epoch;
   final _ReadAction _action;
 
-  static bool _enabled(_ReadAction action) =>
-      ProMaxSettings.antiRead.value &&
-      switch (action) {
-        _ReadAction.reaction => ProMaxSettings.readOnReaction.value,
-        _ReadAction.reply => ProMaxSettings.readOnReply.value,
-        _ReadAction.send => ProMaxSettings.readOnSend.value,
-      };
+  static bool _enabled(int accountId, int chatId, _ReadAction action) =>
+      ProMaxSettings.chatAntiReadMode(accountId, chatId) ==
+          ChatAntiReadMode.inherit &&
+      ProMaxSettings.antiReadFor(accountId, chatId) &&
+      _actionEnabled(action);
+
+  static bool _actionEnabled(_ReadAction action) => switch (action) {
+    _ReadAction.reaction => ProMaxSettings.readOnReaction.value,
+    _ReadAction.reply => ProMaxSettings.readOnReply.value,
+    _ReadAction.send => ProMaxSettings.readOnSend.value,
+  };
 
   static Future<ActionReadReceipt?> forReaction(
     Api api,
@@ -72,12 +76,13 @@ class ActionReadReceipt {
     String? messageId,
     int? accountId,
   }) async {
-    if (!_enabled(action)) return null;
+    if (!_actionEnabled(action)) return null;
     final epoch = api.sessionEpoch;
     try {
       final activeAccount = await TokenStorage.getActiveAccountId();
       if (activeAccount == null ||
-          (accountId != null && activeAccount != accountId)) {
+          (accountId != null && activeAccount != accountId) ||
+          !_enabled(activeAccount, chatId, action)) {
         return null;
       }
       final row = messageId == null
@@ -107,7 +112,7 @@ class ActionReadReceipt {
 
   Future<void> send() async {
     try {
-      if (!_enabled(_action) ||
+      if (!_enabled(accountId, chatId, _action) ||
           await TokenStorage.getActiveAccountId() != accountId ||
           api.sessionEpoch != epoch) {
         return;
@@ -122,7 +127,8 @@ class ActionReadReceipt {
         },
         silent: true,
         beforeSend: () {
-          if (api.sessionEpoch != epoch || !_enabled(_action)) {
+          if (api.sessionEpoch != epoch ||
+              !_enabled(accountId, chatId, _action)) {
             throw StateError('Read action is no longer current');
           }
         },

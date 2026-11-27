@@ -106,6 +106,7 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    await ProMaxSettings.load();
     shown = [];
     _messenger.setMockMethodCallHandler(_fkm, (call) async {
       if (call.method == 'showMessage') {
@@ -167,6 +168,23 @@ void main() {
     await deliver(_push(_dialog, _peer, 6000));
     expect(shownIds(), ['6000']);
   });
+
+  test(
+    'a chat in always no read has a watermark with global mode off',
+    () async {
+      ProMaxSettings.antiRead.value = false;
+      await ProMaxSettings.setChatAntiReadMode(
+        _me,
+        _dialog,
+        ChatAntiReadMode.always,
+      );
+      await chats.markRead(api, _me, _dialog, '5000', 5000);
+
+      await deliver(_push(_dialog, _peer, 6000));
+
+      expect(shown.single['seen'], '5000');
+    },
+  );
 
   test('the notification carries the "don\'t read" watermark so native drops '
       'messages the user already saw from the chat history', () async {

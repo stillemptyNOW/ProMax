@@ -25,6 +25,7 @@ import '../config/build_profile.dart';
 import '../config/promax_settings_link.dart';
 import '../security/app_lock.dart';
 import '../../frontend/screens/profile/settings_link_import.dart';
+import '../../frontend/screens/profile/web_push_screen.dart';
 
 // #***! диплинки ProMax и MAX, а также переходы из пушей
 class DeepLinkService {
@@ -137,7 +138,9 @@ class DeepLinkService {
     }
 
     if (_pendingExternalCallback != null) {
-      if (context == null || api.state != SessionState.online) {
+      if (context == null ||
+          AppLock.instance.locked.value ||
+          api.state != SessionState.online) {
         _externalCallbackRetry ??= Timer(const Duration(milliseconds: 300), () {
           _externalCallbackRetry = null;
           _flushPending();
@@ -149,8 +152,8 @@ class DeepLinkService {
       }
     }
 
-    if (_pendingWebPush != null) {
-      if (context == null) {
+    if (_ready && _pendingWebPush != null) {
+      if (context == null || AppLock.instance.locked.value) {
         _webPushRetry ??= Timer(const Duration(milliseconds: 300), () {
           _webPushRetry = null;
           _flushPending();
@@ -193,18 +196,12 @@ class DeepLinkService {
   Future<void> _handleExternalCallback(BuildContext context, String url) async {
     if (!_externalCallbacksInFlight.add(url)) return;
     try {
-      final launch = await webAppModule.handleExternalCallback(url);
-      if (!context.mounted) return;
-      final route = pushSwipeable<void>(
+      final callback = webAppModule.digitalIdCallback(url);
+      await pushSwipeable<void>(
         context,
-        (_) => DigitalIdWebScreen(initialLaunch: launch),
+        (_) => DigitalIdWebScreen(initialCallback: callback),
       );
-      _lastExternalCallback = url;
-      await route;
-    } catch (e) {
-      if (context.mounted) {
-        showCustomNotification(context, 'Не удалось завершить Цифровой ID: $e');
-      }
+      if (callback.hasLaunched) _lastExternalCallback = url;
     } finally {
       _externalCallbacksInFlight.remove(url);
     }
@@ -267,17 +264,7 @@ class DeepLinkService {
     ].where((s) => s.isNotEmpty).toList();
     if (segments.length != 1 || segments.first != 'webpush') return null;
 
-    final endpoint = uri.queryParameters['endpoint'] ?? '';
-    final publicKey = uri.queryParameters['p256dh'] ?? '';
-    final authKey = uri.queryParameters['auth'] ?? '';
-    if (endpoint.isEmpty || publicKey.isEmpty || authKey.isEmpty) return null;
-    if (Uri.tryParse(endpoint)?.isScheme('https') != true) return null;
-
-    return WebPushSubscription(
-      endpoint: endpoint,
-      publicKey: publicKey,
-      authKey: authKey,
-    );
+    return WebPushSubscription.fromAppleLink(uri);
   }
 
   // #***! вебпуш несёт свою ссылку внутри payload
@@ -286,19 +273,36 @@ class DeepLinkService {
     WebPushSubscription subscription,
   ) async {
     final l10n = AppLocalizations.of(context)!;
-
-    if (!await WebPushService.instance.isAuthorized()) {
-      if (context.mounted) {
-        showCustomNotification(context, l10n.webPushNotAuthorized);
-      }
-      return;
-    }
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (!context.mounted || accountId == null) return;
+    final service = WebPushService.instance;
 
     try {
-      await WebPushService.instance.registerSubscription(subscription);
-      if (context.mounted) {
-        showCustomNotification(context, l10n.webPushLinked);
+      if (await service.isAuthorized()) {
+        try {
+          await service.registerSubscription(
+            subscription,
+            expectedAccountId: accountId,
+          );
+          if (context.mounted) {
+            showCustomNotification(context, l10n.webPushLinked);
+          }
+          return;
+        } on MaxWebException {
+          if (await service.isAuthorized()) rethrow;
+        }
       }
+      if (await TokenStorage.getActiveAccountId() != accountId ||
+          !context.mounted ||
+          AppLock.instance.locked.value) {
+        return;
+      }
+      await pushSwipeable<void>(
+        context,
+        (_) => WebPushScreen(
+          pendingLink: (accountId: accountId, subscription: subscription),
+        ),
+      );
     } on MaxWebException catch (e) {
       if (context.mounted) {
         showCustomNotification(context, l10n.webPushLinkFailed(e.message));
@@ -356,6 +360,8 @@ class DeepLinkService {
     AppLock.instance.locked.removeListener(_flushPending);
     _logExportRetry?.cancel();
     _logExportRetry = null;
+    _externalCallbackRetry?.cancel();
+    _externalCallbackRetry = null;
     _webPushRetry?.cancel();
     _webPushRetry = null;
     _pushTargetRetry?.cancel();

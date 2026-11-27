@@ -604,7 +604,13 @@ class CachedMessage {
   );
 
   CachedMessage withSendFailure(Object error) =>
-      copyWith(status: isPermanentSendFailure(error) ? 'error' : 'pending');
+      copyWith(
+        status:
+            error is ObsoleteGroupCiphertextException ||
+                isPermanentSendFailure(error)
+            ? 'error'
+            : 'pending',
+      );
 
   // #***! история правок это список прошлых версий текста
   static List<Map<String, dynamic>>? parseEditHistory(dynamic raw) {
@@ -1261,13 +1267,22 @@ class MessagesModule {
     required Duration retryDelay,
     required T Function(Packet response) onResult,
     required T onExhausted,
+    void Function()? beforeSend,
   }) async {
     final groupCheck = await _groupSendGuard(payload, null);
     final receipt = await ActionReadReceipt.forSend(_api, payload);
     for (var attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        final response = await _api.sendRequest(Opcode.msgSend, payload,
-          beforeSend: groupCheck);
+        final response = await _api.sendRequest(
+          Opcode.msgSend,
+          payload,
+          beforeSend: beforeSend == null
+              ? groupCheck
+              : () {
+                  beforeSend();
+                  groupCheck?.call();
+                },
+        );
         if (response.isOk) await receipt?.send();
         return onResult(response);
       } on PacketError catch (e) {
@@ -1809,9 +1824,16 @@ class MessagesModule {
   }
 
   // #***! дальше пары запросить адрес и отправить, на каждый тип медиа
-  Future<FileUploadInfo?> requestUploadUrl({int count = 1}) async {
+  Future<FileUploadInfo?> requestUploadUrl({
+    int count = 1,
+    void Function()? beforeSend,
+  }) async {
     final payload = {'count': count};
-    final response = await _api.sendRequest(Opcode.fileUpload, payload);
+    final response = await _api.sendRequest(
+      Opcode.fileUpload,
+      payload,
+      beforeSend: beforeSend,
+    );
     if (!response.isOk) return null;
 
     final data = response.payload;
@@ -1842,6 +1864,7 @@ class MessagesModule {
     int? scheduledTime,
     int maxAttempts = 20,
     Duration retryDelay = const Duration(seconds: 1),
+    void Function()? beforeSend,
   }) async {
     final message = <String, dynamic>{
       'isLive': false,
@@ -1870,6 +1893,7 @@ class MessagesModule {
       retryDelay: retryDelay,
       onResult: (response) => _sentMessageMap(response)?['id']?.toString(),
       onExhausted: null,
+      beforeSend: beforeSend,
     );
   }
 

@@ -76,10 +76,11 @@ class _CloudStorageScreenState extends State<CloudStorageScreen>
   }
 
   void _syncUploadJob() {
+    final accountId = _accountId;
     final chatId = _envGroupId;
-    final job = chatId == null
+    final job = accountId == null || chatId == null
         ? null
-        : UploadService.instance.activeFileJob(chatId);
+        : UploadService.instance.activeFileJob(accountId, chatId);
     if (identical(job, _uploadJob)) return;
 
     _uploadJob?.progress.removeListener(_onUploadProgress);
@@ -108,7 +109,11 @@ class _CloudStorageScreenState extends State<CloudStorageScreen>
     final chatId = _envGroupId;
     final accountId = _accountId;
     if (!mounted || chatId == null || accountId == null) return;
-    if (event.chatId != chatId || event.kind != UploadKind.file) return;
+    if (event.accountId != accountId ||
+        event.chatId != chatId ||
+        event.kind != UploadKind.file) {
+      return;
+    }
 
     _syncUploadJob();
 

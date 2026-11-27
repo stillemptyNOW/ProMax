@@ -27,6 +27,10 @@ class GroupEncryptionException implements Exception {
   final GroupEncryptionBlock reason;
 }
 
+class ObsoleteGroupCiphertextException extends GroupEncryptionException {
+  const ObsoleteGroupCiphertextException() : super(GroupEncryptionBlock.keys);
+}
+
 class GroupEncryptionPeer {
   const GroupEncryptionPeer({
     required this.id,
@@ -214,6 +218,17 @@ class _GroupState {
       members.every(consent.contains) &&
       members.where((id) => id != accountId).every(receivers.containsKey);
 
+  bool get canRetry => switch (block) {
+    GroupEncryptionBlock.membership ||
+    GroupEncryptionBlock.verification ||
+    GroupEncryptionBlock.unavailable => required,
+    null || GroupEncryptionBlock.transport =>
+      pendingDistribution != null ||
+          pendingControls.isNotEmpty ||
+          (required && sender == null && members.every(consent.contains)),
+    _ => false,
+  };
+
   GroupEncryptionInfo info(int accountId) => GroupEncryptionInfo(
     required: required,
     epoch: epoch,
@@ -223,9 +238,7 @@ class _GroupState {
     consented: consent.contains(accountId),
     ready: ready(accountId),
     proposalReceived: proposalReceived,
-    canRetry:
-        (pendingDistribution != null || pendingControls.isNotEmpty) &&
-        (block == null || block == GroupEncryptionBlock.transport),
+    canRetry: canRetry,
     block: block,
     coordinator: coordinator,
   );
@@ -432,10 +445,15 @@ class GroupE2eeService {
     int groupId,
     String text, {
     bool hasAttachments = false,
-  }) async {
-    await ensureLoaded(accountId, groupId);
+  }) => _serial(accountId, groupId, () async {
+    await _load(accountId, groupId);
     assertPrepared(accountId, groupId, text, hasAttachments: hasAttachments);
-  }
+    final state = _states[_key(accountId, groupId)];
+    if (state != null && state.required) {
+      await _check(accountId, groupId, state);
+      assertPrepared(accountId, groupId, text, hasAttachments: hasAttachments);
+    }
+  });
 
   void assertPrepared(
     int accountId,
@@ -443,14 +461,19 @@ class GroupE2eeService {
     String text, {
     bool hasAttachments = false,
   }) {
-    final state = _states[_key(accountId, groupId)];
-    if (!(state?.required ?? false) && !text.startsWith(wirePrefix)) return;
+    final key = _key(accountId, groupId);
+    final state = _states[key];
+    final required = state?.required ?? false;
+    final encrypted = text.startsWith(wirePrefix);
+    if (!required && !encrypted) return;
     if (hasAttachments) {
       throw const GroupEncryptionException(GroupEncryptionBlock.transport);
     }
-    if (state == null ||
-        !state.ready(accountId) ||
-        !state.outbound.contains(text)) {
+    final prepared = state?.outbound.contains(text) ?? false;
+    if (encrypted && _states.containsKey(key) && (!required || !prepared)) {
+      throw const ObsoleteGroupCiphertextException();
+    }
+    if (state == null || !state.ready(accountId) || !prepared) {
       throw GroupEncryptionException(state?.block ?? GroupEncryptionBlock.keys);
     }
   }
@@ -513,7 +536,7 @@ class GroupE2eeService {
         message,
       );
     } catch (_) {
-      state.block = GroupEncryptionBlock.transport;
+      state.block ??= GroupEncryptionBlock.transport;
       if (generation == _generation) {
         _states[_key(accountId, groupId)] = state;
         revision.value++;
@@ -536,7 +559,9 @@ class GroupE2eeService {
     try {
       roster = await _environment.roster(accountId, groupId);
     } on GroupEncryptionException catch (error) {
-      state.block = error.reason;
+      if (state.block != GroupEncryptionBlock.changed) {
+        state.block = error.reason;
+      }
       await _save(accountId, groupId, state);
       rethrow;
     }
@@ -781,28 +806,39 @@ class GroupE2eeService {
       rethrow;
     }
     state.pendingDistribution = null;
+    try {
+      await _save(accountId, groupId, state);
+    } catch (_) {
+      if (state.generation == _generation) {
+        state.pendingDistribution = distribution;
+        revision.value++;
+      } else {
+        ProMaxCrypto.wipe(distribution);
+      }
+      rethrow;
+    }
     ProMaxCrypto.wipe(distribution);
-    await _save(accountId, groupId, state);
   }
 
-  Future<void> retry(
-    int accountId,
-    int groupId,
-  ) => _serial(accountId, groupId, () async {
-    await _load(accountId, groupId);
-    final state = _states[_key(accountId, groupId)];
-    if (state == null ||
-        (state.pendingDistribution == null && state.pendingControls.isEmpty) ||
-        (state.block != null &&
-            state.block != GroupEncryptionBlock.transport)) {
-      throw const GroupEncryptionException(GroupEncryptionBlock.unavailable);
-    }
-    final roster = await _check(accountId, groupId, state);
-    state.block = null;
-    await _save(accountId, groupId, state);
-    await _sendPendingControls(accountId, groupId, state);
-    await _finish(accountId, groupId, state, roster);
-  });
+  Future<void> retry(int accountId, int groupId) => _serial(
+    accountId,
+    groupId,
+    () async {
+      await _load(accountId, groupId);
+      final state = _states[_key(accountId, groupId)];
+      if (state == null || !state.canRetry) {
+        throw const GroupEncryptionException(GroupEncryptionBlock.unavailable);
+      }
+      final roster = await _check(accountId, groupId, state);
+      if (state.block == GroupEncryptionBlock.changed) {
+        throw const GroupEncryptionException(GroupEncryptionBlock.changed);
+      }
+      state.block = null;
+      await _save(accountId, groupId, state);
+      await _sendPendingControls(accountId, groupId, state);
+      await _finish(accountId, groupId, state, roster);
+    },
+  );
 
   Future<void> handleControl(
     int accountId,
@@ -869,19 +905,31 @@ class GroupE2eeService {
             (state != null && state.block == null && state.epoch >= epoch)) {
           return;
         }
+        final required = state?.required ?? false;
         state?.wipe();
         state = _GroupState(
           epoch: (state?.epoch ?? 0) + 1,
           digest: digest,
           members: roster.ids,
           coordinator: roster.coordinator,
+          required: required,
         );
         state.generation = _operationGeneration;
       } else if (type == 'proposal') {
         if (senderId != roster.coordinator ||
-            (state != null && state.proposalReceived && epoch < state.epoch)) {
+            (state != null &&
+                (state.proposalReceived || state.pendingInitiation) &&
+                epoch < state.epoch)) {
           return;
         }
+        acceptInitiatedProposal =
+            state != null &&
+            state.pendingInitiation &&
+            state.required &&
+            state.digest == digest &&
+            listEquals(state.members, roster.ids) &&
+            (state.block == null ||
+                state.block == GroupEncryptionBlock.transport);
         if (state == null ||
             epoch > state.epoch ||
             (!state.proposalReceived && epoch != state.epoch)) {
@@ -897,10 +945,11 @@ class GroupE2eeService {
           state.generation = _operationGeneration;
         } else if (state.digest != digest) {
           state.block = GroupEncryptionBlock.changed;
-        } else if (state.pendingInitiation && state.required) {
+        }
+        if (acceptInitiatedProposal) {
           state.pendingInitiation = false;
           state.pendingControls.remove('invite');
-          acceptInitiatedProposal = true;
+          state.block = null;
         }
         state.proposalReceived = true;
       } else {
@@ -959,11 +1008,11 @@ class GroupE2eeService {
       }
       state.seen.add(marker);
       if (state.seen.length > 512) state.seen.removeAt(0);
-      await _save(accountId, groupId, state);
       if (acceptInitiatedProposal) {
         await _accept(accountId, groupId, state, roster, announce: false);
         return;
       }
+      await _save(accountId, groupId, state);
       await _finish(accountId, groupId, state, roster);
     });
   }
@@ -984,16 +1033,17 @@ class GroupE2eeService {
       });
 
   void membershipChanged(int accountId, int groupId) {
-    final state = _states[_key(accountId, groupId)];
+    final key = _key(accountId, groupId);
+    final state = _states[key];
     if (state == null) return;
     state.block = GroupEncryptionBlock.changed;
     revision.value++;
     unawaited(
-      _serial(
-        accountId,
-        groupId,
-        () => _save(accountId, groupId, state),
-      ).catchError((Object _) {}),
+      _serial(accountId, groupId, () async {
+        if (identical(_states[key], state)) {
+          await _save(accountId, groupId, state);
+        }
+      }).catchError((Object _) {}),
     );
   }
 

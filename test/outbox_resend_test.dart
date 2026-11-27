@@ -150,6 +150,22 @@ void main() {
     expect(await AppDatabase.loadPendingMessages(_me), isEmpty);
   });
 
+  test('an obsolete group ciphertext fails without automatic retry', () async {
+    const id = 'temp_1_stale_group';
+    const ciphertext = 'PMXG1:c3ludGhldGlj';
+    await AppDatabase.saveMessages([
+      _outgoing(id, 'pending', text: ciphertext).toDbRow(),
+    ]);
+
+    await outbox.flush();
+
+    expect(api.sentCids, isEmpty);
+    expect(await _statusOf(id), 'error');
+    final row = await AppDatabase.loadMessage(_me, _chatId, id);
+    expect(row?['text'], ciphertext);
+    expect(outbox.retryScheduled, isFalse);
+  });
+
   test('a legacy row keeps the cid it was first sent with', () async {
     await AppDatabase.saveMessages([
       _outgoing('temp_1_2', 'pending').toDbRow(),

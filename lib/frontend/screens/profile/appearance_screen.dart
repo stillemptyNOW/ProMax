@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../../core/hub/diagnostics.dart';
 
 import '../../../core/config/app_accent.dart';
 import '../../../core/config/app_bubble_behavior.dart';
@@ -63,6 +64,7 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
     _accentPending = false;
     final app = _app;
     if (app != null && app.mounted) {
+      Diagnostics.recordFeature(DiagnosticStage.featureAppearance);
       unawaited(app.applyAccentColor(_accent.value));
     }
   }
@@ -386,6 +388,7 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
 }
 
 void _applyVisualStyle(VisualStyle style) {
+  Diagnostics.recordFeature(DiagnosticStage.featureAppearance);
   AppVisualStyle.save(style);
   if (style == VisualStyle.liquidGlass) {
     if (AppNavPillStyle.current.value != NavPillStyle.auto) {

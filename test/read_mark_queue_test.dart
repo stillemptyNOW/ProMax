@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promax/backend/api.dart';
 import 'package:promax/backend/modules/read_mark_queue.dart';
+import 'package:promax/core/config/promax_settings.dart';
 import 'package:promax/core/protocol/packet.dart';
 import 'package:promax/core/storage/token_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,6 +30,7 @@ class _FlakyApi extends Api {
     if (currentState != SessionState.online) {
       throw StateError('Нет соединения (CHAT_MARK)');
     }
+    beforeSend?.call();
     final error = failure;
     if (error != null) throw error;
     sent.add(payload['mark'] as int);
@@ -46,6 +48,7 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    await ProMaxSettings.load();
     await TokenStorage.setActiveAccount(31);
     api = _FlakyApi();
     queue = ReadMarkQueue();
@@ -87,6 +90,39 @@ void main() {
     await restarted.flush();
     expect(api.sent, [200]);
   });
+
+  test(
+    'a queued receipt is discarded when its chat switches to no read',
+    () async {
+      await queue.submit(api, _mark(5, 100));
+      await queue.submit(api, _mark(6, 200));
+      await ProMaxSettings.setChatAntiReadMode(31, 5, ChatAntiReadMode.always);
+
+      await goOnline();
+
+      expect(api.sent, [200]);
+      expect(queue.pending, isEmpty);
+    },
+  );
+
+  test(
+    'normal mode overrides global no read for only its own account',
+    () async {
+      await ProMaxSettings.setAntiRead(true);
+      await ProMaxSettings.setChatAntiReadMode(31, 5, ChatAntiReadMode.normal);
+      await ProMaxSettings.load();
+      api.currentState = SessionState.online;
+
+      await queue.submit(api, _mark(5, 100));
+      await queue.submit(api, _mark(6, 200));
+
+      expect(api.sent, [100]);
+      expect(ProMaxSettings.antiReadFor(32, 5), isTrue);
+      await ProMaxSettings.setChatAntiReadMode(31, 5, ChatAntiReadMode.inherit);
+      await ProMaxSettings.load();
+      expect(ProMaxSettings.antiReadFor(31, 5), isTrue);
+    },
+  );
 
   test('a refused mark is dropped, a timeout is kept', () async {
     api.currentState = SessionState.online;

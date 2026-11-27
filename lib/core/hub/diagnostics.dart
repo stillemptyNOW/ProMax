@@ -30,6 +30,15 @@ enum DiagnosticStage {
   webPushLink,
   webPushReceipt,
   webPushSubscription,
+  featureSession,
+  featureAppearance,
+  featureSettingsShare,
+  featureDigitalId,
+  featureWebPush,
+  featureGroupEncryption,
+  featureBatchFiles,
+  featureAntiReadException,
+  featureChatSearch,
 }
 
 enum DiagnosticOutcome {
@@ -53,6 +62,7 @@ abstract final class Diagnostics {
   static final operationsEnabled = ValueNotifier<bool>(false);
   static final _pending = <Map<String, Object>>[];
   static final _operations = <Map<String, Object>>[];
+  static final _featuresSeen = <DiagnosticStage>{};
   static HubClient _client = HubClient();
   static HubClient _operationsClient = HubClient();
   static final _operationVersionPattern = RegExp(
@@ -125,6 +135,7 @@ abstract final class Diagnostics {
       _version = '${info.version}+${info.buildNumber}';
     } catch (_) {}
     _ready = true;
+    recordFeature(DiagnosticStage.featureSession);
     if (_pending.isNotEmpty) _schedule();
     _timer?.cancel();
     _timer = Timer.periodic(
@@ -156,7 +167,10 @@ abstract final class Diagnostics {
     _operationsGeneration++;
     if (!value) {
       _operations.clear();
+      _featuresSeen.clear();
       _operationsClient.cancel();
+    } else {
+      recordFeature(DiagnosticStage.featureSession);
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(operationsEnabledKey, value);
@@ -233,6 +247,17 @@ abstract final class Diagnostics {
     _schedule();
   }
 
+  static void recordFeature(DiagnosticStage feature) {
+    if (!_ready ||
+        !operationsEnabled.value ||
+        _operations.length >= 16 ||
+        !feature.name.startsWith('feature') ||
+        !_featuresSeen.add(feature)) {
+      return;
+    }
+    recordOperation(feature, DiagnosticOutcome.success);
+  }
+
   static void _schedule() {
     _soon ??= Timer(const Duration(seconds: 15), () {
       _soon = null;
@@ -259,6 +284,7 @@ abstract final class Diagnostics {
     _soon = null;
     _pending.clear();
     _operations.clear();
+    _featuresSeen.clear();
     _client.cancel();
     _operationsClient.cancel();
   }

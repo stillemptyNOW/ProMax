@@ -43,7 +43,10 @@ class SyntheticGroupNative implements GroupEncryptionNative {
     Uint8List state,
     ContentType type,
     Uint8List plaintext,
-  ) => throw UnimplementedError();
+  ) => GroupEncrypted(
+    state: Uint8List.fromList([2]),
+    envelope: Uint8List.fromList([3]),
+  );
 
   @override
   SessionDecrypted decrypt(Uint8List state, Uint8List envelope) =>
@@ -57,27 +60,33 @@ class SyntheticGroupEnvironment implements GroupEncryptionEnvironment {
   String digest = base64Encode(Uint8List(32));
   String? stored;
   bool failKeyDelivery = false;
+  bool Function(Map<String, dynamic>)? failSave;
   String? failControlDelivery;
+  GroupEncryptionBlock? rosterBlock;
   void Function()? onKeyDelivery;
+  void Function()? onRoster;
   final List<({int sender, int recipient, Uint8List payload})> outgoing = [];
 
   @override
   bool get available => true;
 
   @override
-  Future<GroupEncryptionRoster> roster(int accountId, int groupId) async =>
-      GroupEncryptionRoster(
-        [
-          for (final id in members)
-            GroupEncryptionPeer(
-              id: id,
-              publicKey: Uint8List(32),
-              dialogId: id * 10,
-            ),
-        ],
-        Uint8List(members.length * 40),
-        digest,
-      );
+  Future<GroupEncryptionRoster> roster(int accountId, int groupId) async {
+    onRoster?.call();
+    if (rosterBlock case final block?) throw GroupEncryptionException(block);
+    return GroupEncryptionRoster(
+      [
+        for (final id in members)
+          GroupEncryptionPeer(
+            id: id,
+            publicKey: Uint8List(32),
+            dialogId: id * 10,
+          ),
+      ],
+      Uint8List(members.length * 40),
+      digest,
+    );
+  }
 
   @override
   Future<Uint8List> identity(int accountId) async => Uint8List(64);
@@ -92,6 +101,9 @@ class SyntheticGroupEnvironment implements GroupEncryptionEnvironment {
     String state,
     CachedMessage? message,
   ) async {
+    if (failSave?.call(jsonDecode(state) as Map<String, dynamic>) ?? false) {
+      throw StateError('synthetic save failure');
+    }
     stored = state;
   }
 
@@ -125,6 +137,105 @@ class SyntheticGroupEnvironment implements GroupEncryptionEnvironment {
 }
 
 void main() {
+  test('membership persistence does not replace an in-flight rekey', () async {
+    final environment = SyntheticGroupEnvironment();
+    final service = GroupE2eeService(
+      environment: environment,
+      native: SyntheticGroupNative(),
+    );
+    addTearDown(service.dispose);
+    await service.begin(1, -10);
+    environment.digest = base64Encode(Uint8List.fromList(List.filled(32, 1)));
+    environment.onRoster = () {
+      environment.onRoster = null;
+      service.membershipChanged(1, -10);
+    };
+
+    await service.begin(1, -10);
+    await service.ensureLoaded(1, -10);
+
+    expect(service.info(1, -10).epoch, 2);
+    expect(service.info(1, -10).block, isNull);
+    expect(jsonDecode(environment.stored!)['e'], 2);
+  });
+
+  test('can retry after a failed sender-key completion save', () async {
+    final environment = SyntheticGroupEnvironment();
+    final service = GroupE2eeService(
+      environment: environment,
+      native: SyntheticGroupNative(),
+    );
+    addTearDown(service.dispose);
+    await service.begin(1, -10);
+    environment.failSave = (state) =>
+        state['sender'] != null && state['pendingDistribution'] == null;
+    final consent = Uint8List.fromList(
+      utf8.encode(
+        jsonEncode({
+          'p': GroupE2eeService.controlKind,
+          't': 'consent',
+          'g': -10,
+          'e': 1,
+          'd': environment.digest,
+        }),
+      ),
+    );
+    await expectLater(
+      service.handleControl(1, 2, 'synthetic-consent', consent),
+      throwsStateError,
+    );
+
+    expect(service.info(1, -10).canRetry, isTrue);
+    environment.failSave = null;
+    await service.retry(1, -10);
+    expect(service.info(1, -10).block, isNull);
+    expect(service.info(1, -10).canRetry, isFalse);
+    expect(
+      environment.outgoing.where(
+        (message) => jsonDecode(utf8.decode(message.payload))['t'] == 'key',
+      ),
+      hasLength(1),
+    );
+  });
+
+  test('carries initiation consent into the coordinator rekey epoch', () async {
+    final coordinatorEnvironment = SyntheticGroupEnvironment();
+    final joiningEnvironment = SyntheticGroupEnvironment();
+    final coordinator = GroupE2eeService(
+      environment: coordinatorEnvironment,
+      native: SyntheticGroupNative(),
+    );
+    final joining = GroupE2eeService(
+      environment: joiningEnvironment,
+      native: SyntheticGroupNative(),
+    );
+    addTearDown(coordinator.dispose);
+    addTearDown(joining.dispose);
+    await coordinator.begin(1, -10);
+    coordinatorEnvironment.outgoing.clear();
+    final newDigest = base64Encode(Uint8List.fromList(List.filled(32, 1)));
+    coordinatorEnvironment.digest = joiningEnvironment.digest = newDigest;
+    coordinator.membershipChanged(1, -10);
+
+    await joining.begin(2, -10);
+    await coordinator.handleControl(
+      1,
+      2,
+      'synthetic-invite',
+      joiningEnvironment.outgoing.single.payload,
+    );
+    expect(
+      () => coordinator.assertPrepared(1, -10, 'synthetic plaintext'),
+      throwsA(isA<GroupEncryptionException>()),
+    );
+    await coordinator.accept(1, -10);
+    final proposal = coordinatorEnvironment.outgoing.first.payload;
+    await joining.handleControl(2, 1, 'synthetic-proposal', proposal);
+
+    expect(joining.info(2, -10).epoch, 2);
+    expect(joining.info(2, -10).consented, isTrue);
+  });
+
   test(
     'does not send a key if membership changes at the send boundary',
     () async {
@@ -381,8 +492,49 @@ void main() {
     await deliver();
     expect(first.info(1, -10).ready, isTrue);
     expect(second.info(2, -10).ready, isTrue);
+    final queuedWire = await first.encryptText(1, -10, 'synthetic queued text');
+    final queued = CachedMessage(
+      id: 'synthetic-queued',
+      accountId: 1,
+      chatId: -10,
+      senderId: 1,
+      text: queuedWire,
+      time: 0,
+    );
+    await first.assertSendAllowed(1, -10, queuedWire);
+    firstEnvironment.rosterBlock = GroupEncryptionBlock.verification;
+    await expectLater(
+      first.assertSendAllowed(1, -10, queuedWire),
+      throwsA(
+        isA<GroupEncryptionException>().having(
+          (error) => error.reason,
+          'reason',
+          GroupEncryptionBlock.verification,
+        ),
+      ),
+    );
+    expect(first.info(1, -10).canRetry, isTrue);
+    firstEnvironment.rosterBlock = null;
+    await first.retry(1, -10);
+    await first.assertSendAllowed(1, -10, queuedWire);
     firstEnvironment.digest = base64Encode(
       Uint8List.fromList(List.filled(32, 1)),
+    );
+    await expectLater(
+      first.assertSendAllowed(1, -10, queuedWire),
+      throwsA(
+        isA<GroupEncryptionException>()
+            .having(
+              (error) => error.reason,
+              'reason',
+              GroupEncryptionBlock.changed,
+            )
+            .having(
+              (error) => queued.withSendFailure(error).status,
+              'status',
+              'pending',
+            ),
+      ),
     );
     await expectLater(
       first.encryptText(1, -10, 'synthetic text'),
@@ -395,6 +547,17 @@ void main() {
       ),
     );
     expect(first.info(1, -10).ready, isFalse);
+    await first.begin(1, -10);
+    await expectLater(
+      first.assertSendAllowed(1, -10, queuedWire),
+      throwsA(
+        isA<ObsoleteGroupCiphertextException>().having(
+          (error) => queued.withSendFailure(error).status,
+          'status',
+          'error',
+        ),
+      ),
+    );
   });
 
   test('blocks unencrypted attachments in a protected group', () async {

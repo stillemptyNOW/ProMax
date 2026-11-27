@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../backend/api.dart';
 import '../../../core/config/product_links.dart';
 import '../../../core/hub/diagnostics.dart';
+import '../../../core/security/app_lock.dart';
 import '../../../core/utils/format.dart';
 import '../../../core/webpush/max_web_socket.dart';
 import '../../../core/webpush/web_push_service.dart';
@@ -22,7 +23,9 @@ import '../../../core/utils/user_facing_error.dart';
 enum _Stage { loading, intro, waiting, password, ready }
 
 class WebPushScreen extends StatefulWidget {
-  const WebPushScreen({super.key});
+  const WebPushScreen({super.key, this.pendingLink});
+
+  final ({int accountId, WebPushSubscription subscription})? pendingLink;
 
   @override
   State<WebPushScreen> createState() => _WebPushScreenState();
@@ -40,6 +43,7 @@ class _WebPushScreenState extends State<WebPushScreen> {
   WebPushLinkInfo? _link;
   String? _trackId;
   String? _passwordHint;
+  bool _pendingLinkRegistered = false;
 
   @override
   void initState() {
@@ -128,7 +132,10 @@ class _WebPushScreenState extends State<WebPushScreen> {
     final watch = Stopwatch()..start();
     try {
       final track = await service.startQrAuth();
-      if (!mounted) return;
+      if (!mounted) {
+        await service.cancelAuth();
+        return;
+      }
       setState(() => _stage = _Stage.waiting);
 
       await accountModule.authorizeWebQrLogin(track.qrLink);
@@ -177,6 +184,35 @@ class _WebPushScreenState extends State<WebPushScreen> {
     if (!mounted) return;
     _passwordController.clear();
     setState(() => _stage = _Stage.ready);
+    await _registerPendingLink();
+  }
+
+  Future<void> _registerPendingLink() async {
+    final pending = widget.pendingLink;
+    if (pending == null ||
+        _pendingLinkRegistered ||
+        AppLock.instance.locked.value) {
+      return;
+    }
+    try {
+      await WebPushService.instance.registerSubscription(
+        pending.subscription,
+        expectedAccountId: pending.accountId,
+      );
+      if (!mounted) return;
+      setState(() => _pendingLinkRegistered = true);
+      showCustomNotification(
+        context,
+        AppLocalizations.of(context)!.webPushLinked,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      showCustomNotification(
+        context,
+        l10n.webPushLinkFailed(userFacingError(error)),
+      );
+    }
   }
 
   Future<void> _signOut() async {
@@ -276,6 +312,8 @@ class _WebPushScreenState extends State<WebPushScreen> {
       _primary(l10n.webPushConfirm, _submitPassword),
     ],
     _Stage.ready => [
+      if (widget.pendingLink != null && !_pendingLinkRegistered)
+        _primary(l10n.webPushConnect, () => _run(_registerPendingLink)),
       SectionHeader(
         l10n.proMaxPushWebLogin,
         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),

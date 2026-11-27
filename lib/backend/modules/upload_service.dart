@@ -21,12 +21,14 @@ export 'upload_notification_service.dart' show UploadKind;
 // #***! события очереди наружу
 sealed class UploadJobEvent {
   const UploadJobEvent({
+    required this.accountId,
     required this.chatId,
     required this.tempId,
     required this.kind,
     required this.scheduled,
   });
 
+  final int accountId;
   final int chatId;
   final String tempId;
   final UploadKind kind;
@@ -35,6 +37,7 @@ sealed class UploadJobEvent {
 
 class UploadJobDone extends UploadJobEvent {
   const UploadJobDone({
+    required super.accountId,
     required super.chatId,
     required super.tempId,
     required super.kind,
@@ -53,6 +56,7 @@ class UploadJobDone extends UploadJobEvent {
 
 class UploadJobFailed extends UploadJobEvent {
   const UploadJobFailed({
+    required super.accountId,
     required super.chatId,
     required super.tempId,
     required super.kind,
@@ -216,6 +220,7 @@ class UploadService {
   final Set<String> _failed = {};
   final Map<String, Future<void> Function()> _relaunch = {};
 
+  final Map<(int, int), Future<void>> _fileUploadTails = {};
   int _tempIdCounter = 0;
 
   Stream<UploadJobEvent> get events => _events.stream;
@@ -229,19 +234,27 @@ class UploadService {
   ValueListenable<List<double>>? progressFor(String tempId) =>
       _jobs[tempId]?.progress;
 
-  UploadJob? activeFileJob(int chatId) {
+  UploadJob? activeFileJob(int accountId, int chatId) {
     for (final job in _jobs.values) {
-      if (job.chatId == chatId && job.kind == UploadKind.file) return job;
+      if (job.accountId == accountId &&
+          job.chatId == chatId &&
+          job.kind == UploadKind.file) {
+        return job;
+      }
     }
     return null;
   }
 
   // #***! плейсхолдеры открытого чата, рисуются вместе с настоящими
-  List<CachedMessage> pendingFor(int chatId) {
+  List<CachedMessage> pendingFor(int accountId, int chatId) {
     final pending = <CachedMessage>[];
     for (final job in _jobs.values) {
       final placeholder = job.placeholder;
-      if (job.chatId == chatId && placeholder != null) pending.add(placeholder);
+      if (job.accountId == accountId &&
+          job.chatId == chatId &&
+          placeholder != null) {
+        pending.add(placeholder);
+      }
     }
     return List<CachedMessage>.unmodifiable(pending);
   }
@@ -469,15 +482,29 @@ class UploadService {
         scheduledTime: scheduledTime,
       ),
       (job) async {
-        final done = await _uploadFile(
-          chatId: chatId,
-          job: job,
-          source: source,
-          filename: filename,
-          size: size,
-          text: text,
-          scheduledTime: scheduledTime,
+        final key = (accountId, chatId);
+        final previous = _fileUploadTails[key] ?? Future<void>.value();
+        final uploading = previous.then(
+          (_) => _uploadFile(
+            chatId: chatId,
+            job: job,
+            source: source,
+            filename: filename,
+            size: size,
+            text: text,
+            scheduledTime: scheduledTime,
+          ),
         );
+        final tail = uploading.then<void>((_) {}, onError: (Object _) {});
+        _fileUploadTails[key] = tail;
+        unawaited(
+          tail.then((_) {
+            if (identical(_fileUploadTails[key], tail)) {
+              _fileUploadTails.remove(key);
+            }
+          }),
+        );
+        final done = await uploading;
         FileHistoryCache.add(
           FileHistoryEntry(
             fileId: done.fileId,
@@ -532,6 +559,7 @@ class UploadService {
     late final StreamSubscription<UploadEvent> sub;
     sub = _uploader
         .upload(
+          accountId: job.accountId,
           chatId: chatId,
           file: source,
           filename: filename,
@@ -604,6 +632,7 @@ class UploadService {
       }
       _events.add(
         UploadJobFailed(
+          accountId: job.accountId,
           chatId: job.chatId,
           tempId: job.id,
           kind: job.kind,
@@ -618,6 +647,7 @@ class UploadService {
     if (job.scheduled) {
       _events.add(
         UploadJobDone(
+          accountId: job.accountId,
           chatId: job.chatId,
           tempId: job.id,
           kind: job.kind,
@@ -657,6 +687,7 @@ class UploadService {
     );
     _events.add(
       UploadJobDone(
+        accountId: job.accountId,
         chatId: job.chatId,
         tempId: job.id,
         kind: job.kind,

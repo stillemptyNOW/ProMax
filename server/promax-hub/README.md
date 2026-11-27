@@ -65,6 +65,14 @@ curl -f https://boriskino.qd.je/health
 
 `GET /s` serves short links in the form `https://proma-x.xyz/s#<code>`. The app sends allowlisted preferences to `POST /v1/settings-links` and resolves the random 128-bit code with `GET /v1/settings-links/{code}`. Links are valid for 30 days. SQLite stores the code digest and settings payload. Expired records are pruned on creation and by `manage.py cleanup`. The Hub bounds creation by client IP, overall request volume, and active link count. Link API responses use `Cache-Control: no-store`.
 
+## Сводка использования и ошибок
+
+С включённой расширенной диагностикой приложение отправляет одно событие о сеансе и до одного события на использованную функцию за сеанс. Это число наблюдений, а не уникальных людей. Ноль означает, что события по функции не поступили. Некоторые функции доступны только на отдельных платформах. Сводка доступна через `manage.py features --hours 24` и защищённый `GET /v1/admin/telemetry/features`.
+
+`promax-summary.timer` ежедневно обновляет `/var/lib/promax-reports/summary.json`. Сервис читает SQLite через соединение только для чтения и отправляет в ModuleAPI агрегаты использования, операций, типов ошибок и производительности. Содержимое сообщений, URL, идентификаторы, токены и трассировки в запрос не входят. При отсутствии наблюдений или сбое провайдера в файле остаётся детерминированная сводка.
+
+В `/etc/promax-summary/model.env` задаётся `PROMAX_SUMMARY_MODEL`. Ключ хранится отдельно в `/etc/promax-summary/api-key` с правами `0600` и передаётся сервису через systemd `LoadCredential`.
+
 `GET /settings` continues to serve the portable `#v1.` links, whose payload stays in the URL fragment. Both landing pages open the registered `promax://settings` scheme. The app validates the settings and asks for confirmation before applying them. `/.well-known/assetlinks.json` associates the permanent ProMax Android signing certificate with the domain.
 
 `POST /v1/performance` accepts manually submitted aggregate frame reports when client diagnostics are enabled. It records the random installation ID, version, OS, effect mode/tier, display refresh rate and bounded numeric frame totals/timings. Extra fields are rejected; reports are limited to six per installation per hour and use the existing 14-day telemetry cleanup. They appear in `manage.py logs` with `kind=performance`.

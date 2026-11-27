@@ -167,7 +167,10 @@ class DesktopNotifier {
     final notification = NotificationPolicy.compose(push, facts);
     if (notification == null) return;
     final messageId = notification.messageId;
-    if (ProMaxSettings.antiRead.value &&
+    if (ProMaxSettings.antiReadFor(
+          notification.accountId,
+          notification.chatId,
+        ) &&
         messageId != null &&
         !await NotifiedMessages.claim(
           notification.accountId,

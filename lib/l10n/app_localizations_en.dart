@@ -7450,6 +7450,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proMaxAntiRead => 'Don\'t read';
 
   @override
+  String get chatScreenReadReceipts => 'Read receipts';
+
+  @override
+  String get chatScreenReadReceiptsGlobal => 'Use global setting';
+
+  @override
+  String get chatScreenReadReceiptsNormal => 'Send read receipts';
+
+  @override
+  String get chatScreenReadReceiptsAlways => 'Never send read receipts';
+
+  @override
   String get proMaxNoTypingShort => 'No typing';
 
   @override
@@ -7865,7 +7877,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagnosticsOperationsHint =>
-      'Send Digital ID, iOS notification and connection outcomes and timings to ProMax, along with the app version and OS. Events contain no account data, URLs or content.';
+      'Send operation results, timings and which features were used during the session. Events include the app version and OS, without account data, URLs or content.';
 
   @override
   String get hubAnnouncements => 'ProMax announcements';
@@ -8134,9 +8146,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get appClassicDesignHint =>
       'Use the previous chat list, conversations and profile layout. Your data and settings stay with you.';
-
-  @override
-  String get appRedesignWelcome => 'Welcome to the redesign';
 
   @override
   String get hubKindNews => 'News';

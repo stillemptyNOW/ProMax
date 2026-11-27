@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:kolibri/kolibri.dart' as kb;
 
 import '../api.dart';
+import '../../core/storage/token_storage.dart';
 import '../../core/utils/file_names.dart';
 import '../../core/utils/logger.dart';
 import '../../core/storage/chat_activity_store.dart';
@@ -61,6 +62,7 @@ class FileUploader {
 
   // #***! весь сценарий для документа, url заливка сообщение
   Stream<UploadEvent> upload({
+    required int accountId,
     required int chatId,
     required File file,
     required String filename,
@@ -82,8 +84,19 @@ class FileUploader {
 
     Future<void> run() async {
       try {
-        final info = await messages.requestUploadUrl();
+        final epoch = api.sessionEpoch;
+        void checkSession() {
+          if (api.sessionEpoch != epoch) throw StateError('Account changed');
+        }
+
+        if (await TokenStorage.getActiveAccountId() != accountId) {
+          throw StateError('Account changed');
+        }
+        checkSession();
         if (cancelled) return;
+        final info = await messages.requestUploadUrl(beforeSend: checkSession);
+        if (cancelled) return;
+        checkSession();
         if (info == null) {
           ctrl.add(const UploadError('no_upload_url'));
           return;
@@ -143,12 +156,18 @@ class FileUploader {
         }
 
         // #***! файл на CDN, шлём само сообщение
+        if (await TokenStorage.getActiveAccountId() != accountId) {
+          throw StateError('Account changed');
+        }
+        checkSession();
+        if (cancelled) return;
         final messageId = await messages.sendFileMessage(
           chatId,
           info.fileId,
           token: info.token,
           text: text,
           scheduledTime: scheduledTime,
+          beforeSend: checkSession,
         );
         if (cancelled) return;
         if (messageId == null) {

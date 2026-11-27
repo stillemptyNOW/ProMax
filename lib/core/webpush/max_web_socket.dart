@@ -77,18 +77,30 @@ class MaxWebSocketSession {
 
   // #***! подключение и хэндшейк
   Future<Object?> connect() async {
-    final socket = await WebSocket.connect(
-      endpoint,
-      headers: <String, Object>{
-        'Origin': origin,
-        'User-Agent': device.userAgent,
-      },
-    );
+    final client = HttpClient()..connectionTimeout = requestTimeout;
+    final WebSocket socket;
+    try {
+      socket = await WebSocket.connect(
+        endpoint,
+        headers: <String, Object>{
+          'Origin': origin,
+          'User-Agent': device.userAgent,
+        },
+        customClient: client,
+      ).timeout(requestTimeout);
+    } finally {
+      client.close(force: true);
+    }
+    if (_closed) {
+      await socket.close();
+      throw const MaxWebException('сессия закрыта');
+    }
     _socket = socket;
     _subscription = socket.listen(
       _onFrame,
       onError: (Object error) => _failAll(MaxWebException('сокет: $error')),
-      onDone: () => _failAll(const MaxWebException('соединение закрыто сервером')),
+      onDone: () =>
+          _failAll(const MaxWebException('соединение закрыто сервером')),
       cancelOnError: true,
     );
 
@@ -169,7 +181,9 @@ class MaxWebSocketSession {
     final payload = frame.payload;
     if (payload is Map) {
       final message = payload['localizedMessage'] ?? payload['message'];
-      final code = payload['error'];
+      final code = payload['message'] == 'FAIL_LOGIN_TOKEN'
+          ? 'FAIL_LOGIN_TOKEN'
+          : payload['error'];
       if (message is String && message.isNotEmpty) {
         return MaxWebException(message, code: code is String ? code : null);
       }
@@ -177,7 +191,9 @@ class MaxWebSocketSession {
         return MaxWebException(code, code: code);
       }
     }
-    return MaxWebException('опкод ${frame.opcode}: ошибка сервера (cmd=${frame.cmd})');
+    return MaxWebException(
+      'опкод ${frame.opcode}: ошибка сервера (cmd=${frame.cmd})',
+    );
   }
 
   // #***! при обрыве рубим все ожидающие

@@ -804,7 +804,49 @@ class ChatMediaSendController {
   }) async {
     if (!await allowAttachment()) return;
     if (_myId == 0) return;
+    await _enqueueFile(
+      source: source,
+      filename: filename,
+      size: size,
+      scheduledTime: scheduledTime,
+      text: text,
+      sealedText: sealedText,
+      e2ee: e2ee,
+    );
+  }
 
+  Future<int> enqueuePickedFiles(
+    List<({File source, String filename, int size})> files, {
+    int? scheduledTime,
+  }) async {
+    final accountId = _myId;
+    if (files.isEmpty || accountId == 0 || !await allowAttachment()) return 0;
+    if (!isMounted() || !await confirmSend() || !await allowAttachment()) {
+      return 0;
+    }
+    if (!isMounted() || _myId != accountId) return 0;
+    for (final file in files) {
+      unawaited(
+        _enqueueFile(
+          source: file.source,
+          filename: file.filename,
+          size: file.size,
+          scheduledTime: scheduledTime,
+        ),
+      );
+    }
+    return files.length;
+  }
+
+  Future<void> _enqueueFile({
+    required File source,
+    required String filename,
+    required int size,
+    int? scheduledTime,
+    String? text,
+    Uint8List? sealedText,
+    int e2ee = CachedMessage.e2eeNone,
+  }) {
     showAttachmentPanel.value = false;
 
     final placeholder = scheduledTime != null
@@ -828,11 +870,11 @@ class ChatMediaSendController {
       scheduledTime: scheduledTime,
     );
     syncUploadStatus();
-    await sending;
+    return sending;
   }
 
   void syncUploadStatus() {
-    final job = UploadService.instance.activeFileJob(_chatId);
+    final job = UploadService.instance.activeFileJob(_myId, _chatId);
     if (job?.id == _uploadStatusJobId) return;
     _detachUploadStatus();
     if (job == null) {
@@ -886,7 +928,7 @@ class ChatMediaSendController {
       }
     }
 
-    for (final msg in service.pendingFor(_chatId)) {
+    for (final msg in service.pendingFor(_myId, _chatId)) {
       if (chatController.containsId(msg.id)) continue;
       chatController.addMessage(msg);
       changed = true;
@@ -913,7 +955,9 @@ class ChatMediaSendController {
   }
 
   void onUploadEvent(UploadJobEvent event) {
-    if (!isMounted() || event.chatId != _chatId) return;
+    if (!isMounted() || event.accountId != _myId || event.chatId != _chatId) {
+      return;
+    }
     syncUploadStatus();
     if (event is UploadJobDone) {
       if (event.scheduled) {

@@ -7497,6 +7497,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get proMaxAntiRead => 'Не читать';
 
   @override
+  String get chatScreenReadReceipts => 'Отметки о прочтении';
+
+  @override
+  String get chatScreenReadReceiptsGlobal => 'Как в общих настройках';
+
+  @override
+  String get chatScreenReadReceiptsNormal => 'Отправлять отметки';
+
+  @override
+  String get chatScreenReadReceiptsAlways => 'Никогда не отправлять отметки';
+
+  @override
   String get proMaxNoTypingShort => 'Не печатать';
 
   @override
@@ -7909,7 +7921,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get diagnosticsOperationsHint =>
-      'Отправляет в ProMax этапы, результаты и время работы Цифрового ID, уведомлений iOS и подключения, а также версию приложения и ОС. Без данных аккаунта, ссылок и содержимого.';
+      'Отправляет результаты и время операций, а также сведения о том, какие функции использовались за сеанс. Включает версию приложения и ОС. Без данных аккаунта, ссылок и содержимого.';
 
   @override
   String get hubAnnouncements => 'Объявления ProMax';
@@ -8176,9 +8188,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get appClassicDesignHint =>
       'Прежнее оформление списка чатов, переписки и профиля. Ваши данные и настройки сохраняются.';
-
-  @override
-  String get appRedesignWelcome => 'Добро пожаловать в редизайн';
 
   @override
   String get hubKindNews => 'Новость';

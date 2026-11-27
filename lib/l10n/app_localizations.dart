@@ -13178,6 +13178,30 @@ abstract class AppLocalizations {
   /// **'Don\'t read'**
   String get proMaxAntiRead;
 
+  /// No description provided for @chatScreenReadReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Read receipts'**
+  String get chatScreenReadReceipts;
+
+  /// No description provided for @chatScreenReadReceiptsGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Use global setting'**
+  String get chatScreenReadReceiptsGlobal;
+
+  /// No description provided for @chatScreenReadReceiptsNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Send read receipts'**
+  String get chatScreenReadReceiptsNormal;
+
+  /// No description provided for @chatScreenReadReceiptsAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'Never send read receipts'**
+  String get chatScreenReadReceiptsAlways;
+
   /// No description provided for @proMaxNoTypingShort.
   ///
   /// In en, this message translates to:
@@ -13919,7 +13943,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsOperationsHint.
   ///
   /// In en, this message translates to:
-  /// **'Send Digital ID, iOS notification and connection outcomes and timings to ProMax, along with the app version and OS. Events contain no account data, URLs or content.'**
+  /// **'Send operation results, timings and which features were used during the session. Events include the app version and OS, without account data, URLs or content.'**
   String get diagnosticsOperationsHint;
 
   /// No description provided for @hubAnnouncements.
@@ -14413,12 +14437,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use the previous chat list, conversations and profile layout. Your data and settings stay with you.'**
   String get appClassicDesignHint;
-
-  /// No description provided for @appRedesignWelcome.
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome to the redesign'**
-  String get appRedesignWelcome;
 
   /// No description provided for @hubKindNews.
   ///

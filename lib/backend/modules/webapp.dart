@@ -64,14 +64,8 @@ class WebAppLaunch {
   final String url;
   final String? queryId;
   final int botId;
-  final String? startParam;
 
-  const WebAppLaunch({
-    required this.url,
-    required this.botId,
-    this.queryId,
-    this.startParam,
-  });
+  const WebAppLaunch({required this.url, required this.botId, this.queryId});
 }
 
 // #***! номер который разрешили дать боту, с подписью сервера
@@ -124,6 +118,59 @@ int? _asInt(dynamic value) {
   return int.tryParse(value?.toString() ?? '');
 }
 
+class DigitalIdCallback {
+  DigitalIdCallback._(this._module, this.uri)
+    : _account = TokenStorage.getActiveAccountId();
+
+  final WebAppModule _module;
+  final Uri uri;
+  final Future<int?> _account;
+  ExternalCallbackResult? _exchange;
+  Future<WebAppLaunch>? _running;
+  bool _launched = false;
+  bool get hasLaunched => _launched;
+
+  Future<WebAppLaunch> launch() => _running ??= _launch().whenComplete(() {
+    _running = null;
+  });
+
+  Future<void> _checkAccount() async {
+    final account = await _account;
+    if (account == null || await TokenStorage.getActiveAccountId() != account) {
+      throw const WebAppUnavailable('Аккаунт Цифрового ID изменился');
+    }
+  }
+
+  Future<WebAppLaunch> _launch() async {
+    await _checkAccount();
+    final exchange = _exchange ??= await _module._exchangeDigitalIdCallback(
+      uri,
+    );
+    await _checkAccount();
+    final watch = Stopwatch()..start();
+    var outcome = DiagnosticOutcome.failed;
+    try {
+      final launch = await _module.fetchLaunch(
+        exchange.botId,
+        startParam: exchange.startParam,
+      );
+      await _checkAccount();
+      if (!_launched) {
+        _launched = true;
+        Diagnostics.recordFeature(DiagnosticStage.featureDigitalId);
+      }
+      outcome = DiagnosticOutcome.success;
+      return launch;
+    } finally {
+      Diagnostics.recordOperation(
+        DiagnosticStage.digitalIdExchange,
+        outcome,
+        elapsed: watch.elapsed,
+      );
+    }
+  }
+}
+
 // #***! запуск мини аппок ботов
 class WebAppModule {
   final Api _api;
@@ -162,12 +209,7 @@ class WebAppModule {
       throw const WebAppUnavailable('Сервер не вернул адрес приложения');
     }
     final queryId = (data is Map) ? data['query_id']?.toString() : null;
-    return WebAppLaunch(
-      url: url,
-      botId: botId,
-      queryId: queryId,
-      startParam: normalizedStartParam,
-    );
+    return WebAppLaunch(url: url, botId: botId, queryId: queryId);
   }
 
   // #***! номер боту только по явному действию юзера
@@ -230,48 +272,42 @@ class WebAppModule {
     }
   }
 
-  // #***! вернулись из браузера после госуслуг, докручиваем и переоткрываем
-  Future<WebAppLaunch> handleExternalCallback(String url) async {
+  DigitalIdCallback digitalIdCallback(String url) {
     final uri = Uri.tryParse(url);
     if (uri == null || !HostPolicy.isDigitalIdCallback(uri)) {
       throw const WebAppUnavailable('Некорректный callback Цифрового ID');
     }
+    return DigitalIdCallback._(this, uri);
+  }
+
+  Future<ExternalCallbackResult> _exchangeDigitalIdCallback(Uri uri) async {
     if (_api.state != SessionState.online) {
       throw const WebAppUnavailable('Нет соединения с сервером');
     }
     final watch = Stopwatch()..start();
-    var stage = DiagnosticStage.digitalIdCallback;
     var outcome = DiagnosticOutcome.failed;
     try {
       final packet = await _api.sendRequest(Opcode.externalCallback, {
-        'url': url,
+        'url': uri.toString(),
       });
-      final result = ExternalCallbackResult.fromPayload(packet.payload);
+      final result = packet.isOk
+          ? ExternalCallbackResult.fromPayload(packet.payload)
+          : null;
       if (result == null) {
         throw const WebAppUnavailable(
           'Сервер не вернул данные для завершения Цифрового ID',
         );
       }
+      outcome = DiagnosticOutcome.success;
+      return result;
+    } finally {
       Diagnostics.recordOperation(
-        stage,
-        DiagnosticOutcome.success,
+        DiagnosticStage.digitalIdCallback,
+        outcome,
         elapsed: watch.elapsed,
       );
-      stage = DiagnosticStage.digitalIdExchange;
-      watch.reset();
-      final launch = await fetchLaunch(
-        result.botId,
-        startParam: result.startParam,
-      );
-      outcome = DiagnosticOutcome.success;
-      return launch;
-    } finally {
-      Diagnostics.recordOperation(stage, outcome, elapsed: watch.elapsed);
     }
   }
-
-  Future<WebAppLaunch> reloadDigitalIdLaunch(WebAppLaunch launch) =>
-      fetchLaunch(launch.botId, startParam: launch.startParam);
 
   // #***! id мини аппы лежит в sync_state после login
   Future<int?> _resolveEntryApp(String key) async {

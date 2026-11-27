@@ -229,7 +229,13 @@ class FkmController {
 
   Future<bool> _firstPersistedNotice(MessageNotification notification) async {
     final messageId = notification.messageId;
-    if (!ProMaxSettings.antiRead.value || messageId == null) return true;
+    if (messageId == null ||
+        !ProMaxSettings.antiReadFor(
+          notification.accountId,
+          notification.chatId,
+        )) {
+      return true;
+    }
     return NotifiedMessages.claim(
       notification.accountId,
       notification.chatId,

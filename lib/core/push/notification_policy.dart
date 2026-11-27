@@ -74,7 +74,7 @@ class NotificationFacts {
     final rawConfig = await AppDatabase.getPrivacyConfig(accountId);
     final rows = await AppDatabase.loadChat(accountId, chatId);
     final chat = rows.isEmpty ? null : CachedChat.fromDbRow(rows.first);
-    final antiRead = ProMaxSettings.antiRead.value;
+    final antiRead = ProMaxSettings.antiReadFor(accountId, chatId);
     final local = antiRead
         ? await LocalReadState.load(accountId, chatId)
         : const LocalReadState();

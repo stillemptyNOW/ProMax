@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/config/promax_settings.dart';
 import '../../core/protocol/opcode_map.dart';
 import '../../core/protocol/packet.dart';
 import '../../core/storage/token_storage.dart';
@@ -122,18 +123,33 @@ class ReadMarkQueue {
   }
 
   Future<void> _send(Api api, ReadMark mark) async {
+    bool suppressReceipt() =>
+        ProMaxSettings.antiReadFor(mark.accountId, mark.chatId);
+    if (suppressReceipt()) {
+      _settle(mark);
+      return;
+    }
     try {
-      await api.sendRequest(Opcode.chatMark, {
-        'type': 'READ_MESSAGE',
-        'chatId': mark.chatId,
-        'messageId': mark.messageId,
-        'mark': mark.mark,
-      }, silent: true);
+      await api.sendRequest(
+        Opcode.chatMark,
+        {
+          'type': 'READ_MESSAGE',
+          'chatId': mark.chatId,
+          'messageId': mark.messageId,
+          'mark': mark.mark,
+        },
+        silent: true,
+        beforeSend: () {
+          if (suppressReceipt()) throw StateError('Read receipt suppressed');
+        },
+      );
       _settle(mark);
     } on SessionExpiredException {
       return;
     } catch (e) {
-      if (isPermanentSendFailure(e)) {
+      if (suppressReceipt()) {
+        _settle(mark);
+      } else if (isPermanentSendFailure(e)) {
         logger.w('Отметка прочтения ${mark.chatId} отклонена: $e');
         _settle(mark);
       }

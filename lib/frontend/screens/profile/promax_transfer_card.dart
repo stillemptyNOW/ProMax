@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/config/promax_archive.dart';
 import '../../../core/config/promax_settings_link.dart';
+import '../../../core/hub/diagnostics.dart';
 import '../../../core/security/app_lock.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/save_file_as.dart';
@@ -92,6 +93,7 @@ class _ProMaxTransferCardState extends State<ProMaxTransferCard> {
       );
       if (!confirmed || !mounted || AppLock.instance.locked.value) return;
       final link = await ProMaxSettingsLink.export();
+      Diagnostics.recordFeature(DiagnosticStage.featureSettingsShare);
       if (!mounted || AppLock.instance.locked.value) return;
       await showDialog<void>(
         context: context,

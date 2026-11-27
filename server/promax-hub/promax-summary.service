@@ -1,0 +1,22 @@
+[Unit]
+Description=Build the ProMax aggregate telemetry summary
+After=network-online.target promax-hub.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=promax-hub
+Group=promax-hub
+EnvironmentFile=/etc/promax-summary/model.env
+LoadCredential=api-key:/etc/promax-summary/api-key
+StateDirectory=promax-reports
+StateDirectoryMode=0700
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/promax-hub/current/ai_summary.py
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+ReadWritePaths=/var/lib/promax-hub
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+TimeoutStartSec=60

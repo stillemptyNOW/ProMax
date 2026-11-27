@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/recents_privacy.dart';
 import 'build_profile.dart';
+
+enum ChatAntiReadMode { inherit, normal, always }
 
 class ProMaxSettings {
   static const _kViewDeleted = 'promax_view_deleted';
@@ -15,6 +18,7 @@ class ProMaxSettings {
   static const _kShowReadStamp = 'promax_show_read_stamp';
   static const _kGhostMode = 'promax_ghost_mode';
   static const _kAntiRead = 'promax_anti_read';
+  static const _kChatAntiRead = 'promax_chat_anti_read';
   static const _kReadOnReaction = 'promax_read_on_reaction';
   static const _kReadOnReply = 'promax_read_on_reply';
   static const _kReadOnSend = 'promax_read_on_send';
@@ -38,6 +42,7 @@ class ProMaxSettings {
   static final ValueNotifier<bool> ghostMode = ValueNotifier(false);
   static final ValueNotifier<bool> switcherBlur = ValueNotifier(false);
   static final ValueNotifier<bool> antiRead = ValueNotifier(false);
+  static final Map<String, bool> _chatAntiRead = {};
   static final ValueNotifier<bool> readOnReaction = ValueNotifier(false);
   static final ValueNotifier<bool> readOnReply = ValueNotifier(false);
   static final ValueNotifier<bool> readOnSend = ValueNotifier(false);
@@ -66,6 +71,22 @@ class ProMaxSettings {
     showReadStamp.value = prefs.getBool(_kShowReadStamp) ?? true;
     ghostMode.value = prefs.getBool(_kGhostMode) ?? false;
     antiRead.value = prefs.getBool(_kAntiRead) ?? false;
+    _chatAntiRead.clear();
+    final rawChatAntiRead = prefs.getString(_kChatAntiRead);
+    if (rawChatAntiRead != null) {
+      try {
+        final decoded = jsonDecode(rawChatAntiRead);
+        if (decoded is Map) {
+          for (final entry in decoded.entries) {
+            if (entry.key is String && entry.value is bool) {
+              _chatAntiRead[entry.key as String] = entry.value as bool;
+            }
+          }
+        }
+      } on FormatException {
+        _chatAntiRead.clear();
+      }
+    }
     readOnReaction.value = prefs.getBool(_kReadOnReaction) ?? false;
     readOnReply.value = prefs.getBool(_kReadOnReply) ?? false;
     readOnSend.value = prefs.getBool(_kReadOnSend) ?? false;
@@ -136,6 +157,40 @@ class ProMaxSettings {
     antiRead.value = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kAntiRead, value);
+  }
+
+  static ChatAntiReadMode chatAntiReadMode(int accountId, int chatId) =>
+      switch (_chatAntiRead['$accountId/$chatId']) {
+        true => ChatAntiReadMode.always,
+        false => ChatAntiReadMode.normal,
+        null => ChatAntiReadMode.inherit,
+      };
+
+  static bool antiReadFor(int accountId, int chatId) =>
+      switch (chatAntiReadMode(accountId, chatId)) {
+        ChatAntiReadMode.inherit => antiRead.value,
+        ChatAntiReadMode.normal => false,
+        ChatAntiReadMode.always => true,
+      };
+
+  static Future<void> setChatAntiReadMode(
+    int accountId,
+    int chatId,
+    ChatAntiReadMode mode,
+  ) async {
+    if (accountId == 0) return;
+    final key = '$accountId/$chatId';
+    if (mode == ChatAntiReadMode.inherit) {
+      _chatAntiRead.remove(key);
+    } else {
+      _chatAntiRead[key] = mode == ChatAntiReadMode.always;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    if (_chatAntiRead.isEmpty) {
+      await prefs.remove(_kChatAntiRead);
+    } else {
+      await prefs.setString(_kChatAntiRead, jsonEncode(_chatAntiRead));
+    }
   }
 
   static Future<void> setReadOnReaction(bool value) async {

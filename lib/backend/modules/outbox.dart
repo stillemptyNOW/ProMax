@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../core/protocol/packet.dart';
 import '../../core/storage/app_database.dart';
 import '../../core/storage/token_storage.dart';
 import '../../core/utils/logger.dart';
@@ -209,13 +208,13 @@ class OutboxService {
           // #***! временную ошибку оставляем в очереди, окончательную помечаем и не трогаем
         } catch (e) {
           if (!await _ownsSession(api, epoch, accountId)) return;
-          if (!isPermanentSendFailure(e)) {
+          final failed = pending.withSendFailure(e);
+          if (failed.status == 'pending') {
             logger.w('Outbox: отправка ${pending.id} не удалась: $e');
             deferred = true;
             continue;
           }
-          logger.w('Outbox: ${pending.id} отклонено сервером: $e');
-          final failed = pending.copyWith(status: 'error');
+          logger.w('Outbox: ${pending.id} не отправлено: $e');
           await AppDatabase.saveMessages([failed.toDbRow()]);
           if (!await _ownsSession(api, epoch, accountId)) return;
           chats.emitMessageSent(pending.chatId, pending.id, failed);

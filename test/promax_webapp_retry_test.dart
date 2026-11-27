@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -107,8 +109,9 @@ void main() {
 
   Future<void> open(
     WidgetTester tester,
-    Future<WebAppLaunch> Function() loader,
-  ) async {
+    Future<WebAppLaunch> Function() loader, {
+    Future<WebAppLaunch> Function(String)? onExternalCallback,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('ru'),
@@ -126,6 +129,7 @@ void main() {
                     preferSystemUserAgent: true,
                     privateChannel: true,
                     recoverTechnicalError: true,
+                    onExternalCallback: onExternalCallback,
                   ),
                 ),
               ),
@@ -139,6 +143,44 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
   }
+
+  _mobileTest('cancels callback navigation before waiting for its launch', (
+    tester,
+  ) async {
+    final callbackLaunch = Completer<WebAppLaunch>();
+    const callbackUrl = 'https://max.ru/?externalCallback=1&state=synthetic';
+    await open(
+      tester,
+      () async =>
+          const WebAppLaunch(botId: 101, url: 'https://example.test/app'),
+      onExternalCallback: (url) {
+        expect(url, callbackUrl);
+        return callbackLaunch.future;
+      },
+    );
+    final first = platform.views.single;
+    final policy = await first.params.shouldOverrideUrlLoading!(
+      first.controllerFromPlatform<InAppWebViewController>(first.controller),
+      NavigationAction(
+        request: URLRequest(url: WebUri(callbackUrl)),
+        isForMainFrame: true,
+      ),
+    );
+    expect(policy, NavigationActionPolicy.CANCEL);
+    expect(callbackLaunch.isCompleted, isFalse);
+
+    callbackLaunch.complete(
+      const WebAppLaunch(botId: 101, url: 'https://example.test/resumed'),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(platform.views.length, 2);
+    expect(
+      platform.views.last.controller.page.toString(),
+      'https://example.test/resumed',
+    );
+    await tester.pumpWidget(const SizedBox());
+  });
 
   _mobileTest(
     'technical error retry fetches a new URL and keeps the screen open',

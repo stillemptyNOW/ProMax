@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 from releases import ReleaseCatalog
+from feature_usage import FEATURE_STAGES, usage_summary
 from request_body import read_bounded_body
 from settings_links import LINK_CODE, LINK_LIFETIME, MAX_LINKS, parse_settings_link
 
@@ -72,6 +73,7 @@ OperationStage = Literal[
     "apnsRegistration", "apnsUnregistration", "apnsDelivery", "apnsLocalTest",
     "apnsRelayHealth", "hubRequest", "maxConnection", "webPushAuth",
     "webPushLink", "webPushReceipt", "webPushSubscription",
+    *FEATURE_STAGES,
 ]
 OperationOutcome = Literal[
     "started", "success", "failed", "timeout", "denied", "cancelled", "skipped",
@@ -209,7 +211,7 @@ class Hub:
         cutoff = int(time.time()) - 14 * 86400
         with self.db() as db:
             db.execute("DELETE FROM telemetry WHERE created < ?", (cutoff,))
-            db.execute("DELETE FROM telemetry WHERE id NOT IN (SELECT id FROM telemetry ORDER BY id DESC LIMIT 100000)")
+            db.execute("DELETE FROM telemetry WHERE id <= (SELECT MAX(id) - 100000 FROM telemetry)")
             db.execute("DELETE FROM pair_codes WHERE expires < ?", (int(time.time()),))
             db.execute("DELETE FROM rate_limits WHERE window < ?", (int(time.time()) // 3600 - 48,))
             db.execute("DELETE FROM download_clicks WHERE created < ?", (int(time.time()) - 86400,))
@@ -240,6 +242,10 @@ class Hub:
                 LIMIT ?
             """, (cutoff, stage, stage, limit)).fetchall()
         return {"hours": hours, "limit": limit, "groups": [dict(row) for row in rows]}
+
+    def feature_summary(self, hours):
+        with self.db() as db:
+            return {"hours": hours, **usage_summary(db, int(time.time()) - hours * 3600)}
 
 
 def create_app(database=None, admin_account_id=None):
@@ -472,6 +478,17 @@ def create_app(database=None, admin_account_id=None):
         address = request.client.host if request.client else "unknown"
         hub.limit("operations-summary-ip:" + digest(address), 60, 3600)
         return hub.operation_summary(hours, limit, stage)
+
+    @app.get("/v1/admin/telemetry/features")
+    def feature_summary(
+        request: Request,
+        authorization: str | None = Header(default=None),
+        hours: int = Query(default=24, ge=1, le=336),
+    ):
+        hub.admin(authorization)
+        address = request.client.host if request.client else "unknown"
+        hub.limit("feature-summary-ip:" + digest(address), 60, 3600)
+        return hub.feature_summary(hours)
 
     @app.post("/v1/performance", status_code=202)
     def performance(body: PerformanceReport, request: Request):

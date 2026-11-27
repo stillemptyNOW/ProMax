@@ -76,6 +76,7 @@ import '../../../core/utils/user_facing_error.dart';
 import '../../../core/utils/route_settle.dart';
 import '../../../core/config/app_cache_extent.dart';
 import '../../../core/config/app_swipe_back_desktop.dart';
+import '../../../core/hub/diagnostics.dart';
 import 'chat/chat_prank_controller.dart';
 import 'chat/chat_controller.dart';
 import 'chat/read_marker_gate.dart';
@@ -3173,7 +3174,7 @@ class _ChatScreenState extends State<ChatScreen>
       onCancelSelectedCommand: _cancelSelectedCommand,
       onSendMessage: _sendMessage,
       showAttachmentPanel: _showAttachmentPanel,
-      onPickFile: _pickAndUploadFile,
+      onPickFile: _pickAndUploadFiles,
       onSendFileById: _mediaSend.sendFileById,
       commentsMode: _commentsMode,
       chatType: widget.chatType,
@@ -3677,6 +3678,12 @@ class _ChatScreenState extends State<ChatScreen>
           label: l10n.chatScreenMenuChangeWallpaper,
           onTap: _openWallpaperSheet,
         ),
+        if (_myId != 0)
+          ChatMenuItem(
+            icon: Symbols.mark_chat_read,
+            label: l10n.chatScreenReadReceipts,
+            onTap: _openReadReceiptsSettings,
+          ),
         ChatMenuItem(
           icon: Symbols.auto_awesome,
           label: 'ProMax',
@@ -3702,6 +3709,44 @@ class _ChatScreenState extends State<ChatScreen>
         ),
       ],
     );
+  }
+
+  Future<void> _openReadReceiptsSettings() async {
+    final accountId = _myId;
+    final chatId = widget.chatId;
+    if (!mounted || accountId == 0) return;
+    final l10n = AppLocalizations.of(context)!;
+    final current = ProMaxSettings.chatAntiReadMode(accountId, chatId);
+    final selected = await showDialog<ChatAntiReadMode>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(l10n.chatScreenReadReceipts),
+        children: [
+          for (final (mode, label) in [
+            (ChatAntiReadMode.inherit, l10n.chatScreenReadReceiptsGlobal),
+            (ChatAntiReadMode.normal, l10n.chatScreenReadReceiptsNormal),
+            (ChatAntiReadMode.always, l10n.chatScreenReadReceiptsAlways),
+          ])
+            ListTile(
+              title: Text(label),
+              selected: current == mode,
+              trailing: current == mode ? const Icon(Symbols.check) : null,
+              onTap: () => Navigator.of(dialogContext).pop(mode),
+            ),
+        ],
+      ),
+    );
+    if (!mounted ||
+        _myId != accountId ||
+        widget.chatId != chatId ||
+        selected == null ||
+        selected == current) {
+      return;
+    }
+    await ProMaxSettings.setChatAntiReadMode(accountId, chatId, selected);
+    if (selected != ChatAntiReadMode.inherit) {
+      Diagnostics.recordFeature(DiagnosticStage.featureAntiReadException);
+    }
   }
 
   Future<void> _toggleTranslation() async {
@@ -5940,11 +5985,7 @@ class _ChatScreenState extends State<ChatScreen>
               scheduledTime,
               separate: true,
             ),
-      onPickFile: _encryptionEnabled
-          ? () => _refuseUnencrypted((l) => l.chatScreenNoEncryptFiles)
-          : (scheduledTime == null
-                ? _pickAndUploadFile
-                : () => _pickAndUploadFile(scheduledTime: scheduledTime)),
+      onPickFile: () => _pickAndUploadFiles(scheduledTime: scheduledTime),
       onShareLocation: _encryptionEnabled
           ? () => _refuseUnencrypted((l) => l.chatScreenNoEncryptLocation)
           : _mediaSend.shareLocation,
@@ -6099,19 +6140,32 @@ class _ChatScreenState extends State<ChatScreen>
     }
   }
 
-  Future<void> _pickAndUploadFile({int? scheduledTime}) async {
+  Future<void> _pickAndUploadFiles({int? scheduledTime}) async {
+    final accountId = _myId;
+    if (accountId == 0) return;
+    if (_encryptionEnabled) {
+      _refuseUnencrypted((l) => l.chatScreenNoEncryptFiles);
+      return;
+    }
     final result = await AppLock.instance.external(
-      () => FilePicker.platform.pickFiles(),
+      () => FilePicker.platform.pickFiles(allowMultiple: true, withData: false),
     );
-    if (result == null || result.files.isEmpty) return;
-    final picked = result.files.first;
-    if (picked.path == null) return;
-    await _mediaSend.uploadAsFile(
-      source: File(picked.path!),
-      filename: picked.name,
-      size: picked.size,
+    if (!mounted || _myId != accountId || result == null) return;
+    if (_encryptionEnabled) {
+      _refuseUnencrypted((l) => l.chatScreenNoEncryptFiles);
+      return;
+    }
+    final queued = await _mediaSend.enqueuePickedFiles(
+      [
+        for (final picked in result.files)
+          if (picked.path case final path?)
+            (source: File(path), filename: picked.name, size: picked.size),
+      ],
       scheduledTime: scheduledTime,
     );
+    if (queued > 1) {
+      Diagnostics.recordFeature(DiagnosticStage.featureBatchFiles);
+    }
   }
 }
 

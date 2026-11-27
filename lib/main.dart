@@ -31,7 +31,6 @@ import 'core/crypto/e2ee_service.dart';
 import 'core/storage/chat_encryption_store.dart';
 import 'core/config/app_accent.dart';
 import 'core/config/app_design.dart';
-import 'frontend/widgets/redesign_welcome_layer.dart';
 import 'core/config/app_amoled.dart';
 import 'core/config/app_badge.dart';
 import 'core/config/app_icon.dart';
@@ -1368,9 +1367,6 @@ class ProMaxAppState extends State<ProMaxApp>
                                     ),
                                     const Positioned.fill(
                                       child: AppSwitcherCurtain(),
-                                    ),
-                                    const Positioned.fill(
-                                      child: RedesignWelcomeLayer(),
                                     ),
                                     if (fpsOn) const FpsOverlayLayer(),
                                   ],

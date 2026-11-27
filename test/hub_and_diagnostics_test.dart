@@ -227,7 +227,8 @@ void main() {
     expect(client.uploadPaths, ['/v1/telemetry/operations']);
     final upload = client.uploads.single;
     expect(upload.keys, ['events']);
-    expect((upload['events'] as List).single, {
+    expect((upload['events'] as List).first['stage'], 'featureSession');
+    expect((upload['events'] as List).last, {
       'stage': 'apnsRegistration',
       'outcome': 'success',
       'duration_ms': 123,
@@ -261,11 +262,30 @@ void main() {
       throwsA(isA<HubException>()),
     );
     await Diagnostics.flush();
-    final event = uploads.uploads.single['events'][0] as Map;
+    final event = (uploads.uploads.single['events'] as List).last as Map;
     expect(event['stage'], 'hubRequest');
     expect(event['outcome'], 'failed');
     expect(event['status_code'], 503);
     expect(jsonEncode(event), isNot(contains('synthetic')));
+  });
+
+  test('feature usage is opt-in and recorded once per session', () async {
+    final uploads = _Client();
+    await Diagnostics.init(operationsClient: uploads);
+    Diagnostics.recordFeature(DiagnosticStage.featureBatchFiles);
+    await Diagnostics.flush();
+    expect(uploads.uploads, isEmpty);
+
+    await Diagnostics.setOperationsEnabled(true);
+    Diagnostics.recordFeature(DiagnosticStage.featureBatchFiles);
+    Diagnostics.recordFeature(DiagnosticStage.featureBatchFiles);
+    Diagnostics.recordFeature(DiagnosticStage.webPushAuth);
+    await Diagnostics.flush();
+    final events = uploads.uploads.single['events'] as List;
+    expect(events.map((event) => event['stage']), [
+      'featureSession',
+      'featureBatchFiles',
+    ]);
   });
   test(
     'hub HTTP client sends JSON and bearer token without following redirects',

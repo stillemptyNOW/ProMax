@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -23,6 +24,49 @@ class WebPushSubscription {
     required this.publicKey,
     required this.authKey,
   });
+
+  static WebPushSubscription? fromAppleLink(Uri uri) {
+    final parameters = uri.queryParametersAll;
+    if (parameters.length != 3 ||
+        parameters.values.any((values) => values.length != 1)) {
+      return null;
+    }
+    final endpoint = uri.queryParameters['endpoint'];
+    final publicKey = uri.queryParameters['p256dh'];
+    final authKey = uri.queryParameters['auth'];
+    if (endpoint == null ||
+        publicKey == null ||
+        authKey == null ||
+        endpoint.length > 2048 ||
+        publicKey.length > 100 ||
+        authKey.length > 32) {
+      return null;
+    }
+    final target = Uri.tryParse(endpoint);
+    if (target == null ||
+        target.scheme != 'https' ||
+        target.port != 443 ||
+        !target.host.endsWith('.push.apple.com') ||
+        target.userInfo.isNotEmpty ||
+        target.hasFragment ||
+        target.path.length < 2) {
+      return null;
+    }
+    try {
+      final point = base64Url.decode(base64Url.normalize(publicKey));
+      final secret = base64Url.decode(base64Url.normalize(authKey));
+      if (point.length != 65 || point.first != 4 || secret.length != 16) {
+        return null;
+      }
+    } on FormatException {
+      return null;
+    }
+    return WebPushSubscription(
+      endpoint: endpoint,
+      publicKey: publicKey,
+      authKey: authKey,
+    );
+  }
 }
 
 // #***! что сейчас привязано
@@ -100,7 +144,7 @@ class WebPushService {
   static const Duration _defaultLifetime = Duration(minutes: 2);
 
   MaxWebSocketSession? _authSocket;
-  MaxWebDevice? _device;
+  int? _authAccountId;
 
   // #***! changes на изменение привязки, экран настроек подписан
   final ValueNotifier<int> changes = ValueNotifier<int>(0);
@@ -108,53 +152,59 @@ class WebPushService {
   void _notifyChanged() => changes.value++;
 
   // #***! состояние привязки в защищённом хранилище
-  Future<bool> isAuthorized() async =>
-      (await TokenStorage.readSecure(_tokenKey))?.isNotEmpty ?? false;
-
-  Future<String?> linkedEndpoint() => TokenStorage.readSecure(_endpointKey);
+  Future<bool> isAuthorized() async {
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) return false;
+    return (await TokenStorage.readSecure(
+          '${_tokenKey}_$accountId',
+        ))?.isNotEmpty ??
+        false;
+  }
 
   Future<WebPushLinkInfo?> linkInfo() async {
-    final endpoint = await TokenStorage.readSecure(_endpointKey);
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) return null;
+    final endpoint = await TokenStorage.readSecure(
+      '${_endpointKey}_$accountId',
+    );
     if (endpoint == null || endpoint.isEmpty) return null;
 
-    final stamp = await TokenStorage.readSecure(_linkedAtKey);
+    final stamp = await TokenStorage.readSecure('${_linkedAtKey}_$accountId');
     return WebPushLinkInfo(
       endpoint: endpoint,
       linkedAt: stamp == null ? null : DateTime.tryParse(stamp),
-      deviceId: await deviceId(),
+      deviceId: await _deviceId(accountId),
     );
   }
 
-  Future<String> deviceId() async {
-    final saved = await TokenStorage.readSecure(_deviceIdKey);
+  Future<String> _deviceId(int accountId) async {
+    final key = '${_deviceIdKey}_$accountId';
+    final saved = await TokenStorage.readSecure(key);
     if (saved != null && saved.isNotEmpty) return saved;
 
     final generated = uuidV4();
-    await TokenStorage.writeSecure(_deviceIdKey, generated);
+    await TokenStorage.writeSecure(key, generated);
     return generated;
   }
 
-  Future<MaxWebDevice> device() async {
-    final cached = _device;
-    if (cached != null) return cached;
-
-    final built = MaxWebDevice(
-      deviceId: await deviceId(),
+  Future<MaxWebDevice> _device(int accountId) async {
+    return MaxWebDevice(
+      deviceId: await _deviceId(accountId),
       appVersion: _appVersion,
       userAgent: await _safariUserAgent(),
       screen: _browserScreen(),
     );
-    _device = built;
-    return built;
   }
 
   // #***! создаём QR трек, юзер подтверждает в приложении
   Future<WebPushQrTrack> startQrAuth() async {
+    final accountId = await _activeAccount();
     await cancelAuth();
 
-    final socket = MaxWebSocketSession(device: await device());
-    await socket.connect();
+    final socket = MaxWebSocketSession(device: await _device(accountId));
     _authSocket = socket;
+    _authAccountId = accountId;
+    await socket.connect();
 
     final payload = _asMap(
       await socket.request(_opcodeQrCreate, null),
@@ -177,7 +227,7 @@ class WebPushService {
 
   // #***! опрос до подтверждения или истечения
   Future<WebPushAuthStep> awaitApproval(WebPushQrTrack track) async {
-    final socket = _requireSocket();
+    final socket = await _requireSocket();
     final deadline = DateTime.now().add(track.lifetime);
 
     while (DateTime.now().isBefore(deadline)) {
@@ -211,7 +261,7 @@ class WebPushService {
     String trackId,
     String password,
   ) async {
-    final socket = _requireSocket();
+    final socket = await _requireSocket();
     final payload = _asMap(
       await socket.request(Opcode.authLoginCheckPassword, <String, Object?>{
         'trackId': trackId,
@@ -223,7 +273,12 @@ class WebPushService {
   }
 
   Future<void> finishAuth(String loginToken) async {
-    await TokenStorage.writeSecure(_tokenKey, loginToken);
+    final accountId = _authAccountId;
+    await _requireSocket();
+    if (accountId == null || accountId != _authAccountId) {
+      throw const MaxWebException('сессия входа потеряна, начните заново');
+    }
+    await TokenStorage.writeSecure('${_tokenKey}_$accountId', loginToken);
     await cancelAuth();
     _notifyChanged();
     logger.i('WebPush: WEB-сессия авторизована по QR');
@@ -232,46 +287,61 @@ class WebPushService {
   Future<void> cancelAuth() async {
     final socket = _authSocket;
     _authSocket = null;
+    _authAccountId = null;
     await socket?.close();
   }
 
   // #***! регистрация подписки на сервере
-  Future<void> registerSubscription(WebPushSubscription subscription) async {
-    final token = await TokenStorage.readSecure(_tokenKey);
+  Future<void> registerSubscription(
+    WebPushSubscription subscription, {
+    int? expectedAccountId,
+  }) async {
+    final accountId = await _activeAccount();
+    if (expectedAccountId != null && accountId != expectedAccountId) {
+      throw const MaxWebException(
+        'Аккаунт изменился. Откройте ссылку привязки заново.',
+      );
+    }
+    final token = await TokenStorage.readSecure('${_tokenKey}_$accountId');
     if (token == null || token.isEmpty) {
       throw const MaxWebException(
         'сначала подключите уведомления в настройках',
       );
     }
 
-    final socket = MaxWebSocketSession(device: await device());
+    final socket = MaxWebSocketSession(device: await _device(accountId));
     final watch = Stopwatch()..start();
     var outcome = DiagnosticOutcome.failed;
     try {
       await socket.connect();
-      await socket.request(Opcode.login, <String, Object?>{
-        'token': token,
-        'chatsCount': 0,
-        'interactive': false,
-        'chatsSync': 0,
-        'contactsSync': 0,
-        'presenceSync': -1,
-        'draftsSync': 0,
-      });
+      try {
+        await _login(socket, token);
+      } on MaxWebException catch (e) {
+        if (e.code != 'FAIL_LOGIN_TOKEN') rethrow;
+        final stored = await TokenStorage.readSecure('${_tokenKey}_$accountId');
+        if (stored == token) await _clearAuthorization(accountId);
+        throw const MaxWebException(
+          'Сессия уведомлений истекла. Подключите её заново в настройках.',
+        );
+      }
       await socket.request(Opcode.config, <String, Object?>{
         'subscribe': true,
         'pushToken': subscription.endpoint,
         'secretKey': subscription.authKey,
         'publicKey': subscription.publicKey,
       });
-      await TokenStorage.writeSecure(_endpointKey, subscription.endpoint);
       await TokenStorage.writeSecure(
-        _linkedAtKey,
+        '${_endpointKey}_$accountId',
+        subscription.endpoint,
+      );
+      await TokenStorage.writeSecure(
+        '${_linkedAtKey}_$accountId',
         DateTime.now().toIso8601String(),
       );
       _notifyChanged();
       logger.i('WebPush: подписка зарегистрирована');
       outcome = DiagnosticOutcome.success;
+      Diagnostics.recordFeature(DiagnosticStage.featureWebPush);
     } on TimeoutException {
       outcome = DiagnosticOutcome.timeout;
       rethrow;
@@ -287,37 +357,33 @@ class WebPushService {
 
   // #***! отвязка, гасим сессию и чистим локальное
   Future<void> signOut() async {
+    final accountId = await _activeAccount();
     await cancelAuth();
 
-    final token = await TokenStorage.readSecure(_tokenKey);
-    final endpoint = await TokenStorage.readSecure(_endpointKey);
+    final token = await TokenStorage.readSecure('${_tokenKey}_$accountId');
+    final endpoint = await TokenStorage.readSecure(
+      '${_endpointKey}_$accountId',
+    );
     if (token != null && token.isNotEmpty) {
       try {
-        await _terminateWebSession(token, endpoint);
+        await _terminateWebSession(accountId, token, endpoint);
       } catch (e) {
         logger.w('WebPush: веб-сессию завершить не удалось ($e)');
       }
     }
 
-    await TokenStorage.deleteSecure(_tokenKey);
-    await TokenStorage.deleteSecure(_endpointKey);
-    await TokenStorage.deleteSecure(_linkedAtKey);
-    _notifyChanged();
+    await _clearAuthorization(accountId);
   }
 
-  Future<void> _terminateWebSession(String token, String? endpoint) async {
-    final socket = MaxWebSocketSession(device: await device());
+  Future<void> _terminateWebSession(
+    int accountId,
+    String token,
+    String? endpoint,
+  ) async {
+    final socket = MaxWebSocketSession(device: await _device(accountId));
     try {
       await socket.connect();
-      await socket.request(Opcode.login, <String, Object?>{
-        'token': token,
-        'chatsCount': 0,
-        'interactive': false,
-        'chatsSync': 0,
-        'contactsSync': 0,
-        'presenceSync': -1,
-        'draftsSync': 0,
-      });
+      await _login(socket, token);
 
       if (endpoint != null && endpoint.isNotEmpty) {
         try {
@@ -339,9 +405,36 @@ class WebPushService {
     }
   }
 
-  MaxWebSocketSession _requireSocket() {
+  Future<Object?> _login(MaxWebSocketSession socket, String token) =>
+      socket.request(Opcode.login, <String, Object?>{
+        'token': token,
+        'chatsCount': 0,
+        'interactive': false,
+        'chatsSync': 0,
+        'contactsSync': 0,
+        'presenceSync': -1,
+        'draftsSync': 0,
+      });
+
+  Future<void> _clearAuthorization(int accountId) async {
+    await TokenStorage.deleteSecure('${_tokenKey}_$accountId');
+    await TokenStorage.deleteSecure('${_endpointKey}_$accountId');
+    await TokenStorage.deleteSecure('${_linkedAtKey}_$accountId');
+    _notifyChanged();
+  }
+
+  Future<int> _activeAccount() async {
+    final accountId = await TokenStorage.getActiveAccountId();
+    if (accountId == null) {
+      throw const MaxWebException('Сначала войдите в аккаунт MAX');
+    }
+    return accountId;
+  }
+
+  Future<MaxWebSocketSession> _requireSocket() async {
+    final accountId = await _activeAccount();
     final socket = _authSocket;
-    if (socket == null) {
+    if (socket == null || _authAccountId != accountId) {
       throw const MaxWebException('сессия входа потеряна, начните заново');
     }
     return socket;

@@ -140,6 +140,26 @@ void main() {
     expect(api.receipts, isEmpty);
   });
 
+  test('always no read suppresses enabled action receipts', () async {
+    await configure(reaction: true, reply: true, send: true);
+    await ProMaxSettings.setChatAntiReadMode(
+      101,
+      -301,
+      ChatAntiReadMode.always,
+    );
+
+    await messages.setReaction(-301, '100', '⭐');
+    await messages.sendMessage(
+      101,
+      -301,
+      'Synthetic reply',
+      replyToMessageId: 200,
+    );
+    await messages.sendMessage(101, -301, 'Synthetic send');
+
+    expect(api.receipts, isEmpty);
+  });
+
   test(
     'reaction reads through its target and preserves newer local reads',
     () async {

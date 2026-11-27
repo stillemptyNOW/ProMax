@@ -587,7 +587,8 @@ class ChatsModule {
     if ((row['unread_count'] as int? ?? 0) == 0) return;
 
     final msgIdNum = int.tryParse(messageId);
-    if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
+    final antiRead = ProMaxSettings.antiReadFor(accountId, chatId);
+    if (msgIdNum != null && !antiRead) {
       await ReadMarkQueue.instance.submit(
         api,
         ReadMark(
@@ -606,7 +607,7 @@ class ChatsModule {
     final participants = Map<int, int>.from(cached.participants)
       ..[accountId] = mark > currentMark ? mark : currentMark;
     final updated = cached.copyWith(unreadCount: 0, participants: participants);
-    if (ProMaxSettings.antiRead.value) {
+    if (antiRead) {
       await LocalReadState.recordView(
         accountId,
         chatId,
@@ -622,9 +623,9 @@ class ChatsModule {
     Map<String, dynamic> row, {
     bool updateServerMark = false,
   }) async {
-    if (!ProMaxSettings.antiRead.value) return;
     final accountId = row['account_id'] as int;
     final chatId = row['id'] as int;
+    if (!ProMaxSettings.antiReadFor(accountId, chatId)) return;
     final local = await LocalReadState.load(accountId, chatId);
     if (!local.isActive) return;
     final participants = parseParticipants(row['participants']);
@@ -664,7 +665,8 @@ class ChatsModule {
     required int remaining,
   }) async {
     final msgIdNum = int.tryParse(messageId);
-    if (msgIdNum != null && !ProMaxSettings.antiRead.value) {
+    final antiRead = ProMaxSettings.antiReadFor(accountId, chatId);
+    if (msgIdNum != null && !antiRead) {
       await ReadMarkQueue.instance.submit(
         api,
         ReadMark(
@@ -692,7 +694,7 @@ class ChatsModule {
       unreadCount: next,
       participants: participants,
     );
-    if (ProMaxSettings.antiRead.value) {
+    if (antiRead) {
       await LocalReadState.recordView(
         accountId,
         chatId,
@@ -705,7 +707,7 @@ class ChatsModule {
     await _commitChatContent([(rows.first, updated.toDbRow())]);
     if (next == 0) {
       unawaited(PushService.clearChatNotification(chatId));
-    } else if (ProMaxSettings.antiRead.value) {
+    } else if (antiRead) {
       unawaited(PushService.pruneChatNotification(chatId, nextMark));
     }
   }

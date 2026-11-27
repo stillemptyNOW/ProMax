@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -10,6 +11,7 @@ import 'package:promax/backend/modules/upload_service.dart';
 import 'package:promax/core/protocol/opcode_map.dart';
 import 'package:promax/core/protocol/packet.dart';
 import 'package:promax/core/storage/app_database.dart';
+import 'package:promax/core/storage/token_storage.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,6 +68,34 @@ class _Uploader extends FileUploader {
     : super(api: api, messages: messages);
   bool succeeds = true;
   final calls = <String>[];
+  final firstDocument = Completer<void>();
+
+  @override
+  Stream<UploadEvent> upload({
+    int? accountId,
+    required int chatId,
+    required File file,
+    required String filename,
+    required int totalSize,
+    String? text,
+    int? scheduledTime,
+    Duration autoForceAfter = const Duration(seconds: 1),
+    Duration overallTimeout = const Duration(minutes: 5),
+    Duration progressThrottle = const Duration(milliseconds: 16),
+  }) async* {
+    calls.add(filename);
+    if (filename == 'first.bin') {
+      await firstDocument.future;
+      yield const UploadError('synthetic_failure');
+    } else {
+      yield UploadDone(
+        fileId: 321,
+        filename: filename,
+        size: totalSize,
+        messageId: '432',
+      );
+    }
+  }
 
   @override
   Future<bool> uploadVideoFile(
@@ -148,6 +178,34 @@ void main() {
     tempId: 'synthetic-note',
     file: file,
     durationMs: 4000,
+  );
+
+  test(
+    'queued documents start in order and continue after a failure',
+    () async {
+      await TokenStorage.setActiveAccount(101);
+      final events = service.events.take(2).toList();
+      Future<void> send(String name) => service.sendFile(
+        accountId: 101,
+        chatId: 202,
+        tempId: name,
+        source: file,
+        filename: name,
+        size: 4,
+      );
+      final first = send('first.bin');
+      final second = send('second.bin');
+      expect(service.job('second.bin'), isNotNull);
+      await pumpEventQueue();
+      final startedWhileBlocked = List<String>.of(uploader.calls);
+      uploader.firstDocument.complete();
+
+      await Future.wait([first, second]);
+
+      expect(startedWhileBlocked, ['first.bin']);
+      expect(uploader.calls, ['first.bin', 'second.bin']);
+      expect(await events, [isA<UploadJobFailed>(), isA<UploadJobDone>()]);
+    },
   );
 
   test(

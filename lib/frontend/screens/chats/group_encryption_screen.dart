@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/crypto/group_e2ee_service.dart';
+import '../../../core/hub/diagnostics.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../widgets/custom_notification.dart';
 import '../../widgets/settings_card.dart';
@@ -71,6 +72,7 @@ class _GroupEncryptionScreenState extends State<GroupEncryptionScreen> {
       } else {
         await _service.begin(widget.accountId, widget.groupId);
       }
+      Diagnostics.recordFeature(DiagnosticStage.featureGroupEncryption);
     } catch (_) {
       if (mounted) showCustomNotification(context, l10n.groupEncryptionFailed);
     } finally {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../../core/hub/diagnostics.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../main.dart';
@@ -351,6 +352,7 @@ class _SearchScreenState extends State<SearchScreen> {
     await _applyMessages(accountId, token, [...serverHits, ...localHits]);
     if (!mounted || token != _seq) return;
     final localChatIds = localChats.map((c) => c['id'] as int).toSet();
+    Diagnostics.recordFeature(DiagnosticStage.featureChatSearch);
     setState(() {
       _phoneResult = phoneResult;
       _public = publicHits
